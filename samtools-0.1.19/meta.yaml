@@ -1,0 +1,38 @@
+package:
+  name: samtools
+  version: "0.1.19"
+
+requirements:
+  build:
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: samtools-0.1.19.tar.bz2
+  url: http://download.lab7.io/sources/samtools-0.1.19.tar.bz2
+  md5: ff8b46e6096cfb452003b1ec5091d86a
+  patches:
+    - samtools-makefiles.patch
+    - samtools-sources.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+
+test:
+  files:
+    - test.sam
+  commands:
+    - samtools view -bS test.sam > test.bam
+    - samtools sort test.bam test.sorted
+    # Need this because above returns 0 even if something failed
+    - test -f test.sorted.bam
+
+about:
+  home: http://samtools.sourceforge.net/
+  license: MIT
+  license_file: COPYING
+  summary: "Various utilities for manipulating alignments in the SAM/BAM format"

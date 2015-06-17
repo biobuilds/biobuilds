@@ -1,0 +1,31 @@
+--- misc/bamcheck.c
++++ misc/bamcheck.c
+@@ -174,7 +174,7 @@ int is_in_regions(bam1_t *bam_line, stats_t *stats);
+ 
+ 
+ // Coverage distribution methods
+-inline int coverage_idx(int min, int max, int n, int step, int depth)
++static inline int coverage_idx(int min, int max, int n, int step, int depth)
+ {
+     if ( depth < min )
+         return 0;
+@@ -185,7 +185,7 @@ inline int coverage_idx(int min, int max, int n, int step, int depth)
+     return 1 + (depth - min) / step;
+ }
+ 
+-inline int round_buffer_lidx2ridx(int offset, int size, int64_t refpos, int64_t pos)
++static inline int round_buffer_lidx2ridx(int offset, int size, int64_t refpos, int64_t pos)
+ {
+     return (offset + (pos-refpos) % size) % size;
+ }
+--- padding.c
++++ padding.c
+@@ -138,7 +138,7 @@ int get_unpadded_len(faidx_t *fai, char *ref_name, int padded_len)
+ 	return bases;
+ }
+ 
+-inline int * update_posmap(int *posmap, kstring_t ref)
++static inline int * update_posmap(int *posmap, kstring_t ref)
+ {
+ 	int i, k;
+ 	posmap = realloc(posmap, ref.m * sizeof(int));
