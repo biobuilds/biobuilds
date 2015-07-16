@@ -1,0 +1,30 @@
+package:
+  name: bowtie2
+  version: "2.2.4"
+
+requirements:
+  build:
+    - veclib-headers  # [ppc64le]
+  run:
+    - python
+
+source:
+  fn: bowtie2-2.2.4-source.zip
+  url: http://download.lab7.io/sources/bowtie2-2.2.4-source.zip
+  md5: d31294875092e76ebb061eadc7998582
+  patches:
+    - bowtie2-makefile.patch
+    - bowtie2-power.patch       # [ppc64le]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://bowtie-bio.sourceforge.net/bowtie2/
+  license: GPLv3
+  license_file: True
+  summary: "Ultrafast, memory-efficient tool for aligning sequencing reads to long reference sequences"
