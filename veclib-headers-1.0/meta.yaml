@@ -1,0 +1,18 @@
+package:
+  name: veclib-headers
+  version: "1.0.1"
+
+source:
+  fn: veclib-headers-1.0.1-104.tar.gz
+  url: http://download.lab7.io/ppc64le/veclib-headers-1.0.1-104.tar.gz
+  md5: 8926e3a938fb0689312760244c3e0ea4
+
+build:
+  number: 104
+  track_features:
+    - veclib
+
+about:
+  home: https://www.ibm.com/developerworks/community/groups/community/powerveclib
+  license: Proprietary - IBM
+  summary: Vector intrinsics for IBM POWER architecture
