@@ -1,0 +1,39 @@
+package:
+  name: plink
+  version: "1.07"
+
+requirements:
+  build:
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: plink-1.07-src.zip
+  url: http://download.lab7.io/sources/plink-1.07-src.zip
+  md5: 4566376791df4e69459b849bd7078fa3
+  patches:
+    - plink-makefile.patch
+    - plink-sources.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - cp -f "${SRC_DIR}/test.map" .
+    - cp -f "${SRC_DIR}/test.ped" .
+    - plink --file test --freq --out test
+    - plink --file test --assoc --out test
+    - plink --file test --make-bed --out test
+    - plink --bfile test --assoc
+
+about:
+  home: http://pngu.mgh.harvard.edu/~purcell/plink/
+  license: GPLv2
+  license_file: COPYING.txt
+  summary: "Open-source whole genome association analysis toolset"

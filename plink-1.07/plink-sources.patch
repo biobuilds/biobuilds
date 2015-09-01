@@ -1,0 +1,62 @@
+--- elf.cpp.orig	2014-11-05 16:31:29.000000000 -0600
++++ elf.cpp	2014-11-05 16:32:39.000000000 -0600
+@@ -1175,10 +1175,10 @@
+ 	  << setw(8) << gcnt << " "
+ 	  << setw(8) << (double)cnt / (double)gcnt << "\n";
+ 
+-      map<int,int>::iterator i = chr_cnt.begin();
+-      while ( i != chr_cnt.end() )
++      map<int,int>::iterator iter = chr_cnt.begin();
++      while ( iter != chr_cnt.end() )
+ 	{
+-	  int c = i->first;
++	  int c = iter->first;
+ 	  int x = chr_cnt.find( c )->second;
+ 	  int y = chr_gcnt.find( c )->second;
+ 	  
+@@ -1189,7 +1189,7 @@
+ 	      << setw(8) << y << " "
+ 	      << setw(8) << (double)x / (double)y << "\n";
+ 	  
+-	  ++i;
++	  ++iter;
+ 	}
+       
+     }
+--- idhelp.cpp.orig	2014-11-05 16:33:27.000000000 -0600
++++ idhelp.cpp	2014-11-05 16:34:25.000000000 -0600
+@@ -772,12 +772,12 @@
+       for (int j = 0 ; j < jointField.size(); j++ )
+ 	{
+ 	  set<IDField*> & jf = jointField[j];
+-	  set<IDField*>::iterator j = jf.begin();
++	  set<IDField*>::iterator iter = jf.begin();
+ 	  PP->printLOG(" { ");
+-	  while ( j != jf.end() )
++	  while ( iter != jf.end() )
+ 	    {
+-	      PP->printLOG( (*j)->name + " " );
+-	      ++j;
++	      PP->printLOG( (*iter)->name + " " );
++	      ++iter;
+ 	    }
+ 	  PP->printLOG(" }");
+ 	}
+--- sets.cpp.orig	2014-11-05 16:35:27.000000000 -0600
++++ sets.cpp	2014-11-05 16:36:08.000000000 -0600
+@@ -768,11 +768,11 @@
+       //////////////////////////////////////////////
+       // Reset original missing status
+ 
+-      vector<Individual*>::iterator i = PP->sample.begin();
+-      while ( i != PP->sample.end() )
++      vector<Individual*>::iterator iter = PP->sample.begin();
++      while ( iter != PP->sample.end() )
+ 	{
+-	  (*i)->missing = (*i)->flag;
+-	  ++i;
++	  (*iter)->missing = (*iter)->flag;
++	  ++iter;
+ 	}
+ 
+       ////////////////////////////////////////////////

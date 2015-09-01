@@ -1,0 +1,34 @@
+--- Makefile.orig	2014-11-06 18:13:58.571664215 -0600
++++ Makefile	2014-11-06 18:15:16.883661009 -0600
+@@ -22,8 +22,8 @@
+ SYS = UNIX
+ 
+ # Leave blank after "=" to disable; put "= 1" to enable
+-WITH_R_PLUGINS = 1
+-WITH_WEBCHECK = 1
++WITH_R_PLUGINS =
++WITH_WEBCHECK =
+ FORCE_32BIT = 
+ WITH_ZLIB = 1
+ WITH_LAPACK = 
+@@ -34,7 +34,10 @@
+ CXX_WIN = c:\bin\mingw\bin\mingw32-g++.exe
+ 
+ # Any other compiler flags here ( -Wall, -g, etc)
+-CXXFLAGS = 
++CXXFLAGS ?=
++
++# Additional linker flags
++LDFLAGS  ?=
+ 
+ # Misc
+ LIB_LAPACK = /usr/lib/liblapack.so.3
+@@ -151,7 +154,7 @@
+ all : $(OUTPUT) 
+ 
+ $(OUTPUT) :
+-	$(CXX) $(CXXFLAGS) -o $(OUTPUT) $(OBJ) $(LIB) 
++	$(CXX) $(CXXFLAGS) -o $(OUTPUT) $(OBJ) $(LDFLAGS) $(LIB) 
+ 
+ $(OBJ) : $(HDR)
+ 
