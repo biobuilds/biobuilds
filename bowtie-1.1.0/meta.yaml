@@ -1,0 +1,27 @@
+package:
+  name: bowtie
+  version: "1.1.0"
+
+requirements:
+  run:
+    - python
+
+source:
+  fn: bowtie-1.1.0-src.zip
+  url: http://download.lab7.io/sources/bowtie-1.1.0-src.zip
+  md5: f4b70b22d30e5cfb2be8e25b28fde2ec
+  patches:
+    - bowtie-makefile.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://bowtie-bio.sourceforge.net/index.shtml
+  license: Artistic
+  license_file: True
+  summary: "Ultrafast, memory-efficient short read aligner"
