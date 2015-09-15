@@ -1,0 +1,23 @@
+--- Makefile.org	2014-03-29 09:51:36.407216677 -0500
++++ Makefile	2014-03-29 09:52:16.238781653 -0500
+@@ -1,6 +1,6 @@
+ CC=			gcc
+ #CC=			clang --analyze
+-CFLAGS=		-g -Wall -Wno-unused-function -O2
++CFLAGS?=		-g -Wall -Wno-unused-function -O2
+ WRAP_MALLOC=-DUSE_MALLOC_WRAPPERS
+ AR=			ar
+ DFLAGS=		-DHAVE_PTHREAD $(WRAP_MALLOC)
+@@ -20,10 +20,10 @@
+ all:$(PROG)
+ 
+ bwa:libbwa.a $(AOBJS) main.o
+-		$(CC) $(CFLAGS) $(DFLAGS) $(AOBJS) main.o -o $@ -L. -lbwa $(LIBS)
++		$(CC) $(CFLAGS) $(DFLAGS) $(AOBJS) main.o -o $@ $(LDFLAGS) -L. -lbwa $(LIBS)
+ 
+ bwamem-lite:libbwa.a example.o
+-		$(CC) $(CFLAGS) $(DFLAGS) example.o -o $@ -L. -lbwa $(LIBS)
++		$(CC) $(CFLAGS) $(DFLAGS) example.o -o $@ $(LDFLAGS) -L. -lbwa $(LIBS)
+ 
+ libbwa.a:$(LOBJS)
+ 		$(AR) -csru $@ $(LOBJS)

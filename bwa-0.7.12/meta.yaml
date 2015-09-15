@@ -1,0 +1,31 @@
+package:
+  name: bwa
+  version: "0.7.12"
+
+requirements:
+  build:
+    - zlib
+    - veclib-headers  # [ppc64le]
+  run:
+    - zlib
+
+source:
+  fn: bwa-0.7.12.tar.bz2
+  url: http://download.lab7.io/sources/bwa-0.7.12.tar.bz2
+  md5: 075704634146ec8cc7543c0dee8960e7
+  patches:
+    - bwa-makefile.patch
+    - bwa-power.patch     # [ppc64le]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://bio-bwa.sourceforge.net/
+  license: GPLv3
+  license_file: COPYING
+  summary: "Package for mapping low-divergent sequences against a large reference genome"
