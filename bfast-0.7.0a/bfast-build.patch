@@ -1,0 +1,76 @@
+--- configure.orig	2014-03-29 12:34:42.342229876 -0500
++++ configure	2014-03-29 12:34:45.894194113 -0500
+@@ -3064,13 +3064,13 @@
+   CFLAGS=$ac_save_CFLAGS
+ elif test $ac_cv_prog_cc_g = yes; then
+   if test "$GCC" = yes; then
+-    CFLAGS="-g -O2"
++    CFLAGS=
+   else
+-    CFLAGS="-g"
++    CFLAGS=
+   fi
+ else
+   if test "$GCC" = yes; then
+-    CFLAGS="-O2"
++    CFLAGS=
+   else
+     CFLAGS=
+   fi
+@@ -3581,7 +3581,7 @@
+ 
+ 
+ # set CFLAGS and CXXFLAGS
+-default_CFLAGS="-Wall -g -O2 -pthread";
++default_CFLAGS="-Wall -pthread";
+ extended_CFLAGS="";# "-m64 -D_FILE_OFFSET_BITS=64";
+ 
+ # Define some variables
+@@ -3599,7 +3599,7 @@
+ 
+ # Check whether --enable-intel64 was given.
+ if test "${enable_intel64+set}" = set; then
+-  enableval=$enable_intel64; extended_CFLAGS="${extended_CFLAGS} -mtune=nocona"
++  enableval=$enable_intel64; extended_CFLAGS="${extended_CFLAGS}"
+ fi
+ 
+ # Check whether --enable-unoptimized-sw was given.
+@@ -4404,7 +4404,7 @@
+ fi
+ 
+ 
+-CFLAGS="${default_CFLAGS} ${extended_CFLAGS}";
++CFLAGS="${CFLAGS} ${default_CFLAGS} ${extended_CFLAGS}";
+ 
+ # Enable large file support; disable with --disable-largefile
+ # Check whether --enable-largefile was given.
+--- bfast/aflib.h.orig	2014-03-29 12:22:37.417534388 -0500
++++ bfast/aflib.h	2014-03-29 12:27:57.026312472 -0500
+@@ -3,8 +3,10 @@
+ 
+ #include <stdio.h>
+ #include <zlib.h>
+-#include <bzlib.h>
+ #include <config.h>
++#ifndef DISABLE_BZLIB
++#include <bzlib.h>
++#endif
+ 
+ enum {AFILE_NO_COMPRESSION=0, AFILE_BZ2_COMPRESSION, AFILE_GZ_COMPRESSION};
+ enum {AFILE_BZ2_READ=0, AFILE_BZ2_WRITE};
+--- bfast/aflib.c.orig	2014-03-29 12:22:43.041477674 -0500
++++ bfast/aflib.c	2014-03-29 12:28:31.961960436 -0500
+@@ -3,10 +3,12 @@
+ #include <assert.h>
+ #include <unistd.h>
+ #include <string.h>
+-#include <bzlib.h>
+ #include <zlib.h>
+ #include <ctype.h>
+ #include <config.h>
++#ifndef DISABLE_BZLIB
++#include <bzlib.h>
++#endif
+ #include "aflib.h"
+ 
+ void AFILE_print_error(char *message)
