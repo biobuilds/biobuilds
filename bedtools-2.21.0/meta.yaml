@@ -1,0 +1,29 @@
+package:
+  name: bedtools
+  version: "2.21.0"
+
+requirements:
+  build:
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: bedtools-2.21.0.tar.gz
+  url: http://download.lab7.io/sources/bedtools-2.21.0.tar.gz
+  md5: 42cf57a5f110e06aa666aed58e0c3064
+  patches:
+    - bedtools-makefile.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://bedtools.readthedocs.org/
+  license: GPLv2
+  license_file: True
+  summary: "Swiss-army knife of tools for a wide-range of genomics analysis tasks"
