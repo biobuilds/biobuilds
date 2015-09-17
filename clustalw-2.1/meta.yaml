@@ -1,0 +1,26 @@
+package:
+  name: clustalw
+  version: "2.1"
+
+source:
+  fn: clustalw-2.1.tar.gz
+  url: http://download.lab7.io/sources/clustalw-2.1.tar.gz
+  md5: 144df8440a0ae083d5167616c8ceeb41
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+
+test:
+  files:
+    - kras.fa
+  commands:
+    - "clustalw2 kras.fa && [ -f kras.aln ]"
+
+about:
+  home: http://www.clustal.org/clustal2/
+  license: LGPL
+  license_file: COPYING.LESSER
+  summary: "Multiple alignment of nucleic acid and protein sequences"
