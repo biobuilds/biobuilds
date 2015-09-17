@@ -1,0 +1,27 @@
+package:
+  name: hmmer
+  version: "3.1b2"
+
+requirements:
+  build:
+    - veclib-headers  # [ppc64le]
+
+source:
+  fn: hmmer-3.1b2.tar.gz
+  url: http://download.lab7.io/sources/hmmer-3.1b2.tar.gz
+  md5: c8c141018bc0ccd7fc37b33f2b945d5f
+  patches:
+    - hmmer-ppc64le.patch   # [ppc64le]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://hmmer.janelia.org/
+  license: GPLv3
+  license_file: true
+  summary: "Biosequence analysis using profile HMMs"
