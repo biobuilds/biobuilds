@@ -1,0 +1,36 @@
+package:
+  name: graphviz
+  version: "2.38.0"
+
+source:
+  fn: graphviz-2.38.0.tar.gz
+  url: http://download.lab7.io/sources/graphviz-2.38.0.tar.gz
+  md5: 5b6a829b2ac94efcd5fa3c223ed6d3ae
+  patches:
+     - gvconfig_libdir.patch
+
+build:
+  number: 0
+  binary_relocation: true
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+requirements:
+  build:
+    - libgd
+  run:
+    - libgd
+
+test:
+  files:
+    - example.dot
+  commands:
+    - "dot example.dot -Tps -o example.ps || [[ -f example.ps && -s example.ps ]]"
+    - "dot example.dot -Tpng -o example.png || [[ -f example.png && -s example.png ]]"
+
+about:
+  home: http://www.graphviz.org/
+  license: Eclipse Public License v1.0
+  summary: Graph Visualization Software
