@@ -1,0 +1,3254 @@
+--- configure
++++ configure
+@@ -7000,7 +7000,10 @@ if test "${ax_cv_c_flags__msse2+set}" = set; then
+ else
+ 
+       ax_save_FLAGS=$CFLAGS
+-      CFLAGS="-msse2"
++  case $host in
++    powerpc*-*-*)  CFLAGS="";;
++    *)             CFLAGS="-msse2";;
++  esac
+       cat >conftest.$ac_ext <<_ACEOF
+ /* confdefs.h.  */
+ _ACEOF
+@@ -7050,7 +7053,10 @@ eval ax_check_compiler_flags=$ax_cv_c_flags__msse2
+ { $as_echo "$as_me:$LINENO: result: $ax_check_compiler_flags" >&5
+ $as_echo "$ax_check_compiler_flags" >&6; }
+ if test "x$ax_check_compiler_flags" = xyes; then
+-        SIMD_CFLAGS="-msse2"
++  case $host in
++    powerpc*-*-*)  SIMD_CFLAGS="";;
++    *)             SIMD_CFLAGS="-msse2";;
++  esac
+ else
+         impl_choice=dummy
+ fi
+@@ -7533,14 +7539,14 @@ _ACEOF
+ cat confdefs.h >>conftest.$ac_ext
+ cat >>conftest.$ac_ext <<_ACEOF
+ /* end confdefs.h.  */
+-#include <emmintrin.h>
++//#include <emmintrin.h>
+ int
+ main ()
+ {
+-__m128 a;
+-                                       __m128i b;
+-                                       b = _mm_castps_si128(a);
+-                                       a = _mm_castsi128_ps(b);
++//__m128 a;
++//                                     __m128i b;
++//                                     b = _mm_castps_si128(a);
++//                                     a = _mm_castsi128_ps(b);
+   ;
+   return 0;
+ }
+@@ -7598,18 +7604,18 @@ _ACEOF
+ cat confdefs.h >>conftest.$ac_ext
+ cat >>conftest.$ac_ext <<_ACEOF
+ /* end confdefs.h.  */
+-#include <emmintrin.h>
++//#include <emmintrin.h>
+ int
+ main ()
+ {
+-__m128i* one=(__m128i*)_mm_malloc(4, 16);
+-				   __m128i* two=(__m128i*)_mm_malloc(4, 16);
+-				   __m128i xmm1 = _mm_load_si128(one);
+-				   __m128i xmm2 = _mm_load_si128(two);
+-				   __m128i xmm3 = _mm_or_si128(xmm1, xmm2);
+-				   _mm_store_si128(one, xmm3);
+-				   _mm_free(one);
+-				   _mm_free(two);
++//__m128i* one=(__m128i*)_mm_malloc(4, 16);
++//				   __m128i* two=(__m128i*)_mm_malloc(4, 16);
++//				   __m128i xmm1 = _mm_load_si128(one);
++//				   __m128i xmm2 = _mm_load_si128(two);
++//				   __m128i xmm3 = _mm_or_si128(xmm1, xmm2);
++//				   _mm_store_si128(one, xmm3);
++//				   _mm_free(one);
++//				   _mm_free(two);
+ 
+   ;
+   return 0;
+--- easel/esl_sse.c
++++ easel/esl_sse.c
+@@ -29,8 +29,13 @@
+ #include <math.h>
+ #include <float.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_sse.h"
+@@ -74,10 +79,26 @@ esl_sse_logf(__m128 x)
+   static float cephes_p[9] = {  7.0376836292E-2f, -1.1514610310E-1f,  1.1676998740E-1f,
+ 				-1.2420140846E-1f, 1.4249322787E-1f, -1.6668057665E-1f,
+ 				2.0000714765E-1f, -2.4999993993E-1f,  3.3333331174E-1f };
++#ifdef __PPC64__
++  __m128  onev = vec_splat4sp(1.0f);          /* all elem = 1.0 */
++#else
+   __m128  onev = _mm_set1_ps(1.0f);          /* all elem = 1.0 */
++#endif
++#ifdef __PPC64__
++  __m128  v0p5 = vec_splat4sp(0.5f);          /* all elem = 0.5 */
++#else
+   __m128  v0p5 = _mm_set1_ps(0.5f);          /* all elem = 0.5 */
++#endif
++#ifdef __PPC64__
++  __m128i vneg = vec_splat4sw(0x80000000); /* all elem have IEEE sign bit up */
++#else
+   __m128i vneg = _mm_set1_epi32(0x80000000); /* all elem have IEEE sign bit up */
++#endif
++#ifdef __PPC64__
++  __m128i vexp = vec_splat4sw(0x7f800000); /* all elem have IEEE exponent bits up */
++#else
+   __m128i vexp = _mm_set1_epi32(0x7f800000); /* all elem have IEEE exponent bits up */
++#endif
+   __m128i ei;
+   __m128  e;
+   __m128  invalid_mask, zero_mask, inf_mask;            /* masks used to handle special IEEE754 inputs */
+@@ -88,51 +109,176 @@ esl_sse_logf(__m128 x)
+   __m128  z;
+ 
+   /* first, split x apart: x = frexpf(x, &e); */
++#ifdef __PPC64__
++  ei           = vec_shiftrightimmediate4sw( vec_cast4spto1q(x), 23);	                                        /* shift right 23: IEEE754 floats: ei = biased exponents     */
++#else
+   ei           = _mm_srli_epi32( _mm_castps_si128(x), 23);	                                        /* shift right 23: IEEE754 floats: ei = biased exponents     */
+-  invalid_mask = _mm_castsi128_ps ( _mm_cmpeq_epi32( _mm_and_si128(_mm_castps_si128(x), vneg), vneg));  /* mask any elem that's negative; these become NaN           */
+-  zero_mask    = _mm_castsi128_ps ( _mm_cmpeq_epi32(ei, _mm_setzero_si128()));                          /* mask any elem zero or subnormal; these become -inf        */
+-  inf_mask     = _mm_castsi128_ps ( _mm_cmpeq_epi32( _mm_and_si128(_mm_castps_si128(x), vexp), vexp));  /* mask any elem inf or NaN; log(inf)=inf, log(NaN)=NaN      */
++#endif
++#ifdef __PPC64__
++ invalid_mask = vec_cast1qto4sp ( vec_compare4sw( vec_bitand1q(vec_cast4spto1q(x), vneg), vneg));
++  zero_mask    = vec_cast1qto4sp ( vec_compare4sw(ei, vec_zero1q()));  
++  inf_mask     = vec_cast1qto4sp ( vec_compare4sw( vec_bitand1q(vec_cast4spto1q(x), vexp), vexp));
++#else
++  invalid_mask = _mm_castsi128_ps ( _mm_cmpeq_epi32( _mm_and_si128(_mm_castps_si128(x), vneg), vneg));  
++  zero_mask    = _mm_castsi128_ps ( _mm_cmpeq_epi32(ei, _mm_setzero_si128()));                          
++  inf_mask     = _mm_castsi128_ps ( _mm_cmpeq_epi32( _mm_and_si128(_mm_castps_si128(x), vexp), vexp));  
++#endif
+   origx        = x;			                                                                /* store original x, used for log(inf) = inf, log(NaN) = NaN */
+ 
++#ifdef __PPC64__
++  x  = vec_bitand4sp(x, vec_cast1qto4sp(vec_splat4sw(~0x7f800000))); /* x now the stored 23 bits of the 24-bit significand        */
++#else
+   x  = _mm_and_ps(x, _mm_castsi128_ps(_mm_set1_epi32(~0x7f800000))); /* x now the stored 23 bits of the 24-bit significand        */
+-  x  = _mm_or_ps (x, v0p5);                                          /* sets hidden bit b[0]                                      */
+-
++#endif
++#ifdef __PPC64__
++  x  = vec_bitwiseor4sp (x, v0p5);                                          /* sets hidden bit b[0]                                      */
++#else
++  x  = _mm_or_ps (x, v0p5);                                          /* sets hidden bit b[0]                                      */    
++#endif
++#ifdef __PPC64__
++  ei = vec_subtract4sw(ei, vec_splat4sw(126));                       /* -127 (ei now signed base-2 exponent); then +1             */
++#else
+   ei = _mm_sub_epi32(ei, _mm_set1_epi32(126));                       /* -127 (ei now signed base-2 exponent); then +1             */
++#endif
++#ifdef __PPC64__
++  e  = vec_convert4swto4sp(ei);
++#else
+   e  = _mm_cvtepi32_ps(ei);
++#endif
+ 
+   /* now, calculate the log */
++#ifdef __PPC64__
++  mask = vec_comparelt_4sp(x, vec_splat4sp(0.707106781186547524f)); /* avoid conditional branches.           */
++#else
+   mask = _mm_cmplt_ps(x, _mm_set1_ps(0.707106781186547524f)); /* avoid conditional branches.           */
++#endif
++#ifdef __PPC64__
++  tmp  = vec_bitand4sp(x, mask);	                              /* tmp contains x values < 0.707, else 0 */
++#else
+   tmp  = _mm_and_ps(x, mask);	                              /* tmp contains x values < 0.707, else 0 */
++#endif
++#ifdef __PPC64__
++  x    = vec_subtract4sp(x, onev);
++#else
+   x    = _mm_sub_ps(x, onev);
++#endif
++#ifdef __PPC64__
++  e    = vec_subtract4sp(e, vec_bitand4sp(onev, mask));
++#else
+   e    = _mm_sub_ps(e, _mm_and_ps(onev, mask));
++#endif
++#ifdef __PPC64__
++  x    = vec_add4sp(x, tmp);
++#else
+   x    = _mm_add_ps(x, tmp);
++#endif
++#ifdef __PPC64__
++  z    = vec_multiply4sp(x,x);
++#else
+   z    = _mm_mul_ps(x,x);
++#endif
+ 
++#ifdef __PPC64__
++  y =               vec_splat4sp(cephes_p[0]);    y = vec_multiply4sp(y, x); 
++#else
+   y =               _mm_set1_ps(cephes_p[0]);    y = _mm_mul_ps(y, x); 
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[1]));   y = vec_multiply4sp(y, x);    
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[1]));   y = _mm_mul_ps(y, x);    
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[2]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[2]));   y = _mm_mul_ps(y, x);   
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[3]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[3]));   y = _mm_mul_ps(y, x);   
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[4]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[4]));   y = _mm_mul_ps(y, x);    
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[5]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[5]));   y = _mm_mul_ps(y, x);   
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[6]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[6]));   y = _mm_mul_ps(y, x); 
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[7]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[7]));   y = _mm_mul_ps(y, x);  
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[8]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[8]));   y = _mm_mul_ps(y, x);
++#endif
++#ifdef __PPC64__
++  y = vec_multiply4sp(y, z);
++#else
+   y = _mm_mul_ps(y, z);
++#endif
+ 
++#ifdef __PPC64__
++  tmp = vec_multiply4sp(e, vec_splat4sp(-2.12194440e-4f));
++#else
+   tmp = _mm_mul_ps(e, _mm_set1_ps(-2.12194440e-4f));
++#endif
++#ifdef __PPC64__
++  y   = vec_add4sp(y, tmp);
++#else
+   y   = _mm_add_ps(y, tmp);
++#endif
+ 
++#ifdef __PPC64__
++  tmp = vec_multiply4sp(z, v0p5);
++#else
+   tmp = _mm_mul_ps(z, v0p5);
++#endif
++#ifdef __PPC64__
++  y   = vec_subtract4sp(y, tmp);
++#else
+   y   = _mm_sub_ps(y, tmp);
++#endif
+ 
++#ifdef __PPC64__
++  tmp = vec_multiply4sp(e, vec_splat4sp(0.693359375f));
++#else
+   tmp = _mm_mul_ps(e, _mm_set1_ps(0.693359375f));
++#endif
++#ifdef __PPC64__
++  x = vec_add4sp(x, y);
++#else
+   x = _mm_add_ps(x, y);
++#endif
++#ifdef __PPC64__
++  x = vec_add4sp(x, tmp);
++#else
+   x = _mm_add_ps(x, tmp);
++#endif
+ 
+   /* IEEE754 cleanup: */
+   x = esl_sse_select_ps(x, origx,                     inf_mask);  /* log(inf)=inf; log(NaN)      = NaN  */
++#ifdef __PPC64__
++  x = vec_bitwiseor4sp(x, invalid_mask);                                 /* log(x<0, including -0,-inf) = NaN  */
++#else
+   x = _mm_or_ps(x, invalid_mask);                                 /* log(x<0, including -0,-inf) = NaN  */
++#endif
++#ifdef __PPC64__
++  x = esl_sse_select_ps(x, vec_splat4sp(-eslINFINITY), zero_mask); /* x zero or subnormal         = -inf */
++#else
+   x = esl_sse_select_ps(x, _mm_set1_ps(-eslINFINITY), zero_mask); /* x zero or subnormal         = -inf */
++#endif
+   return x;
+ }
+ 
+@@ -190,48 +336,164 @@ esl_sse_expf(__m128 x)
+   __m128  mask, tmp, fx, z, y, minmask, maxmask;
+   
+   /* handle out-of-range and special conditions */
++#ifdef __PPC64__
++  maxmask = vec_comparegt_4sp(x, vec_splat4sp(maxlogf));
++#else
+   maxmask = _mm_cmpgt_ps(x, _mm_set1_ps(maxlogf));
++#endif
++#ifdef __PPC64__
++  minmask = vec_comparele_4sp(x, vec_splat4sp(minlogf));
++#else
+   minmask = _mm_cmple_ps(x, _mm_set1_ps(minlogf));
++#endif
+ 
+   /* range reduction: exp(x) = 2^k e^f = exp(f + k log 2); k = floorf(0.5 + x / log2): */
++#ifdef __PPC64__
++  fx = vec_multiply4sp(x,  vec_splat4sp(eslCONST_LOG2R));
++#else
+   fx = _mm_mul_ps(x,  _mm_set1_ps(eslCONST_LOG2R));
++#endif
++#ifdef __PPC64__
++  fx = vec_add4sp(fx, vec_splat4sp(0.5f));
++#else
+   fx = _mm_add_ps(fx, _mm_set1_ps(0.5f));
++#endif
+ 
+   /* floorf() with SSE:  */
++#ifdef __PPC64__
++  k    = vec_converttruncating4spto4sw(fx);	              /* cast to int with truncation                  */
++#else
+   k    = _mm_cvttps_epi32(fx);	              /* cast to int with truncation                  */
++#endif
++#ifdef __PPC64__
++  tmp  = vec_convert4swto4sp(k);	              /* cast back to float                           */
++#else
+   tmp  = _mm_cvtepi32_ps(k);	              /* cast back to float                           */
++#endif
++#ifdef __PPC64__
++  mask = vec_comparegt_4sp(tmp, fx);               /* if it increased (i.e. if it was negative...) */
++#else
+   mask = _mm_cmpgt_ps(tmp, fx);               /* if it increased (i.e. if it was negative...) */
++#endif
++#ifdef __PPC64__
++  mask = vec_bitand4sp(mask, vec_splat4sp(1.0f)); /* ...without a conditional branch...           */
++#else
+   mask = _mm_and_ps(mask, _mm_set1_ps(1.0f)); /* ...without a conditional branch...           */
++#endif
++#ifdef __PPC64__
++  fx   = vec_subtract4sp(tmp, mask);	              /* then subtract one.                           */
++#else
+   fx   = _mm_sub_ps(tmp, mask);	              /* then subtract one.                           */
++#endif
++#ifdef __PPC64__
++  k    = vec_converttruncating4spto4sw(fx);	              /* k is now ready for the 2^k part.             */
++#else
+   k    = _mm_cvttps_epi32(fx);	              /* k is now ready for the 2^k part.             */
++#endif
+   
+   /* polynomial approx for e^f for f in range [-0.5, 0.5] */
++#ifdef __PPC64__
++  tmp = vec_multiply4sp(fx, vec_splat4sp(cephes_c[0]));
++#else
+   tmp = _mm_mul_ps(fx, _mm_set1_ps(cephes_c[0]));
++#endif
++#ifdef __PPC64__
++  z   = vec_multiply4sp(fx, vec_splat4sp(cephes_c[1]));
++#else
+   z   = _mm_mul_ps(fx, _mm_set1_ps(cephes_c[1]));
++#endif
++#ifdef __PPC64__
++  x   = vec_subtract4sp(x, tmp);
++#else
+   x   = _mm_sub_ps(x, tmp);
++#endif
++#ifdef __PPC64__
++  x   = vec_subtract4sp(x, z);
++#else
+   x   = _mm_sub_ps(x, z);
++#endif
++#ifdef __PPC64__
++  z   = vec_multiply4sp(x, x);
++#else
+   z   = _mm_mul_ps(x, x);
++#endif
+   
++#ifdef __PPC64__
++  y =               vec_splat4sp(cephes_p[0]);    y = vec_multiply4sp(y, x);
++#else
+   y =               _mm_set1_ps(cephes_p[0]);    y = _mm_mul_ps(y, x);
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[1]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[1]));   y = _mm_mul_ps(y, x);
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[2]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[2]));   y = _mm_mul_ps(y, x);
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[3]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[3]));   y = _mm_mul_ps(y, x);
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[4]));   y = vec_multiply4sp(y, x);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[4]));   y = _mm_mul_ps(y, x);
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(cephes_p[5]));   y = vec_multiply4sp(y, z);
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(cephes_p[5]));   y = _mm_mul_ps(y, z);
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, x);
++#else
+   y = _mm_add_ps(y, x);
++#endif
++#ifdef __PPC64__
++  y = vec_add4sp(y, vec_splat4sp(1.0f));
++#else
+   y = _mm_add_ps(y, _mm_set1_ps(1.0f));
++#endif
+ 
+   /* build 2^k by hand, by creating a IEEE754 float */
++#ifdef __PPC64__
++  k  = vec_add4sw(k, vec_splat4sw(127));
++#else
+   k  = _mm_add_epi32(k, _mm_set1_epi32(127));
++#endif
++#ifdef __PPC64__
++  k  = vec_shiftleftimmediate4sw(k, 23);
++#else
+   k  = _mm_slli_epi32(k, 23);
++#endif
++#ifdef __PPC64__
++  fx = vec_cast1qto4sp(k);
++#else
+   fx = _mm_castsi128_ps(k);
++#endif
+   
+   /* put 2^k e^f together (fx = 2^k,  y = e^f) and we're done */
++#ifdef __PPC64__
++  y = vec_multiply4sp(y, fx);	
++#else
+   y = _mm_mul_ps(y, fx);	
++#endif
+ 
+   /* special/range cleanup */
++#ifdef __PPC64__
++  y = esl_sse_select_ps(y, vec_splat4sp(eslINFINITY), maxmask); /* exp(x) = inf for x > log(2^128)  */
++#else
+   y = esl_sse_select_ps(y, _mm_set1_ps(eslINFINITY), maxmask); /* exp(x) = inf for x > log(2^128)  */
++#endif
++#ifdef __PPC64__
++  y = esl_sse_select_ps(y, vec_splat4sp(0.0f),        minmask); /* exp(x) = 0   for x < log(2^-149) */
++#else
+   y = esl_sse_select_ps(y, _mm_set1_ps(0.0f),        minmask); /* exp(x) = 0   for x < log(2^-149) */
++#endif
+   return y;
+ }
+ 
+@@ -283,7 +545,11 @@ main(int argc, char **argv)
+   int             N       = esl_opt_GetInteger(go, "-N");
+   float           origx   = 2.0;
+   float           x       = origx;
++#ifdef __PPC64__
++  __m128          xv      = vec_splat4sp(x);
++#else
+   __m128          xv      = _mm_set1_ps(x);
++#endif
+   int             i;
+ 
+   /* First, serial time. */
+@@ -330,7 +596,11 @@ utest_logf(ESL_GETOPTS *go)
+    *    log(-inf) = NaN     log(x<0)  = NaN  log(-0)   = NaN
+    *    log(0)    = -inf    log(inf)  = inf  log(NaN)  = NaN
+    */
++#ifdef __PPC64__
++  x   = vec_set4sp(0.0, -0.0, -1.0, -eslINFINITY); /* set_ps() is in order 3 2 1 0 */
++#else
+   x   = _mm_set_ps(0.0, -0.0, -1.0, -eslINFINITY); /* set_ps() is in order 3 2 1 0 */
++#endif
+   r.v =  esl_sse_logf(x); 
+   if (esl_opt_GetBoolean(go, "-v")) {
+     printf("logf");
+@@ -342,7 +612,11 @@ utest_logf(ESL_GETOPTS *go)
+   if (! isnan(r.x[2]))                 esl_fatal("logf(-0)   should be NaN");
+   if (! (r.x[3] < 0 && isinf(r.x[3]))) esl_fatal("logf(0)    should be -inf");
+ 
++#ifdef __PPC64__
++  x   = vec_set4sp(FLT_MAX, FLT_MIN, eslNaN, eslINFINITY);
++#else
+   x   = _mm_set_ps(FLT_MAX, FLT_MIN, eslNaN, eslINFINITY);
++#endif
+   r.v = esl_sse_logf(x);
+   if (esl_opt_GetBoolean(go, "-v")) {
+     printf("logf");
+@@ -362,7 +636,11 @@ utest_expf(ESL_GETOPTS *go)
+   union { __m128 v; float x[4]; } r;   /* test output */
+   
+   /* exp(-inf) = 0    exp(-0)  = 1   exp(0) = 1  exp(inf) = inf   exp(NaN)  = NaN */
++#ifdef __PPC64__
++  x = vec_set4sp(eslINFINITY, 0.0, -0.0, -eslINFINITY); /* set_ps() is in order 3 2 1 0 */
++#else
+   x = _mm_set_ps(eslINFINITY, 0.0, -0.0, -eslINFINITY); /* set_ps() is in order 3 2 1 0 */
++#endif
+   r.v =  esl_sse_expf(x); 
+   if (esl_opt_GetBoolean(go, "-v")) {
+     printf("expf");
+@@ -375,7 +653,11 @@ utest_expf(ESL_GETOPTS *go)
+   if (! isinf(r.x[3]))  esl_fatal("logf(inf)  should be inf");
+ 
+   /* exp(NaN) = NaN    exp(large)  = inf   exp(-large) = 0  exp(1) = exp(1) */
++#ifdef __PPC64__
++  x = vec_set4sp(1.0f, -666.0f, 666.0f, eslNaN); /* set_ps() is in order 3 2 1 0 */
++#else
+   x = _mm_set_ps(1.0f, -666.0f, 666.0f, eslNaN); /* set_ps() is in order 3 2 1 0 */
++#endif
+   r.v =  esl_sse_expf(x); 
+   if (esl_opt_GetBoolean(go, "-v")) {
+     printf("expf");
+@@ -399,7 +681,11 @@ utest_expf(ESL_GETOPTS *go)
+    *     (3): expf(-87.6832)   => 0
+    *     (4): expf(-87.6831)   => <FLT_MIN (subnormal) : ~8.31e-39 (may become 0 in flush-to-zero mode for subnormals)
+    */
++#ifdef __PPC64__
++  x   = vec_set4sp(-88.3763, -88.3762, -87.6832, -87.6831);
++#else
+   x   = _mm_set_ps(-88.3763, -88.3762, -87.6832, -87.6831);
++#endif
+   r.v = esl_sse_expf(x); 
+   if (esl_opt_GetBoolean(go, "-v")) {
+     printf("expf");
+@@ -437,7 +723,11 @@ utest_odds(ESL_GETOPTS *go, ESL_RANDOMNESS *r)
+ 
+       if (odds == 0.0) esl_fatal("whoa, odds ratio can't be 0!\n");
+ 
++#ifdef __PPC64__
++      r1.v      = esl_sse_logf(vec_splat4sp(odds));  /* r1.x[z] = log(p1/p2) */
++#else
+       r1.v      = esl_sse_logf(_mm_set1_ps(odds));  /* r1.x[z] = log(p1/p2) */
++#endif
+       scalar_r1 = log(odds);
+ 
+       err1       = (r1.x[0] == 0. && scalar_r1 == 0.) ? 0.0 : 2 * fabs(r1.x[0] - scalar_r1) / fabs(r1.x[0] + scalar_r1);
+@@ -544,7 +834,11 @@ main(int argc, char **argv)
+   union { __m128 v; float x[4]; } rv;   /* result vector*/
+ 
+   x    = 2.0;
++#ifdef __PPC64__
++  xv   = vec_splat4sp(x);
++#else
+   xv   = _mm_set1_ps(x);
++#endif
+   rv.v = esl_sse_logf(xv);
+   printf("logf(%f) = %f\n", x, rv.x[0]);
+   
+--- easel/esl_sse.h
++++ easel/esl_sse.h
+@@ -17,8 +17,13 @@
+ #include "easel.h"
+ 
+ #include <stdio.h>
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ /* Some compilers (gcc 3.4) did not implement SSE2 cast functions 
+  * on the theory that they're unnecessary no-ops -- but then
+@@ -26,9 +31,17 @@
+  * the no-ops.
+  */
+ #ifndef HAVE_SSE2_CAST
++#ifdef __PPC64__
++#define vec_cast4spto1q(x) (__m128i)(x)
++#else
+ #define _mm_castps_si128(x) (__m128i)(x)
++#endif
++#ifdef __PPC64__
++#define vec_cast1qto4sp(x) (__m128)(x)
++#else
+ #define _mm_castsi128_ps(x) (__m128)(x)
+ #endif
++#endif
+ 
+ 
+ 
+@@ -65,9 +78,21 @@ extern void    esl_sse_dump_ps(FILE *fp, __m128 v);
+ static inline __m128
+ esl_sse_select_ps(__m128 a, __m128 b, __m128 mask)
+ {
++#ifdef __PPC64__
++  b = vec_bitand4sp(b, mask);
++#else
+   b = _mm_and_ps(b, mask);
++#endif
++#ifdef __PPC64__
++  a = vec_bitandnotleft4sp(mask, a);
++#else
+   a = _mm_andnot_ps(mask, a);
++#endif
++#ifdef __PPC64__
++  return vec_bitwiseor4sp(a,b);
++#else
+   return _mm_or_ps(a,b);
++#endif
+ }
+ 
+ /* Function:  esl_sse_any_gt_ps()
+@@ -81,8 +106,16 @@ esl_sse_select_ps(__m128 a, __m128 b, __m128 mask)
+ static inline int 
+ esl_sse_any_gt_ps(__m128 a, __m128 b)
+ {
++#ifdef __PPC64__
++  __m128 mask    = vec_comparegt_4sp(a,b);
++#else
+   __m128 mask    = _mm_cmpgt_ps(a,b);
++#endif
++#ifdef __PPC64__
++  int   maskbits = vec_extractupperbit4sp( mask );
++#else
+   int   maskbits = _mm_movemask_ps( mask );
++#endif
+   return maskbits != 0;
+ }
+ 
+@@ -98,9 +131,21 @@ esl_sse_any_gt_ps(__m128 a, __m128 b)
+ static inline void
+ esl_sse_hmax_ps(__m128 a, float *ret_max)
+ {
++#ifdef __PPC64__
++  a = vec_max4sp(a, vec_shufflepermute44sp(a, a, _MM_SHUFFLE(0, 3, 2, 1)));
++#else
+   a = _mm_max_ps(a, _mm_shuffle_ps(a, a, _MM_SHUFFLE(0, 3, 2, 1)));
++#endif
++#ifdef __PPC64__
++  a = vec_max4sp(a, vec_shufflepermute44sp(a, a, _MM_SHUFFLE(1, 0, 3, 2)));
++#else
+   a = _mm_max_ps(a, _mm_shuffle_ps(a, a, _MM_SHUFFLE(1, 0, 3, 2)));
++#endif
++#ifdef __PPC64__
++  vec_store4spto1sp(ret_max, a);
++#else
+   _mm_store_ss(ret_max, a);
++#endif
+ }
+ 
+ 
+@@ -113,9 +158,21 @@ esl_sse_hmax_ps(__m128 a, float *ret_max)
+ static inline void
+ esl_sse_hmin_ps(__m128 a, float *ret_min)
+ {
++#ifdef __PPC64__
++  a = vec_min4sp(a, vec_shufflepermute44sp(a, a, _MM_SHUFFLE(0, 3, 2, 1)));
++#else
+   a = _mm_min_ps(a, _mm_shuffle_ps(a, a, _MM_SHUFFLE(0, 3, 2, 1)));
++#endif
++#ifdef __PPC64__
++  a = vec_min4sp(a, vec_shufflepermute44sp(a, a, _MM_SHUFFLE(1, 0, 3, 2)));
++#else
+   a = _mm_min_ps(a, _mm_shuffle_ps(a, a, _MM_SHUFFLE(1, 0, 3, 2)));
++#endif
++#ifdef __PPC64__
++  vec_store4spto1sp(ret_min, a);
++#else
+   _mm_store_ss(ret_min, a);
++#endif
+ }
+ 
+ /* Function:  esl_sse_hsum_ps()
+@@ -127,9 +184,21 @@ esl_sse_hmin_ps(__m128 a, float *ret_min)
+ static inline void
+ esl_sse_hsum_ps(__m128 a, float *ret_sum)
+ {
++#ifdef __PPC64__
++  a = vec_add4sp(a, vec_shufflepermute44sp(a, a, _MM_SHUFFLE(0, 3, 2, 1)));
++#else
+   a = _mm_add_ps(a, _mm_shuffle_ps(a, a, _MM_SHUFFLE(0, 3, 2, 1)));
++#endif
++#ifdef __PPC64__
++  a = vec_add4sp(a, vec_shufflepermute44sp(a, a, _MM_SHUFFLE(1, 0, 3, 2)));
++#else
+   a = _mm_add_ps(a, _mm_shuffle_ps(a, a, _MM_SHUFFLE(1, 0, 3, 2)));
++#endif
++#ifdef __PPC64__
++  vec_store4spto1sp(ret_sum, a);
++#else
+   _mm_store_ss(ret_sum, a);
++#endif
+ }
+ 
+ 
+@@ -145,7 +214,11 @@ esl_sse_hsum_ps(__m128 a, float *ret_sum)
+ static inline __m128 
+ esl_sse_rightshift_ps(__m128 a, __m128 b)
+ {
++#ifdef __PPC64__
++  return vec_insertlowerto4sp(vec_shufflepermute44sp(a, a, _MM_SHUFFLE(2, 1, 0, 0)), b);
++#else
+   return _mm_move_ss(_mm_shuffle_ps(a, a, _MM_SHUFFLE(2, 1, 0, 0)), b);
++#endif
+ }
+ 
+ /* Function:  esl_sse_leftshift_ps()
+@@ -160,8 +233,16 @@ esl_sse_rightshift_ps(__m128 a, __m128 b)
+ static inline __m128
+ esl_sse_leftshift_ps(__m128 a, __m128 b)
+ {
++#ifdef __PPC64__
++  register __m128 v = vec_insertlowerto4sp(a, b);                 /* now b[0] a[1] a[2] a[3] */
++#else
+   register __m128 v = _mm_move_ss(a, b);                 /* now b[0] a[1] a[2] a[3] */
++#endif
++#ifdef __PPC64__
++  return vec_shufflepermute44sp(v, v, _MM_SHUFFLE(0, 3, 2, 1));  /* now a[1] a[2] a[3] b[0] */
++#else
+   return _mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 3, 2, 1));  /* now a[1] a[2] a[3] b[0] */
++#endif
+ }
+ 
+ 
+@@ -188,14 +269,26 @@ esl_sse_leftshift_ps(__m128 a, __m128 b)
+ static inline int 
+ esl_sse_any_gt_epu8(__m128i a, __m128i b)
+ {
++#ifdef __PPC64__
++  __m128i mask    = vec_compareeq16sb(vec_max16ub(a,b), b); /* anywhere a>b, mask[z] = 0x0; elsewhere 0xff */
++#else
+   __m128i mask    = _mm_cmpeq_epi8(_mm_max_epu8(a,b), b); /* anywhere a>b, mask[z] = 0x0; elsewhere 0xff */
++#endif
++#ifdef __PPC64__
++  int   maskbits  = vec_extractupperbit16sb(vec_bitxor1q(mask,  vec_compareeq16sb(mask, mask))); /* the xor incantation is a bitwise inversion */
++#else
+   int   maskbits  = _mm_movemask_epi8(_mm_xor_si128(mask,  _mm_cmpeq_epi8(mask, mask))); /* the xor incantation is a bitwise inversion */
++#endif
+   return maskbits != 0;
+ }
+ static inline int 
+ esl_sse_any_gt_epi16(__m128i a, __m128i b)
+ {
++#ifdef __PPC64__
++  return (vec_extractupperbit16sb(vec_comparegt8sh(a,b)) != 0); 
++#else
+   return (_mm_movemask_epi8(_mm_cmpgt_epi16(a,b)) != 0); 
++#endif
+ }
+ 
+ 
+@@ -208,11 +301,31 @@ esl_sse_any_gt_epi16(__m128i a, __m128i b)
+ static inline uint8_t
+ esl_sse_hmax_epu8(__m128i a)
+ {
++#ifdef __PPC64__
++  a = vec_max16ub(a, vec_shiftrightbytes1q(a, 8));
++#else
+   a = _mm_max_epu8(a, _mm_srli_si128(a, 8));
++#endif
++#ifdef __PPC64__
++  a = vec_max16ub(a, vec_shiftrightbytes1q(a, 4));
++#else
+   a = _mm_max_epu8(a, _mm_srli_si128(a, 4));
++#endif
++#ifdef __PPC64__
++  a = vec_max16ub(a, vec_shiftrightbytes1q(a, 2));
++#else
+   a = _mm_max_epu8(a, _mm_srli_si128(a, 2));
++#endif
++#ifdef __PPC64__
++  a = vec_max16ub(a, vec_shiftrightbytes1q(a, 1));
++#else
+   a = _mm_max_epu8(a, _mm_srli_si128(a, 1));
++#endif
++#ifdef __PPC64__
++  return (uint8_t) vec_extract8sh(a, 0);   /* only low-order 8 bits set; so _epi16 or _epi8 equiv; _epi8 is SSE4.1 */
++#else
+   return (uint8_t) _mm_extract_epi16(a, 0);   /* only low-order 8 bits set; so _epi16 or _epi8 equiv; _epi8 is SSE4.1 */
++#endif
+ }
+ 
+ /* Function:  esl_sse_hmax_epi16()
+@@ -224,10 +337,26 @@ esl_sse_hmax_epu8(__m128i a)
+ static inline int16_t
+ esl_sse_hmax_epi16(__m128i a)
+ {
++#ifdef __PPC64__
++  a = vec_max8sh(a, vec_shiftrightbytes1q(a, 8));
++#else
+   a = _mm_max_epi16(a, _mm_srli_si128(a, 8));
++#endif
++#ifdef __PPC64__
++  a = vec_max8sh(a, vec_shiftrightbytes1q(a, 4));
++#else
+   a = _mm_max_epi16(a, _mm_srli_si128(a, 4));
++#endif
++#ifdef __PPC64__
++  a = vec_max8sh(a, vec_shiftrightbytes1q(a, 2));
++#else
+   a = _mm_max_epi16(a, _mm_srli_si128(a, 2));
++#endif
++#ifdef __PPC64__
++  return (int16_t) vec_extract8sh(a, 0);   /* only low-order 8 bits set; so _epi16 or _epi8 equiv; _epi8 is SSE4.1 */
++#else
+   return (int16_t) _mm_extract_epi16(a, 0);   /* only low-order 8 bits set; so _epi16 or _epi8 equiv; _epi8 is SSE4.1 */
++#endif
+ }
+ 
+ 
+--- src/impl_sse/decoding.c
++++ src/impl_sse/decoding.c
+@@ -17,8 +17,13 @@
+ #include <stdio.h>
+ #include <math.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_sse.h"
+@@ -96,9 +101,21 @@ p7_Decoding(const P7_OPROFILE *om, const P7_OMX *oxf, P7_OMX *oxb, P7_OMX *pp)
+ 
+   ppv = pp->dpf[0];
+   for (q = 0; q < Q; q++) {
++#ifdef __PPC64__
++    *ppv = vec_zero4sp(); ppv++;
++#else
+     *ppv = _mm_setzero_ps(); ppv++;
++#endif
++#ifdef __PPC64__
++    *ppv = vec_zero4sp(); ppv++;
++#else
+     *ppv = _mm_setzero_ps(); ppv++;
++#endif
++#ifdef __PPC64__
++    *ppv = vec_zero4sp(); ppv++;
++#else
+     *ppv = _mm_setzero_ps(); ppv++;
++#endif
+   }
+   pp->xmx[p7X_E] = 0.0;
+   pp->xmx[p7X_N] = 0.0;
+@@ -111,22 +128,46 @@ p7_Decoding(const P7_OPROFILE *om, const P7_OMX *oxf, P7_OMX *oxb, P7_OMX *pp)
+       ppv   =  pp->dpf[i];
+       fv    = oxf->dpf[i];
+       bv    = oxb->dpf[i];
++#ifdef __PPC64__
++      totrv = vec_splat4sp(scaleproduct * oxf->xmx[i*p7X_NXCELLS+p7X_SCALE]);
++#else
+       totrv = _mm_set1_ps(scaleproduct * oxf->xmx[i*p7X_NXCELLS+p7X_SCALE]);
++#endif
+ 
+       for (q = 0; q < Q; q++)
+ 	{
+ 	  /* M */
++#ifdef __PPC64__
++	  *ppv = vec_multiply4sp(*fv,  *bv);
++#else
+ 	  *ppv = _mm_mul_ps(*fv,  *bv);
++#endif
++#ifdef __PPC64__
++	  *ppv = vec_multiply4sp(*ppv,  totrv);
++#else
+ 	  *ppv = _mm_mul_ps(*ppv,  totrv);
++#endif
+ 	  ppv++;  fv++;  bv++;
+ 
+ 	  /* D */
++#ifdef __PPC64__
++	  *ppv = vec_zero4sp();
++#else
+ 	  *ppv = _mm_setzero_ps();
++#endif
+ 	  ppv++;  fv++;  bv++;
+ 
+ 	  /* I */
++#ifdef __PPC64__
++	  *ppv = vec_multiply4sp(*fv,  *bv);
++#else
+ 	  *ppv = _mm_mul_ps(*fv,  *bv);
++#endif
++#ifdef __PPC64__
++	  *ppv = vec_multiply4sp(*ppv,  totrv);
++#else
+ 	  *ppv = _mm_mul_ps(*ppv,  totrv);
++#endif
+ 	  ppv++;  fv++;  bv++;
+ 	}
+       pp->xmx[i*p7X_NXCELLS+p7X_E] = 0.0;
+--- src/impl_sse/fwdback.c
++++ src/impl_sse/fwdback.c
+@@ -36,8 +36,13 @@
+ #include <stdio.h>
+ #include <math.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_sse.h"
+@@ -277,7 +282,11 @@ forward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+   ox->M  = om->M;
+   ox->L  = L;
+   ox->has_own_scales = TRUE; 	/* all forward matrices control their own scalefactors */
++#ifdef __PPC64__
++  zerov  = vec_zero4sp();
++#else
+   zerov  = _mm_setzero_ps();
++#endif
+   for (q = 0; q < Q; q++)
+     MMO(dpc,q) = IMO(dpc,q) = DMO(dpc,q) = zerov;
+   xE    = ox->xmx[p7X_E] = 0.;
+@@ -299,9 +308,21 @@ forward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+       dpc   = ox->dpf[do_full * i];     /* avoid conditional, use do_full as kronecker delta */
+       rp    = om->rfv[dsq[i]];
+       tp    = om->tfv;
++#ifdef __PPC64__
++      dcv   = vec_zero4sp();
++#else
+       dcv   = _mm_setzero_ps();
++#endif
++#ifdef __PPC64__
++      xEv   = vec_zero4sp();
++#else
+       xEv   = _mm_setzero_ps();
++#endif
++#ifdef __PPC64__
++      xBv   = vec_splat4sp(xB);
++#else
+       xBv   = _mm_set1_ps(xB);
++#endif
+ 
+       /* Right shifts by 4 bytes. 4,8,12,x becomes x,4,8,12.  Shift zeros on. */
+       mpv   = esl_sse_rightshift_ps(MMO(dpp,Q-1), zerov);
+@@ -311,12 +332,36 @@ forward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+       for (q = 0; q < Q; q++)
+ 	{
+ 	  /* Calculate new MMO(i,q); don't store it yet, hold it in sv. */
++#ifdef __PPC64__
++	  sv   =                vec_multiply4sp(xBv, *tp);  tp++;
++#else
+ 	  sv   =                _mm_mul_ps(xBv, *tp);  tp++;
++#endif
++#ifdef __PPC64__
++	  sv   = vec_add4sp(sv, vec_multiply4sp(mpv, *tp)); tp++;
++#else
+ 	  sv   = _mm_add_ps(sv, _mm_mul_ps(mpv, *tp)); tp++;
++#endif
++#ifdef __PPC64__
++	  sv   = vec_add4sp(sv, vec_multiply4sp(ipv, *tp)); tp++;
++#else
+ 	  sv   = _mm_add_ps(sv, _mm_mul_ps(ipv, *tp)); tp++;
++#endif
++#ifdef __PPC64__
++	  sv   = vec_add4sp(sv, vec_multiply4sp(dpv, *tp)); tp++;
++#else
+ 	  sv   = _mm_add_ps(sv, _mm_mul_ps(dpv, *tp)); tp++;
++#endif
++#ifdef __PPC64__
++	  sv   = vec_multiply4sp(sv, *rp);                  rp++;
++#else
+ 	  sv   = _mm_mul_ps(sv, *rp);                  rp++;
++#endif
++#ifdef __PPC64__
++	  xEv  = vec_add4sp(xEv, sv);
++#else
+ 	  xEv  = _mm_add_ps(xEv, sv);
++#endif
+ 	  
+ 	  /* Load {MDI}(i-1,q) into mpv, dpv, ipv;
+ 	   * {MDI}MX(q) is then the current, not the prev row
+@@ -332,11 +377,23 @@ forward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+ 	  /* Calculate the next D(i,q+1) partially: M->D only;
+            * delay storage, holding it in dcv
+ 	   */
++#ifdef __PPC64__
++	  dcv   = vec_multiply4sp(sv, *tp); tp++;
++#else
+ 	  dcv   = _mm_mul_ps(sv, *tp); tp++;
++#endif
+ 
+ 	  /* Calculate and store I(i,q); assumes odds ratio for emission is 1.0 */
++#ifdef __PPC64__
++	  sv         =                vec_multiply4sp(mpv, *tp);  tp++;
++#else
+ 	  sv         =                _mm_mul_ps(mpv, *tp);  tp++;
++#endif
++#ifdef __PPC64__
++	  IMO(dpc,q) = vec_add4sp(sv, vec_multiply4sp(ipv, *tp)); tp++;
++#else
+ 	  IMO(dpc,q) = _mm_add_ps(sv, _mm_mul_ps(ipv, *tp)); tp++;
++#endif
+ 	}	  
+ 
+       /* Now the DD paths. We would rather not serialize them but 
+@@ -353,8 +410,16 @@ forward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+       tp         = om->tfv + 7*Q;	/* set tp to start of the DD's */
+       for (q = 0; q < Q; q++) 
+ 	{
++#ifdef __PPC64__
++	  DMO(dpc,q) = vec_add4sp(dcv, DMO(dpc,q));	
++#else
+ 	  DMO(dpc,q) = _mm_add_ps(dcv, DMO(dpc,q));	
++#endif
++#ifdef __PPC64__
++	  dcv        = vec_multiply4sp(DMO(dpc,q), *tp); tp++; /* extend DMO(q), so we include M->D and D->D paths */
++#else
+ 	  dcv        = _mm_mul_ps(DMO(dpc,q), *tp); tp++; /* extend DMO(q), so we include M->D and D->D paths */
++#endif
+ 	}
+ 
+       /* now. on small models, it seems best (empirically) to just go
+@@ -373,8 +438,16 @@ forward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+ 	      tp  = om->tfv + 7*Q;	/* set tp to start of the DD's */
+ 	      for (q = 0; q < Q; q++) 
+ 		{ /* note, extend dcv, not DMO(q); only adding DD paths now */
++#ifdef __PPC64__
++		  DMO(dpc,q) = vec_add4sp(dcv, DMO(dpc,q));	
++#else
+ 		  DMO(dpc,q) = _mm_add_ps(dcv, DMO(dpc,q));	
++#endif
++#ifdef __PPC64__
++		  dcv        = vec_multiply4sp(dcv, *tp);   tp++; 
++#else
+ 		  dcv        = _mm_mul_ps(dcv, *tp);   tp++; 
++#endif
+ 		}	    
+ 	    }
+ 	} 
+@@ -389,26 +462,58 @@ forward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+ 	      cv  = zerov;
+ 	      for (q = 0; q < Q; q++) 
+ 		{ /* using cmpgt below tests if DD changed any DMO(q) *without* conditional branch */
++#ifdef __PPC64__
++		  sv         = vec_add4sp(dcv, DMO(dpc,q));	
++#else
+ 		  sv         = _mm_add_ps(dcv, DMO(dpc,q));	
++#endif
++#ifdef __PPC64__
++		  cv         = vec_bitwiseor4sp(cv, vec_comparegt_4sp(sv, DMO(dpc,q))); 
++#else
+ 		  cv         = _mm_or_ps(cv, _mm_cmpgt_ps(sv, DMO(dpc,q))); 
++#endif
+ 		  DMO(dpc,q) = sv;	                                    /* store new DMO(q) */
++#ifdef __PPC64__
++		  dcv        = vec_multiply4sp(dcv, *tp);   tp++;            /* note, extend dcv, not DMO(q) */
++#else
+ 		  dcv        = _mm_mul_ps(dcv, *tp);   tp++;            /* note, extend dcv, not DMO(q) */
++#endif
+ 		}	    
++#ifdef __PPC64__
++	      if (! vec_extractupperbit4sp(cv)) break; /* DD's didn't change any DMO(q)? Then done, break out. */
++#else
+ 	      if (! _mm_movemask_ps(cv)) break; /* DD's didn't change any DMO(q)? Then done, break out. */
++#endif
+ 	    }
+ 	}
+ 
+       /* Add D's to xEv */
++#ifdef __PPC64__
++      for (q = 0; q < Q; q++) xEv = vec_add4sp(DMO(dpc,q), xEv);
++#else
+       for (q = 0; q < Q; q++) xEv = _mm_add_ps(DMO(dpc,q), xEv);
++#endif
+ 
+       /* Finally the "special" states, which start from Mk->E (->C, ->J->B) */
+       /* The following incantation is a horizontal sum of xEv's elements  */
+       /* These must follow DD calculations, because D's contribute to E in Forward
+        * (as opposed to Viterbi)
+        */
++#ifdef __PPC64__
++      xEv = vec_add4sp(xEv, vec_shufflepermute44sp(xEv, xEv, _MM_SHUFFLE(0, 3, 2, 1)));
++#else
+       xEv = _mm_add_ps(xEv, _mm_shuffle_ps(xEv, xEv, _MM_SHUFFLE(0, 3, 2, 1)));
++#endif
++#ifdef __PPC64__
++      xEv = vec_add4sp(xEv, vec_shufflepermute44sp(xEv, xEv, _MM_SHUFFLE(1, 0, 3, 2)));
++#else
+       xEv = _mm_add_ps(xEv, _mm_shuffle_ps(xEv, xEv, _MM_SHUFFLE(1, 0, 3, 2)));
++#endif
++#ifdef __PPC64__
++      vec_store4spto1sp(&xE, xEv);
++#else
+       _mm_store_ss(&xE, xEv);
++#endif
+ 
+       xN =  xN * om->xf[p7O_N][p7O_LOOP];
+       xC = (xC * om->xf[p7O_C][p7O_LOOP]) +  (xE * om->xf[p7O_E][p7O_MOVE]);
+@@ -423,12 +528,28 @@ forward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+ 	  xC  = xC / xE;
+ 	  xJ  = xJ / xE;
+ 	  xB  = xB / xE;
++#ifdef __PPC64__
++	  xEv = vec_splat4sp(1.0 / xE);
++#else
+ 	  xEv = _mm_set1_ps(1.0 / xE);
++#endif
+ 	  for (q = 0; q < Q; q++)
+ 	    {
++#ifdef __PPC64__
++	      MMO(dpc,q) = vec_multiply4sp(MMO(dpc,q), xEv);
++#else
+ 	      MMO(dpc,q) = _mm_mul_ps(MMO(dpc,q), xEv);
++#endif
++#ifdef __PPC64__
++	      DMO(dpc,q) = vec_multiply4sp(DMO(dpc,q), xEv);
++#else
+ 	      DMO(dpc,q) = _mm_mul_ps(DMO(dpc,q), xEv);
++#endif
++#ifdef __PPC64__
++	      IMO(dpc,q) = vec_multiply4sp(IMO(dpc,q), xEv);
++#else
+ 	      IMO(dpc,q) = _mm_mul_ps(IMO(dpc,q), xEv);
++#endif
+ 	    }
+ 	  ox->xmx[i*p7X_NXCELLS+p7X_SCALE] = xE;
+ 	  ox->totscale += log(xE);
+@@ -495,41 +616,93 @@ backward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, c
+   xN     = 0.0;
+   xC     = om->xf[p7O_C][p7O_MOVE];      /* C<-T */
+   xE     = xC * om->xf[p7O_E][p7O_MOVE]; /* E<-C, no tail */
++#ifdef __PPC64__
++  xEv    = vec_splat4sp(xE); 
++#else
+   xEv    = _mm_set1_ps(xE); 
++#endif
++#ifdef __PPC64__
++  zerov  = vec_zero4sp();  
++#else
+   zerov  = _mm_setzero_ps();  
++#endif
+   dcv    = zerov;		/* solely to silence a compiler warning */
+   for (q = 0; q < Q; q++) MMO(dpc,q) = DMO(dpc,q) = xEv;
+   for (q = 0; q < Q; q++) IMO(dpc,q) = zerov;
+ 
+   /* init row L's DD paths, 1) first segment includes xE, from DMO(q) */
+   tp  = om->tfv + 8*Q - 1;	                        /* <*tp> now the [4 8 12 x] TDD quad         */
++#ifdef __PPC64__
++  dpv = vec_insertlowerto4sp(DMO(dpc,Q-1), zerov);               /* start leftshift: [1 5 9 13] -> [x 5 9 13] */
++#else
+   dpv = _mm_move_ss(DMO(dpc,Q-1), zerov);               /* start leftshift: [1 5 9 13] -> [x 5 9 13] */
++#endif
++#ifdef __PPC64__
++  dpv = vec_shufflepermute44sp(dpv, dpv, _MM_SHUFFLE(0,3,2,1)); /* finish leftshift:[x 5 9 13] -> [5 9 13 x] */
++#else
+   dpv = _mm_shuffle_ps(dpv, dpv, _MM_SHUFFLE(0,3,2,1)); /* finish leftshift:[x 5 9 13] -> [5 9 13 x] */
++#endif
+   for (q = Q-1; q >= 0; q--)
+     {
++#ifdef __PPC64__
++      dcv        = vec_multiply4sp(dpv, *tp);      tp--;
++#else
+       dcv        = _mm_mul_ps(dpv, *tp);      tp--;
++#endif
++#ifdef __PPC64__
++      DMO(dpc,q) = vec_add4sp(DMO(dpc,q), dcv);
++#else
+       DMO(dpc,q) = _mm_add_ps(DMO(dpc,q), dcv);
++#endif
+       dpv        = DMO(dpc,q);
+     }
+   /* 2) three more passes, only extending DD component (dcv only; no xE contrib from DMO(q)) */
+   for (j = 1; j < 4; j++)
+     {
+       tp  = om->tfv + 8*Q - 1;	                            /* <*tp> now the [4 8 12 x] TDD quad         */
++#ifdef __PPC64__
++      dcv = vec_insertlowerto4sp(dcv, zerov);                        /* start leftshift: [1 5 9 13] -> [x 5 9 13] */
++#else
+       dcv = _mm_move_ss(dcv, zerov);                        /* start leftshift: [1 5 9 13] -> [x 5 9 13] */
++#endif
++#ifdef __PPC64__
++      dcv = vec_shufflepermute44sp(dcv, dcv, _MM_SHUFFLE(0,3,2,1)); /* finish leftshift:[x 5 9 13] -> [5 9 13 x] */
++#else
+       dcv = _mm_shuffle_ps(dcv, dcv, _MM_SHUFFLE(0,3,2,1)); /* finish leftshift:[x 5 9 13] -> [5 9 13 x] */
++#endif
+       for (q = Q-1; q >= 0; q--)
+ 	{
++#ifdef __PPC64__
++	  dcv        = vec_multiply4sp(dcv, *tp); tp--;
++#else
+ 	  dcv        = _mm_mul_ps(dcv, *tp); tp--;
++#endif
++#ifdef __PPC64__
++	  DMO(dpc,q) = vec_add4sp(DMO(dpc,q), dcv);
++#else
+ 	  DMO(dpc,q) = _mm_add_ps(DMO(dpc,q), dcv);
++#endif
+ 	}
+     }
+   /* now MD init */
+   tp  = om->tfv + 7*Q - 3;	                        /* <*tp> now the [4 8 12 x] Mk->Dk+1 quad    */
++#ifdef __PPC64__
++  dcv = vec_insertlowerto4sp(DMO(dpc,0), zerov);                 /* start leftshift: [1 5 9 13] -> [x 5 9 13] */
++#else
+   dcv = _mm_move_ss(DMO(dpc,0), zerov);                 /* start leftshift: [1 5 9 13] -> [x 5 9 13] */
++#endif
++#ifdef __PPC64__
++  dcv = vec_shufflepermute44sp(dcv, dcv, _MM_SHUFFLE(0,3,2,1)); /* finish leftshift:[x 5 9 13] -> [5 9 13 x] */
++#else
+   dcv = _mm_shuffle_ps(dcv, dcv, _MM_SHUFFLE(0,3,2,1)); /* finish leftshift:[x 5 9 13] -> [5 9 13 x] */
++#endif
+   for (q = Q-1; q >= 0; q--)
+     {
++#ifdef __PPC64__
++      MMO(dpc,q) = vec_add4sp(MMO(dpc,q), vec_multiply4sp(dcv, *tp)); tp -= 7;
++#else
+       MMO(dpc,q) = _mm_add_ps(MMO(dpc,q), _mm_mul_ps(dcv, *tp)); tp -= 7;
++#endif
+       dcv        = DMO(dpc,q);
+     }
+ 
+@@ -541,11 +714,27 @@ backward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, c
+       xC  = xC / fwd->xmx[L*p7X_NXCELLS+p7X_SCALE];
+       xJ  = xJ / fwd->xmx[L*p7X_NXCELLS+p7X_SCALE];
+       xB  = xB / fwd->xmx[L*p7X_NXCELLS+p7X_SCALE];
++#ifdef __PPC64__
++      xEv = vec_splat4sp(1.0 / fwd->xmx[L*p7X_NXCELLS+p7X_SCALE]);
++#else
+       xEv = _mm_set1_ps(1.0 / fwd->xmx[L*p7X_NXCELLS+p7X_SCALE]);
++#endif
+       for (q = 0; q < Q; q++) {
++#ifdef __PPC64__
++	MMO(dpc,q) = vec_multiply4sp(MMO(dpc,q), xEv);
++#else
+ 	MMO(dpc,q) = _mm_mul_ps(MMO(dpc,q), xEv);
++#endif
++#ifdef __PPC64__
++	DMO(dpc,q) = vec_multiply4sp(DMO(dpc,q), xEv);
++#else
+ 	DMO(dpc,q) = _mm_mul_ps(DMO(dpc,q), xEv);
++#endif
++#ifdef __PPC64__
++	IMO(dpc,q) = vec_multiply4sp(IMO(dpc,q), xEv);
++#else
+ 	IMO(dpc,q) = _mm_mul_ps(IMO(dpc,q), xEv);
++#endif
+       }
+     }
+   bck->xmx[L*p7X_NXCELLS+p7X_SCALE] = fwd->xmx[L*p7X_NXCELLS+p7X_SCALE];
+@@ -574,79 +763,195 @@ backward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, c
+       tp  = om->tfv + 7*Q - 1;	     /* <*tp> is now the [4 8 12 x] TII transition quad  */
+ 
+       /* leftshift the first transition quads */
++#ifdef __PPC64__
++      tmmv = vec_insertlowerto4sp(om->tfv[1], zerov); tmmv = vec_shufflepermute44sp(tmmv, tmmv, _MM_SHUFFLE(0,3,2,1));
++#else
+       tmmv = _mm_move_ss(om->tfv[1], zerov); tmmv = _mm_shuffle_ps(tmmv, tmmv, _MM_SHUFFLE(0,3,2,1));
++#endif
++#ifdef __PPC64__
++      timv = vec_insertlowerto4sp(om->tfv[2], zerov); timv = vec_shufflepermute44sp(timv, timv, _MM_SHUFFLE(0,3,2,1));
++#else
+       timv = _mm_move_ss(om->tfv[2], zerov); timv = _mm_shuffle_ps(timv, timv, _MM_SHUFFLE(0,3,2,1));
++#endif
++#ifdef __PPC64__
++      tdmv = vec_insertlowerto4sp(om->tfv[3], zerov); tdmv = vec_shufflepermute44sp(tdmv, tdmv, _MM_SHUFFLE(0,3,2,1));
++#else
+       tdmv = _mm_move_ss(om->tfv[3], zerov); tdmv = _mm_shuffle_ps(tdmv, tdmv, _MM_SHUFFLE(0,3,2,1));
++#endif
+ 
++#ifdef __PPC64__
++      mpv = vec_multiply4sp(MMO(dpp,0), om->rfv[dsq[i+1]][0]); /* precalc M(i+1,k+1) * e(M_k+1, x_{i+1}) */
++#else
+       mpv = _mm_mul_ps(MMO(dpp,0), om->rfv[dsq[i+1]][0]); /* precalc M(i+1,k+1) * e(M_k+1, x_{i+1}) */
++#endif
++#ifdef __PPC64__
++      mpv = vec_insertlowerto4sp(mpv, zerov);
++#else
+       mpv = _mm_move_ss(mpv, zerov);
++#endif
++#ifdef __PPC64__
++      mpv = vec_shufflepermute44sp(mpv, mpv, _MM_SHUFFLE(0,3,2,1));
++#else
+       mpv = _mm_shuffle_ps(mpv, mpv, _MM_SHUFFLE(0,3,2,1));
++#endif
+ 
+       xBv = zerov;
+       for (q = Q-1; q >= 0; q--)     /* backwards stride */
+ 	{
+ 	  ipv = IMO(dpp,q); /* assumes emission odds ratio of 1.0; i+1's IMO(q) now free */
++#ifdef __PPC64__
++	  IMO(dpc,q) = vec_add4sp(vec_multiply4sp(ipv, *tp), vec_multiply4sp(mpv, timv));   tp--;
++#else
+ 	  IMO(dpc,q) = _mm_add_ps(_mm_mul_ps(ipv, *tp), _mm_mul_ps(mpv, timv));   tp--;
++#endif
++#ifdef __PPC64__
++	  DMO(dpc,q) =                                  vec_multiply4sp(mpv, tdmv); 
++#else
+ 	  DMO(dpc,q) =                                  _mm_mul_ps(mpv, tdmv); 
++#endif
++#ifdef __PPC64__
++	  mcv        = vec_add4sp(vec_multiply4sp(ipv, *tp), vec_multiply4sp(mpv, tmmv));   tp-= 2;
++#else
+ 	  mcv        = _mm_add_ps(_mm_mul_ps(ipv, *tp), _mm_mul_ps(mpv, tmmv));   tp-= 2;
++#endif
+ 	  
++#ifdef __PPC64__
++	  mpv        = vec_multiply4sp(MMO(dpp,q), *rp);  rp--;  /* obtain mpv for next q. i+1's MMO(q) is freed  */
++#else
+ 	  mpv        = _mm_mul_ps(MMO(dpp,q), *rp);  rp--;  /* obtain mpv for next q. i+1's MMO(q) is freed  */
++#endif
+ 	  MMO(dpc,q) = mcv;
+ 
+ 	  tdmv = *tp;   tp--;
+ 	  timv = *tp;   tp--;
+ 	  tmmv = *tp;   tp--;
+ 
++#ifdef __PPC64__
++	  xBv = vec_add4sp(xBv, vec_multiply4sp(mpv, *tp)); tp--;
++#else
+ 	  xBv = _mm_add_ps(xBv, _mm_mul_ps(mpv, *tp)); tp--;
++#endif
+ 	}
+ 
+       /* phase 2: now that we have accumulated the B->Mk transitions in xBv, we can do the specials */
++#ifdef __PPC64__
++      /* this incantation is a horiz sum of xBv elements: (vec_partialhorizontal22sp() would require SSE3) */
++#else
+       /* this incantation is a horiz sum of xBv elements: (_mm_hadd_ps() would require SSE3) */
++#endif
++#ifdef __PPC64__
++      xBv = vec_add4sp(xBv, vec_shufflepermute44sp(xBv, xBv, _MM_SHUFFLE(0, 3, 2, 1)));
++#else
+       xBv = _mm_add_ps(xBv, _mm_shuffle_ps(xBv, xBv, _MM_SHUFFLE(0, 3, 2, 1)));
++#endif
++#ifdef __PPC64__
++      xBv = vec_add4sp(xBv, vec_shufflepermute44sp(xBv, xBv, _MM_SHUFFLE(1, 0, 3, 2)));
++#else
+       xBv = _mm_add_ps(xBv, _mm_shuffle_ps(xBv, xBv, _MM_SHUFFLE(1, 0, 3, 2)));
++#endif
++#ifdef __PPC64__
++      vec_store4spto1sp(&xB, xBv);
++#else
+       _mm_store_ss(&xB, xBv);
++#endif
+ 
+       xC =  xC * om->xf[p7O_C][p7O_LOOP];
+       xJ = (xB * om->xf[p7O_J][p7O_MOVE]) + (xJ * om->xf[p7O_J][p7O_LOOP]); /* must come after xB */
+       xN = (xB * om->xf[p7O_N][p7O_MOVE]) + (xN * om->xf[p7O_N][p7O_LOOP]); /* must come after xB */
+       xE = (xC * om->xf[p7O_E][p7O_MOVE]) + (xJ * om->xf[p7O_E][p7O_LOOP]); /* must come after xJ, xC */
++#ifdef __PPC64__
++      xEv = vec_splat4sp(xE);	/* splat */
++#else
+       xEv = _mm_set1_ps(xE);	/* splat */
++#endif
+ 
+ 
+       /* phase 3: {MD}->E paths and one step of the D->D paths */
+       tp  = om->tfv + 8*Q - 1;	/* <*tp> now the [4 8 12 x] TDD quad */
++#ifdef __PPC64__
++      dpv = vec_add4sp(DMO(dpc,0), xEv);
++#else
+       dpv = _mm_add_ps(DMO(dpc,0), xEv);
++#endif
++#ifdef __PPC64__
++      dpv = vec_insertlowerto4sp(dpv, zerov);
++#else
+       dpv = _mm_move_ss(dpv, zerov);
++#endif
++#ifdef __PPC64__
++      dpv = vec_shufflepermute44sp(dpv, dpv, _MM_SHUFFLE(0,3,2,1));
++#else
+       dpv = _mm_shuffle_ps(dpv, dpv, _MM_SHUFFLE(0,3,2,1));
++#endif
+       for (q = Q-1; q >= 0; q--)
+ 	{
++#ifdef __PPC64__
++	  dcv        = vec_multiply4sp(dpv, *tp); tp--;
++#else
+ 	  dcv        = _mm_mul_ps(dpv, *tp); tp--;
+-	  DMO(dpc,q) = _mm_add_ps(DMO(dpc,q), _mm_add_ps(dcv, xEv));
++#endif
++#ifdef __PPC64__
++	  DMO(dpc,q) = vec_add4sp(DMO(dpc,q), vec_add4sp(dcv, xEv));
++#else
++	  DMO(dpc,q) = _mm_add_ps(DMO(dpc,q), vec_add4sp(dcv, xEv));
++#endif
+ 	  dpv        = DMO(dpc,q);
++#ifdef __PPC64__
++	  MMO(dpc,q) = vec_add4sp(MMO(dpc,q), xEv);
++#else
+ 	  MMO(dpc,q) = _mm_add_ps(MMO(dpc,q), xEv);
++#endif
+ 	}
+       
+       /* phase 4: finish extending the DD paths */
+       /* fully serialized for now */
+       for (j = 1; j < 4; j++)	/* three passes: we've already done 1 segment, we need 4 total */
+ 	{
++#ifdef __PPC64__
++	  dcv = vec_insertlowerto4sp(dcv, zerov);
++#else
+ 	  dcv = _mm_move_ss(dcv, zerov);
++#endif
++#ifdef __PPC64__
++	  dcv = vec_shufflepermute44sp(dcv, dcv, _MM_SHUFFLE(0,3,2,1));
++#else
+ 	  dcv = _mm_shuffle_ps(dcv, dcv, _MM_SHUFFLE(0,3,2,1));
++#endif
+ 	  tp  = om->tfv + 8*Q - 1;	/* <*tp> now the [4 8 12 x] TDD quad */
+ 	  for (q = Q-1; q >= 0; q--)
+ 	    {
++#ifdef __PPC64__
++	      dcv        = vec_multiply4sp(dcv, *tp); tp--;
++#else
+ 	      dcv        = _mm_mul_ps(dcv, *tp); tp--;
++#endif
++#ifdef __PPC64__
++	      DMO(dpc,q) = vec_add4sp(DMO(dpc,q), dcv);
++#else
+ 	      DMO(dpc,q) = _mm_add_ps(DMO(dpc,q), dcv);
++#endif
+ 	    }
+ 	}
+ 
+       /* phase 5: add M->D paths */
++#ifdef __PPC64__
++      dcv = vec_insertlowerto4sp(DMO(dpc,0), zerov);
++#else
+       dcv = _mm_move_ss(DMO(dpc,0), zerov);
++#endif
++#ifdef __PPC64__
++      dcv = vec_shufflepermute44sp(dcv, dcv, _MM_SHUFFLE(0,3,2,1));
++#else
+       dcv = _mm_shuffle_ps(dcv, dcv, _MM_SHUFFLE(0,3,2,1));
++#endif
+       tp  = om->tfv + 7*Q - 3;	/* <*tp> is now the [4 8 12 x] Mk->Dk+1 quad */
+       for (q = Q-1; q >= 0; q--)
+ 	{
+-	  MMO(dpc,q) = _mm_add_ps(MMO(dpc,q), _mm_mul_ps(dcv, *tp)); tp -= 7;
++#ifdef __PPC64__
++	  MMO(dpc,q) = vec_add4sp(MMO(dpc,q), vec_multiply4sp(dcv, *tp)); tp -= 7;
++#else
++	  MMO(dpc,q) = _mm_add_ps(MMO(dpc,q), vec_multiply4sp(dcv, *tp)); tp -= 7;
++#endif
+ 	  dcv        = DMO(dpc,q);
+ 	}
+ 
+@@ -670,11 +975,27 @@ backward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, c
+ 	  xJ /= bck->xmx[i*p7X_NXCELLS+p7X_SCALE];
+ 	  xB /= bck->xmx[i*p7X_NXCELLS+p7X_SCALE];
+ 	  xC /= bck->xmx[i*p7X_NXCELLS+p7X_SCALE];
++#ifdef __PPC64__
++	  xBv = vec_splat4sp(1.0 / bck->xmx[i*p7X_NXCELLS+p7X_SCALE]);
++#else
+ 	  xBv = _mm_set1_ps(1.0 / bck->xmx[i*p7X_NXCELLS+p7X_SCALE]);
++#endif
+ 	  for (q = 0; q < Q; q++) {
++#ifdef __PPC64__
++	    MMO(dpc,q) = vec_multiply4sp(MMO(dpc,q), xBv);
++#else
+ 	    MMO(dpc,q) = _mm_mul_ps(MMO(dpc,q), xBv);
++#endif
++#ifdef __PPC64__
++	    DMO(dpc,q) = vec_multiply4sp(DMO(dpc,q), xBv);
++#else
+ 	    DMO(dpc,q) = _mm_mul_ps(DMO(dpc,q), xBv);
++#endif
++#ifdef __PPC64__
++	    IMO(dpc,q) = vec_multiply4sp(IMO(dpc,q), xBv);
++#else
+ 	    IMO(dpc,q) = _mm_mul_ps(IMO(dpc,q), xBv);
++#endif
+ 	  }
+ 	  bck->totscale += log(bck->xmx[i*p7X_NXCELLS+p7X_SCALE]);
+ 	}
+@@ -701,14 +1022,38 @@ backward_engine(int do_full, const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, c
+   xBv = zerov;
+   for (q = 0; q < Q; q++)
+     {
++#ifdef __PPC64__
++      mpv = vec_multiply4sp(MMO(dpp,q), *rp);  rp++;
++#else
+       mpv = _mm_mul_ps(MMO(dpp,q), *rp);  rp++;
++#endif
++#ifdef __PPC64__
++      mpv = vec_multiply4sp(mpv,        *tp);  tp += 7;
++#else
+       mpv = _mm_mul_ps(mpv,        *tp);  tp += 7;
++#endif
++#ifdef __PPC64__
++      xBv = vec_add4sp(xBv,        mpv);
++#else
+       xBv = _mm_add_ps(xBv,        mpv);
++#endif
+     }
+   /* horizontal sum of xBv */
++#ifdef __PPC64__
++  xBv = vec_add4sp(xBv, vec_shufflepermute44sp(xBv, xBv, _MM_SHUFFLE(0, 3, 2, 1)));
++#else
+   xBv = _mm_add_ps(xBv, _mm_shuffle_ps(xBv, xBv, _MM_SHUFFLE(0, 3, 2, 1)));
++#endif
++#ifdef __PPC64__
++  xBv = vec_add4sp(xBv, vec_shufflepermute44sp(xBv, xBv, _MM_SHUFFLE(1, 0, 3, 2)));
++#else
+   xBv = _mm_add_ps(xBv, _mm_shuffle_ps(xBv, xBv, _MM_SHUFFLE(1, 0, 3, 2)));
++#endif
++#ifdef __PPC64__
++  vec_store4spto1sp(&xB, xBv);
++#else
+   _mm_store_ss(&xB, xBv);
++#endif
+  
+   xN = (xB * om->xf[p7O_N][p7O_MOVE]) + (xN * om->xf[p7O_N][p7O_LOOP]);  
+ 
+--- src/impl_sse/impl_sse.h
++++ src/impl_sse/impl_sse.h
+@@ -12,11 +12,16 @@
+ #include "esl_alphabet.h"
+ #include "esl_random.h"
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>    /* SSE  */
+ #include <emmintrin.h>    /* SSE2 */
+ #ifdef _PMMINTRIN_H_INCLUDED
+ #include <pmmintrin.h>   /* DENORMAL_MODE */
+ #endif
++#endif
+ 
+ #include "hmmer.h"
+ 
+--- src/impl_sse/io.c
++++ src/impl_sse/io.c
+@@ -37,8 +37,11 @@
+ #include <pthread.h>
+ #endif
+ 
++#ifdef __PPC64__
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ 
+--- src/impl_sse/msvfilter.c
++++ src/impl_sse/msvfilter.c
+@@ -22,8 +22,13 @@
+ #include <stdio.h>
+ #include <math.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_sse.h"
+@@ -107,26 +112,66 @@ p7_MSVFilter(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, float
+ 
+   /* Initialization. In offset unsigned arithmetic, -infinity is 0, and 0 is om->base.
+    */
++#ifdef __PPC64__
++  biasv = vec_splat16sb((int8_t) om->bias_b); /* yes, you can set1() an unsigned char vector this way */
++#else
+   biasv = _mm_set1_epi8((int8_t) om->bias_b); /* yes, you can set1() an unsigned char vector this way */
++#endif
++#ifdef __PPC64__
++  for (q = 0; q < Q; q++) dp[q] = vec_zero1q();
++#else
+   for (q = 0; q < Q; q++) dp[q] = _mm_setzero_si128();
++#endif
+   xJ   = 0;
+ 
+   /* saturate simd register for overflow test */
++#ifdef __PPC64__
++  ceilingv = vec_compareeq16sb(biasv, biasv);
++#else
+   ceilingv = _mm_cmpeq_epi8(biasv, biasv);
++#endif
++#ifdef __PPC64__
++  basev = vec_splat16sb((int8_t) om->base_b);
++#else
+   basev = _mm_set1_epi8((int8_t) om->base_b);
++#endif
+ 
++#ifdef __PPC64__
++  tjbmv = vec_splat16sb((int8_t) om->tjb_b + (int8_t) om->tbm_b);
++#else
+   tjbmv = _mm_set1_epi8((int8_t) om->tjb_b + (int8_t) om->tbm_b);
++#endif
++#ifdef __PPC64__
++  tecv = vec_splat16sb((int8_t) om->tec_b);
++#else
+   tecv = _mm_set1_epi8((int8_t) om->tec_b);
++#endif
+ 
++#ifdef __PPC64__
++  xJv = vec_subtractsaturating16ub(biasv, biasv);
++#else
+   xJv = _mm_subs_epu8(biasv, biasv);
++#endif
++#ifdef __PPC64__
++  xBv = vec_subtractsaturating16ub(basev, tjbmv);
++#else
+   xBv = _mm_subs_epu8(basev, tjbmv);
++#endif
+ 
+ #if p7_DEBUGGING
+   if (ox->debugging)
+   {
+       uint8_t xB;
++#ifdef __PPC64__
++      xB = vec_extract8sh(xBv, 0);
++#else
+       xB = _mm_extract_epi16(xBv, 0);
++#endif
++#ifdef __PPC64__
++      xJ = vec_extract8sh(xJv, 0);
++#else
+       xJ = _mm_extract_epi16(xJv, 0);
++#endif
+       p7_omx_DumpMFRow(ox, 0, 0, 0, xJ, xB, xJ);
+   }
+ #endif
+@@ -135,29 +180,65 @@ p7_MSVFilter(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, float
+   for (i = 1; i <= L; i++)
+   {
+       rsc = om->rbv[dsq[i]];
++#ifdef __PPC64__
++      xEv = vec_zero1q();      
++#else
+       xEv = _mm_setzero_si128();      
++#endif
+ 
+       /* Right shifts by 1 byte. 4,8,12,x becomes x,4,8,12. 
+        * Because ia32 is littlendian, this means a left bit shift.
+        * Zeros shift on automatically, which is our -infinity.
+        */
++#ifdef __PPC64__
++      mpv = vec_shiftleftbytes1q(dp[Q-1], 1);   
++#else
+       mpv = _mm_slli_si128(dp[Q-1], 1);   
++#endif
+       for (q = 0; q < Q; q++)
+       {
+         /* Calculate new MMXo(i,q); don't store it yet, hold it in sv. */
++#ifdef __PPC64__
++        sv   = vec_max16ub(mpv, xBv);
++#else
+         sv   = _mm_max_epu8(mpv, xBv);
++#endif
++#ifdef __PPC64__
++        sv   = vec_addsaturating16ub(sv, biasv);
++#else
+         sv   = _mm_adds_epu8(sv, biasv);
++#endif
++#ifdef __PPC64__
++        sv   = vec_subtractsaturating16ub(sv, *rsc);   rsc++;
++#else
+         sv   = _mm_subs_epu8(sv, *rsc);   rsc++;
++#endif
++#ifdef __PPC64__
++        xEv  = vec_max16ub(xEv, sv);
++#else
+         xEv  = _mm_max_epu8(xEv, sv);
++#endif
+ 
+         mpv   = dp[q];   	  /* Load {MDI}(i-1,q) into mpv */
+         dp[q] = sv;       	  /* Do delayed store of M(i,q) now that memory is usable */
+       }
+ 
+       /* test for the overflow condition */
++#ifdef __PPC64__
++      tempv = vec_addsaturating16ub(xEv, biasv);
++#else
+       tempv = _mm_adds_epu8(xEv, biasv);
++#endif
++#ifdef __PPC64__
++      tempv = vec_compareeq16sb(tempv, ceilingv);
++#else
+       tempv = _mm_cmpeq_epi8(tempv, ceilingv);
++#endif
++#ifdef __PPC64__
++      cmp = vec_extractupperbit16sb(tempv);
++#else
+       cmp = _mm_movemask_epi8(tempv);
++#endif
+ 
+       /* Now the "special" states, which start from Mk->E (->C, ->J->B)
+        * Use shuffles instead of shifts so when the last max has completed,
+@@ -165,15 +246,51 @@ p7_MSVFilter(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, float
+        * max value.  Then the last shuffle will broadcast the max value
+        * to all simd elements.
+        */
++#ifdef __PPC64__
++      tempv = vec_permute4sw(xEv, _MM_SHUFFLE(2, 3, 0, 1));
++#else
+       tempv = _mm_shuffle_epi32(xEv, _MM_SHUFFLE(2, 3, 0, 1));
++#endif
++#ifdef __PPC64__
++      xEv = vec_max16ub(xEv, tempv);
++#else
+       xEv = _mm_max_epu8(xEv, tempv);
++#endif
++#ifdef __PPC64__
++      tempv = vec_permute4sw(xEv, _MM_SHUFFLE(0, 1, 2, 3));
++#else
+       tempv = _mm_shuffle_epi32(xEv, _MM_SHUFFLE(0, 1, 2, 3));
++#endif
++#ifdef __PPC64__
++      xEv = vec_max16ub(xEv, tempv);
++#else
+       xEv = _mm_max_epu8(xEv, tempv);
++#endif
++#ifdef __PPC64__
++      tempv = vec_permutelower4sh(xEv, _MM_SHUFFLE(2, 3, 0, 1));
++#else
+       tempv = _mm_shufflelo_epi16(xEv, _MM_SHUFFLE(2, 3, 0, 1));
++#endif
++#ifdef __PPC64__
++      xEv = vec_max16ub(xEv, tempv);
++#else
+       xEv = _mm_max_epu8(xEv, tempv);
++#endif
++#ifdef __PPC64__
++      tempv = vec_shiftrightbytes1q(xEv, 1);
++#else
+       tempv = _mm_srli_si128(xEv, 1);
++#endif
++#ifdef __PPC64__
++      xEv = vec_max16ub(xEv, tempv);
++#else
+       xEv = _mm_max_epu8(xEv, tempv);
++#endif
++#ifdef __PPC64__
++      xEv = vec_permute4sw(xEv, _MM_SHUFFLE(0, 0, 0, 0));
++#else
+       xEv = _mm_shuffle_epi32(xEv, _MM_SHUFFLE(0, 0, 0, 0));
++#endif
+ 
+       /* immediately detect overflow */
+       if (cmp != 0x0000)
+@@ -182,25 +299,57 @@ p7_MSVFilter(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, float
+         return eslERANGE;
+       }
+ 
++#ifdef __PPC64__
++      xEv = vec_subtractsaturating16ub(xEv, tecv);
++#else
+       xEv = _mm_subs_epu8(xEv, tecv);
++#endif
++#ifdef __PPC64__
++      xJv = vec_max16ub(xJv,xEv);
++#else
+       xJv = _mm_max_epu8(xJv,xEv);
++#endif
+       
++#ifdef __PPC64__
++      xBv = vec_max16ub(basev, xJv);
++#else
+       xBv = _mm_max_epu8(basev, xJv);
++#endif
++#ifdef __PPC64__
++      xBv = vec_subtractsaturating16ub(xBv, tjbmv);
++#else
+       xBv = _mm_subs_epu8(xBv, tjbmv);
++#endif
+ 	  
+ #if p7_DEBUGGING
+       if (ox->debugging)
+       {
+         uint8_t xB, xE;
++#ifdef __PPC64__
++        xB = vec_extract8sh(xBv, 0);
++#else
+         xB = _mm_extract_epi16(xBv, 0);
++#endif
++#ifdef __PPC64__
++        xE = vec_extract8sh(xEv, 0);
++#else
+         xE = _mm_extract_epi16(xEv, 0);
++#endif
++#ifdef __PPC64__
++        xJ = vec_extract8sh(xJv, 0);
++#else
+         xJ = _mm_extract_epi16(xJv, 0);
++#endif
+         p7_omx_DumpMFRow(ox, i, xE, 0, xJ, xB, xJ);
+       }
+ #endif
+   } /* end loop over sequence residues 1..L */
+ 
++#ifdef __PPC64__
++  xJ = (uint8_t) vec_extract8sh(xJv, 0);
++#else
+   xJ = (uint8_t) _mm_extract_epi16(xJv, 0);
++#endif
+ 
+   /* finally C->T, and add our missing precision on the NN,CC,JJ back */
+   *ret_sc = ((float) (xJ - om->tjb_b) - (float) om->base_b);
+@@ -327,46 +476,114 @@ p7_SSVFilter_longtarget(const ESL_DSQ *dsq, int L, P7_OPROFILE *om, P7_OMX *ox,
+   p7_bg_NullOne  (bg, dsq, om->max_length, &nullsc);
+ 
+   sc_thresh = (int) ceil( ( ( nullsc  + (invP * eslCONST_LOG2) + 3.0 )  * om->scale_b ) + om->base_b +  om->tec_b  + om->tjb_b );
++#ifdef __PPC64__
++  sc_threshv = vec_splat16sb((int8_t) 255 - sc_thresh);
++#else
+   sc_threshv = _mm_set1_epi8((int8_t) 255 - sc_thresh);
++#endif
+ 
+   /* Initialization. In offset unsigned  arithmetic, -infinity is 0, and 0 is om->base.
+    */
++#ifdef __PPC64__
++  biasv = vec_splat16sb((int8_t) om->bias_b); /* yes, you can set1() an unsigned char vector this way */
++#else
+   biasv = _mm_set1_epi8((int8_t) om->bias_b); /* yes, you can set1() an unsigned char vector this way */
++#endif
++#ifdef __PPC64__
++  ceilingv = vec_compareeq16sb(biasv, biasv);
++#else
+   ceilingv = _mm_cmpeq_epi8(biasv, biasv);
++#endif
++#ifdef __PPC64__
++  for (q = 0; q < Q; q++) dp[q] = vec_zero1q();
++#else
+   for (q = 0; q < Q; q++) dp[q] = _mm_setzero_si128();
++#endif
+   xJ   = 0;
+ 
++#ifdef __PPC64__
++  basev = vec_splat16sb((int8_t) om->base_b);
++#else
+   basev = _mm_set1_epi8((int8_t) om->base_b);
++#endif
++#ifdef __PPC64__
++  tecv = vec_splat16sb((int8_t) om->tec_b);
++#else
+   tecv = _mm_set1_epi8((int8_t) om->tec_b);
++#endif
++#ifdef __PPC64__
++  tjbmv = vec_splat16sb((int8_t) om->tjb_b + (int8_t) om->tbm_b);
++#else
+   tjbmv = _mm_set1_epi8((int8_t) om->tjb_b + (int8_t) om->tbm_b);
++#endif
+ 
++#ifdef __PPC64__
++  xBv = vec_subtractsaturating16ub(basev, tjbmv);
++#else
+   xBv = _mm_subs_epu8(basev, tjbmv);
++#endif
+ 
+   for (i = 1; i <= L; i++) {
+     rsc = om->rbv[dsq[i]];
++#ifdef __PPC64__
++    xEv = vec_zero1q();
++#else
+     xEv = _mm_setzero_si128();
++#endif
+ 
+ 	  /* Right shifts by 1 byte. 4,8,12,x becomes x,4,8,12.
+ 	   * Because ia32 is littlendian, this means a left bit shift.
+ 	   * Zeros shift on automatically, which is our -infinity.
+ 	   */
++#ifdef __PPC64__
++	  mpv = vec_shiftleftbytes1q(dp[Q-1], 1);
++#else
+ 	  mpv = _mm_slli_si128(dp[Q-1], 1);
++#endif
+ 	  for (q = 0; q < Q; q++) {
+ 		  /* Calculate new MMXo(i,q); don't store it yet, hold it in sv. */
++#ifdef __PPC64__
++		  sv   = vec_max16ub(mpv, xBv);
++#else
+ 		  sv   = _mm_max_epu8(mpv, xBv);
++#endif
++#ifdef __PPC64__
++		  sv   = vec_addsaturating16ub(sv, biasv);
++#else
+ 		  sv   = _mm_adds_epu8(sv, biasv);
++#endif
++#ifdef __PPC64__
++		  sv   = vec_subtractsaturating16ub(sv, *rsc);   rsc++;
++#else
+ 		  sv   = _mm_subs_epu8(sv, *rsc);   rsc++;
++#endif
++#ifdef __PPC64__
++		  xEv  = vec_max16ub(xEv, sv);
++#else
+ 		  xEv  = _mm_max_epu8(xEv, sv);
++#endif
+ 
+ 		  mpv   = dp[q];   	  /* Load {MDI}(i-1,q) into mpv */
+ 		  dp[q] = sv;       	  /* Do delayed store of M(i,q) now that memory is usable */
+ 	  }
+ 
+ 	  /* test if the pthresh significance threshold has been reached;
+-	   * note: don't use _mm_cmpgt_epi8, because it's a signed comparison, which won't work on uint8s */
++	   * note: don't use _mm_cmpgt_epi8, because it's a signed comparison, which won't work on uint8s */    /* !!!REP NOT FOUND!!! */ 
++#ifdef __PPC64__
++	  tempv = vec_addsaturating16ub(xEv, sc_threshv);
++#else
+ 	  tempv = _mm_adds_epu8(xEv, sc_threshv);
++#endif
++#ifdef __PPC64__
++	  tempv = vec_compareeq16sb(tempv, ceilingv);
++#else
+ 	  tempv = _mm_cmpeq_epi8(tempv, ceilingv);
++#endif
++#ifdef __PPC64__
++	  cmp = vec_extractupperbit16sb(tempv);
++#else
+ 	  cmp = _mm_movemask_epi8(tempv);
++#endif
+ 
+ 	  if (cmp != 0) {  //hit pthresh, so add position to list and reset values
+ 
+@@ -382,7 +599,11 @@ p7_SSVFilter_longtarget(const ESL_DSQ *dsq, int L, P7_OPROFILE *om, P7_OMX *ox,
+               rem_sc = u.b[k];
+             }
+           }
++#ifdef __PPC64__
++          dp[q] = vec_splat16sb(0); // while we're here ... this will cause values to get reset to xB in next dp iteration
++#else
+           dp[q] = _mm_set1_epi8(0); // while we're here ... this will cause values to get reset to xB in next dp iteration
++#endif
+ 	    }
+ 
+ 	    //recover the diagonal that hit threshold
+--- src/impl_sse/null2.c
++++ src/impl_sse/null2.c
+@@ -16,8 +16,13 @@
+ #include <stdlib.h>
+ #include <string.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_sse.h"
+@@ -69,8 +74,16 @@ p7_Null2_ByExpectation(const P7_OPROFILE *om, const P7_OMX *pp, float *null2)
+     {
+       for (q = 0; q < Q; q++)
+ 	{
++#ifdef __PPC64__
++	  pp->dpf[0][q*3 + p7X_M] = vec_add4sp(pp->dpf[i][q*3 + p7X_M], pp->dpf[0][q*3 + p7X_M]);
++#else
+ 	  pp->dpf[0][q*3 + p7X_M] = _mm_add_ps(pp->dpf[i][q*3 + p7X_M], pp->dpf[0][q*3 + p7X_M]);
++#endif
++#ifdef __PPC64__
++	  pp->dpf[0][q*3 + p7X_I] = vec_add4sp(pp->dpf[i][q*3 + p7X_I], pp->dpf[0][q*3 + p7X_I]);
++#else
+ 	  pp->dpf[0][q*3 + p7X_I] = _mm_add_ps(pp->dpf[i][q*3 + p7X_I], pp->dpf[0][q*3 + p7X_I]);
++#endif
+ 	}
+       XMXo(0,p7X_N) += XMXo(i,p7X_N);
+       XMXo(0,p7X_C) += XMXo(i,p7X_C); 
+@@ -79,11 +92,23 @@ p7_Null2_ByExpectation(const P7_OPROFILE *om, const P7_OMX *pp, float *null2)
+ 
+   /* Convert those expected #'s to frequencies, to use as posterior weights. */
+   norm = 1.0 / (float) Ld;
++#ifdef __PPC64__
++  sv   = vec_splat4sp(norm);
++#else
+   sv   = _mm_set1_ps(norm);
++#endif
+   for (q = 0; q < Q; q++)
+     {
++#ifdef __PPC64__
++      pp->dpf[0][q*3 + p7X_M] = vec_multiply4sp(pp->dpf[0][q*3 + p7X_M], sv);
++#else
+       pp->dpf[0][q*3 + p7X_M] = _mm_mul_ps(pp->dpf[0][q*3 + p7X_M], sv);
++#endif
++#ifdef __PPC64__
++      pp->dpf[0][q*3 + p7X_I] = vec_multiply4sp(pp->dpf[0][q*3 + p7X_I], sv);
++#else
+       pp->dpf[0][q*3 + p7X_I] = _mm_mul_ps(pp->dpf[0][q*3 + p7X_I], sv);
++#endif
+     }
+   XMXo(0,p7X_N) *= norm;
+   XMXo(0,p7X_C) *= norm;
+@@ -95,13 +120,29 @@ p7_Null2_ByExpectation(const P7_OPROFILE *om, const P7_OMX *pp, float *null2)
+   xfactor = XMXo(0, p7X_N) + XMXo(0, p7X_C) + XMXo(0, p7X_J); 
+   for (x = 0; x < om->abc->K; x++)
+     {
++#ifdef __PPC64__
++      sv = vec_zero4sp();
++#else
+       sv = _mm_setzero_ps();
++#endif
+       rp = om->rfv[x];
+       for (q = 0; q < Q; q++)
+ 	{
++#ifdef __PPC64__
++	  sv = vec_add4sp(sv, vec_multiply4sp(pp->dpf[0][q*3 + p7X_M], *rp)); rp++;
++#else
+ 	  sv = _mm_add_ps(sv, _mm_mul_ps(pp->dpf[0][q*3 + p7X_M], *rp)); rp++;
++#endif
++#ifdef __PPC64__
++	  sv = vec_add4sp(sv,            pp->dpf[0][q*3 + p7X_I]);              /* insert odds implicitly 1.0 */
++#else
+ 	  sv = _mm_add_ps(sv,            pp->dpf[0][q*3 + p7X_I]);              /* insert odds implicitly 1.0 */
++#endif
++#ifdef __PPC64__
++	  //	  sv = vec_add4sp(sv, _mm_mul_ps(pp->dpf[0][q*3 + p7X_I], *rp)); rp++; 
++#else
+ 	  //	  sv = _mm_add_ps(sv, _mm_mul_ps(pp->dpf[0][q*3 + p7X_I], *rp)); rp++; 
++#endif
+ 	}
+       esl_sse_hsum_ps(sv, &(null2[x]));
+       null2[x] += xfactor;
+@@ -148,8 +189,16 @@ p7_Null2_ByTrace(const P7_OPROFILE *om, const P7_TRACE *tr, int zstart, int zend
+   /* We'll use the i=0 row in wrk for working space: dp[0][] and xmx[][0]. */
+   for (q = 0; q < Q; q++)
+     {
++#ifdef __PPC64__
++      wrk->dpf[0][q*3 + p7X_M] = vec_zero4sp();
++#else
+       wrk->dpf[0][q*3 + p7X_M] = _mm_setzero_ps();
++#endif
++#ifdef __PPC64__
++      wrk->dpf[0][q*3 + p7X_I] = vec_zero4sp();
++#else
+       wrk->dpf[0][q*3 + p7X_I] = _mm_setzero_ps();
++#endif
+     }
+   XMXo(0,p7X_N) =  0.0;
+   XMXo(0,p7X_C) =  0.0;
+@@ -180,11 +229,23 @@ p7_Null2_ByTrace(const P7_OPROFILE *om, const P7_TRACE *tr, int zstart, int zend
+ 	}
+     }
+   norm = 1.0 / (float) Ld;
++#ifdef __PPC64__
++  sv = vec_splat4sp(norm);
++#else
+   sv = _mm_set1_ps(norm);
++#endif
+   for (q = 0; q < Q; q++)
+     {
++#ifdef __PPC64__
++      wrk->dpf[0][q*3 + p7X_M] = vec_multiply4sp(wrk->dpf[0][q*3 + p7X_M], sv);
++#else
+       wrk->dpf[0][q*3 + p7X_M] = _mm_mul_ps(wrk->dpf[0][q*3 + p7X_M], sv);
++#endif
++#ifdef __PPC64__
++      wrk->dpf[0][q*3 + p7X_I] = vec_multiply4sp(wrk->dpf[0][q*3 + p7X_I], sv);
++#else
+       wrk->dpf[0][q*3 + p7X_I] = _mm_mul_ps(wrk->dpf[0][q*3 + p7X_I], sv);
++#endif
+     }
+   XMXo(0,p7X_N) *= norm;
+   XMXo(0,p7X_C) *= norm;
+@@ -196,13 +257,29 @@ p7_Null2_ByTrace(const P7_OPROFILE *om, const P7_TRACE *tr, int zstart, int zend
+   xfactor =  XMXo(0,p7X_N) + XMXo(0,p7X_C) + XMXo(0,p7X_J);
+   for (x = 0; x < om->abc->K; x++)
+     {
++#ifdef __PPC64__
++      sv = vec_zero4sp();
++#else
+       sv = _mm_setzero_ps();
++#endif
+       rp = om->rfv[x];
+       for (q = 0; q < Q; q++)
+ 	{
++#ifdef __PPC64__
++	  sv = vec_add4sp(sv, vec_multiply4sp(wrk->dpf[0][q*3 + p7X_M], *rp)); rp++;
++#else
+ 	  sv = _mm_add_ps(sv, _mm_mul_ps(wrk->dpf[0][q*3 + p7X_M], *rp)); rp++;
++#endif
++#ifdef __PPC64__
++	  sv = vec_add4sp(sv,            wrk->dpf[0][q*3 + p7X_I]); /* insert emission odds implicitly 1.0 */
++#else
+ 	  sv = _mm_add_ps(sv,            wrk->dpf[0][q*3 + p7X_I]); /* insert emission odds implicitly 1.0 */
++#endif
++#ifdef __PPC64__
++	  //	  sv = vec_add4sp(sv, _mm_mul_ps(wrk->dpf[0][q*3 + p7X_I], *rp)); rp++;
++#else
+ 	  //	  sv = _mm_add_ps(sv, _mm_mul_ps(wrk->dpf[0][q*3 + p7X_I], *rp)); rp++;
++#endif
+ 	}
+       esl_sse_hsum_ps(sv, &(null2[x]));
+       null2[x] += xfactor;
+--- src/impl_sse/optacc.c
++++ src/impl_sse/optacc.c
+@@ -16,8 +16,13 @@
+ 
+ #include <float.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>
+ #include <emmintrin.h>
++#endif
+ 
+ #include "easel.h"
+ #include "esl_sse.h"
+@@ -69,8 +74,16 @@ p7_OptimalAccuracy(const P7_OPROFILE *om, const P7_OMX *pp, P7_OMX *ox, float *r
+   __m128 *dpp;                     /* previous row, for use in {MDI}MO(dpp,q) access macro      */
+   __m128 *ppp;			   /* quads in the <pp> posterior probability matrix            */
+   __m128 *tp;			   /* quads in the <om->tfv> transition scores                  */
++#ifdef __PPC64__
++  __m128 zerov = vec_zero4sp();
++#else
+   __m128 zerov = _mm_setzero_ps();
++#endif
++#ifdef __PPC64__
++  __m128 infv  = vec_splat4sp(-eslINFINITY);
++#else
+   __m128 infv  = _mm_set1_ps(-eslINFINITY);
++#endif
+   int M = om->M;
+   int Q = p7O_NQF(M);
+   int q;
+@@ -95,19 +108,47 @@ p7_OptimalAccuracy(const P7_OPROFILE *om, const P7_OMX *pp, P7_OMX *ox, float *r
+       tp  = om->tfv;		/* transition probabilities */
+       dcv = infv;
+       xEv = infv;
++#ifdef __PPC64__
++      xBv = vec_splat4sp(XMXo(i-1, p7X_B));
++#else
+       xBv = _mm_set1_ps(XMXo(i-1, p7X_B));
++#endif
+ 
+       mpv = esl_sse_rightshift_ps(MMO(dpp,Q-1), infv);  /* Right shifts by 4 bytes. 4,8,12,x becomes x,4,8,12. */
+       dpv = esl_sse_rightshift_ps(DMO(dpp,Q-1), infv);
+       ipv = esl_sse_rightshift_ps(IMO(dpp,Q-1), infv);
+       for (q = 0; q < Q; q++)
+ 	{
++#ifdef __PPC64__
++	  sv  =                vec_bitand4sp(vec_comparegt_4sp(*tp, zerov), xBv);  tp++;
++#else
+ 	  sv  =                _mm_and_ps(_mm_cmpgt_ps(*tp, zerov), xBv);  tp++;
++#endif
++#ifdef __PPC64__
++	  sv  = vec_max4sp(sv, vec_bitand4sp(vec_comparegt_4sp(*tp, zerov), mpv)); tp++;
++#else
+ 	  sv  = _mm_max_ps(sv, _mm_and_ps(_mm_cmpgt_ps(*tp, zerov), mpv)); tp++;
++#endif
++#ifdef __PPC64__
++	  sv  = vec_max4sp(sv, vec_bitand4sp(vec_comparegt_4sp(*tp, zerov), ipv)); tp++;
++#else
+ 	  sv  = _mm_max_ps(sv, _mm_and_ps(_mm_cmpgt_ps(*tp, zerov), ipv)); tp++;
++#endif
++#ifdef __PPC64__
++	  sv  = vec_max4sp(sv, vec_bitand4sp(vec_comparegt_4sp(*tp, zerov), dpv)); tp++;
++#else
+ 	  sv  = _mm_max_ps(sv, _mm_and_ps(_mm_cmpgt_ps(*tp, zerov), dpv)); tp++;
++#endif
++#ifdef __PPC64__
++	  sv  = vec_add4sp(sv, *ppp);                                      ppp += 2;
++#else
+ 	  sv  = _mm_add_ps(sv, *ppp);                                      ppp += 2;
++#endif
++#ifdef __PPC64__
++	  xEv = vec_max4sp(xEv, sv);
++#else
+ 	  xEv = _mm_max_ps(xEv, sv);
++#endif
+ 	  
+ 	  mpv = MMO(dpp,q);
+ 	  dpv = DMO(dpp,q);
+@@ -116,11 +157,27 @@ p7_OptimalAccuracy(const P7_OPROFILE *om, const P7_OMX *pp, P7_OMX *ox, float *r
+ 	  MMO(dpc,q) = sv;
+ 	  DMO(dpc,q) = dcv;
+ 
++#ifdef __PPC64__
++	  dcv = vec_bitand4sp(vec_comparegt_4sp(*tp, zerov), sv); tp++;
++#else
+ 	  dcv = _mm_and_ps(_mm_cmpgt_ps(*tp, zerov), sv); tp++;
++#endif
+ 
++#ifdef __PPC64__
++	  sv         =                vec_bitand4sp(vec_comparegt_4sp(*tp, zerov), mpv);   tp++;
++#else
+ 	  sv         =                _mm_and_ps(_mm_cmpgt_ps(*tp, zerov), mpv);   tp++;
++#endif
++#ifdef __PPC64__
++	  sv         = vec_max4sp(sv, vec_bitand4sp(vec_comparegt_4sp(*tp, zerov), ipv));  tp++;
++#else
+ 	  sv         = _mm_max_ps(sv, _mm_and_ps(_mm_cmpgt_ps(*tp, zerov), ipv));  tp++;
++#endif
++#ifdef __PPC64__
++	  IMO(dpc,q) = vec_add4sp(sv, *ppp);                                       ppp++;
++#else
+ 	  IMO(dpc,q) = _mm_add_ps(sv, *ppp);                                       ppp++;
++#endif
+ 	}
+       
+       /* dcv has carried through from end of q loop above; store it 
+@@ -130,8 +187,16 @@ p7_OptimalAccuracy(const P7_OPROFILE *om, const P7_OMX *pp, P7_OMX *ox, float *r
+       tp  = om->tfv + 7*Q;	/* set tp to start of the DD's */
+       for (q = 0; q < Q; q++)
+ 	{
++#ifdef __PPC64__
++	  DMO(dpc, q) = vec_max4sp(dcv, DMO(dpc, q));
++#else
+ 	  DMO(dpc, q) = _mm_max_ps(dcv, DMO(dpc, q));
++#endif
++#ifdef __PPC64__
++	  dcv         = vec_bitand4sp(vec_comparegt_4sp(*tp, zerov), DMO(dpc,q));   tp++;
++#else
+ 	  dcv         = _mm_and_ps(_mm_cmpgt_ps(*tp, zerov), DMO(dpc,q));   tp++;
++#endif
+ 	}
+ 
+       /* fully serialized D->D; can optimize later */
+@@ -141,13 +206,25 @@ p7_OptimalAccuracy(const P7_OPROFILE *om, const P7_OMX *pp, P7_OMX *ox, float *r
+ 	  tp  = om->tfv + 7*Q;	
+ 	  for (q = 0; q < Q; q++)
+ 	    {
++#ifdef __PPC64__
++	      DMO(dpc, q) = vec_max4sp(dcv, DMO(dpc, q));
++#else
+ 	      DMO(dpc, q) = _mm_max_ps(dcv, DMO(dpc, q));
++#endif
++#ifdef __PPC64__
++	      dcv         = vec_bitand4sp(vec_comparegt_4sp(*tp, zerov), dcv);   tp++;
++#else
+ 	      dcv         = _mm_and_ps(_mm_cmpgt_ps(*tp, zerov), dcv);   tp++;
++#endif
+ 	    }
+ 	}
+ 
+       /* D->E paths */
++#ifdef __PPC64__
++      for (q = 0; q < Q; q++) xEv = vec_max4sp(xEv, DMO(dpc,q));
++#else
+       for (q = 0; q < Q; q++) xEv = _mm_max_ps(xEv, DMO(dpc,q));
++#endif
+       
+       /* Specials */
+       esl_sse_hmax_ps(xEv, &(XMXo(i,p7X_E)));
+@@ -290,8 +367,16 @@ select_m(const P7_OPROFILE *om, const P7_OMX *ox, int i, int k)
+   int     q     = (k-1) % Q;		/* (q,r) is position of the current DP cell M(i,k) */
+   int     r     = (k-1) / Q;
+   __m128 *tp    = om->tfv + 7*q;       	/* *tp now at start of transitions to cur cell M(i,k) */
++#ifdef __PPC64__
++  __m128  xBv   = vec_splat4sp(ox->xmx[(i-1)*p7X_NXCELLS+p7X_B]);
++#else
+   __m128  xBv   = _mm_set1_ps(ox->xmx[(i-1)*p7X_NXCELLS+p7X_B]);
++#endif
++#ifdef __PPC64__
++  __m128  zerov = vec_zero4sp();
++#else
+   __m128  zerov = _mm_setzero_ps();
++#endif
+   __m128  mpv, dpv, ipv;
+   union { __m128 v; float p[4]; } u, tv;
+   float   path[4];
+@@ -323,7 +408,11 @@ select_d(const P7_OPROFILE *om, const P7_OMX *ox, int i, int k)
+   int     Q     = p7O_NQF(ox->M);
+   int     q     = (k-1) % Q;		/* (q,r) is position of the current DP cell D(i,k) */
+   int     r     = (k-1) / Q;
++#ifdef __PPC64__
++  __m128  zerov = vec_zero4sp();
++#else
+   __m128  zerov = _mm_setzero_ps();
++#endif
+   union { __m128 v; float p[4]; } mpv, dpv, tmdv, tddv;
+   float   path[2];
+ 
+--- src/impl_sse/p7_omx.c
++++ src/impl_sse/p7_omx.c
+@@ -17,8 +17,11 @@
+ #include <math.h>
+ #include <float.h>
+ 
++#ifdef __PPC64__
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_alphabet.h"
+--- src/impl_sse/p7_oprofile.c
++++ src/impl_sse/p7_oprofile.c
+@@ -18,8 +18,13 @@
+ #include <string.h>
+ #include <math.h>		/* roundf() */
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_random.h"
+@@ -498,7 +503,7 @@ biased_byteify(P7_OPROFILE *om, float sc)
+   uint8_t b;
+ 
+   sc  = -1.0f * roundf(om->scale_b * sc);                          /* ugh. sc is now an integer cost represented in a float...           */
+-  b   = (sc > 255 - om->bias_b) ? 255 : (uint8_t) sc + om->bias_b; /* and now we cast, saturate, and bias it to an unsigned char cost... */
++  b   = (sc > 255 - om->bias_b) ? 255 : (uint8_t) (sc + om->bias_b); /* and now we cast, saturate, and bias it to an unsigned char cost... */
+   return b;
+ }
+  
+@@ -577,12 +582,24 @@ sf_conversion(P7_OPROFILE *om)
+    * hmmscan where many models are loaded.
+    */
+ 
++#ifdef __PPC64__
++  tmp = vec_splat16sb((int8_t) (om->bias_b + 127));
++#else
+   tmp = _mm_set1_epi8((int8_t) (om->bias_b + 127));
++#endif
++#ifdef __PPC64__
++  tmp2  = vec_splat16sb(127);
++#else
+   tmp2  = _mm_set1_epi8(127);
++#endif
+ 
+   for (x = 0; x < om->abc->Kp; x++)
+     {
++#ifdef __PPC64__
++      for (q = 0;  q < nq;            q++) om->sbv[x][q] = vec_bitxor1q(vec_subtractsaturating16ub(tmp, om->rbv[x][q]), tmp2);
++#else
+       for (q = 0;  q < nq;            q++) om->sbv[x][q] = _mm_xor_si128(_mm_subs_epu8(tmp, om->rbv[x][q]), tmp2);
++#endif
+       for (q = nq; q < nq + p7O_EXTRA_SB; q++) om->sbv[x][q] = om->sbv[x][q % nq];
+     }
+ 
+@@ -1247,7 +1264,11 @@ oprofile_dump_mf(FILE *fp, const P7_OPROFILE *om)
+       for (q = 0; q < nq; q++)
+ 	{
+ 	  fprintf(fp, "[ ");
++#ifdef __PPC64__
++	  vec_store1q(&tmp.v, om->rbv[x][q]);
++#else
+ 	  _mm_store_si128(&tmp.v, om->rbv[x][q]);
++#endif
+ 	  for (z = 0; z < 16; z++) fprintf(fp, "%4d ", tmp.i[z]);
+ 	  fprintf(fp, "]");
+ 	}
+@@ -1307,7 +1328,11 @@ oprofile_dump_vf(FILE *fp, const P7_OPROFILE *om)
+       for (q = 0; q < nq; q++)
+ 	{
+ 	  fprintf(fp, "[ ");
++#ifdef __PPC64__
++	  vec_store1q(&tmp.v, om->rwv[x][q]);
++#else
+ 	  _mm_store_si128(&tmp.v, om->rwv[x][q]);
++#endif
+ 	  for (z = 0; z < 8; z++) fprintf(fp, "%6d ", tmp.i[z]);
+ 	  fprintf(fp, "]");
+ 	}
+@@ -1349,7 +1374,11 @@ oprofile_dump_vf(FILE *fp, const P7_OPROFILE *om)
+       for (q = 0; q < nq; q++)
+ 	{
+ 	  fprintf(fp, "[ ");
++#ifdef __PPC64__
++	  vec_store1q(&tmp.v, om->twv[q*7 + t]);
++#else
+ 	  _mm_store_si128(&tmp.v, om->twv[q*7 + t]);
++#endif
+ 	  for (z = 0; z < 8; z++) fprintf(fp, "%6d ", tmp.i[z]);
+ 	  fprintf(fp, "]");
+ 	}
+@@ -1370,7 +1399,11 @@ oprofile_dump_vf(FILE *fp, const P7_OPROFILE *om)
+   for (j = nq*7, q = 0; q < nq; q++, j++)
+     {
+       fprintf(fp, "[ ");
++#ifdef __PPC64__
++      vec_store1q(&tmp.v, om->twv[j]);
++#else
+       _mm_store_si128(&tmp.v, om->twv[j]);
++#endif
+       for (z = 0; z < 8; z++) fprintf(fp, "%6d ", tmp.i[z]);
+       fprintf(fp, "]");
+     }
+--- src/impl_sse/ssvfilter.c
++++ src/impl_sse/ssvfilter.c
+@@ -49,8 +49,11 @@
+  *
+  * The code governing the use of the J state in the original filter is:
+  *
++ *   xEv = vec_subtractsaturating16ub(xEv, tecv);
+  *   xEv = _mm_subs_epu8(xEv, tecv);
++ *   xJv = vec_max16ub(xJv,xEv);
+  *   xJv = _mm_max_epu8(xJv,xEv);
++ *   xBv = vec_max16ub(basev, xJv);
+  *   xBv = _mm_max_epu8(basev, xJv);
+  *
+  * So for an xE value to be high enough to affect xJ, the following
+@@ -79,9 +82,13 @@
+  * Here is an analysis of what is going on in the central loop. The
+  * original code is:
+  *
++ *   1: sv  = vec_max16ub(sv, xBv);
+  *   1: sv  = _mm_max_epu8(sv, xBv);
++ *   2: sv  = vec_addsaturating16ub(sv, biasv);      
+  *   2: sv  = _mm_adds_epu8(sv, biasv);      
++ *   3: sv  = vec_subtractsaturating16ub(sv, *rsc); rsc++;
+  *   3: sv  = _mm_subs_epu8(sv, *rsc); rsc++;
++ *   4: xEv = vec_max16ub(xEv, sv);	
+  *   4: xEv = _mm_max_epu8(xEv, sv);	
+  *
+  * Here is a line by line description:
+@@ -129,7 +136,9 @@
+  * operation, yet we need to subtract a signed byte in idea B. First
+  * the new code, then the explanation:
+  *
++ *   sv   = vec_subtractsaturating16sb(sv, *rsc); rsc++;
+  *   sv   = _mm_subs_epi8(sv, *rsc); rsc++;
++ *   xEv  = vec_max16ub(xEv, sv);
+  *   xEv  = _mm_max_epu8(xEv, sv);
+  *
+  * The last line is unchanged, i.e. the overall max is still done as
+@@ -336,7 +345,9 @@
+  * central calculation is done as described above:
+  *
+  *   #define STEP_SINGLE(sv)
++ *     sv   = vec_subtractsaturating16sb(sv, *rsc); rsc++;
+  *     sv   = _mm_subs_epi8(sv, *rsc); rsc++;
++ *     xEv  = vec_max16ub(xEv, sv);
+  *     xEv  = _mm_max_epu8(xEv, sv);
+  *
+  * The CONVERT macro handles the second phase mentioned above where
+@@ -361,7 +372,9 @@
+  *     length_check(label)
+  *     rsc = om->sbv[dsq[i]] + pos;
+  *     step()
++ *     sv = vec_shiftleftbytes1q(sv, 1);
+  *     sv = _mm_slli_si128(sv, 1);
++ *     sv = vec_bitor1q(sv, beginv);
+  *     sv = _mm_or_si128(sv, beginv);
+  *     i++;
+  *
+@@ -393,6 +406,7 @@
+  *
+  * Even though the code is only around 500 lines, it expands to a
+  * fairly large file when the macros are parsed. For example,
++ * vec_subtractsaturating16sb() is called 6,840 times even though it is only
+  * _mm_subs_epi8() is called 6,840 times even though it is only
+  * present once in this file. The object file is still not
+  * ridiculously large.
+@@ -409,8 +423,13 @@
+ 
+ #include <math.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_sse.h"
+@@ -429,10 +448,15 @@
+ #define  MAX_BANDS 6
+ #endif
+ 
+-
++#ifdef __PPC64__
++#define STEP_SINGLE(sv)                         \
++  sv   = vec_subtractsaturating16sb(sv, *rsc); rsc++;        \
++  xEv  = vec_max16ub(xEv, sv);
++#else
+ #define STEP_SINGLE(sv)                         \
+   sv   = _mm_subs_epi8(sv, *rsc); rsc++;        \
+   xEv  = _mm_max_epu8(xEv, sv);
++#endif
+ 
+ 
+ #define LENGTH_CHECK(label)                     \
+@@ -513,7 +537,15 @@
+   STEP_BANDS_17()                               \
+   STEP_SINGLE(sv17)
+ 
+-
++#ifdef __PPC64__
++#define CONVERT_STEP(step, length_check, label, sv, pos)        \
++  length_check(label)                                           \
++  rsc = om->sbv[dsq[i]] + pos;                                   \
++  step()  							\
++  sv = vec_shiftleftbytes1q(sv, 1);                            \
++  sv = vec_bitor1q(sv, beginv);                                \
++  i++;
++#else
+ #define CONVERT_STEP(step, length_check, label, sv, pos)        \
+   length_check(label)                                           \
+   rsc = om->sbv[dsq[i]] + pos;                                   \
+@@ -521,7 +553,7 @@
+   sv = _mm_slli_si128(sv, 1);                                   \
+   sv = _mm_or_si128(sv, beginv);                                \
+   i++;
+-
++#endif
+ 
+ #define CONVERT_1(step, LENGTH_CHECK, label)            \
+   CONVERT_STEP(step, LENGTH_CHECK, label, sv00, Q - 1)
+@@ -856,7 +888,11 @@ get_xE(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om)
+ #endif
+   };
+ 
++#ifdef __PPC64__
++  beginv =  vec_splat16sb(128);
++#else
+   beginv =  _mm_set1_epi8(128);
++#endif
+   xEv    =  beginv;
+ 
+   /* Use the highest number of bands but no more than MAX_BANDS */
+--- src/impl_sse/stotrace.c
++++ src/impl_sse/stotrace.c
+@@ -18,8 +18,13 @@
+ #include <stdio.h>
+ #include <math.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_random.h"
+@@ -130,8 +135,16 @@ select_m(ESL_RANDOMNESS *rng, const P7_OPROFILE *om, const P7_OMX *ox, int i, in
+   int     q     = (k-1) % Q;		/* (q,r) is position of the current DP cell M(i,k) */
+   int     r     = (k-1) / Q;
+   __m128 *tp    = om->tfv + 7*q;       	/* *tp now at start of transitions to cur cell M(i,k) */
++#ifdef __PPC64__
++  __m128  xBv   = vec_splat4sp(ox->xmx[(i-1)*p7X_NXCELLS+p7X_B]);
++#else
+   __m128  xBv   = _mm_set1_ps(ox->xmx[(i-1)*p7X_NXCELLS+p7X_B]);
++#endif
++#ifdef __PPC64__
++  __m128  zerov = vec_zero4sp();
++#else
+   __m128  zerov = _mm_setzero_ps();
++#endif
+   __m128  mpv, dpv, ipv;
+   union { __m128 v; float p[4]; } u;
+   float   path[4];
+@@ -147,10 +160,26 @@ select_m(ESL_RANDOMNESS *rng, const P7_OPROFILE *om, const P7_OMX *ox, int i, in
+     ipv = esl_sse_rightshift_ps(ox->dpf[i-1][(Q-1)*3 + p7X_I], zerov);
+   }	  
+   
++#ifdef __PPC64__
++  u.v = vec_multiply4sp(xBv, *tp); tp++;  path[0] = u.p[r];
++#else
+   u.v = _mm_mul_ps(xBv, *tp); tp++;  path[0] = u.p[r];
++#endif
++#ifdef __PPC64__
++  u.v = vec_multiply4sp(mpv, *tp); tp++;  path[1] = u.p[r];
++#else
+   u.v = _mm_mul_ps(mpv, *tp); tp++;  path[1] = u.p[r];
++#endif
++#ifdef __PPC64__
++  u.v = vec_multiply4sp(ipv, *tp); tp++;  path[2] = u.p[r];
++#else
+   u.v = _mm_mul_ps(ipv, *tp); tp++;  path[2] = u.p[r];
++#endif
++#ifdef __PPC64__
++  u.v = vec_multiply4sp(dpv, *tp);        path[3] = u.p[r];
++#else
+   u.v = _mm_mul_ps(dpv, *tp);        path[3] = u.p[r];
++#endif
+   esl_vec_FNorm(path, 4);
+   return state[esl_rnd_FChoose(rng, path, 4)];
+ }
+@@ -162,7 +191,11 @@ select_d(ESL_RANDOMNESS *rng, const P7_OPROFILE *om, const P7_OMX *ox, int i, in
+   int     Q     = p7O_NQF(ox->M);
+   int     q     = (k-1) % Q;		/* (q,r) is position of the current DP cell D(i,k) */
+   int     r     = (k-1) / Q;
++#ifdef __PPC64__
++  __m128  zerov = vec_zero4sp();
++#else
+   __m128  zerov = _mm_setzero_ps();
++#endif
+   __m128  mpv, dpv;
+   __m128  tmdv, tddv;
+   union { __m128 v; float p[4]; } u;
+@@ -181,8 +214,16 @@ select_d(ESL_RANDOMNESS *rng, const P7_OPROFILE *om, const P7_OMX *ox, int i, in
+     tddv = esl_sse_rightshift_ps(om->tfv[8*Q-1],              zerov);
+   }	  
+ 
++#ifdef __PPC64__
++  u.v = vec_multiply4sp(mpv, tmdv); path[0] = u.p[r];
++#else
+   u.v = _mm_mul_ps(mpv, tmdv); path[0] = u.p[r];
++#endif
++#ifdef __PPC64__
++  u.v = vec_multiply4sp(dpv, tddv); path[1] = u.p[r];
++#else
+   u.v = _mm_mul_ps(dpv, tddv); path[1] = u.p[r];
++#endif
+   esl_vec_FNorm(path, 2);
+   return state[esl_rnd_FChoose(rng, path, 2)];
+ }
+@@ -201,8 +242,16 @@ select_i(ESL_RANDOMNESS *rng, const P7_OPROFILE *om, const P7_OMX *ox, int i, in
+   float   path[2];
+   int     state[2] = { p7T_M, p7T_I };
+ 
++#ifdef __PPC64__
++  u.v = vec_multiply4sp(mpv, *tp); tp++;  path[0] = u.p[r];
++#else
+   u.v = _mm_mul_ps(mpv, *tp); tp++;  path[0] = u.p[r];
++#endif
++#ifdef __PPC64__
++  u.v = vec_multiply4sp(ipv, *tp);        path[1] = u.p[r];
++#else
+   u.v = _mm_mul_ps(ipv, *tp);        path[1] = u.p[r];
++#endif
+   esl_vec_FNorm(path, 2);
+   return state[esl_rnd_FChoose(rng, path, 2)];
+ }
+@@ -255,20 +304,32 @@ select_e(ESL_RANDOMNESS *rng, const P7_OPROFILE *om, const P7_OMX *ox, int i, in
+   double sum   = 0.0;
+   double roll  = esl_random(rng);
+   double norm  = 1.0 / ox->xmx[i*p7X_NXCELLS+p7X_E];
++#ifdef __PPC64__
++  __m128 xEv   = vec_splat4sp(norm); /* all M, D already scaled exactly the same */
++#else
+   __m128 xEv   = _mm_set1_ps(norm); /* all M, D already scaled exactly the same */
++#endif
+   union { __m128 v; float p[4]; } u;
+   int    q,r;
+ 
+   while (1) {
+     for (q = 0; q < Q; q++)
+       {
++#ifdef __PPC64__
++	u.v = vec_multiply4sp(ox->dpf[i][q*3 + p7X_M], xEv);
++#else
+ 	u.v = _mm_mul_ps(ox->dpf[i][q*3 + p7X_M], xEv);
++#endif
+ 	for (r = 0; r < 4; r++) {
+ 	  sum += u.p[r];
+ 	  if (roll < sum) { *ret_k = r*Q + q + 1; return p7T_M;}
+ 	}
+ 
++#ifdef __PPC64__
++	u.v = vec_multiply4sp(ox->dpf[i][q*3 + p7X_D], xEv);
++#else
+ 	u.v = _mm_mul_ps(ox->dpf[i][q*3 + p7X_D], xEv);
++#endif
+ 	for (r = 0; r < 4; r++) {
+ 	  sum += u.p[r];
+ 	  if (roll < sum) { *ret_k = r*Q + q + 1; return p7T_D;}
+--- src/impl_sse/vitfilter.c
++++ src/impl_sse/vitfilter.c
+@@ -22,8 +22,13 @@
+ #include <stdio.h>
+ #include <math.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_sse.h"
+@@ -106,13 +111,25 @@ p7_ViterbiFilter(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, f
+   ox->M   = om->M;
+ 
+   /* -infinity is -32768 */
++#ifdef __PPC64__
++  negInfv = vec_splat8sh(-32768);
++#else
+   negInfv = _mm_set1_epi16(-32768);
++#endif
++#ifdef __PPC64__
++  negInfv = vec_shiftrightbytes1q(negInfv, 14);  /* negInfv = 16-byte vector, 14 0 bytes + 2-byte value=-32768, for an OR operation. */
++#else
+   negInfv = _mm_srli_si128(negInfv, 14);  /* negInfv = 16-byte vector, 14 0 bytes + 2-byte value=-32768, for an OR operation. */
++#endif
+ 
+   /* Initialization. In unsigned arithmetic, -infinity is -32768
+    */
+   for (q = 0; q < Q; q++)
++#ifdef __PPC64__
++    MMXo(q) = IMXo(q) = DMXo(q) = vec_splat8sh(-32768);
++#else
+     MMXo(q) = IMXo(q) = DMXo(q) = _mm_set1_epi16(-32768);
++#endif
+   xN   = om->base_w;
+   xB   = xN + om->xw[p7O_N][p7O_MOVE];
+   xJ   = -32768;
+@@ -127,28 +144,74 @@ p7_ViterbiFilter(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, f
+     {
+       rsc   = om->rwv[dsq[i]];
+       tsc   = om->twv;
++#ifdef __PPC64__
++      dcv   = vec_splat8sh(-32768);      /* "-infinity" */
++#else
+       dcv   = _mm_set1_epi16(-32768);      /* "-infinity" */
++#endif
++#ifdef __PPC64__
++      xEv   = vec_splat8sh(-32768);     
++#else
+       xEv   = _mm_set1_epi16(-32768);     
++#endif
++#ifdef __PPC64__
++      Dmaxv = vec_splat8sh(-32768);     
++#else
+       Dmaxv = _mm_set1_epi16(-32768);     
++#endif
++#ifdef __PPC64__
++      xBv   = vec_splat8sh(xB);
++#else
+       xBv   = _mm_set1_epi16(xB);
++#endif
+ 
+       /* Right shifts by 1 value (2 bytes). 4,8,12,x becomes x,4,8,12. 
+        * Because ia32 is littlendian, this means a left bit shift.
+        * Zeros shift on automatically; replace it with -32768.
+        */
++#ifdef __PPC64__
++      mpv = MMXo(Q-1);  mpv = vec_shiftleftbytes1q(mpv, 2);  mpv = vec_bitor1q(mpv, negInfv);
++#else
+       mpv = MMXo(Q-1);  mpv = _mm_slli_si128(mpv, 2);  mpv = _mm_or_si128(mpv, negInfv);
++#endif
++#ifdef __PPC64__
++      dpv = DMXo(Q-1);  dpv = vec_shiftleftbytes1q(dpv, 2);  dpv = vec_bitor1q(dpv, negInfv);
++#else
+       dpv = DMXo(Q-1);  dpv = _mm_slli_si128(dpv, 2);  dpv = _mm_or_si128(dpv, negInfv);
++#endif
++#ifdef __PPC64__
++      ipv = IMXo(Q-1);  ipv = vec_shiftleftbytes1q(ipv, 2);  ipv = vec_bitor1q(ipv, negInfv);
++#else
+       ipv = IMXo(Q-1);  ipv = _mm_slli_si128(ipv, 2);  ipv = _mm_or_si128(ipv, negInfv);
++#endif
+ 
+       for (q = 0; q < Q; q++)
+       {
+         /* Calculate new MMXo(i,q); don't store it yet, hold it in sv. */
++#ifdef __PPC64__
++        sv   =                    vec_addsaturating8sh(xBv, *tsc);  tsc++;
++#else
+         sv   =                    _mm_adds_epi16(xBv, *tsc);  tsc++;
+-        sv   = _mm_max_epi16 (sv, _mm_adds_epi16(mpv, *tsc)); tsc++;
+-        sv   = _mm_max_epi16 (sv, _mm_adds_epi16(ipv, *tsc)); tsc++;
+-        sv   = _mm_max_epi16 (sv, _mm_adds_epi16(dpv, *tsc)); tsc++;
++#endif
++#ifdef __PPC64__
++        sv   = vec_max8sh (sv, vec_addsaturating8sh(mpv, *tsc)); tsc++;    
++        sv   = vec_max8sh (sv, vec_addsaturating8sh(ipv, *tsc)); tsc++; 
++        sv   = vec_max8sh (sv, vec_addsaturating8sh(dpv, *tsc)); tsc++;  
++#else
++        sv   = _mm_max_epi16 (sv, _mm_adds_epi16(mpv, *tsc)); tsc++;   
++        sv   = _mm_max_epi16 (sv, _mm_adds_epi16(ipv, *tsc)); tsc++; 
++        sv   = _mm_max_epi16 (sv, _mm_adds_epi16(dpv, *tsc)); tsc++; 
++#endif
++#ifdef __PPC64__
++        sv   = vec_addsaturating8sh(sv, *rsc);                      rsc++;
++#else
+         sv   = _mm_adds_epi16(sv, *rsc);                      rsc++;
++#endif
++#ifdef __PPC64__
++        xEv  = vec_max8sh(xEv, sv);
++#else
+         xEv  = _mm_max_epi16(xEv, sv);
++#endif
+ 
+         /* Load {MDI}(i-1,q) into mpv, dpv, ipv;
+          * {MDI}MX(q) is then the current, not the prev row
+@@ -164,12 +227,28 @@ p7_ViterbiFilter(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, f
+         /* Calculate the next D(i,q+1) partially: M->D only;
+                * delay storage, holding it in dcv
+          */
++#ifdef __PPC64__
++        dcv   = vec_addsaturating8sh(sv, *tsc);  tsc++;
++#else
+         dcv   = _mm_adds_epi16(sv, *tsc);  tsc++;
++#endif
++#ifdef __PPC64__
++        Dmaxv = vec_max8sh(dcv, Dmaxv);
++#else
+         Dmaxv = _mm_max_epi16(dcv, Dmaxv);
++#endif
+ 
+         /* Calculate and store I(i,q) */
++#ifdef __PPC64__
++        sv     =                    vec_addsaturating8sh(mpv, *tsc);  tsc++;
++#else
+         sv     =                    _mm_adds_epi16(mpv, *tsc);  tsc++;
+-        IMXo(q)= _mm_max_epi16 (sv, _mm_adds_epi16(ipv, *tsc)); tsc++;
++#endif
++#ifdef __PPC64__
++        IMXo(q)=  vec_max8sh(sv, vec_addsaturating8sh(ipv, *tsc)); tsc++;
++#else
++        IMXo(q)= _mm_max_epi16 (sv, _mm_adds_epi16(ipv, *tsc)); tsc++;    
++#endif
+       }
+ 
+       /* Now the "special" states, which start from Mk->E (->C, ->J->B) */
+@@ -200,13 +279,29 @@ p7_ViterbiFilter(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, f
+ 	{
+ 	  /* Now we're obligated to do at least one complete DD path to be sure. */
+ 	  /* dcv has carried through from end of q loop above */
++#ifdef __PPC64__
++	  dcv = vec_shiftleftbytes1q(dcv, 2); 
++#else
+ 	  dcv = _mm_slli_si128(dcv, 2); 
++#endif
++#ifdef __PPC64__
++	  dcv = vec_bitor1q(dcv, negInfv);
++#else
+ 	  dcv = _mm_or_si128(dcv, negInfv);
++#endif
+ 	  tsc = om->twv + 7*Q;	/* set tsc to start of the DD's */
+ 	  for (q = 0; q < Q; q++) 
+ 	    {
++#ifdef __PPC64__
++	      DMXo(q) = vec_max8sh(dcv, DMXo(q));	
++#else
+ 	      DMXo(q) = _mm_max_epi16(dcv, DMXo(q));	
++#endif
++#ifdef __PPC64__
++	      dcv     = vec_addsaturating8sh(DMXo(q), *tsc); tsc++;
++#else
+ 	      dcv     = _mm_adds_epi16(DMXo(q), *tsc); tsc++;
++#endif
+ 	    }
+ 
+ 	  /* We may have to do up to three more passes; the check
+@@ -214,21 +309,45 @@ p7_ViterbiFilter(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, f
+ 	   * our score. 
+ 	   */
+ 	  do {
++#ifdef __PPC64__
++	    dcv = vec_shiftleftbytes1q(dcv, 2);
++#else
+ 	    dcv = _mm_slli_si128(dcv, 2);
++#endif
++#ifdef __PPC64__
++	    dcv = vec_bitor1q(dcv, negInfv);
++#else
+ 	    dcv = _mm_or_si128(dcv, negInfv);
++#endif
+ 	    tsc = om->twv + 7*Q;	/* set tsc to start of the DD's */
+ 	    for (q = 0; q < Q; q++) 
+ 	      {
+ 		if (! esl_sse_any_gt_epi16(dcv, DMXo(q))) break;
++#ifdef __PPC64__
++		DMXo(q) = vec_max8sh(dcv, DMXo(q));	
++#else
+ 		DMXo(q) = _mm_max_epi16(dcv, DMXo(q));	
++#endif
++#ifdef __PPC64__
++		dcv     = vec_addsaturating8sh(DMXo(q), *tsc);   tsc++;
++#else
+ 		dcv     = _mm_adds_epi16(DMXo(q), *tsc);   tsc++;
++#endif
+ 	      }	    
+ 	  } while (q == Q);
+ 	}
+       else  /* not calculating DD? then just store the last M->D vector calc'ed.*/
+ 	{
++#ifdef __PPC64__
++	  dcv = vec_shiftleftbytes1q(dcv, 2);
++#else
+ 	  dcv = _mm_slli_si128(dcv, 2);
++#endif
++#ifdef __PPC64__
++	  DMXo(0) = vec_bitor1q(dcv, negInfv);
++#else
+ 	  DMXo(0) = _mm_or_si128(dcv, negInfv);
++#endif
+ 	}
+ 	  
+ #if p7_DEBUGGING
+@@ -342,13 +461,25 @@ p7_ViterbiFilter_longtarget(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+   ox->M   = om->M;
+ 
+   /* -infinity is -32768 */
++#ifdef __PPC64__
++  negInfv = vec_splat8sh(-32768);
++#else
+   negInfv = _mm_set1_epi16(-32768);
++#endif
++#ifdef __PPC64__
++  negInfv = vec_shiftrightbytes1q(negInfv, 14);  /* negInfv = 16-byte vector, 14 0 bytes + 2-byte value=-32768, for an OR operation. */
++#else
+   negInfv = _mm_srli_si128(negInfv, 14);  /* negInfv = 16-byte vector, 14 0 bytes + 2-byte value=-32768, for an OR operation. */
++#endif
+ 
+   /* Initialization. In unsigned arithmetic, -infinity is -32768
+    */
+   for (q = 0; q < Q; q++)
++#ifdef __PPC64__
++    MMXo(q) = IMXo(q) = DMXo(q) = vec_splat8sh(-32768);
++#else
+     MMXo(q) = IMXo(q) = DMXo(q) = _mm_set1_epi16(-32768);
++#endif
+   xN   = om->base_w;
+   xB   = xN + om->xw[p7O_N][p7O_MOVE];
+   xJ   = -32768;
+@@ -364,28 +495,74 @@ p7_ViterbiFilter_longtarget(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+   {
+       rsc   = om->rwv[dsq[i]];
+       tsc   = om->twv;
++#ifdef __PPC64__
++      dcv   = vec_splat8sh(-32768);      /* "-infinity" */
++#else
+       dcv   = _mm_set1_epi16(-32768);      /* "-infinity" */
++#endif
++#ifdef __PPC64__
++      xEv   = vec_splat8sh(-32768);
++#else
+       xEv   = _mm_set1_epi16(-32768);
++#endif
++#ifdef __PPC64__
++      Dmaxv = vec_splat8sh(-32768);
++#else
+       Dmaxv = _mm_set1_epi16(-32768);
++#endif
++#ifdef __PPC64__
++      xBv   = vec_splat8sh(xB);
++#else
+       xBv   = _mm_set1_epi16(xB);
++#endif
+ 
+       /* Right shifts by 1 value (2 bytes). 4,8,12,x becomes x,4,8,12.
+        * Because ia32 is littlendian, this means a left bit shift.
+        * Zeros shift on automatically; replace it with -32768.
+        */
++#ifdef __PPC64__
++      mpv = MMXo(Q-1);  mpv = vec_shiftleftbytes1q(mpv, 2);  mpv = vec_bitor1q(mpv, negInfv);
++#else
+       mpv = MMXo(Q-1);  mpv = _mm_slli_si128(mpv, 2);  mpv = _mm_or_si128(mpv, negInfv);
++#endif
++#ifdef __PPC64__
++      dpv = DMXo(Q-1);  dpv = vec_shiftleftbytes1q(dpv, 2);  dpv = vec_bitor1q(dpv, negInfv);
++#else
+       dpv = DMXo(Q-1);  dpv = _mm_slli_si128(dpv, 2);  dpv = _mm_or_si128(dpv, negInfv);
++#endif
++#ifdef __PPC64__
++      ipv = IMXo(Q-1);  ipv = vec_shiftleftbytes1q(ipv, 2);  ipv = vec_bitor1q(ipv, negInfv);
++#else
+       ipv = IMXo(Q-1);  ipv = _mm_slli_si128(ipv, 2);  ipv = _mm_or_si128(ipv, negInfv);
++#endif
+ 
+       for (q = 0; q < Q; q++)
+       {
+         /* Calculate new MMXo(i,q); don't store it yet, hold it in sv. */
++#ifdef __PPC64__
++        sv   =                    vec_addsaturating8sh(xBv, *tsc);  tsc++;
++#else
+         sv   =                    _mm_adds_epi16(xBv, *tsc);  tsc++;
++#endif
++#ifdef __PPC64__
++        sv   = vec_max8sh (sv, vec_addsaturating8sh(mpv, *tsc)); tsc++;
++        sv   = vec_max8sh (sv, vec_addsaturating8sh(ipv, *tsc)); tsc++;
++        sv   = vec_max8sh (sv, vec_addsaturating8sh(dpv, *tsc)); tsc++;
++#else
+         sv   = _mm_max_epi16 (sv, _mm_adds_epi16(mpv, *tsc)); tsc++;
+         sv   = _mm_max_epi16 (sv, _mm_adds_epi16(ipv, *tsc)); tsc++;
+         sv   = _mm_max_epi16 (sv, _mm_adds_epi16(dpv, *tsc)); tsc++;
++#endif
++#ifdef __PPC64__
++        sv   = vec_addsaturating8sh(sv, *rsc);                      rsc++;
++#else
+         sv   = _mm_adds_epi16(sv, *rsc);                      rsc++;
++#endif
++#ifdef __PPC64__
++        xEv  = vec_max8sh(xEv, sv);
++#else
+         xEv  = _mm_max_epi16(xEv, sv);
++#endif
+ 
+         /* Load {MDI}(i-1,q) into mpv, dpv, ipv;
+          * {MDI}MX(q) is then the current, not the prev row
+@@ -401,12 +578,28 @@ p7_ViterbiFilter_longtarget(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+         /* Calculate the next D(i,q+1) partially: M->D only;
+                * delay storage, holding it in dcv
+          */
++#ifdef __PPC64__
++        dcv   = vec_addsaturating8sh(sv, *tsc);  tsc++;
++#else
+         dcv   = _mm_adds_epi16(sv, *tsc);  tsc++;
++#endif
++#ifdef __PPC64__
++        Dmaxv = vec_max8sh(dcv, Dmaxv);
++#else
+         Dmaxv = _mm_max_epi16(dcv, Dmaxv);
++#endif
+ 
+         /* Calculate and store I(i,q) */
++#ifdef __PPC64__
++        sv     =                    vec_addsaturating8sh(mpv, *tsc);  tsc++;
++#else
+         sv     =                    _mm_adds_epi16(mpv, *tsc);  tsc++;
+-        IMXo(q)= _mm_max_epi16 (sv, _mm_adds_epi16(ipv, *tsc)); tsc++;
++#endif
++#ifdef __PPC64__
++        IMXo(q)=  vec_max8sh(sv, vec_addsaturating8sh(ipv, *tsc)); tsc++;
++#else
++        IMXo(q)= _mm_max_epi16 (sv, _mm_adds_epi16(ipv, *tsc)); tsc++; 
++#endif
+       }
+ 
+       /* Now the "special" states, which start from Mk->E (->C, ->J->B) */
+@@ -424,7 +617,11 @@ p7_ViterbiFilter_longtarget(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+               p7_hmmwindow_new(windowlist, 0, i, 0, (q+Q*z+1), 1, 0.0, p7_NOCOMPLEMENT );
+             }
+           }
++#ifdef __PPC64__
++          MMXo(q) = IMXo(q) = DMXo(q) = vec_splat8sh(-32768); //reset score to start search for next vit window.
++#else
+           MMXo(q) = IMXo(q) = DMXo(q) = _mm_set1_epi16(-32768); //reset score to start search for next vit window.
++#endif
+         }
+ 
+       } else {
+@@ -455,13 +652,29 @@ p7_ViterbiFilter_longtarget(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+         {
+           /* Now we're obligated to do at least one complete DD path to be sure. */
+           /* dcv has carried through from end of q loop above */
++#ifdef __PPC64__
++          dcv = vec_shiftleftbytes1q(dcv, 2);
++#else
+           dcv = _mm_slli_si128(dcv, 2);
++#endif
++#ifdef __PPC64__
++          dcv = vec_bitor1q(dcv, negInfv);
++#else
+           dcv = _mm_or_si128(dcv, negInfv);
++#endif
+           tsc = om->twv + 7*Q;  /* set tsc to start of the DD's */
+           for (q = 0; q < Q; q++)
+           {
++#ifdef __PPC64__
++            DMXo(q) = vec_max8sh(dcv, DMXo(q));
++#else
+             DMXo(q) = _mm_max_epi16(dcv, DMXo(q));
++#endif
++#ifdef __PPC64__
++            dcv     = vec_addsaturating8sh(DMXo(q), *tsc); tsc++;
++#else
+             dcv     = _mm_adds_epi16(DMXo(q), *tsc); tsc++;
++#endif
+           }
+ 
+           /* We may have to do up to three more passes; the check
+@@ -469,21 +682,45 @@ p7_ViterbiFilter_longtarget(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7
+            * our score.
+            */
+           do {
++#ifdef __PPC64__
++            dcv = vec_shiftleftbytes1q(dcv, 2);
++#else
+             dcv = _mm_slli_si128(dcv, 2);
++#endif
++#ifdef __PPC64__
++            dcv = vec_bitor1q(dcv, negInfv);
++#else
+             dcv = _mm_or_si128(dcv, negInfv);
++#endif
+             tsc = om->twv + 7*Q;  /* set tsc to start of the DD's */
+             for (q = 0; q < Q; q++)
+             {
+               if (! esl_sse_any_gt_epi16(dcv, DMXo(q))) break;
++#ifdef __PPC64__
++              DMXo(q) = vec_max8sh(dcv, DMXo(q));
++#else
+               DMXo(q) = _mm_max_epi16(dcv, DMXo(q));
++#endif
++#ifdef __PPC64__
++              dcv     = vec_addsaturating8sh(DMXo(q), *tsc);   tsc++;
++#else
+               dcv     = _mm_adds_epi16(DMXo(q), *tsc);   tsc++;
++#endif
+             }
+           } while (q == Q);
+         }
+         else  /* not calculating DD? then just store the last M->D vector calc'ed.*/
+         {
++#ifdef __PPC64__
++          dcv = vec_shiftleftbytes1q(dcv, 2);
++#else
+           dcv = _mm_slli_si128(dcv, 2);
++#endif
++#ifdef __PPC64__
++          DMXo(0) = vec_bitor1q(dcv, negInfv);
++#else
+           DMXo(0) = _mm_or_si128(dcv, negInfv);
++#endif
+         }
+       }
+ #if p7_DEBUGGING
+--- src/impl_sse/vitscore.c
++++ src/impl_sse/vitscore.c
+@@ -27,8 +27,13 @@
+ #include <stdio.h>
+ #include <math.h>
+ 
++#ifdef __PPC64__
++#include <vec128sp.h>
++#include <vec128int.h>
++#else
+ #include <xmmintrin.h>		/* SSE  */
+ #include <emmintrin.h>		/* SSE2 */
++#endif
+ 
+ #include "easel.h"
+ #include "esl_sse.h"
+@@ -91,7 +96,11 @@ p7_ViterbiScore(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, fl
+   ox->M  = om->M;
+ 
+   /* Initialization. */
++#ifdef __PPC64__
++  infv = vec_splat4sp(-eslINFINITY);
++#else
+   infv = _mm_set1_ps(-eslINFINITY);
++#endif
+   for (q = 0; q < Q; q++)
+     MMXo(q) = IMXo(q) = DMXo(q) = infv;
+   xN   = 0.;
+@@ -111,7 +120,11 @@ p7_ViterbiScore(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, fl
+       dcv   = infv;
+       xEv   = infv;
+       Dmaxv = infv;
++#ifdef __PPC64__
++      xBv   = vec_splat4sp(xB);
++#else
+       xBv   = _mm_set1_ps(xB);
++#endif
+ 
+       mpv = esl_sse_rightshift_ps(MMXo(Q-1), infv);  /* Right shifts by 4 bytes. 4,8,12,x becomes x,4,8,12. */
+       dpv = esl_sse_rightshift_ps(DMXo(Q-1), infv);
+@@ -119,12 +132,36 @@ p7_ViterbiScore(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, fl
+       for (q = 0; q < Q; q++)
+ 	{
+ 	  /* Calculate new MMXo(i,q); don't store it yet, hold it in sv. */
++#ifdef __PPC64__
++	  sv   =                vec_add4sp(xBv, *tsc);  tsc++;
++#else
+ 	  sv   =                _mm_add_ps(xBv, *tsc);  tsc++;
++#endif
++#ifdef __PPC64__
++	  sv   = vec_max4sp(sv, vec_add4sp(mpv, *tsc)); tsc++;
++#else
+ 	  sv   = _mm_max_ps(sv, _mm_add_ps(mpv, *tsc)); tsc++;
++#endif
++#ifdef __PPC64__
++	  sv   = vec_max4sp(sv, vec_add4sp(ipv, *tsc)); tsc++;
++#else
+ 	  sv   = _mm_max_ps(sv, _mm_add_ps(ipv, *tsc)); tsc++;
++#endif
++#ifdef __PPC64__
++	  sv   = vec_max4sp(sv, vec_add4sp(dpv, *tsc)); tsc++;
++#else
+ 	  sv   = _mm_max_ps(sv, _mm_add_ps(dpv, *tsc)); tsc++;
++#endif
++#ifdef __PPC64__
++	  sv   = vec_add4sp(sv, *rsc);                  rsc++;
++#else
+ 	  sv   = _mm_add_ps(sv, *rsc);                  rsc++;
++#endif
++#ifdef __PPC64__
++	  xEv  = vec_max4sp(xEv, sv);
++#else
+ 	  xEv  = _mm_max_ps(xEv, sv);
++#endif
+ 	  
+ 	  /* Load {MDI}(i-1,q) into mpv, dpv, ipv;
+ 	   * {MDI}MX(q) is then the current, not the prev row
+@@ -140,13 +177,33 @@ p7_ViterbiScore(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, fl
+ 	  /* Calculate the next D(i,q+1) partially: M->D only;
+            * delay storage, holding it in dcv
+ 	   */
++#ifdef __PPC64__
++	  dcv   = vec_add4sp(sv, *tsc); tsc++;
++#else
+ 	  dcv   = _mm_add_ps(sv, *tsc); tsc++;
++#endif
++#ifdef __PPC64__
++	  Dmaxv = vec_max4sp(dcv, Dmaxv);
++#else
+ 	  Dmaxv = _mm_max_ps(dcv, Dmaxv);
++#endif
+ 
+ 	  /* Calculate and store I(i,q) */
++#ifdef __PPC64__
++	  sv     =                vec_add4sp(mpv, *tsc);  tsc++;
++#else
+ 	  sv     =                _mm_add_ps(mpv, *tsc);  tsc++;
++#endif
++#ifdef __PPC64__
++	  sv     = vec_max4sp(sv, vec_add4sp(ipv, *tsc)); tsc++;
++#else
+ 	  sv     = _mm_max_ps(sv, _mm_add_ps(ipv, *tsc)); tsc++;
++#endif
++#ifdef __PPC64__
++	  IMXo(q) = vec_add4sp(sv, *rsc);                  rsc++;
++#else
+ 	  IMXo(q) = _mm_add_ps(sv, *rsc);                  rsc++;
++#endif
+ 	}	  
+ 
+       /* Now the "special" states, which start from Mk->E (->C, ->J->B) */
+@@ -180,8 +237,16 @@ p7_ViterbiScore(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, fl
+ 	  tsc = om->tf + 7*Q;	/* set tsc to start of the DD's */
+ 	  for (q = 0; q < Q; q++) 
+ 	    {
++#ifdef __PPC64__
++	      DMXo(q) = vec_max4sp(dcv, DMXo(q));	
++#else
+ 	      DMXo(q) = _mm_max_ps(dcv, DMXo(q));	
++#endif
++#ifdef __PPC64__
++	      dcv     = vec_add4sp(DMXo(q), *tsc); tsc++;
++#else
+ 	      dcv     = _mm_add_ps(DMXo(q), *tsc); tsc++;
++#endif
+ 	    }
+ 
+ 	  /* We may have to do up to three more passes; the check
+@@ -194,8 +259,16 @@ p7_ViterbiScore(const ESL_DSQ *dsq, int L, const P7_OPROFILE *om, P7_OMX *ox, fl
+ 	    for (q = 0; q < Q; q++) 
+ 	      {
+ 		if (! esl_sse_any_gt_ps(dcv, DMXo(q))) break;
++#ifdef __PPC64__
++		DMXo(q) = vec_max4sp(dcv, DMXo(q));	
++#else
+ 		DMXo(q) = _mm_max_ps(dcv, DMXo(q));	
++#endif
++#ifdef __PPC64__
++		dcv     = vec_add4sp(DMXo(q), *tsc);   tsc++;
++#else
+ 		dcv     = _mm_add_ps(DMXo(q), *tsc);   tsc++;
++#endif
+ 	      }	    
+ 	  } while (q == Q);
+ 	}
