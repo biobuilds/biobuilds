@@ -19,7 +19,7 @@ source:
     - velvet-makefile.patch
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS

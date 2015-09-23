@@ -20,14 +20,15 @@
  
  ifdef BIGASSEMBLY
  override DEF := $(DEF) -D BIGASSEMBLY
-@@ -40,15 +36,17 @@
+@@ -40,15 +36,18 @@
  OBJ = obj/tightString.o obj/run.o obj/splay.o obj/splayTable.o obj/graph.o obj/run2.o obj/fibHeap.o obj/fib.o obj/concatenatedGraph.o obj/passageMarker.o obj/graphStats.o obj/correctedGraph.o obj/dfib.o obj/dfibHeap.o obj/recycleBin.o obj/readSet.o obj/binarySequences.o obj/shortReadPairs.o obj/locallyCorrectedGraph.o obj/graphReConstruction.o obj/roadMap.o obj/preGraph.o obj/preGraphConstruction.o obj/concatenatedPreGraph.o obj/readCoherentGraph.o obj/utility.o obj/kmer.o obj/scaffold.o obj/kmerOccurenceTable.o obj/allocArray.o obj/autoOpen.o
  OBJDBG = $(subst obj,obj/dbg,$(OBJ))
  
 -default : cleanobj zlib obj velveth velvetg doc
 +bin: velveth velvetg
++lib: libvelvet.a
 +
-+default : cleanobj zlib obj $(bin) doc
++default : cleanobj zlib obj $(bin) $(lib) doc
  
  clean : clean-zlib
 -	-rm obj/*.o obj/dbg/*.o ./velvet* 
@@ -41,4 +42,13 @@
  
  ifdef BUNDLEDZLIB
  Z_LIB_DIR=third-party/zlib-1.2.3
+@@ -74,6 +73,9 @@
+ velvetg : obj
+ 	$(CC) $(CFLAGS) $(OPT) $(LDFLAGS) -o velvetg obj/tightString.o obj/graph.o obj/run2.o obj/fibHeap.o obj/fib.o obj/concatenatedGraph.o obj/passageMarker.o obj/graphStats.o obj/correctedGraph.o obj/dfib.o obj/dfibHeap.o obj/recycleBin.o obj/readSet.o obj/binarySequences.o obj/shortReadPairs.o obj/scaffold.o obj/locallyCorrectedGraph.o obj/graphReConstruction.o obj/roadMap.o obj/preGraph.o obj/preGraphConstruction.o obj/concatenatedPreGraph.o obj/readCoherentGraph.o obj/utility.o obj/kmer.o obj/kmerOccurenceTable.o obj/allocArray.o obj/autoOpen.o $(Z_LIB_FILES) $(LIBS)
  
++libvelvet.a: obj
++	$(AR) cr $@ $(OBJ)
++
+ debug : override DEF := $(DEF) -D DEBUG 
+ debug : cleanobj obj/dbg
+ 	$(CC) $(CFLAGS) $(LDFLAGS) $(DEBUG) -o velveth obj/dbg/tightString.o obj/dbg/run.o obj/dbg/recycleBin.o obj/dbg/splay.o obj/dbg/splayTable.o obj/dbg/readSet.o obj/dbg/binarySequences.o obj/dbg/utility.o obj/dbg/kmer.o obj/dbg/kmerOccurenceTable.o obj/dbg/allocArray.o obj/dbg/autoOpen.o $(Z_LIB_FILES) $(LIBS)
