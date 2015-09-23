@@ -1,0 +1,15 @@
+# Standard stuff to ignore (editor backups, state files)
+.DS_Store
+.*.swp
+*~
+
+# Ignore source tarballs
+*.tar
+*.tar.gz
+*.tgz
+*.tar.bz2
+*.tbz2
+*.zip
+
+# Ignore files and directories created by build process
+*.log
