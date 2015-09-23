@@ -1,0 +1,27 @@
+--- Makefile.orig	2015-09-23 13:13:47.000000000 -0500
++++ Makefile	2015-09-23 14:00:12.000000000 -0500
+@@ -1,5 +1,5 @@
+ CC = gcc
+-CFLAGS = -Wall
++CFLAGS := -Wall $(CFLAGS)
+ DEBUG = -g
+ LIBS = -lm
+ OPT = -O3
+@@ -90,7 +90,7 @@
+ 	cd doc; make
+ 
+ oases : obj $(OBJ) 
+-	$(CC) $(CFLAGS) $(OPT) $(LDFLAGS) -o oases $(OBJ) $(VELVET_FILES) $(Z_LIB_FILES) $(LIBS)
++	$(CC) $(CFLAGS) $(OPT) $(LDFLAGS) -o oases $(OBJ) -lvelvet $(Z_LIB_FILES) $(LIBS)
+ 
+ 
+ debug : cleanobj velvetdbg obj/dbg $(OBJDBG)
+@@ -111,7 +111,7 @@
+ 	mkdir -p obj/dbg
+ 
+ obj/%.o: src/%.c
+-	$(CC) $(CFLAGS) $(OPT) $(DEF) -c $? -o $@ -I$(VELVET_SRC_DIR)
++	$(CC) $(CFLAGS) $(OPT) $(DEF) -c $? -o $@
+ 
+ obj/dbg/%.o: src/%.c
+ 	$(CC) $(CFLAGS) $(DEBUG) $(DEF) -c $? -o $@ -I$(VELVET_SRC_DIR)

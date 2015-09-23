@@ -1,0 +1,40 @@
+package:
+  name: oases
+  version: "0.2.8"
+
+# Use conda's gcc/libgcc on OSX to enable use of OpenMP
+requirements:
+  build:
+    - zlib
+    - velvet >=1.2.8
+    - gcc >=4.8.5     # [osx]
+  run:
+    - velvet >=1.2.8
+    - libgcc >=4.8.5  # [osx]
+
+source:
+  fn: oases_0.2.08.tgz
+  url: http://download.lab7.io/sources/oases_0.2.08.tgz
+  md5: 642f11b92f2f55cd689b7c9eacb7906a
+  patches:
+    - oases-makefile.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - "cp -f \"${SRC_DIR}/data/test_reads.fa\" ."
+    - "velveth . 31 test_reads.fa"
+    - "velvetg . -read_trkg yes"
+    - "oases ."
+
+about:
+  home: http://www.ebi.ac.uk/~zerbino/oases/
+  license: GPLv3
+  license_file: LICENSE.txt
+  summary: "De novo transcriptome assembler for very short reads"
