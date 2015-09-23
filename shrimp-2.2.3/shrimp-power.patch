@@ -1,0 +1,310 @@
+--- common/sw-vector.c
++++ common/sw-vector.c
+@@ -11,10 +11,7 @@
+ #include <unistd.h>
+ #include <zlib.h>
+ 
+-#include <mmintrin.h>	/* MMX */
+-#include <xmmintrin.h>	/* SSE */
+-#include <emmintrin.h>	/* SSE2 */
+-//#include <pmmintrin.h>/* SSE3 */
++#include <vec128int.h>
+ 
+ #include <sys/time.h>
+ 
+@@ -82,21 +79,21 @@ vect_sw_diff_gap(int8_t *seqA, int lena, int8_t *seqB, int lenb,
+ 	(void)initbp;
+ 
+ #define SET16(a, e7, e6, e5, e4, e3, e2, e1, e0)      \
+-	_mm_set_epi16((int16_t)a[e7], (int16_t)a[e6], \
++	vec_set8sh((int16_t)a[e7], (int16_t)a[e6], \
+ 		      (int16_t)a[e5], (int16_t)a[e4], \
+ 		      (int16_t)a[e3], (int16_t)a[e2], \
+ 		      (int16_t)a[e1], (int16_t)a[e0])
+ 
+-	v_score		 = _mm_setzero_si128();
+-	v_zero		 = _mm_setzero_si128();
++	v_score		 = vec_zero1q();
++	v_zero		 = vec_zero1q();
+ 	v_match		 = SET16((&match), 0, 0, 0, 0, 0, 0, 0, 0);
+         v_mismatch	 = SET16((&mismatch), 0, 0, 0, 0, 0, 0, 0, 0);
+ 	v_a_gap_ext	 = SET16((&a_gap_ext), 0, 0, 0, 0, 0, 0, 0, 0);
+ 	v_a_gap_open_ext = SET16((&a_gap_open), 0, 0, 0, 0, 0, 0, 0, 0);
+-	v_a_gap_open_ext = _mm_add_epi16(v_a_gap_open_ext, v_a_gap_ext);
++	v_a_gap_open_ext = vec_add8sh(v_a_gap_open_ext, v_a_gap_ext);
+ 	v_b_gap_ext	 = SET16((&b_gap_ext), 0, 0, 0, 0, 0, 0, 0, 0);
+ 	v_b_gap_open_ext = SET16((&b_gap_open), 0, 0, 0, 0, 0, 0, 0, 0);
+-	v_b_gap_open_ext = _mm_add_epi16(v_b_gap_open_ext, v_b_gap_ext);
++	v_b_gap_open_ext = vec_add8sh(v_b_gap_open_ext, v_b_gap_ext);
+ 
+         for (i = 0; i < lena + 14; i++) {
+                 nogap[i] = 0;
+@@ -152,64 +149,64 @@ vect_sw_diff_gap(int8_t *seqA, int lena, int8_t *seqB, int lenb,
+ 		v_seq_b = SET16(seqB, k+7, k+6, k+5, k+4, k+3, k+2, k+1, k+0);
+ 
+ 		v_a_gap = v_a_gap_ext;
+-		v_a_gap = _mm_sub_epi16(v_a_gap, v_a_gap_open_ext);
++		v_a_gap = vec_subtract8sh(v_a_gap, v_a_gap_open_ext);
+ 
+-		v_last_nogap = _mm_setzero_si128();
+-		v_prev_nogap = _mm_setzero_si128();
++		v_last_nogap = vec_zero1q();
++		v_prev_nogap = vec_zero1q();
+ 
+ 		for (j = 0; j < (lena + 7); j++) {
+-			v_b_gap = _mm_slli_si128(v_b_gap, 2);
+-			v_b_gap = _mm_insert_epi16(v_b_gap, b_gap[j+7], 0);
++			v_b_gap = vec_shiftleftbytes1q(v_b_gap, 2);
++			v_b_gap = vec_insert8sh(v_b_gap, b_gap[j+7], 0);
+ 
+-			v_nogap = _mm_slli_si128(v_nogap, 2);
+-			v_nogap = _mm_insert_epi16(v_nogap, nogap[j+7], 0);
++			v_nogap = vec_shiftleftbytes1q(v_nogap, 2);
++			v_nogap = vec_insert8sh(v_nogap, nogap[j+7], 0);
+ 
+-			v_seq_a = _mm_slli_si128(v_seq_a, 2);
+-			v_seq_a = _mm_insert_epi16(v_seq_a, seqA[j+7], 0);
++			v_seq_a = vec_shiftleftbytes1q(v_seq_a, 2);
++			v_seq_a = vec_insert8sh(v_seq_a, seqA[j+7], 0);
+ 
+-			v_tmp = _mm_sub_epi16(v_last_nogap, v_a_gap_open_ext);
+-			v_a_gap = _mm_sub_epi16(v_a_gap, v_a_gap_ext);
+-			v_a_gap = _mm_max_epi16(v_a_gap, v_tmp);
++			v_tmp = vec_subtract8sh(v_last_nogap, v_a_gap_open_ext);
++			v_a_gap = vec_subtract8sh(v_a_gap, v_a_gap_ext);
++			v_a_gap = vec_max8sh(v_a_gap, v_tmp);
+ 
+-			v_tmp = _mm_sub_epi16(v_nogap, v_b_gap_open_ext);
+-			v_b_gap = _mm_sub_epi16(v_b_gap, v_b_gap_ext);
+-			v_b_gap = _mm_max_epi16(v_b_gap, v_tmp);
++			v_tmp = vec_subtract8sh(v_nogap, v_b_gap_open_ext);
++			v_b_gap = vec_subtract8sh(v_b_gap, v_b_gap_ext);
++			v_b_gap = vec_max8sh(v_b_gap, v_tmp);
+ 
+ 			/* compute the score (v_last_nogap is a tmp variable) */
+-			v_last_nogap = _mm_cmpeq_epi16(v_seq_a, v_seq_b);
+-			v_tmp = _mm_and_si128(v_last_nogap, v_match);
+-			v_last_nogap = _mm_cmpeq_epi16(v_last_nogap, v_zero);
+-			v_last_nogap = _mm_and_si128(v_last_nogap, v_mismatch);
+-			v_tmp = _mm_or_si128(v_tmp, v_last_nogap);
+-
+-			v_last_nogap = _mm_add_epi16(v_prev_nogap, v_tmp);
+-			v_last_nogap = _mm_max_epi16(v_last_nogap, v_zero);
+-			v_last_nogap = _mm_max_epi16(v_last_nogap, v_a_gap);
+-			v_last_nogap = _mm_max_epi16(v_last_nogap, v_b_gap);
++			v_last_nogap = vec_compareeq8sh(v_seq_a, v_seq_b);
++			v_tmp = vec_bitand1q(v_last_nogap, v_match);
++			v_last_nogap = vec_compareeq8sh(v_last_nogap, v_zero);
++			v_last_nogap = vec_bitand1q(v_last_nogap, v_mismatch);
++			v_tmp = vec_bitor1q(v_tmp, v_last_nogap);
++
++			v_last_nogap = vec_add8sh(v_prev_nogap, v_tmp);
++			v_last_nogap = vec_max8sh(v_last_nogap, v_zero);
++			v_last_nogap = vec_max8sh(v_last_nogap, v_a_gap);
++			v_last_nogap = vec_max8sh(v_last_nogap, v_b_gap);
+ 			
+ 			v_prev_nogap = v_nogap;
+ 			v_nogap = v_last_nogap;
+ 
+-			b_gap[j] = (int16_t)_mm_extract_epi16(v_b_gap, 7);
+-			nogap[j] = (int16_t)_mm_extract_epi16(v_nogap, 7);
++			b_gap[j] = (int16_t)vec_extract8sh(v_b_gap, 7);
++			nogap[j] = (int16_t)vec_extract8sh(v_nogap, 7);
+ 
+-			v_score = _mm_max_epi16(v_score, v_last_nogap);
++			v_score = vec_max8sh(v_score, v_last_nogap);
+ 		}
+ 	}
+ 
+ 	/*
+ 	 * Ugh. Old gcc can't loop and using _mm_store to an int16_t array
+ 	 * breaks strict-aliasing rules.
+ 	 */
+ 	assert(score == 0);
+-	score = MAX(score, _mm_extract_epi16(v_score, 0));
+-	score = MAX(score, _mm_extract_epi16(v_score, 1));
+-	score = MAX(score, _mm_extract_epi16(v_score, 2));
+-	score = MAX(score, _mm_extract_epi16(v_score, 3));
+-	score = MAX(score, _mm_extract_epi16(v_score, 4));
+-	score = MAX(score, _mm_extract_epi16(v_score, 5));
+-	score = MAX(score, _mm_extract_epi16(v_score, 6));
+-	score = MAX(score, _mm_extract_epi16(v_score, 7));
++	score = MAX(score, vec_extract8sh(v_score, 0));
++	score = MAX(score, vec_extract8sh(v_score, 1));
++	score = MAX(score, vec_extract8sh(v_score, 2));
++	score = MAX(score, vec_extract8sh(v_score, 3));
++	score = MAX(score, vec_extract8sh(v_score, 4));
++	score = MAX(score, vec_extract8sh(v_score, 5));
++	score = MAX(score, vec_extract8sh(v_score, 6));
++	score = MAX(score, vec_extract8sh(v_score, 7));
+ 
+ 	return (score);
+ }
+@@ -242,21 +239,21 @@ vect_sw_same_gap(int8_t *seqA, int lena, int8_t *seqB, int lenb,
+ 	(void)initbp;
+ 
+ #define SET16(a, e7, e6, e5, e4, e3, e2, e1, e0)      \
+-	_mm_set_epi16((int16_t)a[e7], (int16_t)a[e6], \
++	vec_set8sh((int16_t)a[e7], (int16_t)a[e6], \
+ 		      (int16_t)a[e5], (int16_t)a[e4], \
+ 		      (int16_t)a[e3], (int16_t)a[e2], \
+ 		      (int16_t)a[e1], (int16_t)a[e0])
+ 
+-	v_score		 = _mm_setzero_si128();
+-	v_zero		 = _mm_setzero_si128();
++	v_score		 = vec_zero1q();
++	v_zero		 = vec_zero1q();
+ 	v_match		 = SET16((&match), 0, 0, 0, 0, 0, 0, 0, 0);
+         v_mismatch	 = SET16((&mismatch), 0, 0, 0, 0, 0, 0, 0, 0);
+ 	v_a_gap_ext	 = SET16((&a_gap_ext), 0, 0, 0, 0, 0, 0, 0, 0);
+ 	v_a_gap_open_ext = SET16((&a_gap_open), 0, 0, 0, 0, 0, 0, 0, 0);
+-	v_a_gap_open_ext = _mm_add_epi16(v_a_gap_open_ext, v_a_gap_ext);
++	v_a_gap_open_ext = vec_add8sh(v_a_gap_open_ext, v_a_gap_ext);
+ 	v_b_gap_ext	 = SET16((&b_gap_ext), 0, 0, 0, 0, 0, 0, 0, 0);
+ 	v_b_gap_open_ext = SET16((&b_gap_open), 0, 0, 0, 0, 0, 0, 0, 0);
+-	v_b_gap_open_ext = _mm_add_epi16(v_b_gap_open_ext, v_b_gap_ext);
++	v_b_gap_open_ext = vec_add8sh(v_b_gap_open_ext, v_b_gap_ext);
+ 
+         for (i = 0; i < lena + 14; i++) {
+                 nogap[i] = 0;
+@@ -312,64 +309,64 @@ vect_sw_same_gap(int8_t *seqA, int lena, int8_t *seqB, int lenb,
+ 		v_seq_b = SET16(seqB, k+7, k+6, k+5, k+4, k+3, k+2, k+1, k+0);
+ 
+ 		v_a_gap = v_a_gap_ext;
+-		v_a_gap = _mm_sub_epi16(v_a_gap, v_a_gap_open_ext);
++		v_a_gap = vec_subtract8sh(v_a_gap, v_a_gap_open_ext);
+ 
+-		v_last_nogap = _mm_setzero_si128();
+-		v_prev_nogap = _mm_setzero_si128();
++		v_last_nogap = vec_zero1q();
++		v_prev_nogap = vec_zero1q();
+ 
+ 		for (j = 0; j < (lena + 7); j++) {
+-			v_b_gap = _mm_slli_si128(v_b_gap, 2);
+-			v_b_gap = _mm_insert_epi16(v_b_gap, b_gap[j+7], 0);
++			v_b_gap = vec_shiftleftbytes1q(v_b_gap, 2);
++			v_b_gap = vec_insert8sh(v_b_gap, b_gap[j+7], 0);
+ 
+-			v_nogap = _mm_slli_si128(v_nogap, 2);
+-			v_nogap = _mm_insert_epi16(v_nogap, nogap[j+7], 0);
++			v_nogap = vec_shiftleftbytes1q(v_nogap, 2);
++			v_nogap = vec_insert8sh(v_nogap, nogap[j+7], 0);
+ 
+-			v_seq_a = _mm_slli_si128(v_seq_a, 2);
+-			v_seq_a = _mm_insert_epi16(v_seq_a, seqA[j+7], 0);
++			v_seq_a = vec_shiftleftbytes1q(v_seq_a, 2);
++			v_seq_a = vec_insert8sh(v_seq_a, seqA[j+7], 0);
+ 
+-			v_tmp = _mm_sub_epi16(v_last_nogap, v_a_gap_open_ext);
+-			v_a_gap = _mm_sub_epi16(v_a_gap, v_a_gap_ext);
+-			v_a_gap = _mm_max_epi16(v_a_gap, v_tmp);
++			v_tmp = vec_subtract8sh(v_last_nogap, v_a_gap_open_ext);
++			v_a_gap = vec_subtract8sh(v_a_gap, v_a_gap_ext);
++			v_a_gap = vec_max8sh(v_a_gap, v_tmp);
+ 
+-			v_tmp = _mm_sub_epi16(v_nogap, v_b_gap_open_ext);
+-			v_b_gap = _mm_sub_epi16(v_b_gap, v_b_gap_ext);
+-			v_b_gap = _mm_max_epi16(v_b_gap, v_tmp);
++			v_tmp = vec_subtract8sh(v_nogap, v_b_gap_open_ext);
++			v_b_gap = vec_subtract8sh(v_b_gap, v_b_gap_ext);
++			v_b_gap = vec_max8sh(v_b_gap, v_tmp);
+ 
+ 			/* compute the score (v_last_nogap is a tmp variable) */
+-			v_last_nogap = _mm_cmpeq_epi16(v_seq_a, v_seq_b);
+-			v_tmp = _mm_and_si128(v_last_nogap, v_match);
+-			v_last_nogap = _mm_cmpeq_epi16(v_last_nogap, v_zero);
+-			v_last_nogap = _mm_and_si128(v_last_nogap, v_mismatch);
+-			v_tmp = _mm_or_si128(v_tmp, v_last_nogap);
+-
+-			v_last_nogap = _mm_add_epi16(v_prev_nogap, v_tmp);
+-			v_last_nogap = _mm_max_epi16(v_last_nogap, v_zero);
+-			v_last_nogap = _mm_max_epi16(v_last_nogap, v_a_gap);
+-			v_last_nogap = _mm_max_epi16(v_last_nogap, v_b_gap);
++			v_last_nogap = vec_compareeq8sh(v_seq_a, v_seq_b);
++			v_tmp = vec_bitand1q(v_last_nogap, v_match);
++			v_last_nogap = vec_compareeq8sh(v_last_nogap, v_zero);
++			v_last_nogap = vec_bitand1q(v_last_nogap, v_mismatch);
++			v_tmp = vec_bitor1q(v_tmp, v_last_nogap);
++
++			v_last_nogap = vec_add8sh(v_prev_nogap, v_tmp);
++			v_last_nogap = vec_max8sh(v_last_nogap, v_zero);
++			v_last_nogap = vec_max8sh(v_last_nogap, v_a_gap);
++			v_last_nogap = vec_max8sh(v_last_nogap, v_b_gap);
+ 			
+ 			v_prev_nogap = v_nogap;
+ 			v_nogap = v_last_nogap;
+ 
+-			b_gap[j] = (int16_t)_mm_extract_epi16(v_b_gap, 7);
+-			nogap[j] = (int16_t)_mm_extract_epi16(v_nogap, 7);
++			b_gap[j] = (int16_t)vec_extract8sh(v_b_gap, 7);
++			nogap[j] = (int16_t)vec_extract8sh(v_nogap, 7);
+ 
+-			v_score = _mm_max_epi16(v_score, v_last_nogap);
++			v_score = vec_max8sh(v_score, v_last_nogap);
+ 		}
+ 	}
+ 
+ 	/*
+ 	 * Ugh. Old gcc can't loop and using _mm_store to an int16_t array
+ 	 * breaks strict-aliasing rules.
+ 	 */
+ 	assert(score == 0);
+-	score = MAX(score, _mm_extract_epi16(v_score, 0));
+-	score = MAX(score, _mm_extract_epi16(v_score, 1));
+-	score = MAX(score, _mm_extract_epi16(v_score, 2));
+-	score = MAX(score, _mm_extract_epi16(v_score, 3));
+-	score = MAX(score, _mm_extract_epi16(v_score, 4));
+-	score = MAX(score, _mm_extract_epi16(v_score, 5));
+-	score = MAX(score, _mm_extract_epi16(v_score, 6));
+-	score = MAX(score, _mm_extract_epi16(v_score, 7));
++	score = MAX(score, vec_extract8sh(v_score, 0));
++	score = MAX(score, vec_extract8sh(v_score, 1));
++	score = MAX(score, vec_extract8sh(v_score, 2));
++	score = MAX(score, vec_extract8sh(v_score, 3));
++	score = MAX(score, vec_extract8sh(v_score, 4));
++	score = MAX(score, vec_extract8sh(v_score, 5));
++	score = MAX(score, vec_extract8sh(v_score, 6));
++	score = MAX(score, vec_extract8sh(v_score, 7));
+ 
+ 	return (score);
+ }
+--- gmapper/mapping.c
++++ gmapper/mapping.c
+@@ -4,7 +4,7 @@
+ 
+ #include <omp.h>
+ #ifdef USE_PREFETCH
+-#include <xmmintrin.h>
++#include <vecmisc.h>
+ #endif
+ 
+ #include <limits.h>
+@@ -499,7 +499,7 @@ read_get_region_counts(struct read_entry * re, int st, struct regions_options *
+ #ifdef USE_PREFETCH
+ 	if (j + 4 < genomemap_len[sn][re->mapidx[st][offset]]) {
+ 	  int region_ahead = (int)(genomemap[sn][re->mapidx[st][offset]][j + 4] >> region_bits);
+-	  _mm_prefetch((char *)&region_map[number_in_pair][st][region_ahead], _MM_HINT_T0);
++	  vec_prefetch((char *)&region_map[number_in_pair][st][region_ahead], vec_HINT_T0);
+ 	}
+ #endif
+ 
+@@ -558,8 +558,8 @@ read_get_mp_region_counts(struct read_entry * re, int st)
+ #ifdef USE_PREFETCH
+ 	if (j + 4 < genomemap_len[sn][re->mapidx[st][offset]]) {
+ 	  int region_ahead = (int)(genomemap[sn][re->mapidx[st][offset]][j + 4] >> region_bits);
+-	  _mm_prefetch((char *)&region_map[nip][st][region_ahead], _MM_HINT_T0);
+-	  _mm_prefetch((char *)&region_map[1-nip][1-st][region_ahead], _MM_HINT_T0);
++	  vec_prefetch((char *)&region_map[nip][st][region_ahead], vec_HINT_T0);
++	  vec_prefetch((char *)&region_map[1-nip][1-st][region_ahead], vec_HINT_T0);
+ 	}
+ #endif
+ 
+@@ -648,7 +648,7 @@ advance_index_in_genomemap(struct read_entry * re, int st,
+ #ifdef USE_PREFETCH
+     if (*idx + 2 < max_idx) {
+       int region_ahead = (int)(map[*idx + 2] >> region_bits);
+-      _mm_prefetch((char *)&region_map[nip][st][region_ahead], _MM_HINT_T0);
++      vec_prefetch((char *)&region_map[nip][st][region_ahead], vec_HINT_T0);
+     }
+ #endif
+     int region = (int)(map[*idx] >> region_bits);

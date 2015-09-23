@@ -1,0 +1,45 @@
+package:
+  name: shrimp
+  version: "2.2.3"
+
+requirements:
+  build:
+    - zlib
+    - veclib-headers  # [ppc64le]
+    - gcc >=4.8.5     # [osx]
+  run:
+    - zlib
+    - libgcc >=4.8.5  # [osx]
+
+source:
+  fn: SHRiMP_2_2_3.src.tar.gz
+  url: http://download.lab7.io/sources/SHRiMP_2_2_3.src.tar.gz
+  md5: c69a5e30f2f81045c5ff84c4e3f318d5
+  patches:
+    - shrimp-makefile.patch
+    - shrimp-timings.patch
+    - shrimp-stdbool.patch
+    - shrimp-power.patch      # [ppc64le]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  files:
+    - reads_1.fq
+    - reads_2.fq
+    - genome.fa
+    - expected.sam
+  commands:
+    - "gmapper --qv-offset 33 -1 reads_1.fq -2 reads_2.fq genome.fa > test.sam"
+    - "diff -sq expected.sam test.sam"
+
+about:
+  home: http://compbio.cs.toronto.edu/shrimp
+  license: BSD
+  license_file: True
+  summary: "Package for mapping (short) reads to a reference genome"

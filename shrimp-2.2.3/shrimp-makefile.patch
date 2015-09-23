@@ -1,0 +1,114 @@
+--- Makefile.orig	2015-02-13 13:31:21.233315170 -0600
++++ Makefile	2015-02-13 13:35:36.949304702 -0600
+@@ -1,3 +1,5 @@
++REL_VERSION = 2.2.3
++
+ ifndef BUILD_TYPE
+   BUILD_TYPE=production
+ endif
+@@ -23,6 +25,22 @@
+   endif
+ endif
+ 
++ifndef PREFIX
++  PREFIX=/usr/local
++endif
++
++ifndef BINDIR
++  BINDIR=$(PREFIX)/bin
++endif
++
++ifndef SHAREDIR
++  SHAREDIR=$(PREFIX)/share/shrimp-$(REL_VERSION)
++endif
++
++ifndef DOCDIR
++  DOCDIR=$(PREFIX)/share/doc/shrimp-$(REL_VERSION)
++endif
++
+ GIT_VERSION=$(shell ./get_git_version)
+ override CXXFLAGS+=-D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -DGIT_VERSION=$(GIT_VERSION)
+ 
+@@ -30,15 +48,26 @@
+ 
+ UNAME := $(shell uname)
+ ifeq ($(UNAME), Darwin)
+-LDFLAGS=-lm -lz -lstdc++
++LDFLAGS+=-lm -lz -lstdc++
+ else
+-LDFLAGS=-lm -lz -lstdc++ -lrt
++LDFLAGS+=-lm -lz -lstdc++ -lrt
+ endif 
+ 
+ LN=ln
+ 
+-all: bin/gmapper bin/probcalc bin/prettyprint bin/probcalc_mp \
+-    bin/shrimp_var bin/shrimp2sam utils/split-contigs bin/fasta2fastq bin/mergesam utils/temp-sink 
++.PHONY: all all-bin all-utils clean install
++
++# Separate list of binaries by install location; makes writing "install" target easier
++all-bin   = bin/gmapper bin/probcalc bin/prettyprint bin/probcalc_mp \
++            bin/shrimp_var bin/shrimp2sam  bin/fasta2fastq bin/mergesam
++all-utils = utils/split-contigs utils/temp-sink 
++links-bin = bin/gmapper-cs bin/gmapper-ls bin/prettyprint-cs bin/prettyprint-ls
++
++# List of files to install as documentation
++doc-files = LICENSE README SPLITTING_AND_MERGING SCORES_AND_PROBABILITES
++
++# Make targets start here ("all" is default, per convention)
++all: $(all-bin) $(all-utils) $(links-bin)
+ 
+ #
+ # mapper /
+@@ -55,8 +84,6 @@
+     common/sw-full-ls.o common/output.o common/anchors.o common/input.o \
+     common/read_hit_heap.o common/sw-post.o common/my-alloc.o common/gen-st.o
+ 	$(LD) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
+-	$(LN) -sf gmapper bin/gmapper-cs
+-	$(LN) -sf gmapper bin/gmapper-ls
+ 
+ gmapper/gmapper.o: gmapper/gmapper.c common/bitmap.h gmapper/gmapper.h gmapper/gmapper-defaults.h \
+     common/debug.h common/f1-wrapper.h common/version.h
+@@ -142,8 +169,6 @@
+     common/sw-full-cs.o common/sw-full-ls.o common/input.o common/output.o \
+     common/util.o common/anchors.o
+ 	$(LD) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
+-	$(LN) -sf prettyprint bin/prettyprint-cs
+-	$(LN) -sf prettyprint bin/prettyprint-ls
+ 
+ prettyprint/prettyprint.o: prettyprint/prettyprint.c common/version.h
+ 	$(CXX) $(CXXFLAGS) -c -o $@ $<
+@@ -155,7 +180,6 @@
+     common/input.o common/output.o \
+     common/util.o common/anchors.o
+ 	$(LD) $(CXXFLAGS) -o $@ $+ $(LDFLAGS)
+-	$(LN) -sf prettyprint bin/prettyprint-ls
+ 
+ shrimp2sam/shrimp2sam.o: shrimp2sam/shrimp2sam.c common/version.h
+ 	$(CXX) $(CXXFLAGS) -c -o $@ $<
+@@ -252,6 +276,13 @@
+ common/gen-st.o: common/gen-st.c common/gen-st.h
+ 	$(CXX) $(CXXFLAGS) -c -o $@ $<
+ 
++# useful symlinks
++bin/gmapper-cs bin/gmapper-ls: bin/gmapper
++	$(LN) -sf $(shell basename $<) $@
++
++bin/prettyprint-cs bin/prettyprint-ls: bin/prettyprint
++	$(LN) -sf $(shell basename $<) $@
++
+ #
+ # cleanup
+ #
+@@ -262,3 +293,11 @@
+ 	find . -name '*.o' |xargs rm -f
+ 	find . -name  '*.core' |xargs rm -f
+ 	find . -name '*.pyc' |xargs rm -f
++
++# install
++install: all
++	install -d "$(BINDIR)" "$(SHAREDIR)" "$(DOCDIR)"
++	install $(all-bin) "$(BINDIR)"
++	for f in $(links-bin); do cp -P "$$f" "$(BINDIR)"; done
++	install $(all-utils) "$(SHAREDIR)"
++	install -m 0644 $(doc-files) "$(DOCDIR)"

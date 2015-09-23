@@ -1,0 +1,207 @@
+--- common/anchors.c
++++ common/anchors.c
+@@ -2,7 +2,6 @@
+ #include <stdio.h>
+ #include <limits.h>
+ #include <assert.h>
+-#include <stdbool.h>
+ #include "anchors.h"
+ 
+ 
+--- common/bitmap.h
++++ common/bitmap.h
+@@ -4,7 +4,6 @@
+ #include <assert.h>
+ #include <inttypes.h>
+ #include <sys/types.h>
+-#include <stdbool.h>
+ 
+ 
+ /*
+--- common/dynhash.c
++++ common/dynhash.c
+@@ -1,7 +1,6 @@
+ /*	$Id: dynhash.c,v 1.2 2008/06/06 18:24:09 rumble Exp $	*/
+ 
+ #include <assert.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <stdlib.h>
+--- common/f1-wrapper.h
++++ common/f1-wrapper.h
+@@ -5,7 +5,6 @@
+ #include <stdint.h>
+ #include <inttypes.h>
+ #include <sys/types.h>
+-#include <stdbool.h>
+ #include <assert.h>
+ #include <string.h>
+ 
+--- common/fasta.c
++++ common/fasta.c
+@@ -4,7 +4,6 @@
+ #include <ctype.h>
+ #include <errno.h>
+ #include <fcntl.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+--- common/input.c
++++ common/input.c
+@@ -1,7 +1,6 @@
+ /*	$Id: input.c,v 1.6 2008/06/11 17:13:37 rumble Exp $	*/
+ 
+ #include <ctype.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+--- common/output.c
++++ common/output.c
+@@ -3,7 +3,6 @@
+ #include <assert.h>
+ #include <ctype.h>
+ #include <inttypes.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <stdlib.h>
+--- common/sw-full-cs.c
++++ common/sw-full-cs.c
+@@ -4,7 +4,6 @@
+ #include <ctype.h>
+ #include <errno.h>
+ #include <math.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+--- common/sw-full-ls.c
++++ common/sw-full-ls.c
+@@ -4,7 +4,6 @@
+ #include <ctype.h>
+ #include <errno.h>
+ #include <math.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+--- common/sw-gapless.c
++++ common/sw-gapless.c
+@@ -2,7 +2,6 @@
+ #include <ctype.h>
+ #include <errno.h>
+ #include <math.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+--- common/sw-gapless.h
++++ common/sw-gapless.h
+@@ -2,7 +2,6 @@
+ #define _SW_GAPLESS_H
+ 
+ 
+-#include <stdbool.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+ 
+--- common/sw-post.c
++++ common/sw-post.c
+@@ -17,7 +17,6 @@
+ #include <ctype.h>
+ #include <errno.h>
+ #include <math.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+--- common/sw-vector.c
++++ common/sw-vector.c
+@@ -4,7 +4,6 @@
+ #include <ctype.h>
+ #include <errno.h>
+ #include <math.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+--- common/util.c
++++ common/util.c
+@@ -5,7 +5,6 @@
+ #include <errno.h>
+ #include <math.h>
+ #include <stdarg.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+--- gmapper/gmapper.c
++++ gmapper/gmapper.c
+@@ -10,7 +10,6 @@
+ #include <fcntl.h>
+ #include <inttypes.h>
+ #include <math.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>
+--- mergesam/file_buffer.h
++++ mergesam/file_buffer.h
+@@ -1,6 +1,5 @@
+ #ifndef __FILE_BUFFER__
+ #define __FILE_BUFFER__
+-#include <stdbool.h>
+ #include <zlib.h>
+ 
+ typedef struct file_read_buffer {
+--- mergesam/sam2pretty_lib.h
++++ mergesam/sam2pretty_lib.h
+@@ -1,5 +1,4 @@
+ #include <stdint.h>
+-#include <stdbool.h>
+ #include <stdlib.h>
+ #include <stdio.h>
+ #ifndef __SAM2PRETTY_H__
+--- prettyprint/prettyprint.c
++++ prettyprint/prettyprint.c
+@@ -4,7 +4,6 @@
+ #include <dirent.h>
+ #include <errno.h>
+ #include <inttypes.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+--- probcalc/probcalc.c
++++ probcalc/probcalc.c
+@@ -5,7 +5,6 @@
+ #include <fcntl.h>
+ #include <inttypes.h>
+ #include <math.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <stdlib.h>
+--- shrimp2sam/shrimp2sam.c
++++ shrimp2sam/shrimp2sam.c
+@@ -4,7 +4,6 @@
+ #include <dirent.h>
+ #include <errno.h>
+ #include <inttypes.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+--- utils/split-contigs.c
++++ utils/split-contigs.c
+@@ -4,7 +4,6 @@
+ #include <fcntl.h>
+ #include <inttypes.h>
+ #include <math.h>
+-#include <stdbool.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdint.h>

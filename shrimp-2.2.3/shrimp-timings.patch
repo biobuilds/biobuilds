@@ -1,0 +1,1010 @@
+--- common/dag_glue.cpp
++++ common/dag_glue.cpp
+@@ -15,14 +15,15 @@
+ //extern "C" {
+ #include "../common/util.h"
+ //}
++#include "../common/time_counter.h"
+ 
+ using namespace std;
+ 
+-static uint64_t aligner_ticks;
++static uint64_t aligner_tc;
+ static uint64_t aligner_invocations;
+ static bool	is_set_up = false;		/* be extra careful this time*/
+ static uint64_t kmers_invocations;
+-static uint64_t kmers_ticks;
++static uint64_t kmers_tc;
+ static uint64_t kmers_total_kmers;
+ 
+ /*
+@@ -45,10 +46,10 @@ dag_setup(int read_match, int read_mismatch, int read_gap, int dag_match,
+ dag_cookie_t
+ dag_build_kmer_graph(char *read1, char *read2, int epsilon)
+ {
+-	uint64_t before = rdtsc();
+-
+ 	assert(is_set_up);
+ 
++	TIME_COUNTER_START(kmers_tc);
++
+ 	Graph g1(read1);
+ 	Graph g2(read2);
+ 	CrossProduct cp(g1, g2);
+@@ -57,7 +58,7 @@ dag_build_kmer_graph(char *read1, char *read2, int epsilon)
+ 	dct->dag = (void *)kg;
+ 	dct->loops_added = false;
+ 
+-	kmers_ticks += rdtsc() - before;
++	TIME_COUNTER_STOP(kmers_tc);
+ 
+ 	return (dct);
+ }
+@@ -66,14 +67,15 @@ void
+ dag_free_kmer_graph(dag_cookie_t dct)
+ {
+ 	Graph *g = (Graph *)dct->dag;
+-	uint64_t before = rdtsc();
+ 
+ 	assert(is_set_up);
+ 
++	TIME_COUNTER_START(kmers_tc);
++
+ 	delete g;
+ 	free(dct);
+ 
+-	kmers_ticks += rdtsc() - before;
++	TIME_COUNTER_STOP(kmers_tc);
+ }
+ 
+ char **
+@@ -84,9 +86,11 @@ dag_get_kmers(dag_cookie_t dct, int len)
+ 	kmersInfo *ki;
+ 	set <string>::iterator setit;
+ 	Graph *kg = (Graph *)dct->dag;
+-	uint64_t before = rdtsc();
+ 
+ 	assert(is_set_up);
++
++	TIME_COUNTER_START(kmers_tc);
++
+ 	kmers_invocations++;
+ 
+ 	if ((len - 1) < 0)
+@@ -113,7 +117,7 @@ dag_get_kmers(dag_cookie_t dct, int len)
+ 
+ 	delete ki;
+ 
+-	kmers_ticks += rdtsc() - before;
++	TIME_COUNTER_STOP(kmers_tc);
+ 
+ 	return (list);
+ }
+@@ -139,11 +143,11 @@ dag_build_alignment(char *genome, dag_cookie_t dct)
+ 	SmallAlignNode *bestend;
+ 	Node *bestendap,  *bestendbp;
+ 	struct dag_alignment *dap;
+-	uint64_t before;
+ 
+ 	assert(is_set_up);
+ 
+-	before = rdtsc();
++	TIME_COUNTER_START(aligner_tc);
++
+ 	aligner_invocations++;
+ 
+ 	dap = (struct dag_alignment *)xmalloc(sizeof(*dap));
+@@ -166,7 +170,7 @@ dag_build_alignment(char *genome, dag_cookie_t dct)
+ 	delete scp;
+ 	delete al;
+ 
+-	aligner_ticks += rdtsc() - before;
++	TIME_COUNTER_STOP(aligner_tc);
+ 
+ 	return (dap);
+ }
+@@ -178,12 +182,14 @@ dag_free_alignment(struct dag_alignment *dap)
+ 
+ 	assert(is_set_up);
+ 
+-	before = rdtsc();
++	TIME_COUNTER_START(aligner_tc);
++
+ 	free(dap->read1);
+ 	free(dap->read2);
+ 	free(dap->sequence);
+ 	free(dap);
+-	aligner_ticks += rdtsc() - before;
++
++	TIME_COUNTER_STOP(aligner_tc);
+ }
+ 
+ struct dag_statistics *
+@@ -195,10 +201,10 @@ dag_get_statistics()
+ 
+ 	dsp = (struct dag_statistics *)xmalloc(sizeof(*dsp));
+ 	dsp->aligner_invocations = aligner_invocations;
+-	dsp->aligner_seconds = (double)aligner_ticks / cpuhz();
++	dsp->aligner_seconds = time_counter_get_secs(aligner_tc);
+ 	dsp->kmers_invocations = kmers_invocations;
+ 	dsp->kmers_total_kmers = kmers_total_kmers;
+-	dsp->kmers_seconds = (double)kmers_ticks / cpuhz();
++	dsp->kmers_seconds = time_counter_get_secs(kmers_tc);
+ 
+ 	return (dsp);
+ }
+--- common/f1-wrapper.h
++++ common/f1-wrapper.h
+@@ -86,7 +86,7 @@ f1_stats(uint64_t *invocs, uint64_t *cells, double *secs, uint64_t *calls_bypass
+   if (!gapless_sw)
+     return sw_vector_stats(invocs, cells, secs);
+   else
+-    return sw_gapless_stats(invocs, cells, NULL);
++    return sw_gapless_stats(invocs, cells);
+ }
+ 
+ 
+--- common/fasta.c
++++ common/fasta.c
+@@ -22,7 +22,6 @@
+ #include "../common/time_counter.h"
+ 
+ 
+-//static uint64_t total_ticks;
+ static time_counter fasta_tc;
+ 
+ int fasta_basemap_char_to_int[128] = {
+@@ -64,7 +63,6 @@ fasta_open(const char *file, int space, bool fastq, bool * fastq_var)
+ 	struct stat sb;
+ 	gzFile fp;
+ 	int c;
+-	//uint64_t before = rdtsc();
+ 	TIME_COUNTER_START(fasta_tc);
+ 
+ 	assert(space == COLOUR_SPACE || space == LETTER_SPACE);
+@@ -74,14 +72,12 @@ fasta_open(const char *file, int space, bool fastq, bool * fastq_var)
+ 	} else {
+ 		if (stat(file, &sb)) {
+ 			fprintf(stderr,"error: Syscall stat failed on file \"%s\"!\n",file);
+-			//total_ticks += (rdtsc() - before);
+ 			return NULL;
+ 		}
+ 		if (!S_ISREG(sb.st_mode)) {
+ 		  logit(0, "input file [%s] is not a regular file", file);
+ 			/* why don't we allow named pipes?
+ 			fprintf(stderr,"error: \"%s\" is not a regular file!\n",file);
+-			total_ticks += (rdtsc() - before);
+ 			return NULL;
+ 			*/
+ 		}
+@@ -89,7 +85,6 @@ fasta_open(const char *file, int space, bool fastq, bool * fastq_var)
+ 	}
+ 	if (fp == NULL) {
+ 		fprintf(stderr,"error: Failed to open \"%s\" for reading!\n",file);
+-		//total_ticks += (rdtsc() - before);
+ 		return NULL;		
+ 	}
+ 
+@@ -207,7 +202,6 @@ fasta_open(const char *file, int space, bool fastq, bool * fastq_var)
+ void
+ fasta_close(fasta_t fasta)
+ {
+-	//uint64_t before = rdtsc();
+ 	TIME_COUNTER_START(fasta_tc);
+ 
+ 	gzclose(fasta->fp);
+@@ -217,7 +211,6 @@ fasta_close(fasta_t fasta)
+ 	free(fasta);
+ 
+ 	TIME_COUNTER_STOP(fasta_tc);
+-	//total_ticks += (rdtsc() - before);
+ }
+ 
+ fasta_stats_t
+@@ -226,7 +219,6 @@ fasta_stats()
+ 	fasta_stats_t fs;
+ 
+ 	fs = (fasta_stats_t)xmalloc(sizeof(*fs));
+-	//fs->total_ticks = total_ticks;
+ 	fs->total_secs = time_counter_get_secs(&fasta_tc);
+ 
+ 	return (fs);
+@@ -235,7 +227,6 @@ fasta_stats()
+ void
+ fasta_reset_stats()
+ {
+-  fasta_tc.type = DEF_FAST_TIME_COUNTER;
+   fasta_tc.counter = 0;
+ }
+ 
+@@ -320,7 +311,6 @@ fasta_get_next_read_with_range(fasta_t fasta, read_entry * re )
+ 	uint32_t quality_length = 0;
+ 	uint32_t plus_line_length = 0;
+ 	uint32_t read_name_length = 0;
+-	//uint64_t before = rdtsc();
+ 	TIME_COUNTER_START(fasta_tc);
+ 	char c;
+ 	assert(re!=NULL);
+@@ -359,7 +349,6 @@ fasta_get_next_read_with_range(fasta_t fasta, read_entry * re )
+ 				} else {
+ 					fprintf(stderr,"Expecting \"%c\" but got \"%c\" are you sure it's right format?\n",c,fasta->parse_buffer[0]);
+ 				}
+-				//total_ticks += (rdtsc() - before);
+ 				return (false);
+ 			}
+ 			if (fasta->buffer[i]=='\n') {
+@@ -376,11 +365,9 @@ fasta_get_next_read_with_range(fasta_t fasta, read_entry * re )
+ 
+ 	}
+ 	if (read_name_length==0) {
+-	  //total_ticks += (rdtsc() - before);
+ 		return (false);
+ 	}
+ 	if (read_name_length<=1 || !end_of_line) {
+-	  //total_ticks += (rdtsc() - before);
+ 		fprintf(stderr,"error: Invalid read name! Are you sure this is a FASTA or FASTQ file?\n%s\n",fasta->buffer);
+ 		return (false);
+ 	}	
+@@ -411,7 +398,6 @@ fasta_get_next_read_with_range(fasta_t fasta, read_entry * re )
+ 	}
+ 	if (sequence_length==0) {
+ 		fprintf(stderr,"Read in sequence of length zero!\n");
+-		//total_ticks += (rdtsc() - before);
+ 		return (false);
+ 	}
+ 	assert(sequence_length>0);
+@@ -441,7 +427,6 @@ fasta_get_next_read_with_range(fasta_t fasta, read_entry * re )
+ 		} while (fast_gzgets_safe(fasta) != NULL );
+ 		if (plus_line_length<1 || fasta->buffer[strlen(fasta->buffer)-1]!='\n') {
+ 			fprintf(stderr,"error: Error while readingin FASTQ entry!\n");
+-			//total_ticks += (rdtsc() - before);
+ 			return (false);	
+ 		}
+ 		re->plus_line = (char *)xmalloc(plus_line_length + 17);
+@@ -489,13 +474,11 @@ fasta_get_next_read_with_range(fasta_t fasta, read_entry * re )
+ 			fprintf(stderr,"Read in quality string of wrong length!, %d vs %d\n",quality_length, sequence_length);
+ 			free(re->seq);
+ 			free(re->plus_line);
+-			//total_ticks += (rdtsc() - before);
+ 			return (false);
+ 		} else if (quality_length != sequence_length-1 && fasta->space==COLOUR_SPACE) {
+ 			fprintf(stderr,"Read in quality string of wrong length!, %d vs %d\n",quality_length, sequence_length);
+ 			free(re->seq);
+ 			free(re->plus_line);
+-			//total_ticks += (rdtsc() - before);
+ 			return (false);
+ 		}
+ 
+@@ -547,7 +530,6 @@ fasta_get_next_read_with_range(fasta_t fasta, read_entry * re )
+ 		assert(re->qual != NULL);
+ 		assert(re->plus_line != NULL);
+ 	}
+-	//total_ticks += (rdtsc() - before);
+ 	TIME_COUNTER_STOP(fasta_tc);
+ 	return (true);
+ }
+@@ -589,7 +571,7 @@ bitfield_to_colourspace(uint32_t *source, uint32_t length, bool is_rna)
+   int a, lastbp = BASE_T;
+   uint32_t *dst;
+   uint32_t i;
+-  //uint64_t before = rdtsc();
++
+   TIME_COUNTER_START(fasta_tc);
+ 
+   dst = (uint32_t *)xmalloc(BPTO32BW(length) * sizeof(uint32_t));
+@@ -601,7 +583,6 @@ bitfield_to_colourspace(uint32_t *source, uint32_t length, bool is_rna)
+     lastbp = a;
+   }
+ 
+-  //total_ticks += (rdtsc() - before);
+   TIME_COUNTER_STOP(fasta_tc);
+   return (dst);
+ }
+@@ -611,7 +592,7 @@ fasta_sequence_to_bitfield(fasta_t fasta, char *sequence)
+ {
+ 	uint32_t i, length, idx;
+ 	uint32_t *bitfield;
+-	//uint64_t before = rdtsc();
++
+ 	TIME_COUNTER_START(fasta_tc);
+ 	int a;
+ 	char c;
+@@ -630,7 +611,6 @@ fasta_sequence_to_bitfield(fasta_t fasta, char *sequence)
+ 		    c != 'G' && c != 'g' &&
+ 		    c != 'T' && c != 't') {
+ 			free(bitfield);
+-			//total_ticks += (rdtsc() - before);
+ 			return (NULL);
+ 		}
+ 		
+@@ -667,7 +647,6 @@ fasta_sequence_to_bitfield(fasta_t fasta, char *sequence)
+ 	else
+ 		assert(idx == length);
+ 
+-	//total_ticks += (rdtsc() - before);
+ 	TIME_COUNTER_STOP(fasta_tc);
+ 	return (bitfield);
+ }
+--- common/fasta.h
++++ common/fasta.h
+@@ -78,7 +78,6 @@ typedef struct _fasta_t {
+ } * fasta_t;
+ 
+ typedef struct _fasta_stats_t {
+-	uint64_t	total_ticks;
+   double total_secs;
+ } * fasta_stats_t;
+ 
+--- common/sw-full-cs.c
++++ common/sw-full-cs.c
+@@ -1119,7 +1119,6 @@ sw_full_cs_setup(int _dblen, int _qrlen, int _a_gap_open, int _a_gap_ext, int _b
+ 
+   if (reset_stats) {
+     swcells = swinvocs = 0;
+-    sw_tc.type = DEF_FAST_TIME_COUNTER;
+     sw_tc.counter = 0;
+   }
+ 
+@@ -1151,7 +1150,6 @@ sw_full_cs(uint32_t *genome_ls, int goff, int glen, uint32_t *read, int rlen,
+   struct sw_full_results scratch;
+   int i, j, k;
+ 
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(sw_tc);
+ 
+   if (!initialised)
+@@ -1230,7 +1228,5 @@ sw_full_cs(uint32_t *genome_ls, int goff, int glen, uint32_t *read, int rlen,
+ #endif
+ 
+   //swcells += (glen * rlen);
+-  //after = rdtsc();
+-  //swticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(sw_tc);
+ }
+--- common/sw-full-ls.c
++++ common/sw-full-ls.c
+@@ -611,7 +611,6 @@ sw_full_ls_setup(int _dblen, int _qrlen, int _a_gap_open, int _a_gap_ext,
+ 
+ 	if (reset_stats) {
+ 	  swcells = swinvocs = 0;
+-	  sw_tc.type = DEF_FAST_TIME_COUNTER;
+ 	  sw_tc.counter = 0;
+ 	}
+ 
+@@ -642,7 +641,6 @@ sw_full_ls(uint32_t *genome, int goff, int glen, uint32_t *read, int rlen,
+ 	struct sw_full_results scratch;
+ 	int i, j, k;
+ 
+-	//llint before = rdtsc(), after;
+ 	TIME_COUNTER_START(sw_tc);
+ 
+ 	if (!initialised)
+@@ -677,7 +675,5 @@ sw_full_ls(uint32_t *genome, int goff, int glen, uint32_t *read, int rlen,
+ 	sfr->qralign = xstrdup(qralign);
+ 
+ 	//swcells += (glen * rlen);
+-	//after = rdtsc();
+-	//swticks += MAX(after - before, 0);
+ 	TIME_COUNTER_STOP(sw_tc);
+ }
+--- common/sw-gapless.c
++++ common/sw-gapless.c
+@@ -14,15 +14,17 @@
+ #include "../common/util.h"
+ #include "../common/sw-gapless.h"
+ #include "../common/stats.h"
++#include "../common/time_counter.h"
+ 
+ 
+ static int	initialised;
+ static int	match, mismatch;
+ 
+ /* statistics */
+-static count_t	ticks, cells, invocs;
++static count_t	cells, invocs;
++static time_counter tc;
+ 
+-#pragma omp threadprivate(initialised, match, mismatch, ticks, cells, invocs)
++#pragma omp threadprivate(initialised, match, mismatch, tc, cells, invocs)
+ 
+ 
+ int
+@@ -32,7 +34,7 @@ sw_gapless_setup(int _match, int _mismatch, bool reset_stats)
+   mismatch = _mismatch;
+ 
+   if (reset_stats) {
+-    count_init(&ticks);
++    tc.counter = 0;
+     count_init(&cells);
+     count_init(&invocs);
+   }
+@@ -44,14 +46,12 @@ sw_gapless_setup(int _match, int _mismatch, bool reset_stats)
+ 
+ 
+ void
+-sw_gapless_stats(uint64_t * _invocs, uint64_t * _cells, uint64_t * _ticks)
++sw_gapless_stats(uint64_t * _invocs, uint64_t * _cells)
+ {
+   if (_invocs != NULL)
+     *_invocs = (uint64_t)count_get_count(&invocs);
+   if (_cells != NULL)
+     *_cells = (uint64_t)count_get_count(&cells);
+-  if (_ticks != NULL)
+-    *_ticks = (uint64_t)count_get_count(&ticks);
+ }
+ 
+ int
+@@ -62,11 +62,11 @@ sw_gapless(uint32_t * genome, int glen, uint32_t * read, int rlen, int g_idx, in
+   int g_left, g_right, r_left, r_right;
+   int max_score;
+ 
+-  llint before = rdtsc(), after;
+-
+   if (!initialised)
+     abort();
+ 
++  TIME_COUNTER_START(tc);
++
+   count_increment(&invocs);
+ 
+   if (g_idx < r_idx) {
+@@ -110,8 +110,7 @@ sw_gapless(uint32_t * genome, int glen, uint32_t * read, int rlen, int g_idx, in
+   }
+ 
+   count_add(&cells, rlen);
+-  after = rdtsc();
+-  count_add(&ticks, MAX(after - before, 0));
++  TIME_COUNTER_STOP(tc);
+ 
+   return max_score;
+ }
+--- common/sw-gapless.h
++++ common/sw-gapless.h
+@@ -8,7 +8,7 @@
+ 
+ 
+ int	sw_gapless_setup(int, int, bool);
+-void	sw_gapless_stats(uint64_t *, uint64_t *, uint64_t *);
++void	sw_gapless_stats(uint64_t *, uint64_t *);
+ int	sw_gapless(uint32_t *, int, uint32_t *, int, int, int,
+ 		   uint32_t *, int, bool);
+ 
+--- common/sw-post.c
++++ common/sw-post.c
+@@ -426,7 +426,6 @@ post_sw_setup(int _max_len,
+ 
+   if (reset_stats) {
+     cells = invocs = 0;
+-    tc.type = DEF_FAST_TIME_COUNTER;
+     tc.counter = 0;
+   }
+ 
+@@ -642,7 +641,6 @@ post_sw(uint32_t * read, int _init_bp, char * qual,
+ {
+   double total_score;
+ 
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tc);
+ 
+   invocs++;
+@@ -752,7 +750,5 @@ post_sw(uint32_t * read, int _init_bp, char * qual,
+ #endif
+ 
+   cells += 16*len;
+-  //after = rdtsc();
+-  //ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tc);
+ }
+--- common/sw-vector.c
++++ common/sw-vector.c
+@@ -34,7 +34,6 @@ static int	match, mismatch;
+ static int	use_colours;
+ 
+ /* statistics */
+-//static uint64_t swticks, swcells, swinvocs;
+ static uint64_t swcells, swinvocs;
+ time_counter sw_tc;
+ 
+@@ -429,7 +428,6 @@ sw_vector_setup(int _dblen, int _qrlen, int _a_gap_open, int _a_gap_ext,
+ 
+ 	if (reset_stats) {
+ 	  swcells = swinvocs = 0;
+-	  sw_tc.type = DEF_FAST_TIME_COUNTER;
+ 	  sw_tc.counter = 0;
+ 	}
+ 
+@@ -456,7 +454,6 @@ sw_vector(uint32_t *genome, int goff, int glen, uint32_t *read, int rlen,
+ {
+ 	int i, score;
+ 
+-	//llint before = rdtsc(), after;
+ 	TIME_COUNTER_START(sw_tc);
+ 
+ 	if (!initialised)
+@@ -507,8 +504,6 @@ sw_vector(uint32_t *genome, int goff, int glen, uint32_t *read, int rlen,
+ 	}
+ 
+ 	swcells += (glen * rlen);
+-	//after = rdtsc();
+-	//swticks += MAX(after - before, 0);
+ 	TIME_COUNTER_STOP(sw_tc);
+ 
+ 	return (score);
+--- common/time_counter.h
++++ common/time_counter.h
+@@ -4,31 +4,14 @@
+ #include <stdlib.h>
+ #include "../common/util.h"
+ 
+-/*
+- * We use two types of time counters:
+- * rdtsc() is faster but less reliable;
+- * gettimeinusecs() is slower but accurate
+- */
+-
+ typedef struct time_counter {
+   long long int counter;
+-  int type;
+ } time_counter;
+ 
+-#ifdef NDEBUG
+-#define DEF_FAST_TIME_COUNTER	0
+-#else
+-#define DEF_FAST_TIME_COUNTER	1
+-#endif
+-
+-
+ static inline long long int
+ time_counter_check(time_counter const * tc)
+ {
+-  if (tc->type == 0)
+-    return rdtsc();
+-  else
+-    return gettimeinusecs();
++  return gettimeinusecs();
+ }
+ 
+ static inline void
+@@ -36,17 +19,13 @@ time_counter_add(time_counter * tc, long long int before, long long int after =
+ {
+   if (after == -1)
+     after = time_counter_check(tc);
+-  if ((tc->type == 0 && after >= before) || tc->type == 1)
+-    tc->counter += after - before;
++  tc->counter += after - before;
+ }
+ 
+ static inline double
+ time_counter_get_secs(time_counter const * tc)
+ {
+-  if (tc->type == 0)
+-    return (double)tc->counter / cpuhz();
+-  else
+-    return (double)tc->counter / 1.0e6;
++  return (double)tc->counter / 1.0e6;
+ }
+ 
+ 
+--- common/util.c
++++ common/util.c
+@@ -61,41 +61,6 @@ gettimeinusecs()
+ 	return ((uint64_t)tv.tv_sec * 1000000 + tv.tv_usec);	
+ }
+ 
+-uint64_t
+-rdtsc()
+-{
+-	uint32_t lo, hi;
+-
+-#ifdef __GNUC__
+-	__asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+-#else
+-	asm("rdtsc" : "=a" (lo), "=d" (hi));
+-#endif
+-
+-	return (((uint64_t)hi << 32) | lo);
+-}
+-
+-double
+-cpuhz()
+-{
+-	uint64_t before;
+-	struct timeval tv1, tv2;
+-	int diff;
+-
+-	/* XXX - abusive, poor man's calc; needs good (2ms) clock granularity */
+-	gettimeofday(&tv1, NULL);
+-	before = rdtsc();
+-	do {
+-		gettimeofday(&tv2, NULL);
+-
+-		diff = tv2.tv_usec - tv1.tv_usec;
+-		if (diff < 0)
+-			diff = 1000000 - tv1.tv_usec + tv2.tv_usec;
+-	} while (diff < 2000);
+-
+-	return (((double)(rdtsc() - before) / diff) * 1.0e6);
+-}
+-
+ u_int
+ strchrcnt(const char *str, const char c)
+ {
+--- common/util.h
++++ common/util.h
+@@ -68,8 +68,6 @@ typedef struct _strbuf_t * strbuf_t;
+ void		set_mode_from_argv(char **, shrimp_mode_t *);
+ const char     *get_mode_string(shrimp_mode_t);
+ uint64_t	gettimeinusecs(void);
+-uint64_t	rdtsc(void);
+-double		cpuhz(void);
+ u_int		strchrcnt(const char *, const char);
+ bool		is_number(const char *);
+ bool		is_whitespace(const char *);
+--- gmapper/gmapper.c
++++ gmapper/gmapper.c
+@@ -331,14 +331,11 @@ launch_scan_threads(fasta_t fasta, fasta_t left_fasta, fasta_t right_fasta)
+     while (read_more) {
+       memset(re_buffer, 0, chunk_size * sizeof(re_buffer[0]));
+ 
+-      //before = rdtsc();
+       TIME_COUNTER_START(tpg.wait_tc);
+ 
+       //Read in this threads 'chunk'
+ #pragma omp critical (fill_reads_buffer)
+       {
+-	//after = rdtsc();
+-	//tpg.wait_ticks += MAX(after - before, 0);
+ 	TIME_COUNTER_STOP(tpg.wait_tc);
+ 
+ 	thread_output_buffer_chunk[thread_id]=current_thread_chunk++;
+@@ -677,11 +674,11 @@ print_insert_histogram()
+ }
+ 
+ typedef struct tp_stats_t {
+-  uint64_t f1_invocs, f1_cells, f1_ticks;
++  uint64_t f1_invocs, f1_cells;
+   double f1_secs, f1_cellspersec;
+-  uint64_t f2_invocs, f2_cells, f2_ticks;
++  uint64_t f2_invocs, f2_cells;
+   double f2_secs, f2_cellspersec;
+-  uint64_t fwbw_invocs, fwbw_cells, fwbw_ticks;
++  uint64_t fwbw_invocs, fwbw_cells;
+   double fwbw_secs, fwbw_cellspersec;
+   double scan_secs, readparse_secs, read_handle_overhead_secs;
+   double anchor_list_secs, hit_list_secs;
+@@ -694,16 +691,16 @@ print_statistics()
+ {
+   static char const my_tab[] = "    ";
+ 
+-  //uint64_t f1_invocs[num_threads], f1_cells[num_threads], f1_ticks[num_threads];
++  //uint64_t f1_invocs[num_threads], f1_cells[num_threads];
+   //double f1_secs[num_threads], f1_cellspersec[num_threads];
+   uint64_t f1_total_invocs = 0, f1_total_cells = 0;
+   double f1_total_secs = 0, f1_total_cellspersec = 0;
+   uint64_t f1_calls_bypassed = 0;
+-  //uint64_t f2_invocs[num_threads], f2_cells[num_threads], f2_ticks[num_threads];
++  //uint64_t f2_invocs[num_threads], f2_cells[num_threads];
+   //double f2_secs[num_threads], f2_cellspersec[num_threads];
+   uint64_t f2_total_invocs = 0, f2_total_cells = 0;
+   double f2_total_secs = 0, f2_total_cellspersec = 0;
+-  //uint64_t fwbw_invocs[num_threads], fwbw_cells[num_threads], fwbw_ticks[num_threads];
++  //uint64_t fwbw_invocs[num_threads], fwbw_cells[num_threads];
+   //double fwbw_secs[num_threads], fwbw_cellspersec[num_threads];
+   uint64_t fwbw_total_invocs = 0, fwbw_total_cells = 0;
+   double fwbw_total_secs = 0, fwbw_total_cellspersec = 0;
+@@ -716,16 +713,14 @@ print_statistics()
+   tp_stats_t * tps = (tp_stats_t *)malloc(num_threads * sizeof(tps[0]));
+   tpg_t * tpgA = (tpg_t *)malloc(num_threads * sizeof(tpgA[0]));
+ 
+-  double hz;
+   double fasta_load_secs;
+   fasta_stats_t fs;
+ 
+   fs = fasta_stats();
+   fasta_load_secs = fs->total_secs;
+   free(fs);
+-  hz = cpuhz();
+ 
+-#pragma omp parallel num_threads(num_threads) shared(hz)
++#pragma omp parallel num_threads(num_threads)
+   {
+     int tid = omp_get_thread_num();
+ 
+@@ -733,7 +728,6 @@ print_statistics()
+ 
+     f1_stats(&tps[tid].f1_invocs, &tps[tid].f1_cells, &tps[tid].f1_secs, NULL);
+ 
+-    //tps[tid].f1_secs = (double)tps[tid].f1_ticks / hz;
+     tps[tid].f1_cellspersec = (double)tps[tid].f1_cells / tps[tid].f1_secs;
+     if (isnan(tps[tid].f1_cellspersec))
+       tps[tid].f1_cellspersec = 0;
+@@ -746,12 +740,10 @@ print_statistics()
+       tps[tid].fwbw_secs = 0;
+     }
+ 
+-    //tps[tid].f2_secs = (double)tps[tid].f2_ticks / hz;
+     tps[tid].f2_cellspersec = (double)tps[tid].f2_cells / tps[tid].f2_secs;
+     if (isnan(tps[tid].f2_cellspersec))
+       tps[tid].f2_cellspersec = 0;
+ 
+-    //tps[tid].fwbw_secs = (double)tps[tid].fwbw_ticks / hz;
+     if (shrimp_mode == MODE_COLOUR_SPACE) {
+       tps[tid].fwbw_cellspersec = (double)tps[tid].fwbw_cells / tps[tid].fwbw_secs;
+       if (isnan(tps[tid].fwbw_cellspersec))
+@@ -763,21 +755,13 @@ print_statistics()
+     tps[tid].scan_secs = ((double)tpg.read_handle_usecs / 1.0e6) - tps[tid].f1_secs - tps[tid].f2_secs - tps[tid].fwbw_secs;
+     tps[tid].scan_secs = MAX(0, tps[tid].scan_secs);
+ 
+-    //tps[tid].anchor_list_secs = (double)tpg.anchor_list_ticks / hz;
+     tps[tid].anchor_list_secs = time_counter_get_secs(&tpg.anchor_list_tc);
+-    //tps[tid].hit_list_secs = (double)tpg.hit_list_ticks / hz;
+     tps[tid].hit_list_secs = time_counter_get_secs(&tpg.hit_list_tc);
+-    //tps[tid].duplicate_removal_secs = (double)tpg.duplicate_removal_ticks / hz;
+     tps[tid].duplicate_removal_secs = time_counter_get_secs(&tpg.duplicate_removal_tc);
+-    //tps[tid].region_counts_secs = (double)tpg.region_counts_ticks / hz;
+     tps[tid].region_counts_secs = time_counter_get_secs(&tpg.region_counts_tc);
+-    //tps[tid].mp_region_counts_secs = (double)tpg.mp_region_counts_ticks / hz;
+     tps[tid].mp_region_counts_secs = time_counter_get_secs(&tpg.mp_region_counts_tc);
+-    //tps[tid].pass1_secs = (double)tpg.pass1_ticks / hz;
+     tps[tid].pass1_secs = time_counter_get_secs(&tpg.pass1_tc);
+-    //tps[tid].get_vector_hits_secs = (double)tpg.get_vector_hits_ticks / hz;
+     tps[tid].get_vector_hits_secs = time_counter_get_secs(&tpg.get_vector_hits_tc);
+-    //tps[tid].pass2_secs = (double)tpg.pass2_ticks / hz;
+     tps[tid].pass2_secs = time_counter_get_secs(&tpg.pass2_tc);
+     /*
+ 	  tps[tid].anchor_list_secs = (double)anchor_list_usecs[tid] / 1.0e6;
+@@ -2909,15 +2893,6 @@ int main(int argc, char **argv){
+ 	{
+ 	  // init thread-private globals
+ 	  memset(&tpg, 0, sizeof(tpg_t));
+-	  tpg.wait_tc.type = DEF_FAST_TIME_COUNTER;
+-	  tpg.region_counts_tc.type = DEF_FAST_TIME_COUNTER;
+-	  tpg.mp_region_counts_tc.type = DEF_FAST_TIME_COUNTER;
+-	  tpg.anchor_list_tc.type = DEF_FAST_TIME_COUNTER;
+-	  tpg.hit_list_tc.type = DEF_FAST_TIME_COUNTER;
+-	  tpg.get_vector_hits_tc.type = DEF_FAST_TIME_COUNTER;
+-	  tpg.pass1_tc.type = DEF_FAST_TIME_COUNTER;
+-	  tpg.pass2_tc.type = DEF_FAST_TIME_COUNTER;
+-	  tpg.duplicate_removal_tc.type = DEF_FAST_TIME_COUNTER;
+ 
+ 	  /* region handling */
+ 	  if (use_regions) {
+--- gmapper/gmapper.h
++++ gmapper/gmapper.h
+@@ -207,41 +207,19 @@ EXTERN(llint,			load_genome_usecs,		0);
+ EXTERN(llint,			mapping_wallclock_usecs,	0);
+ 
+ /* per-thread counts and statistics */
+-//EXTERN(llint,			read_handle_usecs,		0);
+-//EXTERN(llint,			wait_ticks,			0);
+-//EXTERN(llint,			anchor_list_ticks,		0);
+-//EXTERN(llint,			region_counts_ticks,		0);
+-//EXTERN(llint,			mp_region_counts_ticks,		0);
+-//EXTERN(llint,			hit_list_ticks,			0);
+-//EXTERN(llint,			pass1_ticks,			0);
+-//EXTERN(llint,			get_vector_hits_ticks,		0);
+-//EXTERN(llint,			pass2_ticks,			0);
+-//EXTERN(llint,			duplicate_removal_ticks,	0);
+-//EXTERN(stat_t,			anchor_list_init_size,		0);
+-//EXTERN(stat_t,			n_big_gaps_anchor_list,		0);
+-//EXTERN(stat_t,			n_anchors_discarded,		0);
+ EXTERN(int,			anchor_list_big_gap,		DEF_ANCHOR_LIST_BIG_GAP);
+ 
+ // thread-private globals
+ typedef struct tpg_t {
+   llint read_handle_usecs;
+-  //llint wait_ticks;
+   time_counter wait_tc;
+-  //llint anchor_list_ticks;
+   time_counter anchor_list_tc;
+-  //llint region_counts_ticks;
+   time_counter region_counts_tc;
+-  //llint mp_region_counts_ticks;
+   time_counter mp_region_counts_tc;
+-  //llint hit_list_ticks;
+   time_counter hit_list_tc;
+-  //llint pass1_ticks;
+   time_counter pass1_tc;
+-  //llint get_vector_hits_ticks;
+   time_counter get_vector_hits_tc;
+-  //llint pass2_ticks;
+   time_counter pass2_tc;
+-  //llint duplicate_removal_ticks;
+   time_counter duplicate_removal_tc;
+   stat_t anchor_list_init_size;
+   stat_t n_big_gaps_anchor_list;
+--- gmapper/mapping.c
++++ gmapper/mapping.c
+@@ -461,8 +461,6 @@ read_get_region_counts(struct read_entry * re, int st, struct regions_options *
+ {
+   int sn, i, offset, region;
+   uint j;
+-  //llint before = gettimeinusecs();
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.region_counts_tc);
+   int number_in_pair = re->first_in_pair? 0 : 1;
+ 
+@@ -535,9 +533,6 @@ read_get_region_counts(struct read_entry * re, int st, struct regions_options *
+     }
+   }
+ 
+-  //region_counts_usecs[omp_get_thread_num()] += gettimeinusecs() - before;
+-  //after = rdtsc();
+-  //tpg.region_counts_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.region_counts_tc);
+ }
+ 
+@@ -545,7 +540,6 @@ read_get_region_counts(struct read_entry * re, int st, struct regions_options *
+ static void
+ read_get_mp_region_counts(struct read_entry * re, int st)
+ {
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.mp_region_counts_tc);
+ 
+   int nip, sn, i, offset, region;
+@@ -602,8 +596,6 @@ read_get_mp_region_counts(struct read_entry * re, int st)
+     }
+   }
+ 
+-  //after = rdtsc();
+-  //tpg.mp_region_counts_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.mp_region_counts_tc);
+ }
+ 
+@@ -1008,16 +1000,11 @@ read_get_anchor_list_per_strand(struct read_entry * re, int st,
+ static inline void
+ read_get_anchor_list(struct read_entry * re, struct anchor_list_options * options)
+ {
+-  //llint before = gettimeinusecs();
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.anchor_list_tc);
+ 
+   read_get_anchor_list_per_strand(re, 0, options);
+   read_get_anchor_list_per_strand(re, 1, options);
+ 
+-  //anchor_list_usecs[omp_get_thread_num()] += gettimeinusecs() - before;
+-  //after = rdtsc();
+-  //tpg.anchor_list_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.anchor_list_tc);
+ }
+ 
+@@ -1232,8 +1219,6 @@ read_get_hit_list_per_strand(struct read_entry * re, int st, struct hit_list_opt
+ static inline void
+ read_get_hit_list(struct read_entry * re, struct hit_list_options * options)
+ {
+-  //llint before = gettimeinusecs();
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.hit_list_tc);
+ 
+   read_get_hit_list_per_strand(re, 0, options);
+@@ -1245,9 +1230,6 @@ read_get_hit_list(struct read_entry * re, struct hit_list_options * options)
+   for (int i = 0; i < re->n_hits[1]; ++i)
+     re->hits[1][i].sort_idx = re->n_hits[0] + i;
+ 
+-  //hit_list_usecs[omp_get_thread_num()] += gettimeinusecs() - before;
+-  //after = rdtsc();
+-  //tpg.hit_list_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.hit_list_tc);
+ 
+ #ifdef DEBUG_HIT_LIST_CREATION
+@@ -1345,14 +1327,11 @@ read_pass1_per_strand(struct read_entry * re, int st, struct pass1_options * opt
+ static inline void
+ read_pass1(struct read_entry * re, struct pass1_options * options)
+ {
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.pass1_tc);
+ 
+   read_pass1_per_strand(re, 0, options);
+   read_pass1_per_strand(re, 1, options);
+ 
+-  //after = rdtsc();
+-  //tpg.pass1_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.pass1_tc);
+ 
+ #ifdef DEBUG_HIT_LIST_PASS1
+@@ -1376,7 +1355,6 @@ DEF_EXTHEAP(struct read_hit *,unpaired_pass1)
+ static void
+ read_get_vector_hits(struct read_entry * re, struct read_hit * * a, int * load, struct pass1_options * options)
+ {
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.get_vector_hits_tc);
+   int st, i;
+ 
+@@ -1405,8 +1383,6 @@ read_get_vector_hits(struct read_entry * re, struct read_hit * * a, int * load,
+     }
+   }
+ 
+-  //after = rdtsc();
+-  //tpg.get_vector_hits_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.get_vector_hits_tc);
+ }
+ 
+@@ -1521,8 +1497,6 @@ static void
+ read_remove_duplicate_hits(struct read_hit * * hits_pass2, int * n_hits_pass2)
+ {
+   int i, j, k, max, max_idx;
+-  //llint before = gettimeinusecs();
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.duplicate_removal_tc);
+ 
+   /*
+@@ -1599,9 +1573,6 @@ read_remove_duplicate_hits(struct read_hit * * hits_pass2, int * n_hits_pass2)
+ 
+   *n_hits_pass2 = k;
+ 
+-  //duplicate_removal_usecs[omp_get_thread_num()] += gettimeinusecs() - before;
+-  //after = rdtsc();
+-  //tpg.duplicate_removal_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.duplicate_removal_tc);
+ }
+ 
+@@ -1634,7 +1605,6 @@ read_pass2(struct read_entry * re,
+ 	   struct read_hit * * hits_pass2, int * n_hits_pass2,
+ 	   struct pass2_options * options)
+ {
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.pass2_tc);
+ 
+   int i, cnt;
+@@ -1742,8 +1712,6 @@ read_pass2(struct read_entry * re,
+     }
+   }
+ 
+-  //after = rdtsc();
+-  //tpg.pass2_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.pass2_tc);
+ 
+   return cnt >= options->stop_count;
+@@ -1879,7 +1847,6 @@ readpair_get_vector_hits(struct read_entry * re1, struct read_entry * re2,
+ 			 struct read_hit_pair * a, int * load,
+ 			 struct pairing_options * options)
+ {
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.get_vector_hits_tc);
+ 
+   int st1, st2, i, j;
+@@ -1926,8 +1893,6 @@ readpair_get_vector_hits(struct read_entry * re1, struct read_entry * re2,
+     }
+   }
+ 
+-  //after = rdtsc();
+-  //tpg.get_vector_hits_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.get_vector_hits_tc);
+ }
+ 
+@@ -2151,8 +2116,6 @@ readpair_remove_duplicate_hits(struct read_hit_pair * hits_pass2, int * n_hits_p
+   */
+ 
+   int tmp;
+-  //llint before = gettimeinusecs();
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.duplicate_removal_tc);
+ 
+   readpair_push_dominant_single_hits(hits_pass2, n_hits_pass2, threshold_is_absolute, 0, pass2_readpair_hit0_sfrp_gen_start_cmp);
+@@ -2168,9 +2131,6 @@ readpair_remove_duplicate_hits(struct read_hit_pair * hits_pass2, int * n_hits_p
+ 
+   *n_hits_pass2 = tmp;
+ 
+-  //duplicate_removal_usecs[omp_get_thread_num()] += gettimeinusecs() - before;
+-  //after = rdtsc();
+-  //tpg.duplicate_removal_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.duplicate_removal_tc);
+ }
+ 
+@@ -2185,7 +2145,6 @@ readpair_pass2(struct read_entry * re1, struct read_entry * re2,
+ 	       struct pairing_options * options,
+ 	       struct pass2_options * options1, struct pass2_options * options2)
+ {
+-  //llint before = rdtsc(), after;
+   TIME_COUNTER_START(tpg.pass2_tc);
+ 
+   int i, j, cnt;
+@@ -2306,8 +2265,6 @@ readpair_pass2(struct read_entry * re1, struct read_entry * re2,
+     }
+   }
+ 
+-  //after = rdtsc();
+-  //tpg.pass2_ticks += MAX(after - before, 0);
+   TIME_COUNTER_STOP(tpg.pass2_tc);
+ 
+   return cnt >= options->stop_count;
