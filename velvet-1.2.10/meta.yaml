@@ -1,0 +1,38 @@
+package:
+  name: velvet
+  version: "1.2.10"
+
+# Use conda's gcc/libgcc on OSX to enable use of OpenMP
+requirements:
+  build:
+    - zlib
+    - gcc >=4.8.5     # [osx]
+  run:
+    - zlib
+    - libgcc >=4.8.5  # [osx]
+
+source:
+  fn: velvet_1.2.10.tgz
+  url: http://download.lab7.io/sources/velvet_1.2.10.tgz
+  md5: 6e28c4b9bedc5f7ab2b947e7266a02f6
+  patches:
+    - velvet-makefile.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - "cp -f \"${SRC_DIR}/data/test_reads.fa\" ."
+    - "velveth . 21 -shortPaired test_reads.fa"
+    - "velvetg ."
+
+about:
+  home: http://www.ebi.ac.uk/~zerbino/velvet/
+  license: GPLv2
+  license_file: LICENSE.txt
+  summary: "Sequence assembler for very short reads"
