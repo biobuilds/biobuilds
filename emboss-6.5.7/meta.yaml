@@ -1,0 +1,32 @@
+package:
+  name: emboss
+  version: "6.5.7"
+
+requirements:
+  build:
+    - autoconf-update
+    - libgd
+  run:
+    - libgd
+
+source:
+  fn: EMBOSS-6.5.7.tar.gz
+  url: ftp://emboss.open-bio.org/pub/EMBOSS/EMBOSS-6.5.7.tar.gz
+  md5: 6a2cb3f93d5e9415c74ab0f6b1ede5f0
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  # Needed so hard-coded paths in libajax and libeplplot are modified when
+  # installing into a conda environment; lets EMBOSS apps find their config
+  # and data files without having to set shell environment variables.
+  detect_binary_files_with_prefix: True
+
+about:
+  home: "http://emboss.sourceforge.net/"
+  license: GPLv2
+  license_file: LICENSE
+  summary: "Open Source software suite for molecular biology"
