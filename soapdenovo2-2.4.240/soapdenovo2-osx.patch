@@ -1,0 +1,960 @@
+new file mode 100644
+--- /dev/null
++++ sparsePregraph/inc/spinLock.h
+@@ -0,0 +1,40 @@
++typedef int pthread_spinlock_t;
++#ifndef EBUSY
++#define EBUSY 16
++#endif
++
++static inline int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
++    __asm__ __volatile__ ("" ::: "memory");
++    *lock = 0;
++    return 0;
++}
++
++static inline int pthread_spin_destroy(pthread_spinlock_t *lock) {
++    return 0;
++}
++
++static inline int pthread_spin_lock(pthread_spinlock_t *lock) {
++    while (1) {
++        int i;
++        for (i=0; i < 10000; i++) {
++            if (__sync_bool_compare_and_swap(lock, 0, 1)) {
++                return 0;
++            }
++        }
++        sched_yield();
++    }
++}
++
++static inline int pthread_spin_trylock(pthread_spinlock_t *lock) {
++    if (__sync_bool_compare_and_swap(lock, 0, 1)) {
++        return 0;
++    }
++    return (EBUSY);
++}
++
++static inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
++    __asm__ __volatile__ ("" ::: "memory");
++    *lock = 0;
++    return 0;
++}
++
+new file mode 100644
+--- /dev/null
++++ standardPregraph/inc/spinLock.h
+@@ -0,0 +1,40 @@
++typedef int pthread_spinlock_t;
++#ifndef EBUSY
++#define EBUSY 16
++#endif
++
++static inline int pthread_spin_init(pthread_spinlock_t *lock, int pshared) {
++    __asm__ __volatile__ ("" ::: "memory");
++    *lock = 0;
++    return 0;
++}
++
++static inline int pthread_spin_destroy(pthread_spinlock_t *lock) {
++    return 0;
++}
++
++static inline int pthread_spin_lock(pthread_spinlock_t *lock) {
++    while (1) {
++        int i;
++        for (i=0; i < 10000; i++) {
++            if (__sync_bool_compare_and_swap(lock, 0, 1)) {
++                return 0;
++            }
++        }
++        sched_yield();
++    }
++}
++
++static inline int pthread_spin_trylock(pthread_spinlock_t *lock) {
++    if (__sync_bool_compare_and_swap(lock, 0, 1)) {
++        return 0;
++    }
++    return (EBUSY);
++}
++
++static inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
++    __asm__ __volatile__ ("" ::: "memory");
++    *lock = 0;
++    return 0;
++}
++
+--- standardPregraph/prlHashReads.c
++++ standardPregraph/prlHashReads.c
+@@ -46,12 +46,6 @@
+ static ubyte8 * hashBanBuffer;          //the buffered hash value for 'kmerBuffer'
+ static char * nextcBuffer, *prevcBuffer; //next char buffer , previous char buffer for 'kmerBuffer'
+ 
+-static struct aiocb aio1;
+-static struct aiocb aio2;
+-static char * aioBuffer1;
+-static char * aioBuffer2;
+-static char * readBuffer1;
+-static char * readBuffer2;
+ 
+ static void thread_mark ( KmerSet * set, unsigned char thrdID );
+ static void Mark1in1outNode ( unsigned char * thrdSignal );
+@@ -303,8 +297,6 @@
+ *************************************************/
+ boolean prlRead2HashTable ( char * libfile, char * outfile )
+ {
+-	char * cach1;
+-	char * cach2;
+ 	unsigned char asm_ctg = 1;
+ 	long long i;
+ 	char * next_name, name[256];
+@@ -312,6 +304,7 @@
+ 	time_t start_t, stop_t;
+ 	int maxReadNum;
+ 	int libNo;
++	int type = 0; //decide whether the PE reads is good or bad in bam file
+ 	pthread_t threads[thrd_num];
+ 	unsigned char thrdSignal[thrd_num + 1];
+ 	PARAMETER paras[thrd_num];
+@@ -341,16 +334,6 @@
+ 	prevcBuffer = ( char * ) ckalloc ( buffer_size * sizeof ( char ) );
+ 	nextcBuffer = ( char * ) ckalloc ( buffer_size * sizeof ( char ) );
+ 	maxReadNum = buffer_size / ( maxReadLen - overlaplen + 1 );
+-	//printf("buffer size %d, max read len %d, max read num %d\n",buffer_size,maxReadLen,maxReadNum);
+-	int maxAIOSize = 32768;
+-	aioBuffer1 = ( char * ) ckalloc ( ( maxAIOSize ) * sizeof ( char ) );
+-	aioBuffer2 = ( char * ) ckalloc ( ( maxAIOSize ) * sizeof ( char ) );
+-	readBuffer1 = ( char * ) ckalloc ( ( maxAIOSize + ( maxReadLen * 4 + 1024 ) ) * sizeof ( char ) ); //(char *)ckalloc(maxAIOSize*sizeof(char)); //1024
+-	readBuffer2 = ( char * ) ckalloc ( ( maxAIOSize + ( maxReadLen * 4 + 1024 ) ) * sizeof ( char ) ); //1024
+-	cach1 = ( char * ) ckalloc ( ( maxReadLen * 4 + 1024 ) * sizeof ( char ) ); //1024
+-	cach2 = ( char * ) ckalloc ( ( maxReadLen * 4 + 1024 ) * sizeof ( char ) ); //1024
+-	memset ( cach1, '\0', ( maxReadLen * 4 + 1024 ) ); //1024
+-	memset ( cach2, '\0', ( maxReadLen * 4 + 1024 ) ); //1024
+ 	seqBuffer = ( char ** ) ckalloc ( maxReadNum * sizeof ( char * ) );
+ 	lenBuffer = ( int * ) ckalloc ( maxReadNum * sizeof ( int ) );
+ 	indexArray = ( int * ) ckalloc ( maxReadNum * sizeof ( int ) );
+@@ -403,220 +386,33 @@
+ 	time ( &start_t );
+ 	kmer_c = n_solexa = read_c = i = libNo = readNumBack = gradsCounter = 0;
+ 
+-	while ( openNextFile ( &libNo, pairs, asm_ctg ) )
++	while ( ( flag = read1seqInLib ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), &libNo, pairs, 1, &type) ) != 0 )
+ 	{
+-		//read bam file
+-		if ( lib_array[libNo].curr_type == 4 )
++		if ( ( ++i ) % 100000000 == 0 )
++		{ printf ( "--- %lldth reads\n", i ); }
++
++		if ( lenBuffer[read_c] < 0 )
++		{ printf ( "read len %d\n", lenBuffer[read_c] ); }
++
++		if ( lenBuffer[read_c] < overlaplen + 1 )
++		{ continue; }
++
++		/*
++		   if(lenBuffer[read_c]>70)
++		   lenBuffer[read_c] = 50;
++		   else if(lenBuffer[read_c]>40)
++		   lenBuffer[read_c] = 40;
++		 */
++		indexArray[read_c] = kmer_c;
++		kmer_c += lenBuffer[read_c] - overlaplen + 1;
++		read_c++;
++
++		if ( read_c == maxReadNum )
+ 		{
+-			int type = 0;   //deside the PE reads is good or bad
+-
+-			while ( ( flag = read1seqInLibBam ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), &libNo, pairs, 1, &type ) ) != 0 )
+-			{
+-				if ( type == -1 ) //if the reads is bad, go back.
+-				{
+-					i--;
+-
+-					if ( lenBuffer[read_c - 1] >= overlaplen + 1 )
+-					{
+-						kmer_c -= lenBuffer[read_c - 1] - overlaplen + 1;
+-						read_c--;
+-					}
+-
+-					n_solexa -= 2;
+-					continue;
+-				}
+-
+-				if ( ( ++i ) % 100000000 == 0 )
+-					{ fprintf ( stderr, "--- %lldth reads.\n", i ); }
+-
+-				if ( lenBuffer[read_c] < 0 )
+-					{ fprintf ( stderr, "Read len %d.\n", lenBuffer[read_c] ); }
+-
+-				if ( lenBuffer[read_c] < overlaplen + 1 )
+-					{ continue; }
+-
+-				/*
+-				   if(lenBuffer[read_c]>70)
+-				   lenBuffer[read_c] = 50;
+-				   else if(lenBuffer[read_c]>40)
+-				   lenBuffer[read_c] = 40;
+-				 */
+-				indexArray[read_c] = kmer_c;
+-				kmer_c += lenBuffer[read_c] - overlaplen + 1;
+-				read_c++;
+-
+-				if ( read_c == maxReadNum )
+-				{
+-					kmerCounter[0] += kmer_c;
+-					sendWorkSignal ( 2, thrdSignal ); //chopKmer4read
+-					sendWorkSignal ( 1, thrdSignal ); //singleKmer
+-					kmer_c = read_c = 0;
+-				}
+-			}
+-		}
+-		//read PE fasta or fastq
+-		else if ( lib_array[libNo].curr_type == 1 || lib_array[libNo].curr_type == 2 )
+-		{
+-			initAIO ( &aio1, aioBuffer1, fileno ( lib_array[libNo].fp1 ), maxAIOSize );
+-			initAIO ( &aio2, aioBuffer2, fileno ( lib_array[libNo].fp2 ), maxAIOSize );
+-			int offset1, offset2, flag1, flag2, rt1, rt2;
+-			offset1 = offset2 = 0;
+-			rt1 = aio_read ( &aio1 );
+-			rt2 = aio_read ( &aio2 );
+-			flag1 = AIORead ( &aio1, &offset1, readBuffer1, cach1, &rt1, lib_array[libNo].curr_type );
+-			flag2 = AIORead ( &aio2, &offset2, readBuffer2, cach2, &rt2, lib_array[libNo].curr_type );
+-
+-			if ( flag1 && flag2 )
+-			{
+-				int start1, start2, turn;
+-				start1 = start2 = 0;
+-				turn = 1;
+-
+-				while ( start1 < offset1 || start2 < offset2 )
+-				{
+-					if ( turn == 1 )
+-					{
+-						turn = 2;
+-						readseqInLib ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), readBuffer1, &start1, offset1, libNo );
+-
+-						if ( ( ++i ) % 100000000 == 0 )
+-							{ fprintf ( stderr, "--- %lldth reads.\n", i ); }
+-
+-						if ( lenBuffer[read_c] < 0 )
+-							{ fprintf ( stderr, "Read len %d.\n", lenBuffer[read_c] ); }
+-
+-						if ( lenBuffer[read_c] < overlaplen + 1 )
+-						{
+-							if ( start1 >= offset1 )
+-							{
+-								start1 = 0;
+-								offset1 = 0;
+-								flag1 = AIORead ( &aio1, &offset1, readBuffer1, cach1, &rt1, lib_array[libNo].curr_type );
+-							}
+-
+-							continue;
+-						}
+-
+-						indexArray[read_c] = kmer_c;
+-						kmer_c += lenBuffer[read_c] - overlaplen + 1;
+-						read_c++;
+-
+-						if ( start1 >= offset1 )
+-						{
+-							start1 = 0;
+-							offset1 = 0;
+-							flag1 = AIORead ( &aio1, &offset1, readBuffer1, cach1, &rt1, lib_array[libNo].curr_type );
+-						}
+-
+-						if ( read_c == maxReadNum )
+-						{
+-							kmerCounter[0] += kmer_c;
+-							sendWorkSignal ( 2, thrdSignal );   //chopKmer4read
+-							sendWorkSignal ( 1, thrdSignal );   //singleKmer
+-							kmer_c = read_c = 0;
+-						}
+-
+-						continue;
+-					}
+-
+-					if ( turn == 2 )
+-					{
+-						turn = 1;
+-						readseqInLib ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), readBuffer2, &start2, offset2, libNo );
+-
+-						if ( ( ++i ) % 100000000 == 0 )
+-							{ fprintf ( stderr, "--- %lldth reads.\n", i ); }
+-
+-						if ( lenBuffer[read_c] < 0 )
+-							{ fprintf ( stderr, "Read len %d.\n", lenBuffer[read_c] ); }
+-
+-						if ( lenBuffer[read_c] < overlaplen + 1 )
+-						{
+-							if ( ( flag2 == 2 ) && ( start2 >= offset2 ) )
+-								{ break; }
+-
+-							if ( start2 >= offset2 )
+-							{
+-								start2 = 0;
+-								offset2 = 0;
+-								flag2 = AIORead ( &aio2, &offset2, readBuffer2, cach2, &rt2, lib_array[libNo].curr_type );
+-							}
+-
+-							continue;
+-						}
+-
+-						indexArray[read_c] = kmer_c;
+-						kmer_c += lenBuffer[read_c] - overlaplen + 1;
+-						read_c++;
+-
+-						if ( ( flag2 == 2 ) && ( start2 >= offset2 ) )
+-							{ break; }
+-
+-						if ( start2 >= offset2 )
+-						{
+-							start2 = 0;
+-							offset2 = 0;
+-							flag2 = AIORead ( &aio2, &offset2, readBuffer2, cach2, &rt2, lib_array[libNo].curr_type );
+-						}
+-
+-						if ( read_c == maxReadNum )
+-						{
+-							kmerCounter[0] += kmer_c;
+-							sendWorkSignal ( 2, thrdSignal );   //chopKmer4read
+-							sendWorkSignal ( 1, thrdSignal );   //singleKmer
+-							kmer_c = read_c = 0;
+-						}
+-
+-						continue;
+-					}
+-				}
+-			}
+-			else
+-			{
+-				fprintf(stderr, "Error: aio_read error.\n");
+-			}
+-		}
+-		//read single fasta, single fastq and PE fasta in one file
+-		else
+-		{
+-			initAIO ( &aio1, aioBuffer1, fileno ( lib_array[libNo].fp1 ), maxAIOSize );
+-			int offset, flag1, rt;
+-			offset = 0;
+-			rt = aio_read ( &aio1 );
+-
+-			while ( ( flag1 = AIORead ( &aio1, &offset, readBuffer1, cach1, &rt, lib_array[libNo].curr_type ) ) )
+-			{
+-				int start = 0;
+-
+-				while ( start < offset )
+-				{
+-					readseqInLib ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), readBuffer1, &start, offset, libNo );
+-
+-					if ( ( ++i ) % 100000000 == 0 )
+-						{ fprintf ( stderr, "--- %lldth reads.\n", i ); }
+-
+-					if ( lenBuffer[read_c] < 0 )
+-						{ fprintf ( stderr, "Read len %d.\n", lenBuffer[read_c] ); }
+-
+-					if ( lenBuffer[read_c] < overlaplen + 1 )
+-						{ continue; }
+-
+-					indexArray[read_c] = kmer_c;
+-					kmer_c += lenBuffer[read_c] - overlaplen + 1;
+-					read_c++;
+-				}
+-
+-				if ( read_c > maxReadNum - 1024 )
+-				{
+-					kmerCounter[0] += kmer_c;
+-					sendWorkSignal ( 2, thrdSignal );   //chopKmer4read
+-					sendWorkSignal ( 1, thrdSignal );   //singleKmer
+-					kmer_c = read_c = 0;
+-				}
+-
+-				if ( flag1 == 2 )
+-					{ break; }
+-			}
++			kmerCounter[0] += kmer_c;
++			sendWorkSignal ( 2, thrdSignal );
++			sendWorkSignal ( 1, thrdSignal );
++			kmer_c = read_c = 0;
+ 		}
+ 	}
+ 
+@@ -686,12 +482,6 @@
+ 	free ( ( void * ) nextcBuffer );
+ 	free ( ( void * ) prevcBuffer );
+ 	free ( ( void * ) next_name );
+-	free ( ( void * ) aioBuffer1 );
+-	free ( ( void * ) aioBuffer2 );
+-	free ( ( void * ) readBuffer1 );
+-	free ( ( void * ) readBuffer2 );
+-	free ( ( void * ) cach1 );
+-	free ( ( void * ) cach2 );
+ 	fprintf ( stderr, "done hashing nodes\n" );
+ 
+ 	if ( deLowKmer )
+@@ -712,119 +502,6 @@
+ 	return 1;
+ }
+ 
+-void initAIO ( struct aiocb * aio, char * buf, int fd, int size )
+-{
+-	bzero ( aio, sizeof ( struct aiocb ) );
+-	aio->aio_buf = ( void * ) buf;
+-	aio->aio_fildes = fd;
+-	aio->aio_nbytes = size;
+-	aio->aio_offset = 0;
+-}
+-
+-int AIORead ( struct aiocb * mycb, int * offset, char * buf, char * cach, int * rt, int curr_type )
+-{
+-	int i, i2, i3, j;
+-	int num;
+-	size_t mode, get, max_list;
+-
+-	//      rt = aio_read(mycb);
+-	if ( *rt == 0 )
+-	{
+-		struct aiocb * aiocb_list[1];
+-		aiocb_list[0] = mycb;
+-		max_list = 1;
+-
+-		while ( 1 )
+-		{
+-			mode = aio_suspend ( ( const struct aiocb * const * ) aiocb_list, max_list, NULL );
+-
+-			if ( mode == -1 )
+-			{
+-				if ( errno != EAGAIN && errno != EINTR )
+-				{
+-					fprintf ( stderr, "Error:%s.\n", errno );
+-					return 0;
+-				}
+-				else
+-					{ continue; }
+-			}
+-			else
+-			{
+-				//while(aio_error(mycb) == EINPROGRESS);
+-				get = aio_return ( mycb );
+-				j = strlen ( cach );
+-
+-				if ( get > 0 )
+-				{
+-					char * temp = ( char * ) ( ( *mycb ).aio_buf );
+-
+-					if ( ( get % 32768 ) != 0 )
+-					{
+-						strcpy ( buf, cach );
+-						memcpy ( &buf[j], temp, get );
+-						memset ( cach, '\0', j );
+-						//printf("%s",buf);
+-						*offset = j + get;
+-						return 2;
+-					}
+-
+-					if ( ( curr_type == 2 ) || ( curr_type == 6 ) )
+-					{
+-						num = 0;
+-
+-						for ( i = get - 1; ( temp[i] != '@' ) || ( temp[i - 1] != '\n' ); i-- )
+-						{
+-							if ( temp[i] == '\n' ) {num++;}
+-						}
+-
+-						if ( num <= 1 )
+-						{
+-							for ( i2 = i - 2; temp[i2] != '\n'; i2-- ) { ; }
+-
+-							if ( temp[i2 + 1] == '+' )
+-							{
+-								for ( i2 = i2 - 1; temp[i2] != '\n'; i2-- ) { ; }
+-
+-								if ( temp[i2 + 1] != '+' ) {for ( i = i2 - 1; ( temp[i] != '@' ) || ( temp[i - 1] != '\n' ); i-- ) { ; }}
+-							}
+-						}
+-					}
+-					else if ( ( curr_type == 1 ) || ( curr_type == 3 ) || ( curr_type == 5 ) )
+-						for ( i = get - 1; temp[i] != '>'; i-- ) { ; }
+-
+-					//for (i = get - 1; temp[i] != '>' && temp[i] != '@'; i--) ;
+-					strcpy ( buf, cach );
+-					memcpy ( &buf[j], temp, i );
+-					//printf("%s",buf);
+-					*offset = i + j;
+-					memset ( cach, '\0', j );
+-					memcpy ( cach, &temp[i], get - i );
+-					( *mycb ).aio_offset += get;
+-					*rt = aio_read ( mycb );
+-					return 1;
+-				}
+-				else
+-				{
+-					fprintf(stderr, "Error: aio_return error.\n");
+-				}
+-				/*else
+-				   {
+-				   char *temp = (char *)((*mycb).aio_buf);
+-				   strcpy(buf,cach);
+-				   strcpy(&buf[j],temp);
+-				   *offset = j + get;
+-				   return 2;
+-				   } */
+-			}
+-		}
+-	}
+-	else
+-	{
+-		fprintf(stderr, "Error: (*rt != 0) in AIORead.\n");
+-	}
+-
+-	return 0;
+-}
+ 
+ boolean openNextFile ( int * libNo, boolean pairs, unsigned char asm_ctg )
+ {
+--- standardPregraph/prlRead2path.c
++++ standardPregraph/prlRead2path.c
+@@ -61,12 +61,6 @@
+ 
+ static int * deletion;              //read deletion number for each thread
+ 
+-static struct aiocb aio1;
+-static struct aiocb aio2;
+-static char * aioBuffer1;
+-static char * aioBuffer2;
+-static char * readBuffer1;
+-static char * readBuffer2;
+ 
+ static void parse1read ( int t, int threadID );
+ static void search1kmerPlus ( int j, unsigned char thrdID );
+@@ -785,8 +779,6 @@
+ *************************************************/
+ void prlRead2edge ( char * libfile, char * outfile )
+ {
+-	char * cach1;
+-	char * cach2;
+ 	unsigned char asm_ctg = 1;
+ 	long long i;
+ 	char name[256], *src_name, *next_name;
+@@ -796,6 +788,7 @@
+ 	pthread_t threads[thrd_num];
+ 	unsigned char thrdSignal[thrd_num + 1];
+ 	PARAMETER paras[thrd_num];
++	int type = 0; //decide whether the PE reads is good or bad in bam file
+ 	//init
+ 	maxReadLen = 0;
+ 	maxNameLen = 256;
+@@ -826,15 +819,6 @@
+ 	flagArray = ( boolean * ) ckalloc ( buffer_size * sizeof ( boolean ) );
+ 	maxReadNum = buffer_size / ( maxReadLen - overlaplen + 1 );
+ 	//printf("buffer for at most %d reads\n",maxReadNum);
+-	int maxAIOSize = 32768;
+-	aioBuffer1 = ( char * ) ckalloc ( ( maxAIOSize ) * sizeof ( char ) );
+-	aioBuffer2 = ( char * ) ckalloc ( ( maxAIOSize ) * sizeof ( char ) );
+-	readBuffer1 = ( char * ) ckalloc ( ( maxAIOSize + ( maxReadLen * 4 + 1024 ) ) * sizeof ( char ) ); //(char *)ckalloc(maxAIOSize*sizeof(char)); //1024
+-	readBuffer2 = ( char * ) ckalloc ( ( maxAIOSize + ( maxReadLen * 4 + 1024 ) ) * sizeof ( char ) ); //1024
+-	cach1 = ( char * ) ckalloc ( ( maxReadLen * 4 + 1024 ) * sizeof ( char ) ); //1024
+-	cach2 = ( char * ) ckalloc ( ( maxReadLen * 4 + 1024 ) * sizeof ( char ) ); //1024 
+-	memset ( cach1, '\0', ( maxReadLen * 4 + 1024 ) ); //1024
+-	memset ( cach2, '\0', ( maxReadLen * 4 + 1024 ) ); //1024
+ 	seqBuffer = ( char ** ) ckalloc ( maxReadNum * sizeof ( char * ) );
+ 	lenBuffer = ( int * ) ckalloc ( maxReadNum * sizeof ( int ) );
+ 	indexArray = ( int * ) ckalloc ( ( maxReadNum + 1 ) * sizeof ( int ) );
+@@ -897,333 +881,60 @@
+ 	time_t read_start, read_end, time_bef, time_aft;
+ 	time ( &read_start );
+ 
+-	while ( openNextFile ( &libNo, pairs, asm_ctg ) )
++	while ( ( flag = read1seqInLib ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), &libNo, pairs, 1, &type) ) != 0 )
+ 	{
+-		if ( lib_array[libNo].curr_type == 4 )
+-		{
+-			int type = 0;   //deside the PE reads is good or bad
+-
+-			while ( ( flag = read1seqInLibBam ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), &libNo, pairs, 1, &type ) ) != 0 )
+-			{
+-				if ( type == -1 ) //if the reads is bad, go back.
+-				{
+-					i--;
+-
+-					if ( lenBuffer[read_c - 1] >= overlaplen + 1 )
+-					{
+-						kmer_c -= lenBuffer[read_c - 1] - overlaplen + 1;
+-						read_c--;
+-					}
+-
+-					n_solexa -= 2;
+-					continue;
+-				}
+-
+-				if ( ( ++i ) % 100000000 == 0 )
+-				{
+-					fprintf ( stderr, "--- %lldth reads.\n", i );
+-				}
+-
+-				if ( lenBuffer[read_c] < overlaplen + 1 )
+-				{
+-					continue;
+-				}
+-
+-				//if(lenBuffer[read_c]>70)
+-				//    lenBuffer[read_c] = 70;
+-				//else if(lenBuffer[read_c]>40)
+-				//    lenBuffer[read_c] = 40;
+-				indexArray[read_c] = kmer_c;
+-				kmer_c += lenBuffer[read_c] - overlaplen + 1;
+-				read_c++;
+-
+-				if ( read_c == maxReadNum )
+-				{
+-					indexArray[read_c] = kmer_c;
+-					time ( &read_end );
+-					t0 += read_end - read_start;
+-					time ( &time_bef );
+-					sendWorkSignal ( 2, thrdSignal ); //chopKmer4read
+-					time ( &time_aft );
+-					t1 += time_aft - time_bef;
+-					time ( &time_bef );
+-					sendWorkSignal ( 1, thrdSignal ); //searchKmer
+-					time ( &time_aft );
+-					t2 += time_aft - time_bef;
+-					time ( &time_bef );
+-					sendWorkSignal ( 3, thrdSignal ); //parse1read
+-					time ( &time_aft );
+-					t3 += time_aft - time_bef;
+-					time ( &time_bef );
+-					sendWorkSignal ( 4, thrdSignal ); //search1kmerPlus
+-					time ( &time_aft );
+-					t4 += time_aft - time_bef;
+-					time ( &time_bef );
+-					sendWorkSignal ( 6, thrdSignal ); //thread_add1preArc
+-					time ( &time_aft );
+-					t5 += time_aft - time_bef;
+-					time ( &time_bef );
+-
+-					//recordPreArc();
+-					if ( repsTie )
+-					{
+-						recordPathBin ( outfp );
+-					}
+-
+-					time ( &time_aft );
+-					t6 += time_aft - time_bef;
+-					//output_path(read_c,edge_no,flags,outfp);
+-					kmer_c = 0;
+-					read_c = 0;
+-					time ( &read_start );
+-				}
+-			}
+-		}
+-		else if ( lib_array[libNo].curr_type == 1 || lib_array[libNo].curr_type == 2 )
+-		{
+-			initAIO ( &aio1, aioBuffer1, fileno ( lib_array[libNo].fp1 ), maxAIOSize );
+-			initAIO ( &aio2, aioBuffer2, fileno ( lib_array[libNo].fp2 ), maxAIOSize );
+-			int offset1, offset2, flag1, flag2, rt1, rt2;
+-			offset1 = offset2 = 0;
+-			rt1 = aio_read ( &aio1 );
+-			rt2 = aio_read ( &aio2 );
+-			flag1 = AIORead ( &aio1, &offset1, readBuffer1, cach1, &rt1, lib_array[libNo].curr_type );
+-			flag2 = AIORead ( &aio2, &offset2, readBuffer2, cach2, &rt2, lib_array[libNo].curr_type );
+-
+-			if ( flag1 && flag2 )
+-			{
+-				int start1, start2, turn;
+-				start1 = start2 = 0;
+-				turn = 1;
+-
+-				while ( start1 < offset1 || start2 < offset2 )
+-				{
+-					if ( turn == 1 )
+-					{
+-						turn = 2;
+-						readseqInLib ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), readBuffer1, &start1, offset1, libNo );
+-
+-						if ( ( ++i ) % 100000000 == 0 )
+-							{ fprintf ( stderr, "--- %lldth reads.\n", i ); }
+-
+-						if ( lenBuffer[read_c] < overlaplen + 1 )
+-						{
+-							if ( start1 >= offset1 )
+-							{
+-								start1 = 0;
+-								offset1 = 0;
+-								flag1 = AIORead ( &aio1, &offset1, readBuffer1, cach1, &rt1, lib_array[libNo].curr_type );
+-							}
+-
+-							continue;
+-						}
+-
+-						indexArray[read_c] = kmer_c;
+-						kmer_c += lenBuffer[read_c] - overlaplen + 1;
+-						read_c++;
+-
+-						if ( start1 >= offset1 )
+-						{
+-							start1 = 0;
+-							offset1 = 0;
+-							flag1 = AIORead ( &aio1, &offset1, readBuffer1, cach1, &rt1, lib_array[libNo].curr_type );
+-						}
+-
+-						if ( read_c == maxReadNum )
+-						{
+-							indexArray[read_c] = kmer_c;
+-							time ( &read_end );
+-							t0 += read_end - read_start;
+-							time ( &time_bef );
+-							sendWorkSignal ( 2, thrdSignal ); //chopKmer4read
+-							time ( &time_aft );
+-							t1 += time_aft - time_bef;
+-							time ( &time_bef );
+-							sendWorkSignal ( 1, thrdSignal ); //searchKmer
+-							time ( &time_aft );
+-							t2 += time_aft - time_bef;
+-							time ( &time_bef );
+-							sendWorkSignal ( 3, thrdSignal ); //parse1read
+-							time ( &time_aft );
+-							t3 += time_aft - time_bef;
+-							time ( &time_bef );
+-							sendWorkSignal ( 4, thrdSignal ); //search1kmerPlus
+-							time ( &time_aft );
+-							t4 += time_aft - time_bef;
+-							time ( &time_bef );
+-							sendWorkSignal ( 6, thrdSignal ); //thread_add1preArc
+-							time ( &time_aft );
+-							t5 += time_aft - time_bef;
+-							time ( &time_bef );
+-
+-							//recordPreArc();
+-							if ( repsTie )
+-								{ recordPathBin ( outfp ); }
+-
+-							time ( &time_aft );
+-							t6 += time_aft - time_bef;
+-							//output_path(read_c,edge_no,flags,outfp);
+-							kmer_c = 0;
+-							read_c = 0;
+-							time ( &read_start );
+-						}
++		if ( ( ++i ) % 100000000 == 0 )
++			{ printf ( "--- %lldth reads\n", i ); }
+ 
+-						continue;
+-					}
+-
+-					if ( turn == 2 )
+-					{
+-						turn = 1;
+-						readseqInLib ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), readBuffer2, &start2, offset2, libNo );
+-
+-						if ( ( ++i ) % 100000000 == 0 )
+-							{ fprintf ( stderr, "--- %lldth reads.\n", i ); }
+-
+-						if ( lenBuffer[read_c] < overlaplen + 1 )
+-						{
+-							if ( ( flag2 == 2 ) && ( start2 >= offset2 ) )
+-								{ break; }
+-
+-							if ( start2 >= offset2 )
+-							{
+-								start2 = 0;
+-								offset2 = 0;
+-								flag2 = AIORead ( &aio2, &offset2, readBuffer2, cach2, &rt2, lib_array[libNo].curr_type );
+-							}
+-
+-							continue;
+-						}
+-
+-						indexArray[read_c] = kmer_c;
+-						kmer_c += lenBuffer[read_c] - overlaplen + 1;
+-						read_c++;
++		if ( lenBuffer[read_c] < overlaplen + 1 )
++			{ continue; }
+ 
+-						if ( ( flag2 == 2 ) && ( start2 >= offset2 ) )
+-							{ break; }
+-
+-						if ( start2 >= offset2 )
+-						{
+-							start2 = 0;
+-							offset2 = 0;
+-							flag2 = AIORead ( &aio2, &offset2, readBuffer2, cach2, &rt2, lib_array[libNo].curr_type );
+-						}
+-
+-						if ( read_c == maxReadNum )
+-						{
+-							indexArray[read_c] = kmer_c;
+-							time ( &read_end );
+-							t0 += read_end - read_start;
+-							time ( &time_bef );
+-							sendWorkSignal ( 2, thrdSignal ); //chopKmer4read
+-							time ( &time_aft );
+-							t1 += time_aft - time_bef;
+-							time ( &time_bef );
+-							sendWorkSignal ( 1, thrdSignal ); //searchKmer
+-							time ( &time_aft );
+-							t2 += time_aft - time_bef;
+-							time ( &time_bef );
+-							sendWorkSignal ( 3, thrdSignal ); //parse1read
+-							time ( &time_aft );
+-							t3 += time_aft - time_bef;
+-							time ( &time_bef );
+-							sendWorkSignal ( 4, thrdSignal ); //search1kmerPlus
+-							time ( &time_aft );
+-							t4 += time_aft - time_bef;
+-							time ( &time_bef );
+-							sendWorkSignal ( 6, thrdSignal ); //thread_add1preArc
+-							time ( &time_aft );
+-							t5 += time_aft - time_bef;
+-							time ( &time_bef );
+-
+-							//recordPreArc();
+-							if ( repsTie )
+-								{ recordPathBin ( outfp ); }
+-
+-							time ( &time_aft );
+-							t6 += time_aft - time_bef;
+-							//output_path(read_c,edge_no,flags,outfp);
+-							kmer_c = 0;
+-							read_c = 0;
+-							time ( &read_start );
+-						}
++		/*
++		   if(lenBuffer[read_c]>70)
++		   lenBuffer[read_c] = 70;
++		   else if(lenBuffer[read_c]>40)
++		   lenBuffer[read_c] = 40;
++		 */
++		indexArray[read_c] = kmer_c;
++		kmer_c += lenBuffer[read_c] - overlaplen + 1;
++		read_c++;
+ 
+-						continue;
+-					}
+-				}
+-			}
+-			else
+-			{
+-				fprintf(stderr, "Error: aio_read error.\n");
+-			}
+-		}
+-		else
++		if ( read_c == maxReadNum )
+ 		{
+-			initAIO ( &aio1, aioBuffer1, fileno ( lib_array[libNo].fp1 ), maxAIOSize );
+-			int offset, flag1, rt;
+-			offset = 0;
+-			rt = aio_read ( &aio1 );
+-
+-			while ( ( flag1 = AIORead ( &aio1, &offset, readBuffer1, cach1, &rt, lib_array[libNo].curr_type ) ) )
+-			{
+-				int start = 0;
+-
+-				while ( start < offset )
+-				{
+-					readseqInLib ( seqBuffer[read_c], next_name, & ( lenBuffer[read_c] ), readBuffer1, &start, offset, libNo );
+-
+-					if ( ( ++i ) % 100000000 == 0 )
+-						{ fprintf ( stderr, "--- %lldth reads.\n", i ); }
+-
+-					if ( lenBuffer[read_c] < overlaplen + 1 )
+-						{ continue; }
+-
+-					indexArray[read_c] = kmer_c;
+-					kmer_c += lenBuffer[read_c] - overlaplen + 1;
+-					read_c++;
+-				}
+-
+-				if ( read_c > maxReadNum - 1024 )
+-				{
+-					indexArray[read_c] = kmer_c;
+-					time ( &read_end );
+-					t0 += read_end - read_start;
+-					time ( &time_bef );
+-					sendWorkSignal ( 2, thrdSignal ); //chopKmer4read
+-					time ( &time_aft );
+-					t1 += time_aft - time_bef;
+-					time ( &time_bef );
+-					sendWorkSignal ( 1, thrdSignal ); //searchKmer
+-					time ( &time_aft );
+-					t2 += time_aft - time_bef;
+-					time ( &time_bef );
+-					sendWorkSignal ( 3, thrdSignal ); //parse1read
+-					time ( &time_aft );
+-					t3 += time_aft - time_bef;
+-					time ( &time_bef );
+-					sendWorkSignal ( 4, thrdSignal ); //search1kmerPlus
+-					time ( &time_aft );
+-					t4 += time_aft - time_bef;
+-					time ( &time_bef );
+-					sendWorkSignal ( 6, thrdSignal ); //thread_add1preArc
+-					time ( &time_aft );
+-					t5 += time_aft - time_bef;
+-					time ( &time_bef );
+-
+-					//recordPreArc();
+-					if ( repsTie )
+-						{ recordPathBin ( outfp ); }
+-
+-					time ( &time_aft );
+-					t6 += time_aft - time_bef;
+-					//output_path(read_c,edge_no,flags,outfp);
+-					kmer_c = 0;
+-					read_c = 0;
+-					time ( &read_start );
+-				}
+-
+-				if ( flag1 == 2 )
+-					{ break; }
+-			}
++			indexArray[read_c] = kmer_c;
++			time ( &read_end );
++			t0 += read_end - read_start;
++			time ( &time_bef );
++			sendWorkSignal ( 2, thrdSignal ); //chopKmer4read
++			time ( &time_aft );
++			t1 += time_aft - time_bef;
++			time ( &time_bef );
++			sendWorkSignal ( 1, thrdSignal ); //searchKmer
++			time ( &time_aft );
++			t2 += time_aft - time_bef;
++			time ( &time_bef );
++			sendWorkSignal ( 3, thrdSignal ); //parse1read
++			time ( &time_aft );
++			t3 += time_aft - time_bef;
++			time ( &time_bef );
++			sendWorkSignal ( 4, thrdSignal ); //search1kmerPlus
++			time ( &time_aft );
++			t4 += time_aft - time_bef;
++			time ( &time_bef );
++			sendWorkSignal ( 6, thrdSignal ); //thread_add1preArc
++			time ( &time_aft );
++			t5 += time_aft - time_bef;
++			time ( &time_bef );
++
++			//recordPreArc();
++			if ( repsTie )
++			{ recordPathBin ( outfp ); }
++
++			time ( &time_aft );
++			t6 += time_aft - time_bef;
++			kmer_c = 0;
++			read_c = 0;
++			time ( &read_start );
+ 		}
+ 	}
+ 
+@@ -1308,12 +1019,6 @@
+ 	free ( ( void * ) nodeBuffer );
+ 	free ( ( void * ) src_name );
+ 	free ( ( void * ) next_name );
+-	free ( ( void * ) aioBuffer1 );
+-	free ( ( void * ) aioBuffer2 );
+-	free ( ( void * ) readBuffer1 );
+-	free ( ( void * ) readBuffer2 );
+-	free ( ( void * ) cach1 );
+-	free ( ( void * ) cach2 );
+ 
+ 	if ( gLineLen < maxReadLen )
+ 	{

@@ -1,0 +1,102 @@
+--- Makefile.orig
++++ Makefile
+@@ -14,7 +14,7 @@ LIBS=       -pthread -lz -lm
+ EXTRA_FLAGS= 
+ 
+ BIT_ERR = 0
+-ifeq (,$(findstring $(shell uname -m), x86_64 ppc64 ia64))
++ifeq (,$(findstring $(shell uname -m), x86_64 ppc64 ia64 ppc64le))
+ BIT_ERR = 1
+ endif
+ 
+@@ -40,8 +40,8 @@ ifneq (,$(findstring $(shell uname -m), ia64))
+ CFLAGS +=
+ endif
+ 
+-ifneq (,$(findstring $(shell uname -m), ppc64))
+-CFLAGS += -mpowerpc64
++ifneq (,$(findstring $(shell uname -m), ppc64 ppc64le))
++CFLAGS += -m64
+ endif
+ 
+ 
+--- sparsePregraph/Makefile.orig
++++ sparsePregraph/Makefile
+@@ -28,7 +28,7 @@ endif
+ 
+ 
+ BIT_ERR = 0
+-ifeq (,$(findstring $(shell uname -m), x86_64 ppc64 ia64))
++ifeq (,$(findstring $(shell uname -m), x86_64 ppc64 ppc64le ia64))
+ BIT_ERR = 1
+ endif
+ 
+@@ -54,8 +54,8 @@ ifneq (,$(findstring $(shell uname -m), ia64))
+ CFLAGS += 
+ endif
+ 
+-ifneq (,$(findstring $(shell uname -m), ppc64))
+-CFLAGS += -mpowerpc64
++ifneq (,$(findstring $(shell uname -m), ppc64 ppc64le))
++CFLAGS += -m64
+ endif
+ 
+ .SUFFIXES:.cpp .o
+--- standardPregraph/Makefile.orig
++++ standardPregraph/Makefile
+@@ -32,7 +32,7 @@ LIBS=       -pthread -lz -lm
+ EXTRA_FLAGS=
+ 
+ BIT_ERR = 0
+-ifeq (,$(findstring $(shell uname -m), x86_64 ppc64 ia64))
++ifeq (,$(findstring $(shell uname -m), x86_64 ppc64 ppc64le ia64))
+ BIT_ERR = 1
+ endif
+ 
+@@ -66,8 +66,8 @@ ifneq (,$(findstring $(shell uname -m), ia64))
+ CFLAGS += 
+ endif
+ 
+-ifneq (,$(findstring $(shell uname -m), ppc64))
+-CFLAGS += -mpowerpc64
++ifneq (,$(findstring $(shell uname -m), ppc64 ppc64le))
++CFLAGS += -m64
+ endif
+ 
+ .SUFFIXES:.c .o
+--- standardPregraph/hashFunction.c.orig
++++ standardPregraph/hashFunction.c
+@@ -84,6 +84,7 @@ static int crc_table[256] =
+ typedef int ( *CRC32CFunctionPtr ) ( uint32_t, const char *, size_t );
+ static CRC32CFunctionPtr crc32;
+ 
++#ifndef __PPC__    /* FYL, this chunk of code is not used, but it makes trouble on PPC */
+ static uint32_t cpuid ( uint32_t functionInput )
+ {
+ 	uint32_t eax;
+@@ -114,6 +115,7 @@ static inline int crc32cHardware64 ( uint32_t crc, const char * data, size_t len
+ 
+ 	return ( int ) crc;
+ }
++#endif
+ 
+ static inline int crc32cTable ( uint32_t crc, const char * buf, size_t len )
+ {
+@@ -127,6 +129,7 @@ static inline int crc32cTable ( uint32_t crc, const char * buf, size_t len )
+ 
+ CRC32CFunctionPtr detectBestCRC32C()
+ {
++#ifndef __PPC__  /* FYL ?? */
+ 	static const int SSE42_BIT = 20;
+ 	uint32_t ecx = cpuid ( 1 );
+ 	bool hasSSE42 = ecx & ( 1 << SSE42_BIT );
+@@ -141,6 +144,9 @@ CRC32CFunctionPtr detectBestCRC32C()
+ 		//fprintf(stderr, "SSE4.2 disabled\n");
+ 		return crc32cTable;
+ 	}
++#else
++	return crc32cTable;
++#endif
+ }
+ 
+ ubyte8 hash_kmer ( Kmer kmer )

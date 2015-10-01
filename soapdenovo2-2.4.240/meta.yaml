@@ -1,0 +1,33 @@
+package:
+  name: soapdenovo2
+  version: "2.4.240"
+
+requirements:
+  build:
+    - samtools ==0.1.19
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: SOAPdenovo2-src-r240.tgz
+  url: http://download.lab7.io/sources/SOAPdenovo2-src-r240.tgz
+  md5: 2405631b8e8a09acc377fdb7aedb0e05
+  patches:
+    - soapdenovo2-makefiles.patch
+    - soapdenovo2-sources.patch
+    - soapdenovo2-osx.patch         # [osx]
+    - soapdenovo2-power.patch       # [ppc64le]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://soap.genomics.org.cn/soapdenovo.html
+  license: GPLv3
+  license_file: True
+  summary: "Short read assembler specially designed for Illumina GA short reads"
