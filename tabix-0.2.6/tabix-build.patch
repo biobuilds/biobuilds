@@ -1,0 +1,79 @@
+--- Makefile
++++ Makefile
+@@ -1,5 +1,5 @@
+ CC=			gcc
+-CFLAGS=		-g -Wall -O2 -fPIC #-m64 #-arch ppc
++CFLAGS+=		-Wall -fPIC
+ DFLAGS=		-D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE -DBGZF_CACHE
+ LOBJS=		bgzf.o kstring.o knetfile.o index.o bedidx.o
+ AOBJS=		main.o
+@@ -8,6 +8,7 @@
+ SUBDIRS=	.
+ LIBPATH=
+ LIBCURSES=	
++PREFIX=/usr/local
+ 
+ .SUFFIXES:.c .o
+ 
+@@ -24,24 +25,32 @@
+ 			cd $$wdir; \
+ 		done;
+ 
+-all:$(PROG)
++# Names for shared and static libraries
++ifeq ($(shell uname),Darwin)
++sharedlib = libtabix.1.dylib
++else
++sharedlib = libtabix.so.1
++endif
++staticlib = libtabix.a
+ 
+-lib:libtabix.a
++all: $(PROG) $(sharedlib)
++
++lib: $(staticlib)
+ 
+ libtabix.so.1:$(LOBJS)
+-		$(CC) -shared -Wl,-soname,libtabix.so -o $@ $(LOBJS) -lc -lz
++		$(CC) -shared -Wl,-soname,libtabix.so -o $@ $(LOBJS) $(LDFLAGS) -lc -lz
+ 
+ libtabix.1.dylib:$(LOBJS)
+-		libtool -dynamic $(LOBJS) -o $@ -lc -lz
++		$(CC) -shared -Wl,-install_name,libtabix.dylib $(LOBJS) -o $@ -lc $(LDFLAGS) -lz
+ 
+-libtabix.a:$(LOBJS)
++$(staticlib): $(LOBJS)
+ 		$(AR) -csru $@ $(LOBJS)
+ 
+ tabix:lib $(AOBJS)
+-		$(CC) $(CFLAGS) -o $@ $(AOBJS) -L. -ltabix -lm $(LIBPATH) -lz
++		$(CC) $(CFLAGS) -o $@ $(AOBJS) -L. -ltabix -lm $(LIBPATH) $(LDFLAGS) -lz
+ 
+ bgzip:bgzip.o bgzf.o knetfile.o
+-		$(CC) $(CFLAGS) -o $@ bgzip.o bgzf.o knetfile.o -lz
++		$(CC) $(CFLAGS) -o $@ bgzip.o bgzf.o knetfile.o $(LDFLAGS) -lz
+ 
+ TabixReader.class:TabixReader.java
+ 		javac -cp .:sam.jar TabixReader.java
+@@ -61,3 +70,10 @@
+ 		rm -fr gmon.out *.o a.out *.dSYM $(PROG) *~ *.a tabix.aux tabix.log tabix.pdf *.class libtabix.*.dylib libtabix.so*
+ 
+ clean:cleanlocal-recur
++
++install: all
++	install -d "$(PREFIX)/bin" "$(PREFIX)/lib" "$(PREFIX)/include/tabix"
++	install $(PROG) "$(PREFIX)/bin"
++	install tabix.h bgzf.h kstring.h "$(PREFIX)/include/tabix"
++	install $(sharedlib) $(staticlib) "$(PREFIX)/lib" && \
++		cd "$(PREFIX)/lib" && ln -s $(sharedlib) $(subst .1,,$(sharedlib))
+--- main.c
++++ main.c
+@@ -8,7 +8,7 @@
+ #include "tabix.h"
+ #include "knetfile.h"
+ 
+-#define PACKAGE_VERSION "0.2.5 (r1005)"
++#define PACKAGE_VERSION "0.2.6 (r1005)"
+ 
+ #define error(...) { fprintf(stderr,__VA_ARGS__); return -1; }
+ 

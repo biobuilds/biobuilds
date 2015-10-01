@@ -1,0 +1,36 @@
+package:
+  name: tabix
+  version: "0.2.6"
+
+requirements:
+  build:
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: tabix-0.2.6.tar.bz2
+  url: http://download.lab7.io/sources/tabix-0.2.6.tar.bz2
+  md5: 36a61ceac2f5bed36018434282bbcc5d
+  patches:
+    - tabix-build.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - gunzip -c "${SRC_DIR}/example.gtf.gz" > test.gtf
+    - bgzip -f test.gtf
+    - tabix -f -p gff test.gtf.gz
+    - diff -sq "test.gtf.gz" "${SRC_DIR}/example.gtf.gz"
+    - diff -sq "test.gtf.gz.tbi" "${SRC_DIR}/example.gtf.gz.tbi"
+
+about:
+  home: http://www.htslib.org/doc/tabix.html
+  license: MIT
+  summary: "Generic indexer for tab-delimited genome position files"
