@@ -1,0 +1,27 @@
+package:
+  name: htslib
+  version: "1.2.1"
+
+requirements:
+  build:
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: htslib-1.2.1.tar.bz2
+  url: http://download.lab7.io/sources/htslib-1.2.1.tar.bz2
+  md5: 88eec909855abd98032bc2f9c3e83271
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://www.htslib.org/
+  license: MIT
+  license_file: LICENSE
+  summary: "unified library for accessing common file formats used for high-throughput sequencing data"
