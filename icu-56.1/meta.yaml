@@ -1,0 +1,16 @@
+package:
+  name: icu
+  version: "56.1"
+
+source:
+  fn: icu4c-56_1-src.tgz                                                    # [unix]
+  url: http://download.icu-project.org/files/icu4c/56.1/icu4c-56_1-src.tgz  # [unix]
+  md5: c4a2d71ff56aec5ebfab2a3f059be99d                                     # [unix]
+
+build:
+  number: 0
+
+about:
+  home: http://site.icu-project.org/
+  license: MIT
+  summary: "Library for software internationalization"
