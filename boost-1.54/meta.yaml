@@ -1,0 +1,33 @@
+package:
+  name: boost
+  version: "1.54.0"
+
+requirements:
+  build:
+    - icu
+    - zlib
+    - bzip2
+  run:
+    - icu
+    - zlib
+
+source:
+  fn: boost_1_54_0.tar.gz
+  url: https://downloads.sourceforge.net/project/boost/boost/1.54.0/boost_1_54_0.tar.gz
+  md5: efbfbff5a85a9330951f243d0a46e4b9
+  patches:
+    - gcc-glibc.patch
+    - ppc64le-asm.patch   # [ppc64le]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://www.boost.org/"
+  license: Boost
+  license_file: LICENSE_1_0.txt
+  summary: "Peer-reviewed portable C++ source libraries"

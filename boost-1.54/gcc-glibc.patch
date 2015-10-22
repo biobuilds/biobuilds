@@ -1,0 +1,13 @@
+# From: https://svn.boost.org/trac/boost/changeset/84950
+# Fixes issue with gcc-4.8, glibc-2.17 used by Ubuntu14.04 and CentOS7
+# Upstream ticket: https://svn.boost.org/trac/boost/ticket/8731
+--- boost/cstdint.hpp    (revision 84805)
++++ boost/cstdint.hpp    (revision 84950)
+@@ -42,5 +42,6 @@
+ // See https://svn.boost.org/trac/boost/ticket/3548 and http://sources.redhat.com/bugzilla/show_bug.cgi?id=10990
+ //
+-#if defined(BOOST_HAS_STDINT_H) && (!defined(__GLIBC__) || defined(__GLIBC_HAVE_LONG_LONG))
++#if defined(BOOST_HAS_STDINT_H) && (!defined(__GLIBC__) || defined(__GLIBC_HAVE_LONG_LONG) \
++      || (defined(__GLIBC__) && ((__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 17)))))
+ 
+ // The following #include is an implementation artifact; not part of interface
