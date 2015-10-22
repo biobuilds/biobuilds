@@ -1,0 +1,17 @@
+package:
+  name: eigen
+  version: "3.2.0"
+
+source:
+  fn: eigen-3.2.0.tar.gz
+  url: https://bitbucket.org/eigen/eigen/get/3.2.0.tar.gz
+  md5: 9559c34af203dde5f3f1d976d859c5b3
+
+build:
+  number: 0
+
+about:
+  home: http://eigen.tuxfamily.org/
+  license: MPL2
+  license_file: COPYING.MPL2
+  summary: "C++ template library for linear algebra"
