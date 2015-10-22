@@ -1,0 +1,40 @@
+package:
+  name: cufflinks
+  version: "2.2.1"
+
+requirements:
+  # Limits on Boost version due to issues in serialization library; see
+  # https://github.com/cole-trapnell-lab/cufflinks for more details.
+  # Limits on samtools due to changes in samtools/htslib 1.x that we
+  # haven't tested for compatibility breaks yet.
+  build:
+    - zlib
+    - boost <=1.55.0
+    - samtools <1.0.0
+    - python
+    - eigen
+  run:
+    - zlib
+    - boost <=1.55.0
+    - samtools <1.0.0
+    - python
+
+source:
+  fn: cufflinks-2.2.1.tar.gz
+  url: http://download.lab7.io/sources/cufflinks-2.2.1.tar.gz
+  md5: 9a5ba7a7710cd864932cf205c17851f0
+  patches:
+    - samtools-includes.patch
+
+build:
+  number: 1
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://cole-trapnell-lab.github.io/cufflinks/
+  license: Boost
+  license_file: True
+  summary: "Transcriptome assembly and differential expression analysis for RNA-Seq"
