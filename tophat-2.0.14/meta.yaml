@@ -1,0 +1,45 @@
+package:
+  name: tophat
+  version: "2.0.14"
+
+requirements:
+  build:
+    - zlib
+    - boost <=1.55.0
+    - python
+  run:
+    - zlib
+    - boost <=1.55.0
+    - bowtie2
+    - python
+
+source:
+  fn: tophat-2.0.14.tar.gz
+  url: http://download.lab7.io/sources/tophat-2.0.14.tar.gz
+  md5: 509f72082c98f116131e976681578a9f
+  patches:
+    - configure-no-debug.patch
+    - samtools-build.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  # Test data source: http://ccb.jhu.edu/software/tophat/downloads/test_data.tar.gz
+  files:
+    - test_data.tar.gz
+    - junctions-expected.bed
+  commands:
+    - tar --strip=1 -xf test_data.tar.gz
+    - tophat -r 20 test_ref reads_1.fq reads_2.fq
+    - diff junctions-expected.bed tophat_out/junctions.bed
+
+about:
+  home: http://ccb.jhu.edu/software/tophat/index.shtml
+  license: Boost
+  license_file: True
+  summary: "Fast splice junction mapper for RNA-Seq reads"
