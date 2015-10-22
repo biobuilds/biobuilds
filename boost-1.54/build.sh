@@ -9,7 +9,7 @@ build_os=$(uname -s)
 [ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
 CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
 CXXFLAGS="${CXXFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
-LDFLAGS="-L${PREFIX}/lib"
+LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
 
 [ $BB_MAKE_JOBS -gt 64 ] && BB_MAKE_JOBS=64
 [ -d "${PREFIX}/bin" ] || mkdir -vp "${PREFIX}/bin"
@@ -17,11 +17,8 @@ LDFLAGS="-L${PREFIX}/lib"
 
 if [ "$build_os" == 'Darwin' ]; then
     toolset=clang
-    MACOSX_VERSION_MIN=10.8
-    CXXFLAGS="${CXXFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-    CXXFLAGS="${CXXFLAGS} -std=c++11 -stdlib=libc++"
-    LDFLAGS="${LDFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-    LDFLAGS="${LDFLAGS} -stdlib=libc++"
+    CXXFLAGS="${CXXFLAGS} -stdlib=libstdc++"
+    LDFLAGS="${LDFLAGS} -stdlib=libstdc++"
 elif [ "$build_os" == 'Linux' ]; then
     toolset=gcc
 else

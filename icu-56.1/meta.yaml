@@ -8,7 +8,7 @@ source:
   md5: c4a2d71ff56aec5ebfab2a3f059be99d                                     # [unix]
 
 build:
-  number: 0
+  number: 1
 
 about:
   home: http://site.icu-project.org/
