@@ -1,0 +1,59 @@
+--- configure
++++ configure
+@@ -3319,13 +3319,13 @@
+   CXXFLAGS=$ac_save_CXXFLAGS
+ elif test $ac_cv_prog_cxx_g = yes; then
+   if test "$GXX" = yes; then
+-    CXXFLAGS="-g -O2"
++    CXXFLAGS="-O3"
+   else
+     CXXFLAGS="-g"
+   fi
+ else
+   if test "$GXX" = yes; then
+-    CXXFLAGS="-O2"
++    CXXFLAGS="-O3"
+   else
+     CXXFLAGS=
+   fi
+@@ -3981,13 +3981,13 @@
+   CXXFLAGS=$ac_save_CXXFLAGS
+ elif test $ac_cv_prog_cxx_g = yes; then
+   if test "$GXX" = yes; then
+-    CXXFLAGS="-g -O2"
++    CXXFLAGS="-O3"
+   else
+     CXXFLAGS="-g"
+   fi
+ else
+   if test "$GXX" = yes; then
+-    CXXFLAGS="-O2"
++    CXXFLAGS="-O3"
+   else
+     CXXFLAGS=
+   fi
+@@ -4558,13 +4558,13 @@
+   CFLAGS=$ac_save_CFLAGS
+ elif test $ac_cv_prog_cc_g = yes; then
+   if test "$GCC" = yes; then
+-    CFLAGS="-g -O2"
++    CFLAGS="-O3"
+   else
+     CFLAGS="-g"
+   fi
+ else
+   if test "$GCC" = yes; then
+-    CFLAGS="-O2"
++    CFLAGS="-O3"
+   else
+     CFLAGS=
+   fi
+@@ -6863,7 +6863,7 @@
+ # set CFLAGS and CXXFLAGS
+ #user_CFLAGS="${CXXFLAGS}"
+ user_CFLAGS=${CFLAGS}
+-generic_CFLAGS="-Wall -Wno-strict-aliasing -g -gdwarf-2 -Wuninitialized"
++generic_CFLAGS="-Wall -Wno-strict-aliasing -Wuninitialized"
+ ext_CFLAGS=""
+ debug_CFLAGS=""
+ user_LDFLAGS="$LDFLAGS"
