@@ -1,0 +1,29 @@
+package:
+  name: bamtools
+  version: "2.4.0"
+
+requirements:
+  build:
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: bamtools-2.4.0.tar.gz
+  url: http://download.lab7.io/sources/bamtools-2.4.0.tar.gz
+  md5: 6139d00c1b1fe88fe15d094d8a74d8b9
+  patches:
+    - lib-install-path.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: https://github.com/pezmaster31/bamtools
+  license: MIT
+  license_file: LICENSE
+  summary: "C++ API & command-line toolkit for working with BAM data"
