@@ -1,0 +1,33 @@
+package:
+  name: samtools
+  version: "1.2.0"
+
+requirements:
+  build:
+    - zlib
+    - htslib 1.2.*
+  run:
+    - zlib
+    - htslib 1.2.*
+
+source:
+  fn: samtools-1.2.0.tar.gz
+  url: http://download.lab7.io/sources/samtools-1.2.0.tar.gz
+  md5: 2748356ef392c0694ca1142de37cf2aa
+  patches:
+    - makefile.patch
+    - disable-curses.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+
+# No tests needed as those are done in the build script.
+
+about:
+  home: http://www.htslib.org/
+  license: MIT
+  license_file: LICENSE
+  summary: "Various utilities for manipulating alignments in the SAM/BAM format"
