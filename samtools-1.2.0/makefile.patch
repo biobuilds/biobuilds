@@ -126,7 +126,7 @@
 +	$(INSTALL_PROGRAM) $(PROGRAMS) $(MISC_PROGRAMS) $(bindir)
 +	$(INSTALL_DATA) samtools.1 $(man1dir)
 +	$(INSTALL_DATA) libbam.a $(libdir)
-+	$(INSTALL_DATA) $(wildcard *.h) $(incdir)
++	$(INSTALL_DATA) version.h sam.h bam.h $(incdir)
  
  
  testclean:
