@@ -1,0 +1,33 @@
+package:
+  name: allpathslg
+  version: "52488"
+
+requirements:
+  build:
+    - gcc   # [not ppc64le]
+    - autoconf-update
+  run:
+    - libgcc >=4.8  # [not ppc64le]
+    - graphviz
+    - picard
+
+source:
+  fn: allpathslg-52488.tar.gz
+  url: ftp://ftp.broadinstitute.org/pub/crd/ALLPATHS/Release-LG/latest_source_code/allpathslg-52488.tar.gz
+  md5: bde9008e236d87708a48eb83af6d6d5b
+  patches:
+    - configure-flags.patch
+
+build:
+  skip: True  # [osx]
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://www.broadinstitute.org/software/allpaths-lg/blog/?page_id=2"
+  license: BSD-like
+  license_file: LICENSE
+  summary: "Whole genome shotgun assembler that can generate high quality assemblies from short reads"

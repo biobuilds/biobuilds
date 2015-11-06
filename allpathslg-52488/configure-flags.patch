@@ -1,0 +1,21 @@
+--- configure.orig
++++ configure
+@@ -5651,6 +5651,9 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
+ 	  ppc64-*linux*|powerpc64-*linux*)
+ 	    LD="${LD-ld} -m elf32ppclinux"
+ 	    ;;
++	  ppc64le-*linux*)
++	    LD="${LD-ld} -m elf32ppclinux"
++	    ;;
+ 	  s390x-*linux*)
+ 	    LD="${LD-ld} -m elf_s390"
+ 	    ;;
+@@ -16407,7 +16410,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+     CFLAGS=$OLD_CFLAGS
+ 
+ 
+-CXXFLAGS="$CXXFLAGS -std=c++11 -Wextra -Wall -Wsign-promo -Woverloaded-virtual -Wendif-labels -Wno-unused -Wno-deprecated -Wno-long-long -Wno-parentheses -Wno-unused-parameter -fno-nonansi-builtins -mieee-fp -fno-strict-aliasing -iquote . -ggdb -DNDEBUG"
++CXXFLAGS="$CXXFLAGS -std=c++11 -Wextra -Wall -Wsign-promo -Woverloaded-virtual -Wendif-labels -Wno-unused -Wno-deprecated -Wno-long-long -Wno-parentheses -Wno-unused-parameter -fno-nonansi-builtins -fno-strict-aliasing -iquote . -ggdb -DNDEBUG"
+ 
+ OS_RELEASE="`uname -r`"
+ 
