@@ -1,0 +1,20 @@
+package:
+  name: picard
+  version: "1.140"
+
+source:
+  fn: picard-tools-1.140.zip
+  url: https://github.com/broadinstitute/picard/releases/download/1.140/picard-tools-1.140.zip
+  md5: 308f95516d94c1f3273a4e7e2b315ec2
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://broadinstitute.github.io/picard/"
+  license: MIT
+  summary: "Java tools for working with NGS data in the BAM format"
