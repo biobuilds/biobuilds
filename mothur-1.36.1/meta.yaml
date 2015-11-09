@@ -1,0 +1,35 @@
+package:
+  name: mothur
+  version: "1.36.1"
+
+requirements:
+  build:
+    - boost
+    - zlib
+    - readline
+    - ncurses
+  run:
+    - boost
+    - zlib
+    - readline
+    - ncurses
+
+source:
+  fn: mothur-1.36.1.tar.gz
+  url: https://github.com/mothur/mothur/archive/v1.36.1.tar.gz
+  md5: 96e176b223468e4d0cda02859a4ac7aa
+  patches:
+    - makefiles.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://www.mothur.org/"
+  license: GPLv3
+  license_file: LICENSE.md
+  summary: "Bioinformatics tools for microbial ecology "

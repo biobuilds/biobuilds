@@ -1,0 +1,88 @@
+--- makefile
++++ makefile
+@@ -13,8 +13,8 @@
+ USEREADLINE ?= yes
+ USECOMPRESSION ?= no
+ USEBOOST ?= yes
+-MOTHUR_FILES="\"Enter_your_default_path_here\""
+-RELEASE_DATE = "\"7/27/2015\""
++MOTHUR_FILES = "\"$(PREFIX)\""
++RELEASE_DATE = "\"2015-07-27\""
+ VERSION = "\"1.36.1\""
+ 
+ # Optimize to level 3:
+@@ -22,17 +22,6 @@
+ 
+ 
+ ifeq  ($(strip $(64BIT_VERSION)),yes)
+-    #if you are a mac user use the following line
+-    TARGET_ARCH += -arch x86_64
+-
+-    #if you using cygwin to build Windows the following line
+-    #CXX = x86_64-w64-mingw32-g++
+-    #CC = x86_64-w64-mingw32-g++
+-    #TARGET_ARCH += -m64 -static
+-
+-    #if you are a linux user use the following line
+-    #CXXFLAGS += -mtune=native -march=native
+-
+     CXXFLAGS += -DBIT_VERSION
+ endif
+ 
+@@ -64,14 +53,12 @@
+ 
+ #The boost libraries allow you to read gz files.
+ ifeq  ($(strip $(USEBOOST)),yes)
+-    BOOST_INCLUDE_DIR="/usr/local/include"
+-    BOOST_LIBRARY_DIR="/usr/local/lib"
++    BOOST_INCLUDE_DIR ?= "/usr/local/include"
++    BOOST_LIBRARY_DIR ?= "/usr/local/lib"
+ 
+     CXXFLAGS += -DUSE_BOOST
+ 
+-    LIBS += \
+-    ${BOOST_LIBRARY_DIR}/libboost_iostreams.a \
+-    ${BOOST_LIBRARY_DIR}/zlib.a
++    LIBS += -lboost_iostreams -lz
+ 
+     #if linux or windows then ${BOOST_LIBRARY_DIR}/libz.a
+ endif
+@@ -107,12 +94,14 @@
+     OBJECTS+=$(patsubst %.c,%.o,$(wildcard *.c))
+ 
+ mothur : $(OBJECTS) uchime
+-	$(CXX) $(LDFLAGS) $(TARGET_ARCH) -o $@ $(OBJECTS) $(LIBS)
++	$(CXX) $(LDFLAGS) -o $@ $(OBJECTS) $(LIBS)
+ 	strip mothur
+ 
+ 
+ uchime:
+-	cd source/uchime_src && ./mk && mv uchime ../../ && cd ..
++	cd source/uchime_src && \
++	env ENV_GCC_OPTS="$(CXXFLAGS)" ENV_LINK_OPTS="$(LDFLAGS)" ./mk && \
++	mv uchime ../../ && cd ..
+ 
+ 
+ install : mothur
+--- source/uchime_src/mk
++++ source/uchime_src/mk
+@@ -7,17 +7,13 @@
+ for CPPName in $CPPNames
+ do
+   echo $CPPName >> /dev/tty
+-  g++ $ENV_GCC_OPTS -c -O3 -msse2 -mfpmath=sse -D_FILE_OFFSET_BITS=64 -DNDEBUG=1 -DUCHIMES=1 $CPPName.cpp -o $CPPName.o  >> mk.stdout 2>> tmp.stderr
++  g++ $ENV_GCC_OPTS -c -D_FILE_OFFSET_BITS=64 -DNDEBUG=1 -DUCHIMES=1 $CPPName.cpp -o $CPPName.o  >> mk.stdout 2>> tmp.stderr
+ 	cat tmp.stderr
+ 	cat tmp.stderr >> mk.stderr
+ 	rm -f tmp.stderr
+ done
+ 
+-LINK_OPTS= 
+-if [ `uname -s` == Linux ] ; then
+-    LINK_OPTS=-static
+-fi
+-g++ $LINK_OPTS $ENV_LINK_OPTS -g -o uchime $ObjNames >> mk.stdout 2>> tmp.stderr
++g++ $ENV_LINK_OPTS -o uchime $ObjNames >> mk.stdout 2>> tmp.stderr
+ cat tmp.stderr
+ cat tmp.stderr >> mk.stderr
+ rm -f tmp.stderr
