@@ -1,0 +1,121 @@
+--- source/BAMfunctions.cpp
++++ source/BAMfunctions.cpp
+@@ -1,5 +1,5 @@
+ #include "BAMfunctions.h"
+-#include "htslib/htslib/kstring.h"
++#include "htslib/kstring.h"
+ 
+ string bam_cigarString (bam1_t *b) {//output CIGAR string
+ //    kstring_t strK;
+--- source/IncludeDefine.h
++++ source/IncludeDefine.h
+@@ -26,8 +26,8 @@
+ #include "VERSION"
+ 
+ //external libs
+-#define SAMTOOLS_BGZF_H "htslib/htslib/bgzf.h"
+-#define SAMTOOLS_SAM_H  "htslib/htslib/sam.h"
++#define SAMTOOLS_BGZF_H "htslib/bgzf.h"
++#define SAMTOOLS_SAM_H  "htslib/sam.h"
+ 
+ using namespace std;
+ 
+--- source/Makefile
++++ source/Makefile
+@@ -18,7 +18,8 @@
+         bam_cat.o
+ SOURCES := $(wildcard *.cpp) $(wildcard *.c)
+ 
+-LDFLAGS := -pthread -Lhtslib -Bstatic -lhts -Bdynamic -lz -lrt
++LIBHTS ?= -Lhtslib -Bstatic -lhts
++LDFLAGS := -pthread $(LIBHTS) -lz
+ LDFLAGS_static := -static -static-libgcc -pthread -Lhtslib -lhts -lz
+ LDFLAGS_Mac :=-pthread -lz htslib/libhts.a
+ LDFLAGS_Mac_static :=-pthread -lz -static-libgcc htslib/libhts.a
+@@ -29,8 +30,8 @@
+ COMPTIMEPLACE := -D'COMPILATION_TIME_PLACE="biobuilds-2015.11"'
+ EXTRAFLAGS := 
+ 
+-CCFLAGS_common := -pipe -std=c++0x -Wall -Wextra -fopenmp $(COMPTIMEPLACE) $(OPTIMFLAGS) $(OPTIMFLAGS1) $(EXTRAFLAGS)
+-CCFLAGS_main := -O3 $(CCFLAGS_common)
++CCFLAGS_common := -pipe -std=c++0x -Wall -Wextra -fopenmp $(COMPTIMEPLACE) $(EXTRAFLAGS)
++CCFLAGS_main := $(CPPFLAGS) $(CFLAGS) $(CCFLAGS_common)
+ CCFLAGS_gdb :=  -O0 -g $(CCFLAGS_common)
+ 
+ CXX ?=g++
+@@ -64,10 +65,10 @@
+ ifneq ($(MAKECMDGOALS),CLEAN)
+ ifneq ($(MAKECMDGOALS),STARforMac)
+ ifneq ($(MAKECMDGOALS),STARforMacGDB)
+-Depend.list: $(SOURCES) parametersDefault.xxd htslib
++Depend.list: $(SOURCES) parametersDefault.xxd
+ 	echo $(SOURCES)
+ 	/bin/rm -f ./Depend.list
+-	$(CXX) $(CCFLAGS_common) -MM $^ >> Depend.list
++	$(CXX) $(CPPFLAGS) $(CCFLAGS_common) -MM $^ >> Depend.list
+ include Depend.list
+ endif
+ endif
+@@ -85,7 +86,7 @@
+ 
+ STAR : CCFLAGS=$(CCFLAGS_main)
+ STAR : Depend.list parametersDefault.xxd $(OBJECTS)
+-	$(CXX) -o STAR $(CCFLAGS) $(OBJECTS) $(LDFLAGS)
++	$(CXX) -o STAR $(CCFLAGS) $(OBJECTS) $(LDFLAGSextra) $(LDFLAGS)
+ 
+ POSIXSHARED : CCFLAGS=$(CCFLAGS_main) -DPOSIX_SHARED_MEM
+ POSIXSHARED : Depend.list parametersDefault.xxd $(OBJECTS)
+@@ -97,7 +98,7 @@
+ 
+ STARlong : CCFLAGS=-D'COMPILE_FOR_LONG_READS' $(CCFLAGS_main)
+ STARlong : Depend.list parametersDefault.xxd $(OBJECTS)
+-	$(CXX) -o STARlong $(CCFLAGS) $(OBJECTS) $(LDFLAGS)
++	$(CXX) -o STARlong $(CCFLAGS) $(OBJECTS) $(LDFLAGSextra) $(LDFLAGS)
+ 
+ STARlongStatic : CCFLAGS=-D'COMPILE_FOR_LONG_READS' $(CCFLAGS_main)
+ STARlongStatic : Depend.list parametersDefault.xxd $(OBJECTS)
+--- source/STAR.cpp
++++ source/STAR.cpp
+@@ -28,7 +28,7 @@
+ #include "sjdbInsertJunctions.h"
+ 
+ 
+-#include "htslib/htslib/sam.h"
++#include "htslib/sam.h"
+ extern int bam_cat(int nfn, char * const *fn, const bam_hdr_t *h, const char* outbam);
+ 
+ int main(int argInN, char* argIn[]) {
+--- source/bamRemoveDuplicates.cpp
++++ source/bamRemoveDuplicates.cpp
+@@ -1,7 +1,7 @@
+ #include <unordered_map>
+ #include "bamRemoveDuplicates.h"
+ #include <iostream>
+-#include "htslib/htslib/sam.h"
++#include "htslib/sam.h"
+ #include "IncludeDefine.h"
+ #include SAMTOOLS_BGZF_H
+ #include "ErrorWarning.h"
+--- source/bam_cat.c
++++ source/bam_cat.c
+@@ -49,8 +49,8 @@
+ #include <stdlib.h>
+ #include <unistd.h>
+ 
+-#include "htslib/htslib/bgzf.h"
+-#include "htslib/htslib/sam.h"
++#include "htslib/bgzf.h"
++#include "htslib/sam.h"
+ #include <cstring>
+ 
+ #define BUF_SIZE 0x10000
+--- source/signalFromBAM.h
++++ source/signalFromBAM.h
+@@ -1,6 +1,6 @@
+ #ifndef CODE_signalFromBAM
+ #define CODE_signalFromBAM
+-#include "htslib/htslib/sam.h"
++#include "htslib/sam.h"
+ #include  <fstream>
+ #include <string>
+ #include "Stats.h"

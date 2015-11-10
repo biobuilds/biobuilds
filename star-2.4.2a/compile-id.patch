@@ -1,0 +1,11 @@
+--- source/Makefile
++++ source/Makefile
+@@ -26,7 +26,7 @@
+ LDFLAGS_gdb := $(LDFLAGS_static)
+ LDFLAGS_gdb := $(LDFLAGS)
+ 
+-COMPTIMEPLACE := -D'COMPILATION_TIME_PLACE="$(shell echo `date` $(HOSTNAME):`pwd`)"'
++COMPTIMEPLACE := -D'COMPILATION_TIME_PLACE="biobuilds-2015.11"'
+ EXTRAFLAGS := 
+ 
+ CCFLAGS_common := -pipe -std=c++0x -Wall -Wextra -fopenmp $(COMPTIMEPLACE) $(OPTIMFLAGS) $(OPTIMFLAGS1) $(EXTRAFLAGS)
