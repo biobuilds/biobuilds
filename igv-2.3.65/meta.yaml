@@ -1,0 +1,16 @@
+package:
+  name: igv
+  version: "2.3.65"
+
+source:
+  fn: IGV_2.3.65.zip
+  url: http://data.broadinstitute.org/igv/projects/downloads/IGV_2.3.65.zip
+  md5: 15a75bc70276eaef25270bbaa6aa5d3c
+
+build:
+  number: 0
+
+about:
+  home: "http://www.broadinstitute.org/software/igv/home"
+  license: MIT
+  summary: "Java visualization tool for interactive exploration of large, integrated genomic datasets."
