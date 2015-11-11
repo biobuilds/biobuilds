@@ -1,0 +1,45 @@
+package:
+  name: isaac
+  version: "15.04.01"
+
+source:
+  fn: iSAAC-01.15.04.01.tar.gz
+  url: "https://github.com/sequencing/isaac_aligner/archive/iSAAC-01.15.04.01.tar.gz"
+  md5: f3b778a54cd6927bcb37f8ee615aa099
+  patches:
+    - cmake-files.patch
+    - ppc64le-support.patch   # [ppc64le]
+
+requirements:
+  build:
+    - bzip2
+    - zlib
+    - boost ==1.54
+    - libxml2 >=2.7.8
+    - libxslt >=1.1.26
+    - veclib-headers    # [ppc64le]
+  run:
+    - zlib
+    - boost ==1.54
+    - libxml2 >=2.7.8
+    - libxslt >=1.1.26
+    - gnuplot
+
+build:
+  skip: True  # [osx]
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  detect_binary_files_with_prefix: True
+
+test:
+  files:
+    - test-data.tar.gz
+
+about:
+  home: "https://github.com/sequencing/isaac_aligner"
+  license: BSD
+  license_file: COPYRIGHT
+  summary: "Illumina short-read alignment program"

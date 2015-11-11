@@ -1,0 +1,342 @@
+--- src/c++/lib/alignment/BandedSmithWaterman.cpp
++++ src/c++/lib/alignment/BandedSmithWaterman.cpp
+@@ -21,8 +21,8 @@
+ #include <cassert>
+ #include <cstdlib>
+ #include <algorithm>
+-#include <xmmintrin.h> 
+-//#include <smmintrin.h> // sse4 instructions for _mm_insert_epi8
++#include <vec128int.h>
++#include <vecmisc.h>
+ 
+ #include <boost/format.hpp>
+ 
+@@ -42,7 +42,7 @@ BandedSmithWaterman::BandedSmithWaterman(const int matchScore, const int mismatc
+     , gapExtendScore_(gapExtendScore)
+     , maxReadLength_(maxReadLength)
+     , initialValue_(static_cast<int>(std::numeric_limits<short>::min()) + gapOpenScore_)
+-    , T_((char *)_mm_malloc (maxReadLength_ * 3 *sizeof(__m128i), 16))
++    , T_((char *)vec_malloc (maxReadLength_ * 3 *sizeof(__m128i), 16))
+ {
+     // check that there won't be any overflows in the matrices
+     const int maxScore = std::max(std::max(std::max(abs(matchScore_), abs(mismatchScore_)), abs(gapOpenScore_)), abs(gapExtendScore_));
+@@ -55,15 +55,15 @@ BandedSmithWaterman::BandedSmithWaterman(const int matchScore, const int mismatc
+ 
+ BandedSmithWaterman::~BandedSmithWaterman()
+ {
+-    _mm_free(T_);
++    vec_free(T_);
+ }
+ 
+ // insert in register 0 only -- workaround for missing sse4 instruction set
+-inline __m128i _mm_insert_epi8(__m128i v, char c, int)
++inline __m128i vec_insert16ub(__m128i v, char c, int)
+ {
+-    const unsigned int tmp = _mm_extract_epi16(v, 0) & 0xffffff00u;
++    const unsigned int tmp = vec_extract8sh(v, 0) & 0xffffff00u;
+     const unsigned s = c & 0xff;
+-    return _mm_insert_epi16(v, tmp | s, 0);
++    return vec_insert8sh(v, tmp | s, 0);
+ }
+ 
+ // helper functions for debugging
+@@ -99,26 +99,26 @@ unsigned BandedSmithWaterman::align(
+     //__m128i *nextH = allH_;
+     //allH_.clear();
+     //allH_.reserve(query.length());
+-    //const __m128i GapOpenScore = _mm_insert_epi16(_mm_set1_epi16(gapOpenScore_), 0, 0);
+-    //const __m128i GapExtendScore = _mm_insert_epi16(_mm_set1_epi16(gapExtendScore_), 0, 0);
++    //const __m128i GapOpenScore = vec_insert8sh(vec_splat8sh(gapOpenScore_), 0, 0);
++    //const __m128i GapExtendScore = vec_insert8sh(vec_splat8sh(gapExtendScore_), 0, 0);
+     __m128i *t = (__m128i *)T_;
+-    const __m128i GapOpenScore = _mm_set1_epi16(gapOpenScore_);
+-    const __m128i GapExtendScore = _mm_set1_epi16(gapExtendScore_);
++    const __m128i GapOpenScore = vec_splat8sh(gapOpenScore_);
++    const __m128i GapExtendScore = vec_splat8sh(gapExtendScore_);
+     // Initialize E, F and G
+     __m128i E[2], F[2], G[2];
+     for (unsigned int i = 0; 2 > i; ++i)
+     {
+-        E[i] = _mm_set1_epi16(initialValue_);
+-        F[i] = _mm_set1_epi16(0); // Should this be -10000?
+-        G[i] = _mm_set1_epi16(initialValue_);
++        E[i] = vec_splat8sh(initialValue_);
++        F[i] = vec_splat8sh(0); // Should this be -10000?
++        G[i] = vec_splat8sh(initialValue_);
+     }
+-    G[0] = _mm_insert_epi16(G[0], 0, 0);
++    G[0] = vec_insert8sh(G[0], 0, 0);
+     // initialize D -- Note that we must leave the leftmost position empty (else it will be discarded before use)
+-    __m128i D = _mm_setzero_si128();
++    __m128i D = vec_zero1q();
+     for (unsigned int i = 0; WIDEST_GAP_SIZE > i + 1; ++i)
+     {
+-        D = _mm_slli_si128(D, 1);
+-        D = _mm_insert_epi8(D, *(databaseBegin + i), 0);
++        D = vec_shiftleftbytes1q(D, 1);
++        D = vec_insert16ub(D, *(databaseBegin + i), 0);
+     }
+     //std::cerr << "    D:" << epi8(D) << "   " << database << std::endl;
+     // iterate over all bases in the query
+@@ -129,64 +129,64 @@ unsigned BandedSmithWaterman::align(
+         __m128i tmp0[2], tmp1[2], tmp2[2];
+         // F[i, j] = max(G[i-1, j] - open, E[i-1, j] - open, F[i-1, j] - extend)
+         // G[i-1, j] and E[i-1, j]
+-        tmp0[1] = _mm_slli_si128(G[1], 2);
+-        tmp0[1] = _mm_insert_epi16(tmp0[1], _mm_extract_epi16(G[0], 7), 0);
+-        tmp0[0] = _mm_slli_si128(G[0], 2); // is the 0 initialisation alright?
+-        tmp1[1] = _mm_slli_si128(E[1], 2);
+-        tmp1[1] = _mm_insert_epi16(tmp1[1], _mm_extract_epi16(E[0], 7), 0);
+-        tmp1[0] = _mm_slli_si128(E[0], 2); // is the 0 initialisation alright?
++        tmp0[1] = vec_shiftleftbytes1q(G[1], 2);
++        tmp0[1] = vec_insert8sh(tmp0[1], vec_extract8sh(G[0], 7), 0);
++        tmp0[0] = vec_shiftleftbytes1q(G[0], 2); // is the 0 initialisation alright?
++        tmp1[1] = vec_shiftleftbytes1q(E[1], 2);
++        tmp1[1] = vec_insert8sh(tmp1[1], vec_extract8sh(E[0], 7), 0);
++        tmp1[0] = vec_shiftleftbytes1q(E[0], 2); // is the 0 initialisation alright?
+ 
+         for (unsigned j = 0; 2 > j; ++j)
+         {
+             // identify which matrix provided the max (hack: true is 0xffff)
+-            tmp2[j] = _mm_cmplt_epi16(tmp0[j], tmp1[j]); // 0xffff if G[i-1, j] < E[i-1, j], 0 otherwise
+-            tmp2[j] = _mm_srli_epi16(tmp2[j], 15); // shift 15 bits to have only 1 for true
++            tmp2[j] = vec_comparelt8sh(tmp0[j], tmp1[j]); // 0xffff if G[i-1, j] < E[i-1, j], 0 otherwise
++            tmp2[j] = vec_shiftrightimmediate8sh(tmp2[j], 15); // shift 15 bits to have only 1 for true
+         }
+-        __m128i TF = _mm_packs_epi16(tmp2[0], tmp2[1]);
++        __m128i TF = vec_packs88hto16sb(tmp2[0], tmp2[1]);
+         // get max(G[i-1, j] - open, E[i-1, j] - open)
+         __m128i newF[2];
+         for (unsigned int j = 0; 2 > j; ++j)
+         {
+-            newF[j] = _mm_max_epi16(tmp0[j], tmp1[j]);// newF = max(G[i-1, j], E[i-1, j])
+-            newF[j] = _mm_sub_epi16(newF[j], GapOpenScore); // newF = max(G[i-1, j] - open, E[i-1, j] - open)
++            newF[j] =  vec_max8sh(tmp0[j], tmp1[j]);// newF = max(G[i-1, j], E[i-1, j])
++            newF[j] = vec_subtract8sh(newF[j], GapOpenScore); // newF = max(G[i-1, j] - open, E[i-1, j] - open)
+         }
+         // get F[i-1, j] - extend
+-        tmp0[1] = _mm_slli_si128(F[1], 2);
+-        tmp0[1] = _mm_insert_epi16(tmp0[1], _mm_extract_epi16(F[0], 7), 0);
+-        tmp0[1] = _mm_sub_epi16(tmp0[1], GapExtendScore);
+-        tmp0[0] = _mm_slli_si128(F[0], 2);
+-        tmp0[0] = _mm_sub_epi16(tmp0[0], GapExtendScore);
++        tmp0[1] = vec_shiftleftbytes1q(F[1], 2);
++        tmp0[1] = vec_insert8sh(tmp0[1], vec_extract8sh(F[0], 7), 0);
++        tmp0[1] = vec_subtract8sh(tmp0[1], GapExtendScore);
++        tmp0[0] = vec_shiftleftbytes1q(F[0], 2);
++        tmp0[0] = vec_subtract8sh(tmp0[0], GapExtendScore);
+         // correct TF
+         for (unsigned j = 0; 2 > j; ++j)
+         {
+-            tmp2[j] = _mm_cmplt_epi16(newF[j], tmp0[j]); // 0xffff if max(G[i-1, j], E[i-1,j] - open < F[i-1, j] - extend
+-            //tmp2[j] = _mm_srli_epi16(tmp2[j], 14); // shift 14 bits to have 3 for true
+-            tmp2[j] = _mm_slli_epi16(_mm_srli_epi16(tmp2[j], 15), 1); // shift right 15 bits and left 1 bit to have 2 for true
++            tmp2[j] = vec_comparelt8sh(newF[j], tmp0[j]); // 0xffff if max(G[i-1, j], E[i-1,j] - open < F[i-1, j] - extend
++            //tmp2[j] = vec_shiftrightimmediate8sh(tmp2[j], 14); // shift 14 bits to have 3 for true
++            tmp2[j] = vec_shiftleftimmediate8sh(vec_shiftrightimmediate8sh(tmp2[j], 15), 1); // shift right 15 bits and left 1 bit to have 2 for true
+         }
+-        TF = _mm_max_epu8(_mm_packs_epi16(tmp2[0], tmp2[1]), TF); // 0, 1, or 2 for G, E or F
+-        TF = _mm_insert_epi8(TF, 0, 0); // 0, 1, or 2 for G, E or F
++        TF = vec_max16ub(vec_packs88hto16sb(tmp2[0], tmp2[1]), TF); // 0, 1, or 2 for G, E or F
++        TF = vec_insert16ub(TF, 0, 0); // 0, 1, or 2 for G, E or F
+         // correct F according to (F[i-1, j] - extend)
+         for (unsigned int j = 0; 2 > j; ++j)
+         {
+-            newF[j] = _mm_max_epi16(newF[j], tmp0[j]);
++            newF[j] =  vec_max8sh(newF[j], tmp0[j]);
+         }
+-        newF[0] = _mm_insert_epi16(newF[0], initialValue_, 0);
++        newF[0] = vec_insert8sh(newF[0], initialValue_, 0);
+         // G[i, j] = max(G[i-1, j-1], E[i-1, j-1], F[i-1, j-1]
+         __m128i newG[2];
+         for (unsigned int j = 0; 2 > j; ++j)
+         {
+-            tmp2[j] = _mm_cmplt_epi16(G[j], E[j]); // 0xffff if G[i-1, j-1] < E[i-1, j-1], 0 otherwise
+-            tmp2[j] = _mm_srli_epi16(tmp2[j], 15); // shift 15 bits to have only 1 for true
+-            newG[j] = _mm_max_epi16(G[j], E[j]);// newG = max(G[i-1, j-1], E[i-1, j-1])
++            tmp2[j] = vec_comparelt8sh(G[j], E[j]); // 0xffff if G[i-1, j-1] < E[i-1, j-1], 0 otherwise
++            tmp2[j] = vec_shiftrightimmediate8sh(tmp2[j], 15); // shift 15 bits to have only 1 for true
++            newG[j] =  vec_max8sh(G[j], E[j]);// newG = max(G[i-1, j-1], E[i-1, j-1])
+         }
+-        __m128i TG = _mm_packs_epi16(tmp2[0], tmp2[1]);
++        __m128i TG = vec_packs88hto16sb(tmp2[0], tmp2[1]);
+         // correct G and TG
+         //std::cerr << "newG: " << newG[1] << newG[0] << std::endl;
+         for (unsigned int j = 0; 2 > j; ++j)
+         {
+-            tmp2[j] =  _mm_cmplt_epi16(newG[j], F[j]); // 0xffff if max(G[i-1, j-1], E[i-1,j-1] < F[i-1, j-1]
+-            tmp2[j] = _mm_slli_epi16(_mm_srli_epi16(tmp2[j], 15), 1); // shift right 15 bits and left 1 bit to have 2 for true
+-            newG[j] = _mm_max_epi16(newG[j], F[j]);
++            tmp2[j] =  vec_comparelt8sh(newG[j], F[j]); // 0xffff if max(G[i-1, j-1], E[i-1,j-1] < F[i-1, j-1]
++            tmp2[j] = vec_shiftleftimmediate8sh(vec_shiftrightimmediate8sh(tmp2[j], 15), 1); // shift right 15 bits and left 1 bit to have 2 for true
++            newG[j] =  vec_max8sh(newG[j], F[j]);
+         }
+         //std::cerr << "newG: " << newG[1] << newG[0] << std::endl;
+         //std::cerr << "   G: " << G[1] << G[0] << std::endl;
+@@ -194,15 +194,15 @@ unsigned BandedSmithWaterman::align(
+         //std::cerr << "   F: " << F[1] <<  F[0] << std::endl;
+         //std::cerr << "tmp0: " << tmp0[1] << tmp0[0] << std::endl;
+         //std::cerr << "tmp1: " << tmp1[1] << tmp1[0] << std::endl;
+-        TG = _mm_max_epi16(_mm_packs_epi16(tmp2[0], tmp2[1]), TG); // 0, 1, or 2 for G, E or F
++        TG =  vec_max8sh(vec_packs88hto16sb(tmp2[0], tmp2[1]), TG); // 0, 1, or 2 for G, E or F
+         // add the match/mismatch score
+         // load the query base in all 8 values of the register
+-        __m128i Q = _mm_set1_epi8(*queryCurrent);
++        __m128i Q = vec_splat16sb(*queryCurrent);
+         // shift the database by 1 byte to the left and add the new base
+-        D = _mm_slli_si128(D, 1);
+-        D = _mm_insert_epi8(D, *(databaseBegin + queryOffset + WIDEST_GAP_SIZE - 1), 0);
++        D = vec_shiftleftbytes1q(D, 1);
++        D = vec_insert16ub(D, *(databaseBegin + queryOffset + WIDEST_GAP_SIZE - 1), 0);
+         // compare query and database. 0xff if different (that also the sign bits)
+-        const __m128i B = ~_mm_cmpeq_epi8(Q, D);
++        const __m128i B = ~vec_compareeq16sb(Q, D);
+ #if 0
+         //std::cerr << std::endl << database << std::endl << query << std::endl;;
+         std::cerr << (boost::format("%2d  D:") % (queryOffset+1)).str();
+@@ -227,10 +227,10 @@ unsigned BandedSmithWaterman::align(
+         //exit(1);
+ #endif
+         // set match/mismatch scores, according to comparison
+-        const __m128i Match = _mm_andnot_si128(B, _mm_set1_epi8(matchScore_));
+-        const __m128i Mismatch = _mm_and_si128(B, _mm_set1_epi8(mismatchScore_));
++        const __m128i Match = vec_bitandnotleft1q(B, vec_splat16sb(matchScore_));
++        const __m128i Mismatch = vec_bitand1q(B, vec_splat16sb(mismatchScore_));
+         // add the match/mismatch scored to HH
+-        const __m128i W = _mm_add_epi8(Match, Mismatch);
++        const __m128i W = vec_add16sb(Match, Mismatch);
+ 
+ #if 0
+         std::cerr << (boost::format("%2d  W:") % (queryOffset+1)).str();
+@@ -240,18 +240,18 @@ unsigned BandedSmithWaterman::align(
+         }
+         std::cerr << epi8s(W) << std::endl;
+ #endif
+-        newG[0] = _mm_add_epi16(newG[0], _mm_unpacklo_epi8(W, B));
+-        newG[1] = _mm_add_epi16(newG[1], _mm_unpackhi_epi8(W, B));
++        newG[0] = vec_add8sh(newG[0], vec_unpacklow88sb(W, B));
++        newG[1] = vec_add8sh(newG[1], vec_unpackhigh88sb(W, B));
+         // E[i,j] = max(G[i, j-1] - open, E[i, j-1] - extend, F[i, j-1] - open)
+-        __m128i TE = _mm_setzero_si128();
++        __m128i TE = vec_zero1q();
+         // E should never be the maximum in the leftmost side of the window
+         short g = initialValue_; // -gapOpenScore_;
+         short e = initialValue_; // -gapExtendScore_;
+         short f = initialValue_; // -gapOpenScore_;
+         for (unsigned j = 0; 2 > j; ++j)
+         {
+-            tmp0[j] = _mm_sub_epi16(newG[j], GapOpenScore);
+-            tmp1[j] = _mm_sub_epi16(newF[j], GapOpenScore);
++            tmp0[j] = vec_subtract8sh(newG[j], GapOpenScore);
++            tmp1[j] = vec_subtract8sh(newF[j], GapOpenScore);
+         }
+         //std::cerr << "newG: " << newG[1] << newG[0] << std::endl;
+         //std::cerr << "tmp0: " << tmp0[1] << tmp0[0] << std::endl;
+@@ -283,19 +283,19 @@ unsigned BandedSmithWaterman::align(
+                 tMax = 2;
+             }
+             //std::cerr << (boost::format("g = %d, e = %d, f = %d, max = %d, tMax = %d") % g % e % f % max % tMax ).str() << std::endl;
+-            TE = _mm_slli_si128(TE, 1);
+-            TE = _mm_insert_epi8(TE, tMax, 0);
+-            E[0] = _mm_slli_si128(E[0], 2);
+-            E[0] = _mm_insert_epi16(E[0], max, 0);
+-            g = _mm_extract_epi16(tmp0[1], 7);
++            TE = vec_shiftleftbytes1q(TE, 1);
++            TE = vec_insert16ub(TE, tMax, 0);
++            E[0] = vec_shiftleftbytes1q(E[0], 2);
++            E[0] = vec_insert8sh(E[0], max, 0);
++            g = vec_extract8sh(tmp0[1], 7);
+             e = max - gapExtendScore_;
+-            f = _mm_extract_epi16(tmp1[1], 7);
+-            tmp0[1] = _mm_slli_si128(tmp0[1], 2);
+-            tmp1[1] = _mm_slli_si128(tmp1[1], 2);
++            f = vec_extract8sh(tmp1[1], 7);
++            tmp0[1] = vec_shiftleftbytes1q(tmp0[1], 2);
++            tmp1[1] = vec_shiftleftbytes1q(tmp1[1], 2);
+             //std::cerr << "   E: " << E[1] << E[0] << std::endl;
+             //std::cerr << "  TE: " << epi8(TE) << std::endl;
+         }
+-        //E[0] = _mm_slli_si128(E[0], 2);
++        //E[0] = vec_shiftleftbytes1q(E[0], 2);
+         for (unsigned j = 0; 2 > j; ++j)
+         {
+             G[j] = newG[j];
+@@ -303,9 +303,9 @@ unsigned BandedSmithWaterman::align(
+         }
+         // TODO: add support for databases shorter than query + widestGapSize
+         // store the matrix types
+-        _mm_store_si128(t++, TG);
+-        _mm_store_si128(t++, TE);
+-        _mm_store_si128(t++, TF);
++        vec_store1q(t++, TG);
++        vec_store1q(t++, TE);
++        vec_store1q(t++, TF);
+ #if 0
+         std::cerr << (boost::format("%2d  G:") % (queryOffset+1)).str();
+         for (unsigned j = 0; j < queryOffset; ++j)
+@@ -346,7 +346,7 @@ unsigned BandedSmithWaterman::align(
+ #endif
+     }
+     // find the max of E, F and G at the end
+-    short max = _mm_extract_epi16(G[1], 7) - 1;
++    short max = vec_extract8sh(G[1], 7) - 1;
+     int ii = querySize - 1;
+     int jj = ii;
+     unsigned maxType = 0;
+@@ -363,9 +363,9 @@ unsigned BandedSmithWaterman::align(
+             //std::cerr << "j = " << j;
+             for (unsigned type = 0; 3 > type; ++type)
+             {
+-                const short value = _mm_extract_epi16(TT[type][kk], 7);
++                const short value = vec_extract8sh(TT[type][kk], 7);
+                 //std::cerr << ", type = " << type << ", value = " << value;
+-                TT[type][kk] = _mm_slli_si128(TT[type][kk], 2);
++                TT[type][kk] = vec_shiftleftbytes1q(TT[type][kk], 2);
+                 if (value > max)
+                 {
+                     //std::cerr << std::endl << "max = " << max << ", value = " << value<< ", j = "  << j<< ", kk = "  << kk << std::endl;
+@@ -466,8 +466,8 @@ std::string epi8(__m128i v)
+     std::string result;
+     for (unsigned int i = 0; 16 > i; ++i)
+     {
+-        result += (boost::format("%3d") % (_mm_extract_epi16(v, 7) >> 8)).str();
+-        v = _mm_slli_si128(v, 1);
++        result += (boost::format("%3d") % (vec_extract8sh(v, 7) >> 8)).str();
++        v = vec_shiftleftbytes1q(v, 1);
+     }
+     return result;
+ }
+@@ -477,8 +477,8 @@ std::string epi8s(__m128i v)
+     std::string result;
+     for (unsigned int i = 0; 16 > i; ++i)
+     {
+-        result += (boost::format("%3d") % ((int)(_mm_extract_epi16(v, 7)) >> 8)).str();
+-        v = _mm_slli_si128(v, 1);
++        result += (boost::format("%3d") % ((int)(vec_extract8sh(v, 7)) >> 8)).str();
++        v = vec_shiftleftbytes1q(v, 1);
+     }
+     return result;
+ }
+@@ -488,8 +488,8 @@ std::string epi8c(__m128i v)
+     std::string result;
+     for (unsigned int i = 0; 16 > i; ++i)
+     {
+-        result += (boost::format("  %c") % char(_mm_extract_epi16(v, 7) >> 8)).str();
+-        v = _mm_slli_si128(v, 1);
++        result += (boost::format("  %c") % char(vec_extract8sh(v, 7) >> 8)).str();
++        v = vec_shiftleftbytes1q(v, 1);
+     }
+     return result;
+ }
+@@ -499,9 +499,9 @@ std::ostream &operator<<(std::ostream &os, const __m128i &H)
+     __m128i tmp0 = H;
+     for (unsigned int i = 0; i < 8; ++i)
+     {
+-        short v = _mm_extract_epi16(tmp0, 7);
++        short v = vec_extract8sh(tmp0, 7);
+         std::cerr << (boost::format("%3d") % std::max(short(-99), v)).str();
+-        tmp0 = _mm_slli_si128(tmp0, 2);
++        tmp0 = vec_shiftleftbytes1q(tmp0, 2);
+     }
+     return os;
+ }

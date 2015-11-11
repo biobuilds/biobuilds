@@ -1,0 +1,66 @@
+--- src/cmake/cxxConfigure.cmake
++++ src/cmake/cxxConfigure.cmake
+@@ -129,9 +129,9 @@
+ include_directories(BEFORE SYSTEM ${LIBXML2_INCLUDE_DIR})
+ include_directories(BEFORE SYSTEM ${LIBXSLT_INCLUDE_DIR})
+ include_directories(BEFORE SYSTEM ${LIBEXSLT_INCLUDE_DIR})
+-set(iSAAC_DEP_LIB ${iSAAC_DEP_LIB} "${LIBEXSLT_LIBRARIES}" "${LIBXSLT_LIBRARIES}" "${LIBXML2_LIBRARIES}")
++set(iSAAC_DEP_LIB ${iSAAC_DEP_LIB} "${LIBEXSLT_LIBRARIES}" "${LIBXSLT_EXSLT_LIBRARIES}" "${LIBXSLT_LIBRARIES}" "${LIBXML2_LIBRARIES}")
+ 
+-set (CMAKE_CXX_FLAGS "$ENV{CXX_FLAGS} $ENV{CXXFLAGS} -fopenmp -msse2 -Wall -Wextra -Wunused -Wno-long-long -Wsign-compare -Wpointer-arith " CACHE STRING "g++ flags" FORCE)
++set (CMAKE_CXX_FLAGS "$ENV{CXX_FLAGS} $ENV{CXXFLAGS} -fopenmp -Wall -Wextra -Wunused -Wno-long-long -Wsign-compare -Wpointer-arith " CACHE STRING "g++ flags" FORCE)
+ #set (CMAKE_CXX_FLAGS_DEBUG "-O0 -g -pg -fprofile-arcs -ftest-coverage -D_GLIBCXX_DEBUG" CACHE STRING "g++ flags" FORCE)
+ set (CMAKE_CXX_FLAGS_DEBUG "-O0 -g " CACHE STRING "g++ flags" FORCE)
+ set (CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "g++ flags" FORCE)
+@@ -172,20 +172,6 @@
+     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic ")
+ endif (GNU412 OR GNU42 OR GNU43)
+ 
+-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^i[67]86$")
+-    ##
+-    ## Use scalar floating point instructions from the SSE instruction set.
+-    ## Note: Pentium3 SSE supports only single precision arithmetics
+-    ##
+-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse -mfpmath=sse")
+-endif (CMAKE_SYSTEM_PROCESSOR MATCHES "^i[67]86$")
+-if (CMAKE_SYSTEM_PROCESSOR MATCHES "^i[345]86$")
+-    ##
+-    ## Prevent using 80bits registers (more consistent rounding)
+-    ##
+-    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffloat-store")
+-endif (CMAKE_SYSTEM_PROCESSOR MATCHES "^i[345]86$")
+-
+ if    (CYGWIN)
+     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DISAAC_CYGWIN -Wl,--stack,4194304")
+ endif (CYGWIN)
+--- src/cmake/isaac_redist_macros.cmake
++++ src/cmake/isaac_redist_macros.cmake
+@@ -27,14 +27,17 @@
+   find_package("${libname}" ${version})
+  
+   if(${${libname}_UPPER}_FOUND)
+-    if("${${${libname}_UPPER}_VERSION_STRING}" STREQUAL "${version}")
++    if(NOT "${${${libname}_UPPER}_VERSION_STRING}" VERSION_LESS "${version}")
+        message(" Found: ${libname}, correct version ${version}")
+        message("   ${${libname}_UPPER}_INCLUDE_DIR = ${${${libname}_UPPER}_INCLUDE_DIR}")
+        message("   ${${libname}_UPPER}_LIBRARIES = ${${${libname}_UPPER}_LIBRARIES}")
+-    else("${${${libname}_UPPER}_VERSION_STRING}" STREQUAL "${version}")
++       set(${${libname}_UPPER}_FOUND "TRUE")
++       set(HAVE_${${libname}_UPPER} "TRUE")
++    else()
+        message(" Not found: ${libname}, incorrect version ( ${${${libname}_UPPER}_VERSION} )")
+        set(${${libname}_UPPER}_FOUND "FALSE")
+-    endif("${${${libname}_UPPER}_VERSION_STRING}" STREQUAL "${version}")
++       set(HAVE_${${libname}_UPPER} "FALSE")
++    endif()
+   endif(${${libname}_UPPER}_FOUND)
+ 
+ endmacro(find_package_version libname version)
+@@ -43,6 +46,7 @@
+ ## Redist if not found (untar, configure, make install)
+ macro(redist_package name version args)
+ 
++     message(FATAL_ERROR "Calling redist_package for ${name}-${version}")
+      if (NOT CMAKE_VERBOSE_MAKEFILE)
+        list(APPEND REDIST_QUIET "OUTPUT_QUIET")
+        list(APPEND REDIST_QUIET "ERROR_QUIET")
