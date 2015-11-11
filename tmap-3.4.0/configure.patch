@@ -1,0 +1,95 @@
+--- configure.orig	2015-04-06 11:14:19.000000000 -0500
++++ configure	2015-04-06 12:05:08.000000000 -0500
+@@ -5201,8 +5201,8 @@
+ # condition on BWT Type!
+ ## 0 - Use this to use the original BWT code
+ extended_CFLAGS="-D_TMAP_BWT_RUN_TYPE=0 -D_USE_KNETFILE -Isrc/samtools -DSAMTOOLS_MAIN";
+-default_CFLAGS="-Wall -g -O3 -pthread -msse3";
+-default_CXXFLAGS="-Wall -g -O3 -pthread -msse3";
++default_CFLAGS="-Wall -pthread";
++default_CXXFLAGS="-Wall -pthread";
+ extended_CXXFLAGS="-D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS"; # for <stdint.h> and <inttypes.h>
+ ## 1 - Use this to use the optimized code
+ #extended_CFLAGS="-D_TMAP_BWT_RUN_TYPE=0";
+@@ -5236,14 +5236,18 @@
+ 
+ # Check whether --enable-intel64 was given.
+ if test "${enable_intel64+set}" = set; then :
+-  enableval=$enable_intel64; extended_CFLAGS="${extended_CFLAGS} -mtune=nocona"
++  enableval=$enable_intel64;
++  if test "${enableval}" = yes; then extended_CFLAGS="${extended_CFLAGS} -mtune=nocona"; fi
+ fi
+ 
+ # Check whether --enable-bz2 was given.
+ if test "${enable_bz2+set}" = set; then :
+-  enableval=$enable_bz2;
+-$as_echo "#define DISABLE_BZ2 1" >>confdefs.h
+-
++  enableval=$enable_bz2; use_bzip2="${enableval}";
++else
++  use_bzip2="yes"
++fi
++if test "$use_bzip2" = "no"; then
++  $as_echo "#define DISABLE_BZ2 1" >>confdefs.h
+ else
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BZ2_bzRead in -lbz2" >&5
+ $as_echo_n "checking for BZ2_bzRead in -lbz2... " >&6; }
+@@ -5294,7 +5298,9 @@
+ 
+ # Check whether --enable-debug-functions was given.
+ if test "${enable_debug_functions+set}" = set; then :
+-  enableval=$enable_debug_functions;
++  enableval=$enable_debug_functions; use_debug_fns="${enableval}"
++fi
++if test "${use_debug_fns}" = "yes"; then
+ $as_echo "#define ENABLE_TMAP_DEBUG_FUNCTIONS 1" >>confdefs.h
+ 
+ fi
+@@ -5302,8 +5308,9 @@
+ # NB: what happens if --disable-tcmalloc is used with --enable-perftools ?
+ # Check whether --enable-tcmalloc was given.
+ if test "${enable_tcmalloc+set}" = set; then :
+-  enableval=$enable_tcmalloc;
+-else
++  enableval=$enable_tcmalloc; use_tmalloc="${enableval}"
++fi
++if test "${use_tmalloc}" = "yes"; then
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for malloc in -ltcmalloc" >&5
+ $as_echo_n "checking for malloc in -ltcmalloc... " >&6; }
+ if ${ac_cv_lib_tcmalloc_malloc+:} false; then :
+@@ -5353,12 +5360,16 @@
+ 
+ # Check whether --enable-perftools was given.
+ if test "${enable_perftools+set}" = set; then :
+-  enableval=$enable_perftools; LIBS="${LIBS} -lprofiler"
++  enableval=$enable_perftools;
++  if test "${enableval}" = "yes"; then LIBS="${LIBS} -lprofiler"; fi
+ fi
+ 
+ # Check whether --enable-32bit-support was given.
+ if test "${enable_32bit_support+set}" = set; then :
+-  enableval=$enable_32bit_support; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Using 32-bit SA intervals; Genome sizes limited to 4Gb\"" >&5
++  enableval=$enable_32bit_support; use_32bit="${enableval}";
++fi
++if test "${use_32bit}" = "yes"; then
++  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Using 32-bit SA intervals; Genome sizes limited to 4Gb\"" >&5
+ $as_echo "$as_me: WARNING: \"Using 32-bit SA intervals; Genome sizes limited to 4Gb\"" >&2;}
+ 
+ $as_echo "#define TMAP_BWT_32_BIT 1" >>confdefs.h
+@@ -5371,14 +5382,14 @@
+ # Check whether --enable-coloring was given.
+ if test "${enable_coloring+set}" = set; then :
+   enableval=$enable_coloring;
+-$as_echo "#define DISABLE_COLORING 1" >>confdefs.h
++  if test "${enableval}" = "no"; then $as_echo "#define DISABLE_COLORING 1" >>confdefs.h; fi
+ 
+ fi
+ 
+ # Check whether --enable-adjacent-indels was given.
+ if test "${enable_adjacent_indels+set}" = set; then :
+   enableval=$enable_adjacent_indels;
+-$as_echo "#define ENABLE_ADJACENT_INDELS 1" >>confdefs.h
++  if test "${enableval}" = "yes"; then $as_echo "#define ENABLE_ADJACENT_INDELS 1" >>confdefs.h; fi
+ 
+ fi
+ 

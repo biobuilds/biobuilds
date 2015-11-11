@@ -1,0 +1,10 @@
+--- src/sw/lib/Solution8.cpp.orig	2015-04-13 17:05:53.000000000 -0500
++++ src/sw/lib/Solution8.cpp	2015-04-13 17:05:59.000000000 -0500
+@@ -28,7 +28,6 @@
+ #include <sys/time.h>
+ #include <ext/hash_set>
+ #include <ext/hash_map>
+-#include <ext/pool_allocator.h>
+ #include <emmintrin.h>
+ #include <pmmintrin.h>
+ #include <stdint.h>

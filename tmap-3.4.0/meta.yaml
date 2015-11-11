@@ -1,0 +1,38 @@
+package:
+  name: tmap
+  version: "3.4.0"
+
+requirements:
+  build:
+    - autoconf-update
+    - veclib-headers    # [ppc64le]
+    - bzip2
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: tmap-3.4.0.tar.gz
+  url: http://download.lab7.io/sources/tmap-3.4.0.tar.gz
+  md5: 9023d7d400f75e0f3455b718e33a3c7a
+  patches:
+    - configure.patch
+    - ppc64le-support.patch   # [ppc64le]
+    - osx-clang.patch         # [osx]
+
+test:
+  files:
+    - test-data.tar.bz2
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "https://github.com/iontorrent/TMAP"
+  license: GPLv2
+  license_file: LICENSE
+  summary: "IonTorrent short-read alignment program"
