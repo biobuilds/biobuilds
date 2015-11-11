@@ -1,0 +1,34 @@
+package:
+  name: gnuplot
+  version: "5.0.0"
+
+source:
+  fn: gnuplot-5.0.0.tar.gz
+  url: "https://downloads.sourceforge.net/project/gnuplot/gnuplot/5.0.0/gnuplot-5.0.0.tar.gz"
+  md5: 23628e321ff2428d3f171e1cd4245486
+
+requirements:
+  build:
+    - readline
+    - ncurses
+    - libgd
+#    - cairo    # [linux]
+  run:
+    - readline
+    - ncurses
+    - libgd
+#    - cairo    # [linux]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  detect_binary_files_with_prefix: True
+
+about:
+  home: "http://www.gnuplot.info/index.html"
+  license: gnuplot
+  license_file: Copyright
+  summary: "Portable command-line driven graphing utility"
