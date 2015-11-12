@@ -1,0 +1,29 @@
+package:
+  name: soapaligner
+  version: "2.20"
+
+requirements:
+  build:
+    - veclib-headers  # [ppc64le]
+  run:
+    - soapbuilder
+
+source:
+  fn: SOAPaligner-v2.20-src.tar.gz
+  url: "http://download.lab7.io/sources/SOAPaligner-v2.20-src.tar.gz"
+  md5: ca75753697b12749c42356f366738fef
+  patches:
+    - makefile.patch
+    - ppc64le-support.patch  # [ppc64le]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://soap.genomics.org.cn/soapaligner.html
+  license: GPLv3
+  summary: "Fast alignment of short reads to a reference genome (mapper)"

@@ -1,0 +1,64 @@
+--- Makefile
++++ Makefile
+@@ -1,35 +1,37 @@
++COMPILE_TIME = $(shell date +'%Y-%m-%dT%H:%M:%S%z')
++
+ DEFINE = 
+ CC = gcc
+ CMTIME = 
+-CFLAGS = -g -O0 -DCOMPILE_TIME=\""`date`"\"  #-funroll-loops -maccumulate-outgoing-args  -fomit-frame-pointer -msse3 -O3 
++CFLAGS += -DCOMPILE_TIME=\"$(COMPILE_TIME)\"
+ 
+ 
+ all:	2bwt-builder
+ 
+-BWT.o:	BWT.c BWT.h TypeNLimit.h MemManager.h TextConverter.h HSP.h MiscUtilities.h DNACount.h r250.h HSPstatistic.h makefile
+-BWTConstruct.o:	BWTConstruct.c BWTConstruct.h TypeNLimit.h BWT.h MemManager.h TextConverter.h HSP.h MiscUtilities.h DNACount.h QSufSort.h r250.h makefile
+-2BWT-Builder.o:		2BWT-Builder.c BWTConstruct.h TypeNLimit.h BWT.h MemManager.h TextConverter.h HSP.h MiscUtilities.h DNACount.h iniparser.h dictionary.h BWTFormatdb.h Timing.h lookupBuilder.h highOccBuilder.h makefile
+-SeqIO.o:	SeqIO.c SeqIO.h Types.h HSP.h makefile
+-BWTSearch.o:	BWTSearch.c BWTSearch.h BWT.h MiscUtilities.h MemManager.h TextConverter.h HSP.h makefile
+-karlin.o:	karlin.c karlin.h makefile
+-extratools.o:	extratools.c extratools.h BWT.h MiscUtilities.h MemManager.h TextConverter.h HSP.h  Timing.h makefile
+-lookupBuilder.o:	lookupBuilder.c lookupBuilder.h makefile
+-highOccBuilder.o:	highOccBuilder.c highOccBuilder.h makefile
+-DNACount.o:	DNACount.c DNACount.h TypeNLimit.h MiscUtilities.h makefile
+-HSP.o:	HSP.c TextConverter.h TypeNLimit.h MemManager.h MiscUtilities.h r250.h HSP.h HSPstatistic.h makefile
+-HSPstatistic.o:	HSPstatistic.c karlin.h HSPstatistic.h makefile
+-MemManager.o:	MemManager.c MiscUtilities.h TypeNLimit.h MemManager.h makefile
+-MiscUtilities.o:	MiscUtilities.c MiscUtilities.h TypeNLimit.h makefile
+-iniparser.o:	iniparser.c iniparser.h dictionary.h inistrlib.h makefile
+-inistrlib.o:	inistrlib.c inistrlib.h makefile
+-r250.o:	r250.c r250.h makefile
+-Socket.o:	Socket.c Socket.h TypeNLimit.h MemManager.h MiscUtilities.h makefile
+-QSufSort.o:	QSufSort.c QSufSort.h TypeNLimit.h MiscUtilities.h makefile
+-TextConverter.o:	TextConverter.c TextConverter.h TypeNLimit.h MemManager.h MiscUtilities.h r250.h makefile
+-Timing.o:	Timing.c Timing.h makefile
++BWT.o:	BWT.c BWT.h TypeNLimit.h MemManager.h TextConverter.h HSP.h MiscUtilities.h DNACount.h r250.h HSPstatistic.h
++BWTConstruct.o:	BWTConstruct.c BWTConstruct.h TypeNLimit.h BWT.h MemManager.h TextConverter.h HSP.h MiscUtilities.h DNACount.h QSufSort.h r250.h
++2BWT-Builder.o:		2BWT-Builder.c BWTConstruct.h TypeNLimit.h BWT.h MemManager.h TextConverter.h HSP.h MiscUtilities.h DNACount.h iniparser.h dictionary.h BWTFormatdb.h Timing.h lookupBuilder.h highOccBuilder.h
++SeqIO.o:	SeqIO.c SeqIO.h Types.h HSP.h
++BWTSearch.o:	BWTSearch.c BWTSearch.h BWT.h MiscUtilities.h MemManager.h TextConverter.h HSP.h
++karlin.o:	karlin.c karlin.h
++extratools.o:	extratools.c extratools.h BWT.h MiscUtilities.h MemManager.h TextConverter.h HSP.h  Timing.h
++lookupBuilder.o:	lookupBuilder.c lookupBuilder.h
++highOccBuilder.o:	highOccBuilder.c highOccBuilder.h
++DNACount.o:	DNACount.c DNACount.h TypeNLimit.h MiscUtilities.h
++HSP.o:	HSP.c TextConverter.h TypeNLimit.h MemManager.h MiscUtilities.h r250.h HSP.h HSPstatistic.h
++HSPstatistic.o:	HSPstatistic.c karlin.h HSPstatistic.h
++MemManager.o:	MemManager.c MiscUtilities.h TypeNLimit.h MemManager.h
++MiscUtilities.o:	MiscUtilities.c MiscUtilities.h TypeNLimit.h
++iniparser.o:	iniparser.c iniparser.h dictionary.h inistrlib.h
++inistrlib.o:	inistrlib.c inistrlib.h
++r250.o:	r250.c r250.h
++Socket.o:	Socket.c Socket.h TypeNLimit.h MemManager.h MiscUtilities.h
++QSufSort.o:	QSufSort.c QSufSort.h TypeNLimit.h MiscUtilities.h
++TextConverter.o:	TextConverter.c TextConverter.h TypeNLimit.h MemManager.h MiscUtilities.h r250.h
++Timing.o:	Timing.c Timing.h
+ 
+-2bwt-builder:	2BWT-Builder.o BWT.o BWTConstruct.o MiscUtilities.o MemManager.o TextConverter.o r250.o QSufSort.o iniparser.o inistrlib.o dictionary.o DNACount.o Timing.o Socket.o HSP.o HSPstatistic.o karlin.o lookupBuilder.o highOccBuilder.o makefile
+-	$(CC) $(CFLAGS) 2BWT-Builder.o BWT.o BWTConstruct.o MiscUtilities.o MemManager.o TextConverter.o r250.o QSufSort.o iniparser.o inistrlib.o dictionary.o DNACount.o HSP.o HSPstatistic.o karlin.o lookupBuilder.o highOccBuilder.o Timing.o Socket.o -o 2bwt-builder -lm
++2bwt-builder:	2BWT-Builder.o BWT.o BWTConstruct.o MiscUtilities.o MemManager.o TextConverter.o r250.o QSufSort.o iniparser.o inistrlib.o dictionary.o DNACount.o Timing.o Socket.o HSP.o HSPstatistic.o karlin.o lookupBuilder.o highOccBuilder.o
++	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS) -lm
+ 
+ clean:
+ 	rm -f *.o 2bwt-builder

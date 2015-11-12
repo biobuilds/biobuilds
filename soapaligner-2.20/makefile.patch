@@ -1,0 +1,40 @@
+--- Makefile
++++ Makefile
+@@ -1,3 +1,4 @@
++MAKE_TIME     = $(shell date +'%Y-%m-%dT%H:%M:%S%z')
+ SHELL         = /bin/sh
+ PROG          = soap
+ DEBUG         = NO
+@@ -6,19 +7,19 @@
+ CC            = gcc
+ DEBUG_FLAGS   = -g3 -Wall -O2
+ PROFILE_FLAGS = -fprofile-arcs -ftest-coverage -pg 
+-RELEASE_FLAGS = -msse3 -O3 -static -funroll-loops -maccumulate-outgoing-args -fomit-frame-pointer 
++RELEASE_FLAGS = -fomit-frame-pointer
+ STATIC_FLAGS  = -static
+-DFLAGS        = -DMAKE_TIME=\""`date`"\"
++DFLAGS        = -DMAKE_TIME=\"$(MAKE_TIME)\"
+ LIBS          = -lm
+ #TARBALL_EXCLUDE = "*.(o,gz,zip)"
+ #ZIP_EXCLUDE     = *.o *.gz *.zip
+ 
+ ifeq (YES, $(DEBUG))
+-        CFLAGS   = $(DEBUG_FLAGS) $(STATIC_FLAGS)
++        CFLAGS  += $(DEBUG_FLAGS)
+         DFLAGS  += -DDEBUG
+ #        PTHREADS = NO
+ else
+-        CFLAGS   = $(RELEASE_FLAGS) $(STATIC_FLAGS)
++        CFLAGS  += $(RELEASE_FLAGS)
+ endif
+ 
+ ifeq (YES, $(PTHREADS))
+@@ -40,7 +41,7 @@ OBJ = SeqIO.o MiscUtilities.o MemManager.o TextConverter.o r250.o DNACount.o HSP
+ all: $(PROG)
+ 
+ $(PROG): $(OBJ) soap.o
+-	$(CC) $(CFLAGS) $(DFLAGS) $(OBJ) soap.o -o $@ $(LIBS)
++	$(CC) $(CFLAGS) $(DFLAGS) $(OBJ) soap.o -o $@ $(LDFLAGS) $(LIBS)
+ 
+ SeqIO.o:SeqIO.h
+ r250.o: r250.h
