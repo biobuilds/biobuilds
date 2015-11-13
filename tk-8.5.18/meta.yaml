@@ -1,0 +1,13 @@
+package:
+  name: tk
+  version: "8.5.18"
+
+source:
+  fn: tcltk-8.5.18.tar
+  url: http://download.lab7.io/sources/tcltk-8.5.18.tar
+  md5: 1fd7013c2a0dd47a55aad376d42f2e69
+
+about:
+  home: http://www.tcl.tk/
+  license: BSD-like
+  summary: powerful but easy to learn dynamic programming language
