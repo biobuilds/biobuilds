@@ -1,0 +1,75 @@
+# Based on the recipe from Continuum's "r" anaconda channel, with Windows
+# support removed (since BioBuilds only targets Linux and OS X) and ppc64le
+# support added.
+
+package:
+  name: r-base # [not win]
+  version: 3.2.2
+
+source:
+  fn: R-3.2.2.tar.gz
+  url: http://cran.cnr.berkeley.edu/src/base/R-3/R-3.2.2.tar.gz
+  sha1: 68c74db1c5a2f2040280a03b8396e4d28a5a7617
+  patches:
+    - share-make-vars.mk.patch  # build recommended packages separately
+    - mac-unicode.patch         # [osx]
+
+build:
+  # Window users should use the "r" anaconda channel instead
+  skip: True  # [win]
+  number: 1
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+requirements:
+  build:
+    - gcc       # [not ppc64le]
+    - zlib
+    - bzip2     # static lib; not needed at runtime
+    - xz
+    - pcre
+    - icu
+    - readline
+    - ncurses
+    - curl      # needed so CRAN package installs work
+    - gsl
+    - tk
+    - jpeg
+    - libpng 1.6*
+    - libtiff
+    - cairo     # [linux]
+    - pango     # [linux]
+
+  run:
+    - libgcc    # [not ppc64le]
+    - zlib
+    - xz
+    - pcre
+    - icu
+    - readline
+    - ncurses
+    - curl      # needed so CRAN package installs work
+    - tk
+    - jpeg
+    - libpng 1.6*
+    - libtiff
+    - cairo     # [linux]
+    - pango     # [linux]
+
+test:
+  commands:
+    - R -h
+    - R --version
+    - Rscript --version
+    - Rscript -e 'cat("ok\\n")'
+
+about:
+  home: http://www.r-project.org/
+  license: GPL
+  summary: "Base binaries for the R statistical computing environment. You should install the 'r-recommended' package as well."
