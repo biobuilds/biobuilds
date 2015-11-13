@@ -1,0 +1,30 @@
+package:
+  name: gsl
+  version: 1.16
+
+requirements:
+  build:
+    - autoconf-update
+    - gcc     # [not ppc64le]
+  run:
+    - libgcc  # [not ppc64le]
+
+source:
+  fn: gsl-1.16.tar.gz
+  url: http://ftpmirror.gnu.org/gsl/gsl-1.16.tar.gz
+  md5: e49a664db13d81c968415cd53f62bc8b
+  patches:
+    - poly-test.patch
+
+build:
+  number: 3
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://www.gnu.org/software/gsl/"
+  license: GPLv3
+  license_file: COPYING
+  summary: "Numerical library for C and C++"
