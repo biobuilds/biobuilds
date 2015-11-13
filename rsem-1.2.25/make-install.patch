@@ -1,0 +1,22 @@
+--- Makefile
++++ Makefile
+@@ -2,11 +2,19 @@
+ CFLAGS  += -Wall -O3 -ffast-math -I.
+ LDFLAGS +=
+ PROGRAMS = rsem-extract-reference-transcripts rsem-synthesis-reference-transcripts rsem-preref rsem-parse-alignments rsem-build-read-index rsem-run-em rsem-tbam2gbam rsem-run-gibbs rsem-calculate-credibility-intervals rsem-simulate-reads rsem-bam2wig rsem-get-unique rsem-bam2readdepth rsem-sam-validator rsem-scan-for-paired-end-reads
++SCRIPTS = convert-sam-for-rsem extract-transcript-to-gene-map-from-trinity rsem-calculate-expression rsem-control-fdr rsem-generate-data-matrix rsem-generate-ngvector rsem-gen-transcript-plots rsem_perl_utils.pm rsem-plot-model rsem-plot-transcript-wiggles rsem-prepare-reference rsem-run-ebseq
++PREFIX ?= /usr/local/bin
++
+ 
+ .PHONY : all ebseq clean
++.PHONY : install
+ 
+ all : $(PROGRAMS)
+ 
++install : all $(SCRIPTS)
++	install -d "$(PREFIX)/bin"
++	install -m 0755 $(PROGRAMS) $(SCRIPTS) "$(PREFIX)/bin"
++
+ sam/libbam.a :
+ 	cd sam ; ${MAKE} all
+ 

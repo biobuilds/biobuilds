@@ -1,0 +1,34 @@
+package:
+  name: rsem
+  version: "1.2.25"
+
+requirements:
+  build:
+    - samtools ==0.1.19
+    - zlib
+    # Use BioBuilds version of boost instead of more recent version available
+    # on some platforms to ensure more consistent behavior across systems.
+    - boost ==1.54.0
+  run:
+    - zlib
+
+source:
+  fn: rsem-1.2.25.tar.gz
+  url: https://github.com/deweylab/RSEM/archive/v1.2.25.tar.gz
+  md5: d4ac4739f37ef0d91b8668c85d8153ba
+  patches:
+    - rsem-build.patch
+    - make-install.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://deweylab.github.io/RSEM/"
+  license: GPLv3
+  license_file: COPYING
+  summary: "Accurate quantification of gene and isoform expression from RNA-Seq data"
