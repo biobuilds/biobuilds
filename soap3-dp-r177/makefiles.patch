@@ -1,0 +1,417 @@
+--- 2bwt-flex/Makefile.orig.orig
++++ 2bwt-flex/Makefile
+@@ -36,7 +36,7 @@
+ 
+ CC = g++
+ DEFINE = 
+-CFLAGS = -O3 -funroll-loops -march=core2 -Wno-unused-result -Wno-write-strings
++CFLAGS += -fsigned-char -Wno-unused-result -Wno-write-strings
+ LIBS = -lm -lz
+ THREADLIBS = -lpthread
+ 
+--- 2bwt-flex/pair-end/Makefile.orig
++++ 2bwt-flex/pair-end/Makefile
+@@ -31,7 +31,7 @@
+ 
+ CC = g++
+ DEFINE = 
+-CFLAGS = -O3 -funroll-loops -march=nocona -maccumulate-outgoing-args
++CFLAGS += -maccumulate-outgoing-args
+ LIBS = -lm 
+ 
+ all: PEAlgnmt.o
+--- 2bwt-lib/Makefile.orig
++++ 2bwt-lib/Makefile
+@@ -15,10 +15,17 @@
+ 
+ CC = g++
+ DEFINE = 
+-CFLAGS = -O3 -funroll-loops -march=nocona -maccumulate-outgoing-args -Wno-write-strings -Wno-unused-result 
++CFLAGS += -fsigned-char -Wno-write-strings -Wno-unused-result
+ LIBS = -lm 
+ 
+-all: 2BWT-Builder 2BWT-Interface.o 2BWT-Sample
++TARGETS = 2BWT-Sample 2BWT-Builder
++
++all: $(TARGETS) 2BWT-Interface.o
++
++OBJS = 2BWT-Builder.o 2BWT-Interface.o 2BWT-Sample.o BWT.o BWTConstruct.o \
++	   BlastCompare.o Builder.o DNACount.o HSP.o HSPstatistic.o IndexCtl.o \
++	   Interface.o MemManager.o MiscUtilities.o QSufSort.o Sample.o Socket.o \
++	   TextConverter.o Timing.o dictionary.o iniparser.o inistrlib.o karlin.o r250.o
+ 
+ BWT.o:	BWT.c BWT.h TypeNLimit.h MemManager.h TextConverter.h HSP.h MiscUtilities.h DNACount.h r250.h HSPstatistic.h Makefile
+ 
+@@ -68,3 +75,5 @@ IndexCtl.o:	IndexCtl.c IndexCtl.h Makefile
+ 
+ 2BWT-Interface.o:	2BWT-Interface.c 2BWT-Interface.h Makefile
+ 
++clean:
++	rm -rf $(OBJS) $(TARGETS)
+--- 2bwt-lib/devTools/Makefile.orig
++++ 2bwt-lib/devTools/Makefile
+@@ -15,7 +15,7 @@
+ 
+ CC = g++
+ DEFINE = 
+-CFLAGS = -O3 -funroll-loops -march=nocona -maccumulate-outgoing-args -Wno-write-strings -Wno-unused-result 
++CFLAGS += -fsigned-char -Wno-write-strings -Wno-unused-result
+ LIBS = -lm 
+ THREADLIBS = -lpthread
+ 
+@@ -33,5 +33,8 @@ $(BWTLIB) : force_look
+ all: 2BWT-Benchmark
+ 
+ 2BWT-Benchmark:	2BWT-Benchmark.o $(BWTOBJLIBS) Makefile
+-	$(CC) $(CFLAGS) $(LIBS) $(THREADLIBS) 2BWT-Benchmark.o $(BWTOBJLIBS) -o 2bwt-benchmark
++	$(CC) $(CFLAGS) $(LIBS) 2BWT-Benchmark.o $(BWTOBJLIBS) $(THREADLIBS) -o $@
++
++clean:
++	rm -f 2BWT-Benchmark 2BWT-Benchmark.o
+ 
+--- Makefile.orig
++++ Makefile
+@@ -30,13 +30,23 @@
+ #
+ ####################################################################
+ 
+-#CC = /home/rbluo/gcc/rtf/bin/g++
+ CC = g++
+-#NVCC = /usr/local/cuda/bin/nvcc
++
+ NVCC = nvcc
+-CUDAFLAG = -cuda -arch=sm_20 --ptxas-options=-v
+-LIBFLAG = -L/usr/local/cuda/lib64/ -lcuda -lcudart
+-CFLAGS = -O3 -funroll-loops -march=core2 -fomit-frame-pointer -maccumulate-outgoing-args -Wno-unused-result -lm -static-libgcc -lz -mpopcnt #-mavx
++CUDAFLAG += -cuda -arch=sm_35 --ptxas-options=-v -lineinfo $(VPROFINC)
++LIBFLAG += -L$(LIBCUDA_PATH) -lcuda -L$(LIBCUDART_PATH) -lcudart -lpthread $(LDFLAGS) -lz $(HUGETLBFLAGS)
++CFLAGS  += -D__STDC_LIMIT_MACROS -fsigned-char -Wno-write-strings -Wno-unused-result
++
++ifeq ($(USEHUGETLB),yes)
++HUGETLBFLAGS = -B/opt/libhugetlbfs/share/libhugetlbfs -Wl,--hugetlbfs-align
++endif
++
++ifeq ($(USEVPROF),yes)
++VPROFPATH = /opt/vprof
++VPROFLIB  = $(VPROFPATH)/vprof.o
++VPROFINC  = -DUSEVPROF -I$(VPROFPATH)
++CFLAGS += -g
++endif
+ 
+ BWTLIB = 2bwt-lib
+ BWTOBJLIBS = $(BWTLIB)/BWT.o $(BWTLIB)/dictionary.o $(BWTLIB)/DNACount.o $(BWTLIB)/HSP.o $(BWTLIB)/HSPstatistic.o $(BWTLIB)/iniparser.o $(BWTLIB)/inistrlib.o $(BWTLIB)/karlin.o $(BWTLIB)/MemManager.o $(BWTLIB)/MiscUtilities.o $(BWTLIB)/QSufSort.o $(BWTLIB)/r250.o $(BWTLIB)/TextConverter.o $(BWTLIB)/Timing.o $(BWTLIB)/Socket.o
+@@ -49,7 +59,10 @@ SAMOBJLIBS = $(SAMLIB)/sam.o $(SAMLIB)/bam.o $(SAMLIB)/bgzf.o $(SAMLIB)/kstring.
+ CPULIB = 2bwt-flex
+ CPUOBJLIB = $(CPULIB)/HOCC.o $(CPULIB)/LT.o $(CPULIB)/LTConstruct.o $(CPULIB)/HOCCConstruct.o $(CPULIB)/SRA2BWTCheckAndExtend.o $(CPULIB)/SRA2BWTMdl.o
+ 
+-all:	SOAP3-DP SOAP3-Builder BGS-Build BGS-View BGS-View-PE Sample 
++TARGETS = SOAP3-DP SOAP3-Builder BGS-Build
++OTHER_TARGETS = BGS-View BGS-View-PE Sample
++
++all: $(TARGETS) $(OTHER_TARGETS)
+ 
+ other:	BGS-View BGS-View-PE Sample
+ 
+@@ -66,143 +79,41 @@ $(CPULIB) : 	force_look
+ # Why do we parse the source code twice? The reason we perform the *.cu->*.cpp->*o conversion
+ # is that NVCC does not seem to support -funroll-loops compilation flag. Converting *.cu->*.o
+ # directly will result in atl least 10% performance reducation.
+-#
+-# First Parse: Compiling CUDA into standard CPP
+-#
+-.sample.cpp :	sample.cu Makefile
+-			$(NVCC) $(CUDAFLAG) sample.cu -o .sample.cpp
+-
+-.soap3-dp-module.cpp :	soap3-dp-module.cu Makefile
+-			$(NVCC) $(CUDAFLAG) soap3-dp-module.cu -o .soap3-dp-module.cpp
+-
+-.SOAP3-DP.cpp :	SOAP3-DP.cu Makefile
+-			$(NVCC) $(CUDAFLAG) SOAP3-DP.cu -o .SOAP3-DP.cpp
+-
+-.DV-Kernel.cpp :	DV-Kernel.cu Makefile
+-			$(NVCC) $(CUDAFLAG) DV-Kernel.cu -o .DV-Kernel.cpp
+-
+-.DV-DPfunctions.cpp :	DV-DPfunctions.cu Makefile
+-			$(NVCC) $(CUDAFLAG) DV-DPfunctions.cu -o .DV-DPfunctions.cpp
+ 
+-.alignment.cpp :		alignment.cu Makefile
+-			$(NVCC) $(CUDAFLAG) alignment.cu -o .alignment.cpp
+-
+-.DV-SemiDP.cpp :		DV-SemiDP.cu Makefile
+-			$(NVCC) $(CUDAFLAG) DV-SemiDP.cu -o .DV-SemiDP.cpp
+-
+-.DV-DPForBothUnalign.cpp:	DV-DPForBothUnalign.cu Makefile
+-			$(NVCC) $(CUDAFLAG) DV-DPForBothUnalign.cu -o .DV-DPForBothUnalign.cpp
++# First Parse: Compiling CUDA into standard CPP
+ 
+-.DV-DPForSingleReads.cpp:	DV-DPForSingleReads.cu Makefile
+-			$(NVCC) $(CUDAFLAG) DV-DPForSingleReads.cu -o .DV-DPForSingleReads.cpp
++.%.cpp: %.cu Makefile
++	$(NVCC) $(CUDAFLAG) $< -o $@
+ 
+ # Second Parse: Normal CC compilation
+-#
+-sample.o:	.sample.cpp Makefile
+-	$(CC) $(CFLAGS) -c .sample.cpp -o sample.o
+-
+-soap3-dp-module.o:	.soap3-dp-module.cpp Makefile
+-	$(CC) $(CFLAGS) -c .soap3-dp-module.cpp -o soap3-dp-module.o
+-
+-SOAP3-DP.o:	.SOAP3-DP.cpp Makefile
+-	$(CC) $(CFLAGS) -c .SOAP3-DP.cpp -o SOAP3-DP.o
+-
+-DV-Kernel.o:	.DV-Kernel.cpp Makefile
+-	$(CC) $(CFLAGS) -c .DV-Kernel.cpp -o DV-Kernel.o
+-
+-DV-DPfunctions.o:	.DV-DPfunctions.cpp Makefile
+-	$(CC) $(CFLAGS) -c .DV-DPfunctions.cpp -o DV-DPfunctions.o
+-
+-alignment.o:	.alignment.cpp Makefile
+-	$(CC) $(CFLAGS) -c .alignment.cpp -o alignment.o
+-
+-DV-SemiDP.o:	.DV-SemiDP.cpp Makefile
+-	$(CC) $(CFLAGS) -c .DV-SemiDP.cpp -o DV-SemiDP.o
+-
+-DV-DPForBothUnalign.o:	.DV-DPForBothUnalign.cpp Makefile
+-	$(CC) $(CFLAGS) -c .DV-DPForBothUnalign.cpp -o DV-DPForBothUnalign.o
+ 
+-DV-DPForSingleReads.o:	.DV-DPForSingleReads.cpp Makefile
+-	$(CC) $(CFLAGS) -c .DV-DPForSingleReads.cpp -o DV-DPForSingleReads.o
++%.o: .%.cpp Makefile
++	$(CC) $(CFLAGS) $< -o $@ -c
+ 
+ # Other non-CUDA source files
+-#
+-BGS-IO.o:	BGS-IO.cpp Makefile
+-	$(CC) $(CFLAGS) -c BGS-IO.cpp -o BGS-IO.o
+-
+-BGS-HostAlgnmtMdl.o:	BGS-HostAlgnmtMdl.cpp Makefile
+-	$(CC) $(CFLAGS) -c BGS-HostAlgnmtMdl.cpp -o BGS-HostAlgnmtMdl.o
+-
+-BGS-HostAlgnmtAlgo2.o:	BGS-HostAlgnmtAlgo2.cpp Makefile
+-	$(CC) $(CFLAGS) -c BGS-HostAlgnmtAlgo2.cpp -o BGS-HostAlgnmtAlgo2.o
+-
+-BGS-HostAlgnmtAlgoSingle.o:	BGS-HostAlgnmtAlgoSingle.cpp Makefile
+-	$(CC) $(CFLAGS) -c BGS-HostAlgnmtAlgoSingle.cpp -o BGS-HostAlgnmtAlgoSingle.o
+-
+-PE.o:	PE.cpp Makefile
+-	$(CC) $(CFLAGS) -c PE.cpp -o PE.o
+-
+-SAList.o:	SAList.cpp Makefile
+-	$(CC) $(CFLAGS) -c SAList.cpp -o SAList.o
+ 
+-UsageInterface.o:	UsageInterface.cpp Makefile
+-	$(CC) $(CFLAGS) -c UsageInterface.cpp -o UsageInterface.o
+-
+-IndexHandler.o:	IndexHandler.cpp Makefile
+-	$(CC) $(CFLAGS) -c IndexHandler.cpp -o IndexHandler.o
+-
+-IniParam.o:	IniParam.cpp Makefile
+-	$(CC) $(CFLAGS) -c IniParam.cpp -o IniParam.o
+-
+-FileUtilities.o:	FileUtilities.cpp Makefile
+-	$(CC) $(CFLAGS) -c FileUtilities.cpp -o FileUtilities.o
+-	
+-CPUfunctions.o:	CPUfunctions.cpp Makefile
+-	$(CC) $(CFLAGS) -c CPUfunctions.cpp -o CPUfunctions.o
+-
+-PEAlgnmt.o:	PEAlgnmt.cpp Makefile
+-	$(CC) $(CFLAGS) -c PEAlgnmt.cpp -o PEAlgnmt.o
+-
+-SAM.o:	SAM.cpp Makefile
+-	$(CC) $(CFLAGS) -c SAM.cpp -o SAM.o
+-
+-OutputDPResult.o:	OutputDPResult.cpp Makefile
+-	$(CC) $(CFLAGS) -c OutputDPResult.cpp -o OutputDPResult.o
+-
+-AlgnResult.o:	AlgnResult.cpp Makefile
+-	$(CC) $(CFLAGS) -c AlgnResult.cpp -o AlgnResult.o
+-
+-global_arrays.o:	global_arrays.cpp Makefile
+-	$(CC) $(CFLAGS) -c global_arrays.cpp -o global_arrays.o
+-
+-aio_thread.o:	aio_thread.cpp Makefile
+-	$(CC) $(CFLAGS) -c aio_thread.cpp -o aio_thread.o
+-
+-ssse3_popcount.o:	ssse3_popcount.cpp Makefile
+-	$(CC) $(CFLAGS) -c ssse3_popcount.cpp -o ssse3_popcount.o
+-
+-QueryParser.o:	QueryParser.cpp Makefile
+-	$(CC) $(CFLAGS) -c QueryParser.cpp -o QueryParser.o
++%.o: %.cpp Makefile
++	$(CC) $(CFLAGS) $< -o $@ -c
+ 	
+ # Application
+-#
+-SOAP3-DP:	SOAP3-DP.o BGS-IO.o BGS-HostAlgnmtAlgo2.o BGS-HostAlgnmtAlgoSingle.o DV-Kernel.o PE.o SAList.o CPUfunctions.o alignment.o PEAlgnmt.o SAM.o DV-SemiDP.o OutputDPResult.o AlgnResult.o DV-DPfunctions.o DV-DPForBothUnalign.o DV-DPForSingleReads.o global_arrays.o aio_thread.o ssse3_popcount.o IniParam.o UsageInterface.o FileUtilities.o IndexHandler.o QueryParser.o $(SAMOBJLIBS) $(BWTOBJLIBS) $(CPUOBJLIB)
+-	$(CC) $(CFLAGS) $(LIBFLAG) SOAP3-DP.o BGS-IO.o BGS-HostAlgnmtAlgo2.o BGS-HostAlgnmtAlgoSingle.o DV-Kernel.o PE.o SAList.o CPUfunctions.o alignment.o PEAlgnmt.o SAM.o DV-SemiDP.o OutputDPResult.o AlgnResult.o DV-DPfunctions.o DV-DPForBothUnalign.o DV-DPForSingleReads.o global_arrays.o aio_thread.o ssse3_popcount.o IniParam.o UsageInterface.o FileUtilities.o IndexHandler.o QueryParser.o $(SAMOBJLIBS) $(BWTOBJLIBS) $(CPUOBJLIB) -o soap3-dp
++
++SOAP3-DP: SOAP3-DP.o BGS-IO.o BGS-HostAlgnmtAlgo2.o BGS-HostAlgnmtAlgoSingle.o DV-Kernel.o PE.o SAList.o CPUfunctions.o alignment.o PEAlgnmt.o SAM.o DV-SemiDP.o OutputDPResult.o AlgnResult.o DV-DPfunctions.o DV-DPForBothUnalign.o DV-DPForSingleReads.o global_arrays.o aio_thread.o ssse3_popcount.o IniParam.o UsageInterface.o FileUtilities.o IndexHandler.o QueryParser.o $(SAMOBJLIBS) $(BWTOBJLIBS) $(CPUOBJLIB)
++	$(CC) $(CFLAGS) SOAP3-DP.o BGS-IO.o BGS-HostAlgnmtAlgo2.o BGS-HostAlgnmtAlgoSingle.o DV-Kernel.o PE.o SAList.o CPUfunctions.o alignment.o PEAlgnmt.o SAM.o DV-SemiDP.o OutputDPResult.o AlgnResult.o DV-DPfunctions.o DV-DPForBothUnalign.o DV-DPForSingleReads.o global_arrays.o aio_thread.o ssse3_popcount.o IniParam.o UsageInterface.o FileUtilities.o IndexHandler.o QueryParser.o $(SAMOBJLIBS) $(BWTOBJLIBS) $(CPUOBJLIB) $(VPROFLIB) $(LIBFLAG) -o $@
+ 
+ Sample: sample.o BGS-IO.o BGS-HostAlgnmtAlgo2.o BGS-HostAlgnmtAlgoSingle.o DV-Kernel.o PE.o SAList.o CPUfunctions.o alignment.o PEAlgnmt.o SAM.o DV-SemiDP.o OutputDPResult.o AlgnResult.o DV-DPfunctions.o DV-DPForBothUnalign.o DV-DPForSingleReads.o soap3-dp-module.o global_arrays.o ssse3_popcount.o IniParam.o UsageInterface.o FileUtilities.o IndexHandler.o QueryParser.o $(SAMOBJLIBS) $(BWTOBJLIBS) $(CPUOBJLIB)
+-	$(CC) $(CFLAGS) $(LIBFLAG) sample.o BGS-IO.o BGS-HostAlgnmtAlgo2.o BGS-HostAlgnmtAlgoSingle.o DV-Kernel.o PE.o SAList.o CPUfunctions.o alignment.o PEAlgnmt.o SAM.o DV-SemiDP.o OutputDPResult.o AlgnResult.o DV-DPfunctions.o DV-DPForBothUnalign.o DV-DPForSingleReads.o soap3-dp-module.o global_arrays.o ssse3_popcount.o IniParam.o UsageInterface.o FileUtilities.o IndexHandler.o QueryParser.o $(SAMOBJLIBS) $(BWTOBJLIBS) $(CPUOBJLIB) -o sample
++	$(CC) $(CFLAGS) sample.o BGS-IO.o BGS-HostAlgnmtAlgo2.o BGS-HostAlgnmtAlgoSingle.o DV-Kernel.o PE.o SAList.o CPUfunctions.o alignment.o PEAlgnmt.o SAM.o DV-SemiDP.o OutputDPResult.o AlgnResult.o DV-DPfunctions.o DV-DPForBothUnalign.o DV-DPForSingleReads.o soap3-dp-module.o global_arrays.o ssse3_popcount.o IniParam.o UsageInterface.o FileUtilities.o IndexHandler.o QueryParser.o $(SAMOBJLIBS) $(BWTOBJLIBS) $(CPUOBJLIB) $(LIBFLAG) -o $@
+ 
+ BGS-View: BGS-View.cpp $(BWTOBJLIBS) Makefile
+-	$(CC) $(CFLAGS) BGS-View.cpp $(BWTOBJLIBS) -o BGS-View
++	$(CC) $(CFLAGS) BGS-View.cpp $(BWTOBJLIBS) -o $@
+ 
+ BGS-View-PE: BGS-View-PE.cpp $(BWTOBJLIBS) Makefile
+-	$(CC) $(CFLAGS) BGS-View-PE.cpp $(BWTOBJLIBS) -o BGS-View-PE
++	$(CC) $(CFLAGS) BGS-View-PE.cpp $(BWTOBJLIBS) -o $@
+ 
+ SOAP3-Builder: $(CPULIB)/2BWT-Builder.c $(BWTLIB)/BWTConstruct.o $(BWTOBJLIBS) $(CPUOBJLIB) Makefile
+-	$(CC) $(CFLAGS) $(CPULIB)/2BWT-Builder.c $(BWTLIB)/BWTConstruct.o $(BWTOBJLIBS) $(CPUOBJLIB) -o soap3-dp-builder
++	$(CC) $(CFLAGS) $(CPULIB)/2BWT-Builder.c $(BWTLIB)/BWTConstruct.o $(BWTOBJLIBS) $(CPUOBJLIB) -o $@
+ 
+ BGS-Build: BGS-Build.cpp $(BWTOBJLIBS) Makefile
+-	$(CC) $(CFLAGS) BGS-Build.cpp $(BWTOBJLIBS) -o BGS-Build
++	$(CC) $(CFLAGS) BGS-Build.cpp $(BWTOBJLIBS) -o $@
+ 
+ clean:
+ 	echo "Cleaning up all object codes, including 2BWT-LIB, SAM and all other library compiled."
+@@ -210,4 +121,7 @@ clean:
+ 
+ cleanCPU:
+ 	echo "Cleaning up only CPU SOAP3 object code."
+-	rm -f *.o
++	rm -f *.o $(BWTLIB)/BWTConstruct.o
++
++distclean: clean cleanCPU
++	rm -f $(TARGETS) $(OTHER_TARGETS)
+--- samtools-0.1.18/Makefile.original.orig
++++ samtools-0.1.18/Makefile.original
+@@ -1,5 +1,5 @@
+ CC=			gcc
+-CFLAGS=		-g -Wall -O2 #-m64 #-arch ppc
++CFLAGS?=		-g -Wall -O2 #-m64 #-arch ppc
+ DFLAGS=		-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D_USE_KNETFILE -D_CURSES_LIB=1
+ KNETFILE_O=	knetfile.o
+ LOBJS=		bgzf.o kstring.o bam_aux.o bam.o bam_import.o sam.o bam_index.o	\
+@@ -25,7 +25,7 @@ all-recur lib-recur clean-recur cleanlocal-recur install-recur:
+ 		wdir=`pwd`; \
+ 		list='$(SUBDIRS)'; for subdir in $$list; do \
+ 			cd $$subdir; \
+-			$(MAKE) CC="$(CC)" DFLAGS="$(DFLAGS)" CFLAGS="$(CFLAGS)" \
++			$(MAKE) CC="$(CC)" DFLAGS="$(DFLAGS)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
+ 				INCLUDES="$(INCLUDES)" LIBPATH="$(LIBPATH)" $$target || exit 1; \
+ 			cd $$wdir; \
+ 		done;
+@@ -41,13 +41,13 @@ libbam.a:$(LOBJS)
+ 		$(AR) -csru $@ $(LOBJS)
+ 
+ samtools:lib-recur $(AOBJS)
+-		$(CC) $(CFLAGS) -o $@ $(AOBJS) -Lbcftools $(LIBPATH) libbam.a -lbcf $(LIBCURSES) -lm -lz
++		$(CC) $(CFLAGS) -o $@ $(AOBJS) -Lbcftools $(LIBPATH) libbam.a -lbcf $(LIBCURSES) -lm $(LDFLAGS) -lz
+ 
+ razip:razip.o razf.o $(KNETFILE_O)
+-		$(CC) $(CFLAGS) -o $@ razf.o razip.o $(KNETFILE_O) -lz
++		$(CC) $(CFLAGS) -o $@ razf.o razip.o $(KNETFILE_O) $(LDFLAGS) -lz
+ 
+ bgzip:bgzip.o bgzf.o $(KNETFILE_O)
+-		$(CC) $(CFLAGS) -o $@ bgzf.o bgzip.o $(KNETFILE_O) -lz
++		$(CC) $(CFLAGS) -o $@ bgzf.o bgzip.o $(KNETFILE_O) $(LDFLAGS) -lz
+ 
+ razip.o:razf.h
+ bam.o:bam.h razf.h bam_endian.h kstring.h sam_header.h
+@@ -73,10 +73,10 @@ faidx_main.o:faidx.h razf.h
+ 
+ 
+ libbam.1.dylib-local:$(LOBJS)
+-		libtool -dynamic $(LOBJS) -o libbam.1.dylib -lc -lz
++		libtool -dynamic $(LOBJS) -o libbam.1.dylib -lc $(LDFLAGS) -lz
+ 
+ libbam.so.1-local:$(LOBJS)
+-		$(CC) -shared -Wl,-soname,libbam.so -o libbam.so.1 $(LOBJS) -lc -lz
++		$(CC) -shared -Wl,-soname,libbam.so -o libbam.so.1 $(LOBJS) -lc $(LDFLAGS) -lz
+ 
+ dylib:
+ 		@$(MAKE) cleanlocal; \
+--- samtools-0.1.18/bcftools/Makefile.orig
++++ samtools-0.1.18/bcftools/Makefile
+@@ -1,5 +1,5 @@
+ CC=			gcc
+-CFLAGS=		-g -Wall -O2 #-m64 #-arch ppc
++CFLAGS?=		-g -Wall -O2 #-m64 #-arch ppc
+ DFLAGS=		-D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE
+ LOBJS=		bcf.o vcf.o bcfutils.o prob1.o em.o kfunc.o kmin.o index.o fet.o mut.o bcf2qcall.o
+ OMISC=		..
+@@ -18,7 +18,7 @@ all-recur lib-recur clean-recur cleanlocal-recur install-recur:
+ 		wdir=`pwd`; \
+ 		list='$(SUBDIRS)'; for subdir in $$list; do \
+ 			cd $$subdir; \
+-			$(MAKE) CC="$(CC)" DFLAGS="$(DFLAGS)" CFLAGS="$(CFLAGS)" \
++			$(MAKE) CC="$(CC)" DFLAGS="$(DFLAGS)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
+ 				INCLUDES="$(INCLUDES)" LIBPATH="$(LIBPATH)" $$target || exit 1; \
+ 			cd $$wdir; \
+ 		done;
+@@ -31,7 +31,7 @@ libbcf.a:$(LOBJS)
+ 		$(AR) -csru $@ $(LOBJS)
+ 
+ bcftools:lib $(AOBJS)
+-		$(CC) $(CFLAGS) -o $@ $(AOBJS) -L. $(LIBPATH) -lbcf -lm -lz
++		$(CC) $(CFLAGS) -o $@ $(AOBJS) -L. $(LIBPATH) -lbcf -lm $(LDFLAGS) -lz
+ 
+ bcf.o:bcf.h
+ vcf.o:bcf.h
+--- samtools-0.1.18/examples/Makefile.orig
++++ samtools-0.1.18/examples/Makefile
+@@ -40,7 +40,7 @@ ex1.bcf:ex1.bam ex1.fa.fai
+ 		(cd ..; make libbam.a)
+ 
+ calDepth:../libbam.a calDepth.c
+-		gcc -g -Wall -O2 -I.. calDepth.c -o $@ -L.. -lbam -lm -lz
++		gcc -g -Wall -O2 -I.. calDepth.c -o $@ -L.. -lbam -lm $(LDFLAGS) -lz
+ 
+ clean:
+ 		rm -fr *.bam *.bai *.glf* *.fai *.pileup* *~ calDepth *.dSYM ex1*.rg ex1.bcf
+--- samtools-0.1.18/misc/Makefile.orig
++++ samtools-0.1.18/misc/Makefile
+@@ -1,6 +1,6 @@
+ CC=			gcc
+ CXX=		g++
+-CFLAGS=		-g -Wall -O2 #-m64 #-arch ppc
++CFLAGS?=		-g -Wall -O2 #-m64 #-arch ppc
+ CXXFLAGS=	$(CFLAGS)
+ DFLAGS=		-D_FILE_OFFSET_BITS=64
+ OBJS=		
+@@ -20,7 +20,7 @@ lib-recur all-recur clean-recur cleanlocal-recur install-recur:
+ 		wdir=`pwd`; \
+ 		list='$(SUBDIRS)'; for subdir in $$list; do \
+ 			cd $$subdir; \
+-			$(MAKE) CC="$(CC)" DFLAGS="$(DFLAGS)" CFLAGS="$(CFLAGS)" \
++			$(MAKE) CC="$(CC)" DFLAGS="$(DFLAGS)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
+ 				INCLUDES="$(INCLUDES)" $$target || exit 1; \
+ 			cd $$wdir; \
+ 		done;
+@@ -28,13 +28,13 @@ lib-recur all-recur clean-recur cleanlocal-recur install-recur:
+ lib:
+ 
+ seqtk:seqtk.o
+-		$(CC) $(CFLAGS) -o $@ seqtk.o -lm -lz
++		$(CC) $(CFLAGS) -o $@ seqtk.o -lm $(LDFLAGS) -lz
+ 
+ wgsim:wgsim.o
+-		$(CC) $(CFLAGS) -o $@ wgsim.o -lm -lz
++		$(CC) $(CFLAGS) -o $@ wgsim.o -lm $(LDFLAGS) -lz
+ 
+ md5fa:md5.o md5fa.o md5.h ../kseq.h
+-		$(CC) $(CFLAGS) -o $@ md5.o md5fa.o -lz
++		$(CC) $(CFLAGS) -o $@ md5.o md5fa.o $(LDFLAGS) -lz
+ 
+ md5sum-lite:md5sum-lite.o
+ 		$(CC) $(CFLAGS) -o $@ md5sum-lite.o
+@@ -43,10 +43,10 @@ md5sum-lite.o:md5.c md5.h
+ 		$(CC) -c $(CFLAGS) -DMD5SUM_MAIN -o $@ md5.c
+ 
+ maq2sam-short:maq2sam.c
+-		$(CC) $(CFLAGS) -o $@ maq2sam.c -lz
++		$(CC) $(CFLAGS) -o $@ maq2sam.c $(LDFLAGS) -lz
+ 
+ maq2sam-long:maq2sam.c
+-		$(CC) $(CFLAGS) -DMAQ_LONGREADS -o $@ maq2sam.c -lz
++		$(CC) $(CFLAGS) -DMAQ_LONGREADS -o $@ maq2sam.c $(LDFLAGS) -lz
+ 
+ md5fa.o:md5.h md5fa.c
+ 		$(CC) $(CFLAGS) -c -I.. -o $@ md5fa.c
