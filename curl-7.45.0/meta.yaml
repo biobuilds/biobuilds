@@ -1,0 +1,27 @@
+package:
+  name: curl
+  version: 7.45.0
+
+source:
+  fn: curl-7.45.0.tar.gz
+  url: "https://github.com/bagder/curl/releases/download/curl-7_45_0/curl-7.45.0.tar.gz"
+  md5: be21c6a190d65cfd3eeb749a3dce3947
+
+requirements:
+  build:
+    - zlib
+    - openssl
+    - libidn    # static lib, so not needed at run time
+  run:
+    - zlib
+    - openssl
+
+build:
+  number: 1
+  # Needed to fix path to CA certificate bundle
+  detect_binary_files_with_prefix: true
+
+about:
+  license: BSD-like
+  license_file: COPYING
+  summary: "Multi-protocol file transfer library and CLI utility"
