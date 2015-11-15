@@ -1,0 +1,33 @@
+package:
+  name: cairo
+  version: 1.12.18
+
+source:
+  fn: cairo-1.12.18.tar.xz
+  url: http://cairographics.org/releases/cairo-1.12.18.tar.xz
+  sha1: a76940b58da9c83b8934264617135326c0918f9d
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: True
+
+requirements:
+  build:
+    - autoconf-update
+    - freetype
+    - fontconfig
+    - pixman
+    - libpng        # needed for png backend
+    - zlib          # needed for PS and PDF backends
+  run:
+    - freetype
+    - fontconfig
+    - pixman
+    - libpng
+    - zlib
+
+about:
+  home: http://cairographics.org/
+  license: LGPL 2.1, MPL 1.1
+  license_file: COPYING
+  summary: 2D graphics library with support for multiple output devices
