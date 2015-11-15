@@ -1,0 +1,26 @@
+package:
+  name: pixman
+  version: 0.26.2
+
+source:
+  fn: pixman-0.26.2.tar.gz
+  url: http://cairographics.org/releases/pixman-0.26.2.tar.gz
+  md5: 276242da5b3af1258d072cf205d18f0b
+
+requirements:
+  build:
+    - autoconf-update
+    - libpng
+    - zlib
+  run:
+    - libpng
+    - zlib
+
+build:
+  number: 0
+
+about:
+  home: http://www.pixman.org/
+  license: MIT
+  license_file: COPYING
+  summary: Low-level software library for pixel manipulation
