@@ -1,0 +1,35 @@
+package:
+  name: harfbuzz
+  version: 0.9.35
+
+source:
+  url: http://www.freedesktop.org/software/harfbuzz/release/harfbuzz-0.9.35.tar.bz2
+  fn: harfbuzz-0.9.35.tar.bz2
+  md5: 531ee8650626ecddcd90b2a4637e31d4
+
+requirements:
+  build:
+    - autoconf-update
+    - gcc     # [not ppc64le]
+    - freetype
+    - cairo
+    - glib
+    - zlib
+    - libpng 1.6.*
+  run:
+    - libgcc  # [not ppc64le]
+    - freetype
+    - cairo
+    - glib
+    - zlib
+    - libpng 1.6.*
+
+build:
+  number: 7
+  detect_binary_files_with_prefix: true
+
+about:
+  home: http://www.freedesktop.org/software/harfbuzz/release/harfbuzz-0.9.35.tar.bz2
+  license: MIT
+  license_file: COPYING
+  summary: "OpenType text shaping engine."
