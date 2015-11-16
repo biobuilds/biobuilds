@@ -1,0 +1,59 @@
+package:
+  name: r-kernsmooth
+  version: "2.23_15"
+
+source:
+  fn: KernSmooth_2.23-15.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/KernSmooth_2.23-15.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/KernSmooth/KernSmooth_2.23-15.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  # Needed to ensure $PREFIX is long enough that patchelf doesn't change the
+  # size of the .so file(s), as changing the size of compiled R libraries
+  # triggers "ELF load command alignment not page-aligned" errors on ppc64le.
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base
+    - gcc     # [not ppc64le]
+
+  run:
+    - r
+    - libgcc  # [not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('KernSmooth')" # [not win]
+    - "\"%R%\" -e \"library('KernSmooth')\"" # [win]
+
+about:
+  license: Unlimited
+  summary: "Functions for kernel smoothing (and density estimation)"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: KernSmooth
+# Priority: recommended
+# Version: 2.23-15
+# Date: 2015-06-29
+# Title: Functions for Kernel Smoothing Supporting Wand & Jones (1995)
+# Authors@R: c(person("Matt", "Wand", role = "aut", email = "Matt.Wand@uts.edu.au"), person("Brian", "Ripley", role = c("trl", "cre", "ctb"), email = "ripley@stats.ox.ac.uk", comment = "R port and updates"))
+# Depends: R (>= 2.5.0), stats
+# Suggests: MASS
+# Description: Functions for kernel smoothing (and density estimation) corresponding to the book:  Wand, M.P. and Jones, M.C. (1995) "Kernel Smoothing".
+# License: Unlimited
+# ByteCompile: yes
+# NeedsCompilation: yes
+# Packaged: 2015-06-29 08:37:00 UTC; ripley
+# Author: Matt Wand [aut], Brian Ripley [trl, cre, ctb] (R port and updates)
+# Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+# Repository: CRAN
+# Date/Publication: 2015-06-29 17:15:14
+#----------------------------------------------------------------------

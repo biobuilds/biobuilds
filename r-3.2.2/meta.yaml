@@ -1,0 +1,13 @@
+package:
+  name: r   # [not win]
+  version: 3.2.2
+
+requirements:
+  run:
+    - r-base 3.2.2
+    - r-recommended 3.2.2
+
+about:
+  home: https://www.r-project.org/
+  license: GPL
+  summary: "Language and environment for statistical computing (meta-package)"

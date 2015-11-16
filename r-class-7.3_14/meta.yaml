@@ -1,0 +1,63 @@
+package:
+  name: r-class
+  version: "7.3_14"
+
+source:
+  fn: class_7.3-14.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/class_7.3-14.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/class/class_7.3-14.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  # Needed to ensure $PREFIX is long enough that patchelf doesn't change the
+  # size of the .so file(s), as changing the size of compiled R libraries
+  # triggers "ELF load command alignment not page-aligned" errors on ppc64le.
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base
+    - r-mass
+    - gcc     # [not ppc64le]
+
+  run:
+    - r
+    - r-mass
+    - libgcc  # [not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('class')" # [not win]
+    - "\"%R%\" -e \"library('class')\"" # [win]
+
+about:
+  home: http://www.stats.ox.ac.uk/pub/MASS4/
+  license: GPLv2
+  summary: "Functions for classification"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: class
+# Priority: recommended
+# Version: 7.3-14
+# Date: 2015-08-29
+# Depends: R (>= 3.0.0), stats, utils
+# Imports: MASS
+# Authors@R: c(person("Brian", "Ripley", role = c("aut", "cre", "cph"), email = "ripley@stats.ox.ac.uk"), person("William", "Venables", role = "cph"))
+# Description: Various functions for classification, including k-nearest neighbour, Learning Vector Quantization and Self-Organizing Maps.
+# Title: Functions for Classification
+# ByteCompile: yes
+# License: GPL-2 | GPL-3
+# URL: http://www.stats.ox.ac.uk/pub/MASS4/
+# NeedsCompilation: yes
+# Packaged: 2015-08-28 15:25:36 UTC; ripley
+# Author: Brian Ripley [aut, cre, cph], William Venables [cph]
+# Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+# Repository: CRAN
+# Date/Publication: 2015-08-30 08:59:38
+#----------------------------------------------------------------------

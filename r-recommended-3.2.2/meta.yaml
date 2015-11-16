@@ -1,0 +1,35 @@
+package:
+  name: r-recommended
+  version: 3.2.2
+
+requirements:
+  # NOTE: When bootstrapping an R build (i.e., building the recommended
+  # packages for the first time), the list below needs to be commented out
+  # to avoid circular dependencies. After the packages have been built,
+  # uncomment the list and rebuild the r-recommended package. I.e.,
+  #   $ conda build r-base-3.2.2
+  #   $ <comment out the package list from this meta.yaml>
+  #   $ conda build r-3.2.2 r-recommended-3.2.2
+  #   $ conda build <list of recipes for recommended packages>
+  #   $ <uncomment the package list from the meta.yaml>
+  #   $ conda build r-recommended-3.2.2
+  run:
+    - r 3.2.2     # OK to leave this uncommented when bootstrapping
+    - r-boot
+    - r-class
+    - r-cluster
+    - r-codetools
+    - r-foreign
+    - r-kernsmooth
+    - r-lattice
+    - r-mass
+    - r-matrix
+    - r-mgcv
+    - r-nlme
+    - r-nnet
+    - r-rpart
+    - r-spatial
+    - r-survival
+
+about:
+  summary: "Basic set of recommended packages for an R install (meta-package)"

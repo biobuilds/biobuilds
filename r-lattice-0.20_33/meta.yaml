@@ -1,0 +1,64 @@
+package:
+  name: r-lattice
+  version: "0.20_33"
+
+source:
+  fn: lattice_0.20-33.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/lattice_0.20-33.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/lattice/lattice_0.20-33.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  # Needed to ensure $PREFIX is long enough that patchelf doesn't change the
+  # size of the .so file(s), as changing the size of compiled R libraries
+  # triggers "ELF load command alignment not page-aligned" errors on ppc64le.
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base
+    - gcc     # [not ppc64le]
+
+  run:
+    - r
+    - libgcc  # [not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('lattice')" # [not win]
+    - "\"%R%\" -e \"library('lattice')\"" # [win]
+
+about:
+  home: http://lattice.r-forge.r-project.org/
+  license: GPLv2
+  summary: "High-level data visualization system inspired by Trellis graphics"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: lattice
+# Version: 0.20-33
+# Date: 2015-07-07
+# Priority: recommended
+# Title: Trellis Graphics for R
+# Author: Deepayan Sarkar <deepayan.sarkar@r-project.org>
+# Maintainer: Deepayan Sarkar <deepayan.sarkar@r-project.org>
+# Description: A powerful and elegant high-level data visualization system inspired by Trellis graphics, with an emphasis on multivariate data. Lattice is sufficient for typical graphics needs, and is also flexible enough to handle most nonstandard requirements. See ?Lattice for an introduction.
+# Depends: R (>= 3.0.0)
+# Suggests: KernSmooth, MASS
+# Imports: grid, grDevices, graphics, stats, utils
+# Enhances: chron
+# LazyLoad: yes
+# LazyData: yes
+# License: GPL (>= 2)
+# URL: http://lattice.r-forge.r-project.org/
+# BugReports: http://r-forge.r-project.org/projects/lattice/
+# NeedsCompilation: yes
+# Packaged: 2015-07-13 09:04:45 UTC; deepayan
+# Repository: CRAN
+# Date/Publication: 2015-07-14 15:58:29
+#----------------------------------------------------------------------

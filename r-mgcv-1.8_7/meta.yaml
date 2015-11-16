@@ -1,0 +1,63 @@
+package:
+  name: r-mgcv
+  version: "1.8_7"
+
+source:
+  fn: mgcv_1.8-7.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/mgcv_1.8-7.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/mgcv/mgcv_1.8-7.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  # Needed to ensure $PREFIX is long enough that patchelf doesn't change the
+  # size of the .so file(s), as changing the size of compiled R libraries
+  # triggers "ELF load command alignment not page-aligned" errors on ppc64le.
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base
+    - r-matrix
+    - r-nlme >=3.1_64
+    - gcc             # [not ppc64le]
+
+  run:
+    - r
+    - r-matrix
+    - r-nlme >=3.1_64
+    - libgcc          # [not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('mgcv')" # [not win]
+    - "\"%R%\" -e \"library('mgcv')\"" # [win]
+
+about:
+  license: GPLv2
+  summary: "GAMs, GAMMs and other generalized ridge regression with multiple smoothing parameter estimation"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: mgcv
+# Version: 1.8-7
+# Author: Simon Wood <simon.wood@r-project.org>
+# Maintainer: Simon Wood <simon.wood@r-project.org>
+# Title: Mixed GAM Computation Vehicle with GCV/AIC/REML Smoothness Estimation
+# Description: GAMs, GAMMs and other generalized ridge regression with  multiple smoothing parameter estimation by GCV, REML or UBRE/AIC.  Includes a gam() function, a wide variety of smoothers, JAGS  support and distributions beyond the exponential family.
+# Priority: recommended
+# Depends: R (>= 2.14.0), nlme (>= 3.1-64)
+# Imports: methods, stats, graphics, Matrix
+# Suggests: splines, parallel, survival, MASS
+# LazyLoad: yes
+# ByteCompile: yes
+# License: GPL (>= 2)
+# NeedsCompilation: yes
+# Packaged: 2015-07-22 17:38:22 UTC; sw283
+# Repository: CRAN
+# Date/Publication: 2015-07-23 07:05:08
+#----------------------------------------------------------------------
