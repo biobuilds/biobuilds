@@ -1,0 +1,41 @@
+package:
+  name: pango
+  version: 1.36.8
+
+source:
+  fn: pango-1.36.8.tar.xz
+  url: http://ftp.gnome.org/pub/GNOME/sources/pango/1.36/pango-1.36.8.tar.xz
+  md5: 217a9a753006275215fa9fa127760ece
+
+build:
+  number: 4
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - autoconf-update
+    - fontconfig
+    - freetype
+    - glib
+    - harfbuzz
+    - libpng 1.6.*
+    - cairo >=1.12.10
+    # On POWER8, rely on distro-vendor version of libffi as the little-endian
+    # (ppc64le) patches have not yet been merged into the upstream sources.
+    - libffi >=3.0.0  # [not ppc64le]
+  run:
+    - fontconfig
+    - freetype
+    - glib
+    - harfbuzz
+    - libpng 1.6.*
+    - cairo >=1.12.10
+    # On POWER8, rely on distro-vendor version of libffi as the little-endian
+    # (ppc64le) patches have not yet been merged into the upstream sources.
+    - libffi >=3.0.0  # [not ppc64le]
+
+about:
+  home: http://www.pango.org/
+  license: LGPL
+  license_file: COPYING
+  summary: "Library for text layout and rendering, with emphasis on internationalization"
