@@ -1,0 +1,33 @@
+package:
+  name: glib
+  version: 2.43.0
+
+requirements:
+  build:
+    - autoconf-update
+    - python
+    - zlib
+    - gcc   # [not ppc64le]
+    # On POWER8, rely on distro-vendor version of libffi as the little-endian
+    # (ppc64le) patches have not yet been merged into the upstream sources.
+    - libffi >=3.0.0  # [not ppc64le]
+  run:
+    - zlib
+    # On POWER8, rely on distro-vendor version of libffi as the little-endian
+    # (ppc64le) patches have not yet been merged into the upstream sources.
+    - libffi >=3.0.0  # [not ppc64le]
+
+source:
+  fn: glib-2.43.0.tar.xz
+  url: http://ftp.gnome.org/pub/gnome/sources/glib/2.43/glib-2.43.0.tar.xz
+  md5: c93f4364a2bc82807a5ea7ae220a9e35
+
+build:
+  number: 3
+  detect_binary_files_with_prefix: true
+
+about:
+  home: 'https://developer.gnome.org/glib/'
+  license: LGPL
+  license_file: COPYING
+  summary: 'Building blocks for libraries and applications written in C'
