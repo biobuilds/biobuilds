@@ -1,0 +1,28 @@
+package:
+  name: biopython
+  version: "1.66"
+
+source:
+  fn: biopython-1.66.tar.gz
+  url: https://pypi.python.org/packages/source/b/biopython/biopython-1.66.tar.gz
+  md5: d3f4c14e5cba3dfd354d0e0013bc350f
+
+requirements:
+  build:
+    - python
+    # Requires conda-build 1.18 or greater
+    - numpy x.x
+  run:
+    - python
+    # Requires conda-build 1.18 or greater
+    - numpy x.x
+
+test:
+  imports:
+    - Bio
+    - BioSQL
+
+about:
+  home: http://biopython.org/
+  license: BSD-like
+  summary: Python tools for computational molecular biology
