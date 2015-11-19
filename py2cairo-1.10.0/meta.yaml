@@ -1,0 +1,24 @@
+package:
+  name: py2cairo
+  version: 1.10.0
+
+source:
+  fn: py2cairo-1.10.0.tar.bz2
+  url: http://cairographics.org/releases/py2cairo-1.10.0.tar.bz2
+  md5: 20337132c4ab06c1146ad384d55372c5
+
+build:
+  number: 2
+
+requirements:
+  build:
+    - cairo
+    - python
+  run:
+    - cairo
+    - python
+
+about:
+  home: http://cairographics.org/pycairo/
+  license: LGPL 2.1, MPL 1.1
+  summary: Python bindings for the cairo graphics library
