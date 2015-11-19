@@ -1,0 +1,30 @@
+package:
+  name: r-biocinstaller
+  version: "1.20.1"
+
+source:
+  fn: "BiocInstaller_1.20.1.tar.gz"
+  url: "https://bioconductor.org/packages/3.2/bioc/src/contrib/BiocInstaller_1.20.1.tar.gz"
+  md5: d6758faae696c9bbed2c5c43fcefdb00
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+
+  run:
+    - r
+
+test:
+  commands:
+    - $R -e "library('BiocInstaller')"  # [not win]
+    - "\"%R%\" -e \"library('BiocInstaller')\""  # [win]
+
+about:
+  home: "https://www.bioconductor.org/packages/release/bioc/html/BiocInstaller.html"
+  license: Artistic 2.0
+  summary: "Package for installing and updating Bioconductor, CRAN, and (some) github packages"

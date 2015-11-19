@@ -1,0 +1,41 @@
+package:
+  name: r-annotationdbi
+  version: "1.32.0"
+
+source:
+  fn: AnnotationDbi_1.32.0.tar.gz
+  url: "https://bioconductor.org/packages/3.2/bioc/src/contrib/AnnotationDbi_1.32.0.tar.gz"
+  md5: b03ae2c21574e1290de50c0f5a5e285f
+
+requirements:
+  build:
+    - r
+    - gcc  # [not ppc64le]
+    - r-dbi
+    - r-rsqlite
+    - r-biocgenerics >=0.15.10
+    - r-biobase >=1.17.0
+    - r-iranges
+  run:
+    - r
+    - libgcc  # [not ppc64le]
+    - r-dbi
+    - r-rsqlite
+    - r-biocgenerics >=0.15.10
+    - r-biobase >=1.17.0
+    - r-iranges
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('AnnotationDbi')"  # [not win]
+    - "\"%R%\" -e \"library('AnnotationDbi')\""  # [win]
+
+about:
+  home: "https://www.bioconductor.org/packages/release/bioc/html/AnnotationDbi.html"
+  license: Artistic 2.0
+  summary: "Base functions for Bioconductor"

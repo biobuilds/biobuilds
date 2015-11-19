@@ -1,0 +1,34 @@
+package:
+  name: r-biobase
+  version: "2.30.0"
+
+source:
+  fn: Biobase_2.30.0.tar.gz
+  url: "https://bioconductor.org/packages/3.2/bioc/src/contrib/Biobase_2.30.0.tar.gz"
+  md5: 697d3b5504f899c38a5e6e784ca0e33f
+
+requirements:
+  build:
+    - r
+    - gcc  # [not ppc64le]
+    - r-biocgenerics >=0.3.2
+  run:
+    - r
+    - libgcc  # [not ppc64le]
+    - r-biocgenerics >=0.3.2
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - $R -e "library('Biobase')"  # [not win]
+    - "\"%R%\" -e \"library('Biobase')\""  # [win]
+
+about:
+  home: "https://www.bioconductor.org/packages/release/bioc/html/Biobase.html"
+  license: Artistic 2.0
+  summary: "Base functions for Bioconductor"
