@@ -1,0 +1,37 @@
+package:
+  name: htseq
+  version: "0.6.1"
+
+source:
+  fn: HTSeq-0.6.1p1.tar.gz
+  url: https://pypi.python.org/packages/source/H/HTSeq/HTSeq-0.6.1p1.tar.gz
+  md5: c44d7b256281a8a53b6fe5beaeddd31c
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - numpy x.x
+    - matplotlib
+
+  run:
+    - python
+    - numpy x.x
+    - matplotlib
+
+test:
+  imports:
+    - HTSeq
+
+about:
+  home: http://www-huber.embl.de/users/anders/HTSeq/
+  license: GPL
+  summary: 'Framework for processing and analyzing data from high-throughput sequencing assays'
