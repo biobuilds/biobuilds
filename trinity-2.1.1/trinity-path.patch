@@ -1,0 +1,30 @@
+--- Trinity
++++ Trinity
+@@ -5,8 +5,7 @@
+ use threads;
+ no strict qw(subs refs);
+ 
+-use FindBin;
+-use lib ("$FindBin::RealBin/PerlLib");
++use lib ("@@INSTALL_DIR@@/PerlLib");
+ use File::Basename;
+ use Time::localtime;
+ use Cwd;
+@@ -22,7 +21,7 @@
+ 
+ BEGIN {
+ 
+-    $ENV{TRINITY_HOME} = "$FindBin::Bin";
++    $ENV{TRINITY_HOME} = "@@INSTALL_DIR@@";
+ 
+ }
+ 
+@@ -35,7 +34,7 @@
+ 
+ 
+ #directory defnintions
+-my $ROOTDIR = "$FindBin::RealBin";
++my $ROOTDIR = "@@INSTALL_DIR@@";
+ my $UTILDIR = "$ROOTDIR/util";
+ my $MISCDIR = "$UTILDIR/misc";
+ my $INCHWORM_DIR = "$ROOTDIR/Inchworm/bin/";

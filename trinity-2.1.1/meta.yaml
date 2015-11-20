@@ -1,0 +1,43 @@
+package:
+  name: trinity
+  version: 2.1.1
+
+requirements:
+  build:
+    - autoconf-update
+    - gcc     # [not ppc64le]
+    - samtools 0.1.19
+    - htslib 1.2.*
+  run:
+    - bowtie
+    - libgcc  # [not ppc64le]
+
+source:
+  fn: trinityrnaseq-2.1.1.tar.gz
+  url: https://github.com/trinityrnaseq/trinityrnaseq/archive/v2.1.1.tar.gz
+  md5: 45c1ad13c331d6a1976f6a9b5b015daa
+  patches:
+    - trinity-path.patch
+    - inchworm-build.patch
+    - chrysalis-makefiles.patch
+    - scaffold-iworm-contigs.patch
+    - collectl-install.patch
+    - test-fixes.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  detect_binary_files_with_prefix: true
+
+test:
+  files:
+    - test.sam
+
+about:
+  home: https://github.com/trinityrnaseq/trinityrnaseq/wiki
+  license: BSD
+  license_file: LICENSE.txt
+  summary: "De-novo transcriptome assembly from Illumina RNA-Seq data"

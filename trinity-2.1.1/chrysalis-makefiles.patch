@@ -1,0 +1,109 @@
+--- Chrysalis/Makefile
++++ Chrysalis/Makefile
+@@ -94,6 +94,9 @@
+ 	  ifeq ($(OS_MACHINE),macosx)
+ 	       ACCEPT_HARDWARE := yes
+           endif
++	  ifeq ($(OS_MACHINE),ppc64le)
++	       ACCEPT_HARDWARE := yes
++          endif
+ 	  ifeq ($(OS_MACHINE),alpha)
+ 	       ACCEPT_HARDWARE := yes
+           endif
+@@ -209,7 +212,7 @@
+ 
+ # DEBUG=yes forces out-of-date executables to be built with symbolic
+ # debugging information.  Any other value is ignored.
+-DEBUG		= yes
++DEBUG		= no
+ 
+ # OPTIM=<compiler optimization> forces user-defined optimizations to be used,
+ # rather than the compiler-specific default.  
+--- Chrysalis/Makefile_g++
++++ Chrysalis/Makefile_g++
+@@ -90,6 +90,9 @@
+                ifeq ($(OS_MACHINE),macosx)
+                include Makefile_g++_macosx
+                else
++                    ifeq ($(OS_MACHINE),ppc64le)
++                    include Makefile_g++_ppc64le
++                    else
+                     ifeq ($(OS_MACHINE),x86_64)
+                     include Makefile_g++_x86_64
+                     else
+@@ -107,6 +110,7 @@
+                          endif
+                     endif
+                     endif
++                    endif
+                endif
+           endif
+      endif
+new file mode 100644
+--- /dev/null
++++ Chrysalis/Makefile_g++_ppc64le
+@@ -0,0 +1,64 @@
++
++CPLUSPLUS	= g++ -mcpu=power8 -mtune=power8
++CC		= gcc -mcpu=power8 -mtune=power8
++
++# Location of Xerces XML parser library:
++XERCES_INC	= -ISpines
++
++# XERCES_LIB	= -L$(LIB) -lxerces-c1_5_1-x86_64-gcc411 -lpthread -lrt
++
++
++# Need to use old Compaq assembler:
++SYS_OPT		+=  
++
++SYS_LANG	+= #-mieee-fp
++
++SYS_INCS	+=
++
++SYS_LINK	+= 
++
++SYS_LIBS	+= 
++
++SYS_WARN	+= -ansi -pedantic -Wno-long-long
++
++
++# compiler options controlling C++ dialects:
++# for compiling
++SYS_WARN	+= -fno-nonansi-builtins
++
++# compiler options controlling C++ dialects:
++# for optimization and code-generation
++SYS_WARN	+= -Wctor-dtor-privacy -Wsign-promo -Woverloaded-virtual
++
++# compiler options to request or suppress warnings:
++# warnings not implied by -Wall and -Wextra
++# SYS_WARN	+= -Wconversion
++
++# preprocessor options (for additional warnings)
++SYS_WARN	+= -Wendif-labels
++
++
++# For more stringent checks, add the following options:
++
++# SYS_WARN	+= -Wunused
++# overrides -Wno-unused (i.e. standard -Wall)
++# warns against unused functions, labels, parameters, variables and values
++
++# SYS_WARN	+= -Wfloat-equal
++# warns against floating point (in)equality comparisons
++
++# SYS_WARN	+= -Wwrite-strings
++# warns against code that can try to write into a string constant
++
++# SYS_WARN	+= -Wold-style-cast
++# warns against old-style (C-style) casts to non-void types in C++ programs
++
++# SYS_WARN	+= -Wformat=2
++# equivalent to -Wformat -Wformat-nonliteral -Wformat-security -Wformat-y2k
++# -Wformat-nonliteral issues a warning if the format string (to printf, scanf, etc)
++#		      is not a literal string and so cannot be checked
++# -Wformat-security   issues a warning against using format functions that represent
++#		      security problems, such as a nonliteral format string with
++#		      no format arguments
++# -Wformat-y2k	      issues a warning against strftime format which may yield
++#		      a two-digit year

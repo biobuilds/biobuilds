@@ -1,0 +1,13 @@
+--- trinity-plugins/collectl/build_collectl.sh
++++ trinity-plugins/collectl/build_collectl.sh
+@@ -11,7 +11,9 @@
+ rm -rf $DOCDIR
+ rm -rf $MANDIR
+ 
+-FILE=`ls -1 -d collectl*.gz | tail -1`
++FILE="${1}"
++[ -f "$FILE" ] || \
++    { echo "Could not find source tarball '$FILE'" >&2; exit 1; }
+ tar xzf ${FILE}
+ INSTALLDIR=`find . -maxdepth 1 -type d -iname "*collect*" | tail -1`
+ 

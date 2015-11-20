@@ -1,0 +1,13 @@
+--- include/jellyfish/mer_dna.hpp
++++ include/jellyfish/mer_dna.hpp
+@@ -153,8 +153,9 @@ class mer_base {
+ public:
+   typedef typename mer_dna_traits<derived>::base_type base_type;
+ 
++  /* Ruzhu Chen (IBM) */
+   enum { CODE_A, CODE_C, CODE_G, CODE_T,
+-         CODE_RESET = -1, CODE_IGNORE = -2, CODE_COMMENT = -3 };
++         CODE_RESET = 0xff, CODE_IGNORE = 0xfe, CODE_COMMENT = 0xfd };
+ 
+   explicit mer_base(unsigned int k) :
+   _data(new base_type[derived::nb_words(k)])

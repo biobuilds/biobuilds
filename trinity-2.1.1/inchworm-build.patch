@@ -1,0 +1,29 @@
+--- Inchworm/configure
++++ Inchworm/configure
+@@ -3123,11 +3123,11 @@
+ AM_CXXFLAGS=-m64
+ 
+ case $CXX in
+-  g++*) AM_CXXFLAGS="-ansi -pedantic -fopenmp -Wall -Wextra -Wno-deprecated $AM_CXXFLAGS"
++  *g++*) AM_CXXFLAGS="-ansi -pedantic -fopenmp -Wall -Wextra -Wno-deprecated $AM_CXXFLAGS"
+ ;;
+-  sunCC*) AM_CXXFLAGS="-std=c++0x -library=stlport4 -xopenmp -xvpara -fast $AM_CXXFLAGS"
++  *sunCC*) AM_CXXFLAGS="-std=c++0x -library=stlport4 -xopenmp -xvpara -fast $AM_CXXFLAGS"
+  ;;
+-  icpc*) AM_CXXFLAGS="-std=c++0x -Wall -openmp $AM_CXXFLAGS"
++  *icpc*) AM_CXXFLAGS="-std=c++0x -Wall -openmp $AM_CXXFLAGS"
+  ;;
+ esac
+ 
+--- Makefile
++++ Makefile
+@@ -20,7 +20,8 @@
+ inchworm_target:
+ 	@echo Using $(TRINITY_COMPILER) compiler for Inchworm and Chrysalis
+ 	cd Inchworm && (test -e configure || autoreconf) \
+-                && sh ./configure --prefix=`pwd` $(INCHWORM_CONFIGURE_FLAGS) && $(MAKE) install
++                && sh ./configure --prefix=$(INCHWORM_PREFIX) $(INCHWORM_CONFIGURE_FLAGS) \
++                && $(MAKE) install
+ 
+ chrysalis_target:
+ 	cd Chrysalis && $(MAKE) UNSUPPORTED=yes $(CHRYSALIS_MAKE_FLAGS)
