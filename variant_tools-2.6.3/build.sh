@@ -16,6 +16,10 @@ LDFLAGS="-L${PREFIX}/lib ${LDFLAGS}"
 env CFLAGS="${CFLAGS}" CXXFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     "$PYTHON" setup.py install
 
-# Strip shared libs to significantly reduce the package size
-cd "${PREFIX}/lib/python2.7/site-packages/${PKG_NAME}"
-strip *.so
+# Strip shared libs to significantly reduce the package size; NOTE: skipping
+# this step  OS X because attempting to do so causes "symbols referenced by
+# indirect symbol table entries that can't be stripped in".
+if [ `uname -s` == 'Linux' ]; then
+    cd "${PREFIX}/lib/python2.7/site-packages/${PKG_NAME}"
+    strip *.so
+fi
