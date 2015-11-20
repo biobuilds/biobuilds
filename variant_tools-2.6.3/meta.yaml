@@ -1,0 +1,46 @@
+package:
+  name: variant_tools
+  version: "2.6.3"
+
+source:
+  fn: variant_tools-2.6.3.tar.gz
+  url: https://pypi.python.org/packages/source/v/variant_tools/variant_tools-2.6.3.tar.gz
+  md5: 51491f3f98272ef9253fefd33ab7aee5
+  patches:
+    - pep0263-utf8-encoding.patch
+    # TODO: Replace and use BioBuilds version of boost and GSL.
+    # (copies included in upstream sources are for obsolete API.)
+    #- prebuilt-boost-gsl.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - python 2.7.*
+    - bzip2
+    # TODO: Replace and use BioBuilds version of boost and GSL.
+    # (copies included in upstream sources are for obsolete API.)
+    #- boost 1.54.0
+    #- gsl
+
+  run:
+    - python 2.7.*
+    # TODO: Replace and use BioBuilds version of boost and GSL
+    # (copies included in upstream sources are for obsolete API.)
+    #- boost 1.54.0
+
+test:
+  commands:
+    - vtools -h
+    - vtools_report -h
+
+about:
+  home: http://varianttools.sourceforge.net
+  license: GPL
+  summary: 'Integrated annotation and analysis package for next-generation sequencing data'
