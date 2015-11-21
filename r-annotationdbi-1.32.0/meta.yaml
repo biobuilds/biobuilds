@@ -26,6 +26,7 @@ requirements:
     - r-iranges
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
@@ -38,4 +39,4 @@ test:
 about:
   home: "https://www.bioconductor.org/packages/release/bioc/html/AnnotationDbi.html"
   license: Artistic 2.0
-  summary: "Base functions for Bioconductor"
+  summary: "Annotation Database Interface"
