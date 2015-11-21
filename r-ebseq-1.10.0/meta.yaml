@@ -1,0 +1,35 @@
+package:
+  name: r-ebseq
+  version: "1.10.0"
+
+source:
+  fn: EBSeq_1.10.0.tar.gz
+  url: "http://bioconductor.org/packages/release/bioc/src/contrib/EBSeq_1.10.0.tar.gz"
+  md5: 2a7d3dbcf63cfa88fcf3f291f2bbd4ad
+
+requirements:
+  build:
+    - r
+    - r-blockmodeling
+    - r-gplots
+    - r-testthat
+  run:
+    - r
+    - r-blockmodeling
+    - r-gplots
+    - r-testthat
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('EBSeq')"  # [not win]
+    - "\"%R%\" -e \"library('EBSeq')\""  # [win]
+
+about:
+  home: "http://bioconductor.org/packages/release/bioc/html/EBSeq.html"
+  license: Artistic 2.0
+  summary: "R package for gene and isoform differential expression analysis of RNA-seq data"

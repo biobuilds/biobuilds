@@ -1,0 +1,53 @@
+package:
+  name: r-bitops
+  version: "1.0_6"
+
+source:
+  fn: bitops_1.0-6.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/bitops_1.0-6.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/bitops/bitops_1.0-6.tar.gz
+  md5: fba16485a51b1ccd354abde5816b6bdd
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r
+    - gcc     # [not win and not ppc64le]
+
+  run:
+    - r
+    - libgcc  # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('bitops')" # [not win]
+    - "\"%R%\" -e \"library('bitops')\"" # [win]
+
+about:
+  #home:
+  license: GPLv2
+  summary: "R functions for bitwise operations on integer vectors."
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: bitops
+# Version: 1.0-6
+# Date: 2013-08-17
+# Author: S original by Steve Dutky <sdutky@terpalum.umd.edu> initial R port and extensions by Martin Maechler; revised and modified by Steve Dutky
+# Maintainer: Martin Maechler <maechler@stat.math.ethz.ch>
+# Title: Bitwise Operations
+# Description: Functions for bitwise operations on integer vectors.
+# License: GPL (>= 2)
+# Packaged: 2013-08-17 15:58:57 UTC; maechler
+# NeedsCompilation: yes
+# Repository: CRAN
+# Date/Publication: 2013-08-17 21:10:34
+#----------------------------------------------------------------------

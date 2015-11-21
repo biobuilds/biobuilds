@@ -1,0 +1,54 @@
+package:
+  name: r-praise
+  version: "1.0.0"
+
+source:
+  fn: praise_1.0.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/praise_1.0.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/praise/praise_1.0.0.tar.gz
+  md5: 9318724cec0454884b5f762bee2da6a1
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+
+  run:
+    - r
+
+test:
+  commands:
+    - $R -e "library('praise')" # [not win]
+    - "\"%R%\" -e \"library('praise')\"" # [win]
+
+about:
+  home: https://github.com/gaborcsardi/praise
+  license: MIT + file LICENSE
+  summary: "Build friendly R packages that praise their users if they have done something good, or they just need it to feel better."
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: praise
+# Title: Praise Users
+# Version: 1.0.0
+# Author: Gabor Csardi, Sindre Sorhus
+# Maintainer: Gabor Csardi <csardi.gabor@gmail.com>
+# Description: Build friendly R packages that praise their users if they have done something good, or they just need it to feel better.
+# License: MIT + file LICENSE
+# LazyData: true
+# URL: https://github.com/gaborcsardi/praise
+# BugReports: https://github.com/gaborcsardi/praise/issues
+# Suggests: testthat
+# Collate: 'adjective.R' 'adverb.R' 'exclamation.R' 'verb.R' 'rpackage.R' 'package.R'
+# NeedsCompilation: no
+# Packaged: 2015-08-11 02:01:43 UTC; gaborcsardi
+# Repository: CRAN
+# Date/Publication: 2015-08-11 08:22:28
+#----------------------------------------------------------------------

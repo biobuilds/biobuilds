@@ -1,0 +1,56 @@
+package:
+  name: r-gdata
+  version: "2.17.0"
+
+source:
+  fn: gdata_2.17.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/gdata_2.17.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/gdata/gdata_2.17.0.tar.gz
+  md5: c716b663b9dc16ad8cafe6acc781a75f
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+    - r-gtools
+
+  run:
+    - r
+    - r-gtools
+
+test:
+  commands:
+    - $R -e "library('gdata')" # [not win]
+    - "\"%R%\" -e \"library('gdata')\"" # [win]
+
+about:
+  #home:
+  license: GPLv2
+  summary: 'Various R tools for data manipulation'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: gdata
+# Title: Various R Programming Tools for Data Manipulation
+# Description: Various R programming tools for data manipulation, including: - medical unit conversions ('ConvertMedUnits', 'MedUnits'), - combining objects ('bindData', 'cbindX', 'combine', 'interleave'), - character vector operations ('centerText', 'startsWith', 'trim'), - factor manipulation ('levels', 'reorder.factor', 'mapLevels'), - obtaining information about R objects ('object.size', 'elem', 'env', 'humanReadable', 'is.what', 'll', 'keep', 'ls.funs', 'Args','nPairs', 'nobs'), - manipulating MS-Excel formatted files ('read.xls', 'installXLSXsupport', 'sheetCount', 'xlsFormats'), - generating fixed-width format files ('write.fwf'), - extricating components of date & time objects ('getYear', 'getMonth', 'getDay', 'getHour', 'getMin', 'getSec'), - operations on columns of data frames  ('matchcols', 'rename.vars'), - matrix operations ('unmatrix', 'upperTriangle', 'lowerTriangle'), - operations on vectors ('case', 'unknownToNA', 'duplicated2', 'trimSum'), - operations on data frames ('frameApply', 'wideByFactor'), - value of last evaluated expression ('ans'), and - wrapper for 'sample' that ensures consistent behavior for both scalar and vector arguments ('resample').
+# Depends: R (>= 2.3.0)
+# SystemRequirements: perl (>= 5.10.0)
+# Imports: gtools, stats, methods, utils
+# Version: 2.17.0
+# Date: 2015-07-02
+# Author: Gregory R. Warnes, Ben Bolker, Gregor Gorjanc, Gabor Grothendieck, Ales Korosec, Thomas Lumley, Don MacQueen, Arni Magnusson, Jim Rogers, and others
+# Maintainer: Gregory R. Warnes <greg@warnes.net>
+# License: GPL-2
+# NeedsCompilation: no
+# Suggests: RUnit
+# Packaged: 2015-07-03 23:13:13 UTC; warnes
+# Repository: CRAN
+# Date/Publication: 2015-07-04 09:51:58
+#----------------------------------------------------------------------
