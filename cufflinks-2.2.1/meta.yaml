@@ -5,18 +5,23 @@ package:
 requirements:
   # Limits on Boost version due to issues in serialization library; see
   # https://github.com/cole-trapnell-lab/cufflinks for more details.
-  # Limits on samtools due to changes in samtools/htslib 1.x that we
-  # haven't tested for compatibility breaks yet.
   build:
     - zlib
     - boost <=1.55.0
-    - samtools <1.0.0
+    # Require older version of samtools to _build_, due to incompatibilities
+    # between the older samtools 0.1.x and newer htslib 1.x APIs and headers.
+    - samtools 0.1.19
     - python
     - eigen
   run:
     - zlib
     - boost <=1.55.0
-    - samtools <1.0.0
+    # Allow newer samtools versions at _runtime_, because nothing in the code
+    # suggests we will have version-compatibility problems (i.e., cufflinks
+    # doesn't write BCF files). Without this "hack", we wouldn't be able to
+    # include cufflinks in a standard BioBuilds environment (since that
+    # installs the htslib-1.x version of samtools).
+    - samtools
     - python
 
 source:
@@ -27,7 +32,7 @@ source:
     - samtools-includes.patch
 
 build:
-  number: 1
+  number: 2
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
