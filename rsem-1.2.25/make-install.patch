@@ -20,3 +20,30 @@
  sam/libbam.a :
  	cd sam ; ${MAKE} all
  
+--- EBSeq/Makefile
++++ EBSeq/Makefile
+@@ -1,7 +1,10 @@
+ CC = g++
+ PROGRAMS = EBSeq rsem-for-ebseq-calculate-clustering-info
++SCRIPTS = rsem-for-ebseq-find-DE rsem-for-ebseq-generate-ngvector-from-clustering-info
++PREFIX ?= /usr/local/bin
+ 
+ .PHONY : all EBSeq clean
++.PHONY : install
+ 
+ all : $(PROGRAMS)
+ 
+@@ -9,7 +12,12 @@ EBSeq :
+ 	./install
+ 
+ rsem-for-ebseq-calculate-clustering-info : calcClusteringInfo.cpp
+-	$(CC) -O3 -Wall calcClusteringInfo.cpp -o $@
++	$(CC) $(CFLAGS) -O3 -Wall calcClusteringInfo.cpp $(LDFLAGS) -o $@
+ 
+ clean : 
+ 	rm -rf blockmodeling gplots $(PROGRAMS) *~ BiocInstaller
++
++# Assuming EBSeq R package has been installed by other means...
++install : rsem-for-ebseq-calculate-clustering-info $(SCRIPTS)
++	install -d "$(PREFIX)/bin"
++	install -m 0755 $^ "$(PREFIX)/bin"

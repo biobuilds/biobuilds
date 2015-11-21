@@ -12,3 +12,6 @@ env CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     make -j${BB_MAKE_JOBS} install \
     PREFIX="${PREFIX}" LIBBAM="${PREFIX}/lib/libbam.a" \
     2>&1 | tee build.log
+make -C EBSeq install PREFIX="${PREFIX}" \
+    CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
+    2>&1 | tee build-ebseq.log

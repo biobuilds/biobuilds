@@ -11,6 +11,8 @@ requirements:
     - boost ==1.54.0
   run:
     - zlib
+    - r
+    - r-ebseq >=1.2.0
 
 source:
   fn: rsem-1.2.25.tar.gz
@@ -21,7 +23,7 @@ source:
     - make-install.patch
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
