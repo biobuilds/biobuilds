@@ -18,7 +18,7 @@ requirements:
   build:
     - python
     - setuptools
-    - numpy
+    - numpy x.x
     - python-dateutil
     - freetype
     - pyparsing
@@ -32,7 +32,7 @@ requirements:
 
   run:
     - python
-    - numpy
+    - numpy x.x
     - python-dateutil
     - freetype            [unix]
     - pytz
@@ -41,6 +41,9 @@ requirements:
     - libpng              [unix]
     - pyqt                [not osx and not ppc64le]
     - cycler
+
+build:
+  number: 1
 
 test:
   requires:
