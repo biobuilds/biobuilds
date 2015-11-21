@@ -1,0 +1,19 @@
+package:
+  name: patchelf
+  version: "0.8"
+
+source:
+  fn: patchelf-0.8.tar.gz
+  url: http://archive.ubuntu.com/ubuntu/pool/universe/p/patchelf/patchelf_0.8.orig.tar.gz
+  md5: 407b229e6a681ffb0e2cdd5915cb2d01
+  patches:
+    - detect-pagesizes.patch
+
+build:
+  number: 0
+
+about:
+  home: http://nixos.org/patchelf.html
+  license: GPLv3
+  license_file: COPYING
+  summary: "Utility for modifing existing ELF executables and libraries"
