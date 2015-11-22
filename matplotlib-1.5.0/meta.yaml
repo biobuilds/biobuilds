@@ -9,10 +9,11 @@ source:
   patches:
     - setupext.patch
     - cfg_notests.patch
-    - cfg.patch           [not ppc64le]
+    - cfg_tkagg.patch     [not ppc64le]
     - cfg_qt4agg.patch    [not osx and not ppc64le]
     - rctmp_pyside.patch  [not osx and not ppc64le]
     - osx-tk.patch        [osx]
+    - osx-framework.patch [osx]
 
 requirements:
   build:
@@ -21,12 +22,11 @@ requirements:
     - numpy x.x
     - python-dateutil
     - freetype
-    - pyparsing
     - pytz
+    - pyparsing
     - py2cairo            [linux and py2k]
     - tornado
     - libpng
-    - zlib                [win]
     - pyqt                [not osx and not ppc64le]
     - cycler
 
@@ -43,14 +43,17 @@ requirements:
     - cycler
 
 build:
-  number: 1
+  number: 2
 
 test:
   requires:
     - nose
     - mock
+  imports:
+    - matplotlib
 
 about:
   home: http://matplotlib.sourceforge.net/
   license: PSF-based (http://matplotlib.sourceforge.net/users/license.html)
   license_file: LICENSE/LICENSE
+  summary: "Python 2D plotting library"

@@ -1,5 +1,3 @@
-diff --git setupext.py setupext.py
-index 9219c88..e3a9653 100644
 --- setupext.py
 +++ setupext.py
 @@ -1334,52 +1334,11 @@ class BackendTkAgg(OptionalBackendPackage):

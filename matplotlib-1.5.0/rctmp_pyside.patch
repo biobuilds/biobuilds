@@ -1,5 +1,3 @@
-diff --git matplotlibrc.template matplotlibrc.template
-index fdbbf26..6902fe9 100644
 --- matplotlibrc.template
 +++ matplotlibrc.template
 @@ -35,12 +35,12 @@
