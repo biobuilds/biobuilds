@@ -4,12 +4,15 @@ package:
 
 requirements:
   build:
-    - boost
+    # Force use of BioBuilds' version boost, instead of a more recent version
+    # (if available); helps prevent library version conflicts when multiple
+    # boost-using applications are installed in the same environment.
+    - boost ==1.54.0
     - zlib
     - readline
     - ncurses
   run:
-    - boost
+    - boost ==1.54.0
     - zlib
     - readline
     - ncurses
@@ -22,7 +25,7 @@ source:
     - makefiles.patch
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
