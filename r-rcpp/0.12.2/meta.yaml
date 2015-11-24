@@ -7,6 +7,7 @@ source:
   url:
     - http://cran.r-project.org/src/contrib/Rcpp_0.12.2.tar.gz
     - http://cran.r-project.org/src/contrib/Archive/Rcpp/Rcpp_0.12.2.tar.gz
+  md5: "0df3bbd99e84dd5bc95582ca03f4457f"
 
 build:
   rpaths:
