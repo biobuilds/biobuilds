@@ -1,0 +1,61 @@
+package:
+  name: r-rcpparmadillo
+  version: "0.6.200.2.0"
+
+source:
+  fn: RcppArmadillo_0.6.200.2.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/RcppArmadillo_0.6.200.2.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/RcppArmadillo/RcppArmadillo_0.6.200.2.0.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+    - r-rcpp >=0.11.0
+    - gcc     # [not win and not ppc64le]
+
+  run:
+    - r
+    - r-rcpp >=0.11.0
+    - libgcc  # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('RcppArmadillo')" # [not win]
+    - "\"%R%\" -e \"library('RcppArmadillo')\"" # [win]
+    # Put any additional test requirements here.
+
+about:
+  home: 'https://github.com/RcppCore/RcppArmadillo'
+  license: GPLv2
+  summary: 'R interface into the "Armadillo" templated C++ linear algebra library'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: RcppArmadillo
+# Type: Package
+# Title: 'Rcpp' Integration for the 'Armadillo' Templated Linear Algebra Library
+# Version: 0.6.200.2.0
+# Date: 2015-10-31
+# Author: Dirk Eddelbuettel, Romain Francois and Doug Bates
+# Maintainer: Dirk Eddelbuettel <edd@debian.org>
+# Description: 'Armadillo' is a templated C++ linear algebra library (by Conrad Sanderson) that aims towards a good balance between speed and ease of use. Integer, floating point and complex numbers are supported, as well as a subset of trigonometric and statistics functions. Various matrix decompositions are provided through optional integration with LAPACK and ATLAS libraries. The 'RcppArmadillo' package includes the header files from the templated 'Armadillo' library. Thus users do not need to install 'Armadillo' itself in order to use 'RcppArmadillo'. 'Armadillo' is licensed under the MPL 2.0, while 'RcppArmadillo' (the 'Rcpp' bindings/bridge to Armadillo) is licensed under the GNU GPL version 2 or later, as is the rest of 'Rcpp'.
+# License: GPL (>= 2)
+# LazyLoad: yes
+# LinkingTo: Rcpp
+# Imports: Rcpp (>= 0.11.0), stats, utils
+# Suggests: RUnit, Matrix, pkgKitten
+# URL: https://github.com/RcppCore/RcppArmadillo, http://arma.sourceforge.net/, http://dirk.eddelbuettel.com/code/rcpp.armadillo.html
+# BugReports: https://github.com/RcppCore/RcppArmadillo/issues
+# NeedsCompilation: yes
+# Packaged: 2015-10-31 13:47:48.724094 UTC; edd
+# Repository: CRAN
+# Date/Publication: 2015-10-31 19:36:52
+#----------------------------------------------------------------------
