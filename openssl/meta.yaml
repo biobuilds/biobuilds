@@ -1,0 +1,30 @@
+package:
+  name: openssl
+  version: "1.0.2d"
+
+source:
+  fn: openssl-1.0.2d.tar.gz
+  url: https://openssl.org/source/openssl-1.0.2d.tar.gz
+  sha256: 671c36487785628a703374c652ad2cebea45fa920ae5681515df25d9f2c9a8c8
+  sha1: d01d17b44663e8ffa6a33a5a30053779d9593c3d
+
+requirements:
+  build:
+    - zlib
+  run:
+    - zlib
+
+build:
+  # WARNING: This recipe is provided only as a stop-gap until the "defaults"
+  # channel picks up OpenSSL updates for the linux-ppc64le platform. It should
+  # NOT be used to build OpenSSL packages for other platforms; those users
+  # should rely on the Continuum-provided packages instead!
+  skip: True  # [not ppc64le]
+  number: 0
+  detect_binary_files_with_prefix: true
+
+about:
+  home: "https://openssl.org"
+  license: Dual OpenSSL/SSLeay (Apache-like)
+  license_file: LICENSE
+  summary: "General-purpose cryptography and SSL/TLS library"
