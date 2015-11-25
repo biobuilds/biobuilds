@@ -1,0 +1,58 @@
+package:
+  name: r-stringr
+  version: "1.0.0"
+
+source:
+  fn: stringr_1.0.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/stringr_1.0.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/stringr/stringr_1.0.0.tar.gz
+  md5: "5ca977c90351f78b1b888b379114a7b4"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+    - r-magrittr
+    - r-stringi >=0.4.1
+
+  run:
+    - r
+    - r-magrittr
+    - r-stringi >=0.4.1
+
+test:
+  commands:
+    - $R -e "library('stringr')" # [not win]
+    - "\"%R%\" -e \"library('stringr')\"" # [win]
+
+about:
+  home: 'https://cran.r-project.org/web/packages/stringr/index.html'
+  license: GPLv2
+  summary: 'Simple, consistent wrappers for common string operations'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: stringr
+# Version: 1.0.0
+# Title: Simple, Consistent Wrappers for Common String Operations
+# Description: A consistent, simple and easy to use set of wrappers around the fantastic 'stringi' package. All function and argument names (and positions) are consistent, all functions deal with "NA"'s and zero length vectors in the same way, and the output from one function is easy to feed into the input of another.
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre", "cph")), person("RStudio", role = "cph") )
+# License: GPL-2
+# Depends: R (>= 2.14)
+# Imports: stringi (>= 0.4.1), magrittr
+# Suggests: testthat, knitr
+# VignetteBuilder: knitr
+# NeedsCompilation: no
+# Packaged: 2015-04-29 12:46:34 UTC; hadley
+# Author: Hadley Wickham [aut, cre, cph], RStudio [cph]
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2015-04-30 11:48:24
+#----------------------------------------------------------------------

@@ -1,0 +1,62 @@
+package:
+  name: r-foreach
+  version: "1.4.3"
+
+source:
+  fn: foreach_1.4.3.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/foreach_1.4.3.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/foreach/foreach_1.4.3.tar.gz
+  md5: "ef45768126661b259f9b8994462c49a0"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+    - r-codetools # [not win]
+    - r-iterators
+
+  run:
+    - r
+    - r-codetools # [not win]
+    - r-iterators
+
+test:
+  commands:
+    - $R -e "library('foreach')" # [not win]
+    - "\"%R%\" -e \"library('foreach')\"" # [win]
+
+about:
+  home: 'https://cran.r-project.org/web/packages/foreach/index.html'
+  license: 'Apache 2.0'
+  summary: 'Foreach Looping Construct for R'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: foreach
+# Type: Package
+# Title: Provides Foreach Looping Construct for R
+# Version: 1.4.3
+# Authors@R: c(person("Rich", "Calaway", role="cre", email="richcala@microsoft.com"), person("Revolution", "Analytics", role=c("aut", "cph")), person("Steve", "Weston", role="aut"))
+# Description: Support for the foreach looping construct.  Foreach is an idiom that allows for iterating over elements in a collection, without the use of an explicit loop counter.  This package in particular is intended to be used for its return value, rather than for its side effects.  In that sense, it is similar to the standard lapply function, but doesn't require the evaluation of a function.  Using foreach without side effects also facilitates executing the loop in parallel.
+# Depends: R (>= 2.5.0)
+# Imports: codetools, utils, iterators
+# Suggests: randomForest
+# Enhances: compiler, doMC, RUnit, doParallel
+# License: Apache License (== 2.0)
+# Author: Rich Calaway [cre], Revolution Analytics [aut, cph], Steve Weston [aut]
+# Maintainer: Rich Calaway <richcala@microsoft.com>
+# Repository: CRAN
+# Repository/R-Forge/Project: foreach
+# Repository/R-Forge/Revision: 27
+# Repository/R-Forge/DateTimeStamp: 2015-10-12 01:37:31
+# Date/Publication: 2015-10-13 09:12:53
+# NeedsCompilation: no
+# Packaged: 2015-10-12 02:26:29 UTC; rforge
+#----------------------------------------------------------------------

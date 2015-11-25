@@ -1,0 +1,52 @@
+package:
+  name: r-assertthat
+  version: "0.1"
+
+source:
+  fn: assertthat_0.1.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/assertthat_0.1.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/assertthat/assertthat_0.1.tar.gz
+  md5: "59f9d7f7c00077ea54d763b78eeb5798"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+
+  run:
+    - r
+
+test:
+  commands:
+    - $R -e "library('assertthat')" # [not win]
+    - "\"%R%\" -e \"library('assertthat')\"" # [win]
+
+about:
+  home: 'https://cran.r-project.org/web/packages/assertthat/index.html'
+  license: GPLv3
+  summary: 'Extension to stopifnot() to add easy pre- and post-assertions'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: assertthat
+# Title: Easy pre and post assertions.
+# Version: 0.1
+# Authors@R: 'Hadley Wickham <h.wickham@gmail.com> [aut,cre]'
+# Description: assertthat is an extension to stopifnot() that makes it easy to declare the pre and post conditions that you code should satisfy, while also producing friendly error messages so that your users know what they've done wrong.
+# License: GPL-3
+# Suggests: testthat
+# Collate: 'assert-that.r' 'on-failure.r' 'assertions-file.r' 'assertions-scalar.R' 'assertions.r' 'base.r' 'base-comparison.r' 'base-is.r' 'base-logical.r' 'base-misc.r' 'utils.r' 'validate-that.R'
+# Packaged: 2013-12-05 18:46:37 UTC; hadley
+# Author: 'Hadley Wickham' [aut, cre]
+# Maintainer: 'Hadley Wickham' <h.wickham@gmail.com>
+# NeedsCompilation: no
+# Repository: CRAN
+# Date/Publication: 2013-12-06 00:51:10
+#----------------------------------------------------------------------

@@ -1,0 +1,57 @@
+package:
+  name: r-labeling
+  version: "0.3"
+
+source:
+  fn: labeling_0.3.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/labeling_0.3.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/labeling/labeling_0.3.tar.gz
+  md5: "ccd7082ec0b211aba8a89d85176bb534"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+
+  run:
+    - r
+
+test:
+  commands:
+    - $R -e "library('labeling')" # [not win]
+    - "\"%R%\" -e \"library('labeling')\"" # [win]
+
+about:
+  home: 'https://cran.r-project.org/web/packages/labeling/index.html'
+  license: MIT
+  license_file: LICENSE
+  summary: 'A range of axis labeling algorithms'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: labeling
+# Type: Package
+# Title: Axis Labeling
+# Version: 0.3
+# Date: 2014-08-22
+# Author: Justin Talbot
+# Maintainer: Justin Talbot <justintalbot@gmail.com>
+# Description: Provides a range of axis labeling algorithms
+# License: MIT + file LICENSE | Unlimited
+# LazyLoad: no
+# Collate: 'labeling.R'
+# Repository: CRAN
+# Repository/R-Forge/Project: labeling
+# Repository/R-Forge/Revision: 16
+# Repository/R-Forge/DateTimeStamp: 2014-08-23 05:53:23
+# Date/Publication: 2014-08-23 14:57:53
+# Packaged: 2014-08-23 06:15:07 UTC; rforge
+# NeedsCompilation: no
+#----------------------------------------------------------------------

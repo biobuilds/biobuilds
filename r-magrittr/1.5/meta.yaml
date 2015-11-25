@@ -1,0 +1,54 @@
+package:
+  name: r-magrittr
+  version: "1.5"
+
+source:
+  fn: magrittr_1.5.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/magrittr_1.5.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/magrittr/magrittr_1.5.tar.gz
+  md5: "e74ab7329f2b9833f0c3c1216f86d65a"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+
+  run:
+    - r
+
+test:
+  commands:
+    - $R -e "library('magrittr')" # [not win]
+    - "\"%R%\" -e \"library('magrittr')\"" # [win]
+
+about:
+  home: 'https://cran.r-project.org/web/packages/magrittr/index.html'
+  license: MIT
+  license_file: LICENSE
+  summary: 'A forward-pipe operator ("%>%") for R'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: magrittr
+# Type: Package
+# Title: A Forward-Pipe Operator for R
+# Version: 1.5
+# Author: Stefan Milton Bache <stefan@stefanbache.dk> and Hadley Wickham <h.wickham@gmail.com>
+# Maintainer: Stefan Milton Bache <stefan@stefanbache.dk>
+# Description: Provides a mechanism for chaining commands with a new forward-pipe operator, %>%. This operator will forward a value, or the result of an expression, into the next function call/expression. There is flexible support for the type of right-hand side expressions. For more information, see package vignette. To quote Rene Magritte, "Ceci n'est pas un pipe."
+# Suggests: testthat, knitr
+# VignetteBuilder: knitr
+# License: MIT + file LICENSE
+# ByteCompile: Yes
+# Packaged: 2014-11-22 08:50:53 UTC; shb
+# NeedsCompilation: no
+# Repository: CRAN
+# Date/Publication: 2014-11-22 19:15:57
+#----------------------------------------------------------------------

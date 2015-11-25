@@ -1,0 +1,72 @@
+package:
+  name: r-scales
+  version: "0.3.0"
+
+source:
+  fn: scales_0.3.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/scales_0.3.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/scales/scales_0.3.0.tar.gz
+  md5: "9cb9e3952887e33bfcf8b94604bc7a02"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+    - r-rcolorbrewer
+    - r-rcpp
+    - r-dichromat
+    - r-labeling
+    - r-munsell >=0.2
+    - r-plyr
+    - gcc     # [not win and not ppc64le]
+
+  run:
+    - r
+    - r-rcolorbrewer
+    - r-rcpp
+    - r-dichromat
+    - r-labeling
+    - r-munsell >=0.2
+    - r-plyr
+    - libgcc  # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('scales')" # [not win]
+    - "\"%R%\" -e \"library('scales')\"" # [win]
+
+about:
+  home: 'https://github.com/hadley/scales'
+  license: MIT
+  license_file: LICENSE
+  summary: 'Scale functions for visualization'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: scales
+# Version: 0.3.0
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")), person("RStudio", role = "cph") )
+# Title: Scale Functions for Visualization
+# Description: Graphical scales map data to aesthetics, and provide methods for automatically determining breaks and labels for axes and legends.
+# URL: https://github.com/hadley/scales
+# BugReports: https://github.com/hadley/scales/issues
+# Depends: R (>= 2.13)
+# Imports: RColorBrewer, dichromat, plyr, munsell (>= 0.2), labeling, methods, Rcpp
+# LinkingTo: Rcpp
+# Suggests: testthat (>= 0.8)
+# License: MIT + file LICENSE
+# LazyLoad: yes
+# NeedsCompilation: yes
+# Packaged: 2015-08-24 18:41:17 UTC; hadley
+# Author: Hadley Wickham [aut, cre], RStudio [cph]
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2015-08-25 00:48:31
+#----------------------------------------------------------------------

@@ -1,0 +1,61 @@
+package:
+  name: r-glmnet
+  version: "2.0_2"
+
+source:
+  fn: glmnet_2.0-2.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/glmnet_2.0-2.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/glmnet/glmnet_2.0-2.tar.gz
+  md5: "bdfa81ae1b6acbf60236bba42a9d0e79"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+    - r-matrix >=1.0_6  # [not win]
+    - r-foreach
+    - gcc               # [not win and not ppc64le]
+
+  run:
+    - r
+    - r-matrix >=1.0_6  # [not win]
+    - r-foreach
+    - libgcc            # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('glmnet')" # [not win]
+    - "\"%R%\" -e \"library('glmnet')\"" # [win]
+
+about:
+  home: 'http://www.jstatsoft.org/article/view/v033i01'
+  license: GPLv2
+  summary: 'LASSO and elastic-net regularized generalized linear models'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: glmnet
+# Type: Package
+# Title: Lasso and Elastic-Net Regularized Generalized Linear Models
+# Version: 2.0-2
+# Date: 2015-4-11
+# Author: Jerome Friedman, Trevor Hastie, Noah Simon, Rob Tibshirani
+# Maintainer: Trevor Hastie <hastie@stanford.edu>
+# Depends: Matrix (>= 1.0-6), utils, foreach
+# Suggests: survival, knitr, lars
+# Description: Extremely efficient procedures for fitting the entire lasso or elastic-net regularization path for linear regression, logistic and multinomial regression models, Poisson regression and the Cox model. Two recent additions are the multiple-response Gaussian, and the grouped multinomial. The algorithm uses cyclical coordinate descent in a path-wise fashion, as described in the paper linked to via the URL below.
+# License: GPL-2
+# VignetteBuilder: knitr
+# URL: http://www.jstatsoft.org/v33/i01/.
+# Packaged: 2015-04-11 10:00:57 UTC; hastie
+# NeedsCompilation: yes
+# Repository: CRAN
+# Date/Publication: 2015-04-12 00:56:25
+#----------------------------------------------------------------------

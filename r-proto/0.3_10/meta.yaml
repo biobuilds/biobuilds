@@ -1,0 +1,52 @@
+package:
+  name: r-proto
+  version: "0.3_10"
+
+source:
+  fn: proto_0.3-10.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/proto_0.3-10.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/proto/proto_0.3-10.tar.gz
+  md5: "d5523943a5be6ca2f0ab557c900f8212"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+
+  run:
+    - r
+
+test:
+  commands:
+    - $R -e "library('proto')" # [not win]
+    - "\"%R%\" -e \"library('proto')\"" # [win]
+
+about:
+  home: 'http://r-proto.googlecode.com'
+  license: GPLv2
+  summary: 'Prototype-based, object-oriented programming for R'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: proto
+# Version: 0.3-10
+# Date: 2012-12-21
+# Title: Prototype object-based programming
+# Author: Louis Kates, Thomas Petzoldt
+# Maintainer: Gabor Grothendieck <ggrothendieck@gmail.com>
+# Description: An object oriented system using object-based, also called prototype-based, rather than class-based object oriented ideas.
+# Suggests: graph, Rgraphviz
+# License: GPL-2
+# URL: http://r-proto.googlecode.com
+# Packaged: 2012-12-22 16:03:20 UTC; Louis
+# Repository: CRAN
+# Date/Publication: 2012-12-22 21:51:44
+# NeedsCompilation: no
+#----------------------------------------------------------------------

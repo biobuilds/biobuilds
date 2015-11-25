@@ -1,0 +1,64 @@
+package:
+  name: r-reshape2
+  version: "1.4.1"
+
+source:
+  fn: reshape2_1.4.1.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/reshape2_1.4.1.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/reshape2/reshape2_1.4.1.tar.gz
+  md5: "41e9dffdf5c6fa830321ac9c8ebffe00"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+    - r-rcpp
+    - r-plyr >=1.8.1
+    - r-stringr
+    - gcc     # [not win and not ppc64le]
+
+  run:
+    - r
+    - r-rcpp
+    - r-plyr >=1.8.1
+    - r-stringr
+    - libgcc  # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('reshape2')" # [not win]
+    - "\"%R%\" -e \"library('reshape2')\"" # [win]
+
+about:
+  home: 'https://github.com/hadley/reshape'
+  license: MIT
+  license_file: LICENSE
+  summary: 'Flexibly reshape, restructure, and aggregate data'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: reshape2
+# Title: Flexibly Reshape Data: A Reboot of the Reshape Package.
+# Version: 1.4.1
+# Author: Hadley Wickham <h.wickham@gmail.com>
+# Maintainer: Hadley Wickham <h.wickham@gmail.com>
+# Description: Flexibly restructure and aggregate data using just two functions: melt and dcast (or acast).
+# URL: https://github.com/hadley/reshape
+# BugReports: https://github.com/hadley/reshape/issues
+# LinkingTo: Rcpp
+# Imports: plyr (>= 1.8.1), stringr, Rcpp
+# Suggests: testthat (>= 0.8.0), lattice
+# License: MIT + file LICENSE
+# LazyData: true
+# Packaged: 2014-12-05 16:34:10 UTC; hadley
+# NeedsCompilation: yes
+# Repository: CRAN
+# Date/Publication: 2014-12-06 06:56:59
+#----------------------------------------------------------------------

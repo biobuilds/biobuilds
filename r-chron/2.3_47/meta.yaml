@@ -1,0 +1,56 @@
+package:
+  name: r-chron
+  version: "2.3_47"
+
+source:
+  fn: chron_2.3-47.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/chron_2.3-47.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/chron/chron_2.3-47.tar.gz
+  md5: "b8890cdc5f2337f8fd775b0becdcdd1f"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+    - gcc     # [not win and not ppc64le]
+
+  run:
+    - r
+    - libgcc  # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('chron')" # [not win]
+    - "\"%R%\" -e \"library('chron')\"" # [win]
+
+about:
+  home: 'https://cran.r-project.org/web/packages/chron/index.html'
+  license: GPLv2
+  summary: 'Chronological objects for handling dates and times'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: chron
+# Version: 2.3-47
+# Title: Chronological Objects which can Handle Dates and Times
+# Description: Chronological objects which can handle dates and times.
+# Authors@R: c(person("David", "James", role = "aut", comment = "S original"), person("Kurt", "Hornik", role = c("aut", "trl", "cre"), email = "Kurt.Hornik@R-project.org"), person("Gabor", "Grothendieck", role = "ctb", email = "ggrothendieck@gmail.com"))
+# Depends: R (>= 2.12.0)
+# Imports: graphics, stats
+# Suggests: scales, ggplot2
+# Enhances: zoo
+# License: GPL-2
+# NeedsCompilation: yes
+# Packaged: 2015-06-24 15:58:52 UTC; hornik
+# Author: David James [aut] (S original), Kurt Hornik [aut, trl, cre], Gabor Grothendieck [ctb]
+# Maintainer: Kurt Hornik <Kurt.Hornik@R-project.org>
+# Repository: CRAN
+# Date/Publication: 2015-06-24 18:01:27
+#----------------------------------------------------------------------

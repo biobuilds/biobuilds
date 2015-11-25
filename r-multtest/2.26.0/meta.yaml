@@ -1,0 +1,36 @@
+package:
+  name: r-multtest
+  version: "2.26.0"
+
+source:
+  fn: multtest_2.26.0.tar.gz
+  url: "https://www.bioconductor.org/packages/release/bioc/src/contrib/multtest_2.26.0.tar.gz"
+  md5: "77592f4a4f61628d00bb356da06b6179"
+
+requirements:
+  build:
+    - r
+    - gcc     # [not win and not ppc64le]
+    - r-biocgenerics
+    - r-biobase
+  run:
+    - r
+    - libgcc  # [not win and not ppc64le]
+    - r-biocgenerics
+    - r-biobase
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('multtest')"  # [not win]
+    - "\"%R%\" -e \"library('multtest')\""  # [win]
+
+about:
+  home: "https://www.bioconductor.org/packages/release/bioc/html/multtest.html"
+  license: LGPL
+  summary: "Resampling-based multiple hypothesis testing"

@@ -1,0 +1,57 @@
+package:
+  name: r-e1071
+  version: "1.6_7"
+
+source:
+  fn: e1071_1.6-7.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/e1071_1.6-7.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/e1071/e1071_1.6-7.tar.gz
+  md5: "d109a7e3dd0c905d420e327a9a921f5a"
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+    - r-class # [not win]
+    - gcc     # [not win and not ppc64le]
+
+  run:
+    - r
+    - r-class # [not win]
+    - libgcc  # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('e1071')" # [not win]
+    - "\"%R%\" -e \"library('e1071')\"" # [win]
+
+about:
+  home: 'https://cran.r-project.org/web/packages/e1071/index.html'
+  license: GPLv2
+  summary: 'Various machine learning functions including naive Bayes, SVMs, fuzzy clustering, bagged clustering, etc.'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: e1071
+# Version: 1.6-7
+# Title: Misc Functions of the Department of Statistics, Probability Theory Group (Formerly: E1071), TU Wien
+# Imports: graphics, grDevices, class, stats, methods, utils
+# Suggests: cluster, mlbench, nnet, randomForest, rpart, SparseM, xtable, Matrix, MASS
+# Authors@R: c(person(given = "David", family = "Meyer", role = c("aut", "cre"), email = "David.Meyer@R-project.org"), person(given = "Evgenia", family = "Dimitriadou", role = c("aut","cph")), person(given = "Kurt", family = "Hornik", role = "aut"), person(given = "Andreas", family = "Weingessel", role = "aut"), person(given = "Friedrich", family = "Leisch", role = "aut"), person(given = "Chih-Chung", family = "Chang", role = c("ctb","cph"), comment = "libsvm C++-code"), person(given = "Chih-Chen", family = "Lin", role = c("ctb","cph"), comment = "libsvm C++-code"))
+# Description: Functions for latent class analysis, short time Fourier transform, fuzzy clustering, support vector machines, shortest path computation, bagged clustering, naive Bayes classifier, ...
+# License: GPL-2
+# LazyLoad: yes
+# NeedsCompilation: yes
+# Packaged: 2015-08-05 10:27:16 UTC; david
+# Author: David Meyer [aut, cre], Evgenia Dimitriadou [aut, cph], Kurt Hornik [aut], Andreas Weingessel [aut], Friedrich Leisch [aut], Chih-Chung Chang [ctb, cph] (libsvm C++-code), Chih-Chen Lin [ctb, cph] (libsvm C++-code)
+# Maintainer: David Meyer <David.Meyer@R-project.org>
+# Repository: CRAN
+# Date/Publication: 2015-08-05 18:51:12
+#----------------------------------------------------------------------
