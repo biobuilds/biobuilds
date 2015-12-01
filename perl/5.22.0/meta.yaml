@@ -1,0 +1,24 @@
+package:
+  name: perl
+  version: "5.22.0"
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+source:
+  fn: perl-5.22.0.tar.gz
+  url: "http://www.cpan.org/src/5.0/perl-5.22.0.tar.gz"
+  md5: "e32cb6a8dda0084f2a43dac76318d68d"
+
+test:
+  commands:
+    - perl --help
+
+about:
+  home: http://www.perl.org/
+  license: Artistic or GPL
+  summary: "Highly capable, feature-rich programming language"
