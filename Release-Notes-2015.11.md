@@ -36,6 +36,8 @@ To install BioBuilds 2015.11, please first download the appropriate Miniconda in
 
 Then install Miniconda by running `bash Miniconda-latest-<os>-<arch>.sh`, where `<os>` is either "Linux" or "MacOSX", and `<arch>` is either "x86_64" or "ppc64le"; for further details, refer to the [Conda Quick Install Guide](http://conda.pydata.org/docs/install/quick.html). **NOTE**: If you are already using Continuum's [Miniconda](http://conda.pydata.org/miniconda.html) or [Anaconda](http://docs.continuum.io/anaconda/index) system, you can skip this part of the BioBuilds installation procedure.
 
+**Linux on POWER8 (ppc64le) users**: Before running the rest of the installation, you *must* first upgrade `conda` itself by running `conda update -c biobuilds -y conda`; failing to do so will cause the install commands below to fail with an `AssertionError: emboss-6.5.7-0.tar.bz2 MatchSpec(u'libgd')` error.
+
 Once miniconda has been installed, you can then install BioBuilds 2015.11 by running:
 ```bash
 conda create -c biobuilds -p /path/to/biobuilds-2015.11 biobuilds=2015.11

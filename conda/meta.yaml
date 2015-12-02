@@ -1,0 +1,41 @@
+package:
+  name: conda
+  version: 3.18.6
+
+source:
+  git_url: https://github.com/conda/conda.git
+  git_tag: 3.18.6
+
+build:
+  # WARNING: This recipe is provided only as a stop-gap until the "defaults"
+  # channel picks up conda updates for the linux-ppc64le platform. It should
+  # NOT be used to build conda packages for other platforms; those users should
+  # rely on Continuum's "defaults" channel instead!
+  skip: True  # [not ppc64le]
+
+  # These are present when the new environment is created
+  # so we have to exempt them from the list of initial files
+  # for conda-build to realize they should be included.
+  always_include_files:
+    - bin/conda
+
+requirements:
+  build:
+    - python
+  run:
+    - python
+    - pycosat
+    - pyyaml
+    - requests
+
+test:
+  commands:
+    - conda --version
+    - conda info
+  imports:
+    - conda
+
+about:
+  home: http://conda.pydata.org/
+  license: BSD
+  summary: "Cross-platform, Python-agnostic binary package manager"
