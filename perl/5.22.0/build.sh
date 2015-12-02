@@ -14,9 +14,13 @@
     -Duse64bitall -Duselargefiles \
     -Dusethreads \
     -Duserelocatableinc \
+    -Dman1dir="${PREFIX}/share/man/man1" \
+    -Dman3dir="${PREFIX}/share/man/man3" \
+    -Dsiteman1dir="${PREFIX}/share/man/man1" \
+    -Dsiteman3dir="${PREFIX}/share/man/man3" \
+    -Dman1ext="1" -Dman3ext="3perl" \
     2>&1 | tee configure.log
 
 make -j$BB_MAKE_JOBS
 make -j$BB_MAKE_JOBS test
 make install
-rm -rf "${PREFIX}/man"
