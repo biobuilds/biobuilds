@@ -16,6 +16,9 @@ requirements:
   run:
     - perl
 
+build:
+  number: 1
+
 test:
   imports:
     - Exporter::Shiny

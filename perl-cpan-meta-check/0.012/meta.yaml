@@ -15,6 +15,9 @@ requirements:
   run:
     - perl
 
+build:
+  number: 1
+
 test:
   imports:
     - CPAN::Meta::Check
