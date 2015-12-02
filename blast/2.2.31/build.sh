@@ -56,9 +56,13 @@ make -f Makefile.flat -j${BB_MAKE_JOBS}
 
 ## Install
 cd "${SRC_DIR}/c++/BUILD"
-[ -d "${PREFIX}/bin" ] || mkdir -p "${PREFIX}/bin"
-[ -d "${PREFIX}/lib" ] || mkdir -p "${PREFIX}/lib"
-rm -f bin/project_tree_builder bin/test_pcre lib/*.a \
-    bin/legacy_blast.pl bin/windowmasker_2.2.22_adapter.py
-cp -R bin/. "${PREFIX}/bin"
-cp -R lib/. "${PREFIX}/lib"
+install -d "${PREFIX}/bin" "${PREFIX}/lib"
+rm -f bin/project_tree_builder bin/test_pcre lib/*.a
+install -m 0755 bin/* "${PREFIX}/bin"
+install -m 0755 lib/* "${PREFIX}/lib"
+
+cd "${PREFIX}/bin"
+for fn in update_blastdb.pl legacy_blast.pl windowmasker_2.2.22_adapter.py; do
+    sed -i.bak "s:@PREFIX@:${PREFIX}:" "$fn"
+    rm -f "${fn}.bak"
+done

@@ -14,14 +14,19 @@ requirements:
     - zlib
     - openssl
     - libgcc >=4.8.5  # [osx]
+    - perl
+    - perl-list-moreutils
+    - python 2.7*
 
 source:
   fn: ncbi-blast-2.2.31+-src.tar.gz
   url: http://download.lab7.io/sources/ncbi-blast-2.2.31+-src.tar.gz
   md5: f32bd2d2c66205c53c6981f94e1a0d54
+  patches:
+    - prefix-paths.patch
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
@@ -35,6 +40,9 @@ test:
     - blastx -help
     - tblastn -help
     - tblastx -help
+    - update_blastdb.pl --version
+    - legacy_blast.pl --version
+    - windowmasker_2.2.22_adapter.py
 
 about:
   home: http://blast.ncbi.nlm.nih.gov/

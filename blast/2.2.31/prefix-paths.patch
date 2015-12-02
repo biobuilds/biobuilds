@@ -1,0 +1,25 @@
+--- c++/src/app/blast/update_blastdb.pl
++++ c++/src/app/blast/update_blastdb.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!@PREFIX@/bin/perl
+ # $Id: update_blastdb.pl 446090 2014-09-11 12:12:27Z ivanov $
+ # ===========================================================================
+ #
+--- c++/src/app/blast/legacy_blast.pl
++++ c++/src/app/blast/legacy_blast.pl
+@@ -1,4 +1,4 @@
+-#! /usr/bin/perl -w
++#!@PREFIX@/bin/perl -w
+ # $Id: legacy_blast.pl 195935 2010-06-28 20:32:08Z camacho $
+ # ===========================================================================
+ #
+--- c++/src/app/winmasker/windowmasker_2.2.22_adapter.py
++++ c++/src/app/winmasker/windowmasker_2.2.22_adapter.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!@PREFIX@/bin/python
+ 
+ #
+ # Run this script without arguments to obtain usage informatioin.
+
