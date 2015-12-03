@@ -1,0 +1,21 @@
+package:
+  name: binutils
+  version: "2.25.1"
+
+source:
+  fn: binutils-2.25.1.tar.bz2
+  url: http://ftp.gnu.org/gnu/binutils/binutils-2.25.1.tar.bz2
+  md5: "ac493a78de4fee895961d025b7905be4"
+
+build:
+  number: 0
+
+test:
+  commands:
+    - as --version
+
+about:
+  home: http://www.gnu.org/software/binutils/
+  license: GPL
+  license_file: COPYING
+  summary: "Programming tools for creating and managing binary objects, libraries, programs, and assembly source"
