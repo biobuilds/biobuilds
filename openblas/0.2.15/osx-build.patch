@@ -1,0 +1,22 @@
+# Pass certain flags on to C and FORTRAN compilers:
+#
+#   -arch x86_64 : Make sure we build for x86_64 targets
+#
+#   -Wa,-q : Use the CLANG-integrated assembler instead of the GNU one; needed
+#   because the GNU assembler provided with older OS X/Xcode releases (e.g.,
+#   OS X 10.9/Xcode 6.2) lacks support for newer instructions sets like AVX.
+#
+# Done here instead of supplying CFLAGS, FCFLAGS because the OpenBLAS makefile
+# reacts badly to the latter (set comments in build.sh for details).
+--- Makefile.system
++++ Makefile.system
+@@ -214,6 +214,10 @@
+ 
+ ifeq ($(OSNAME), Darwin)
+ export MACOSX_DEPLOYMENT_TARGET=10.6
++ifeq ($(ARCH), x86_64)
++CCOMMON_OPT += -arch x86_64 -Wa,-q
++FCOMMON_OPT += -arch x86_64 -Wa,-q
++endif
+ MD5SUM = md5 -r
+ endif
