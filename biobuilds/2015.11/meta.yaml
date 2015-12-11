@@ -3,7 +3,7 @@ package:
   version: 2015.11
 
 build:
-  number: 1
+  number: 2
 
 requirements:
   run:
@@ -92,7 +92,7 @@ requirements:
     - velvet 1.2.10 1
     # GPU-enabled applications currently not available on OS X
     - barracuda 0.7.107b 0    # [not osx]
-    - soap3-dp r177 0         # [not osx]
+    - soap3-dp r177 1         # [not osx]
     # Applications using Linux-specific system calls
     - allpathslg 52488 0      # [linux]
     - isaac 15.04.01 0        # [linux]
