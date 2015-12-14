@@ -15,10 +15,11 @@ source:
   md5: 4747924f43ece2eee2efdfbb82f1887b
   patches:
     - makefiles.patch
+    - backport-bugfixes.patch
     - ppc64le-support.patch  # [ppc64le]
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS

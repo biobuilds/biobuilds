@@ -62,3 +62,7 @@ install -d "${PREFIX}/bin" "${PREFIX}/share/soap3-dp"
 install -m 0755 -t "${PREFIX}/bin" \
     BGS-Build BGS-View BGS-View-PE SOAP3-Sample SOAP3-Builder SOAP3-DP
 install -m 0644 soap3-dp-builder.ini soap3-dp.ini "${PREFIX}/share/soap3-dp"
+
+# Link the binaries so they match the names in the documentation
+ln -sf "${PREFIX}/bin/SOAP3-DP" "${PREFIX}/bin/soap3-dp"
+ln -sf "${PREFIX}/bin/SOAP3-Builder" "${PREFIX}/bin/soap3-dp-builder"

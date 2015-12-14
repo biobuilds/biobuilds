@@ -1,0 +1,1687 @@
+--- 2bwt-flex/LT.c.orig
++++ 2bwt-flex/LT.c
+@@ -50,7 +50,7 @@ LT *  LTLoad(const char * fileName)  {
+     unsigned step = 1048576;
+     unsigned long long i;
+     for (i = 0; i < lookupWordSize; i += LOOKUP_LOAD_STEP) {
+-        fread(lookupTable->table+i, LOOKUP_LOAD_STEP * sizeof(unsigned int), 1, fin);
++        fread(lookupTable->table+i, sizeof(unsigned int), LOOKUP_LOAD_STEP, fin);
+     }
+     fclose(fin);
+     return lookupTable;
+--- 2bwt-flex/SRA2BWTCheckAndExtend.c.orig
++++ 2bwt-flex/SRA2BWTCheckAndExtend.c
+@@ -61,7 +61,7 @@ int CEPackPattern(const unsigned char * convertedKey,
+                          unsigned long long * packedKey) {
+ 
+     if (len>SRA_MAX_READ_LENGTH) {
+-        fprintf(stderr,"[GetPackedPatternLong] Read length longer than the maximum short read length defined.\n");
++        fprintf(stderr,"[CEPackPattern] Read length longer than the maximum short read length defined.\n");
+         return 0;
+     }
+     if (len==0) return 0;
+@@ -127,7 +127,7 @@ int CEPackedMismatchMatching(unsigned long long * packedKey, int packedKeyLength
+         packedSeqExtract <<= seqShift * BIT_PER_CHAR;
+         packedSeqExtract |= packedDNA[seqIndex+2] >> ((CHAR_PER_WORD-seqShift)*BIT_PER_CHAR);
+     }
+-    packedSeqExtract >>= SRA_CE_BIT_PER_64 - ((len % CHAR_PER_64) * BIT_PER_CHAR);
++    packedSeqExtract >>= ( SRA_CE_BIT_PER_64 - ((len % CHAR_PER_64) * BIT_PER_CHAR) ) % SRA_CE_BIT_PER_64;
+     diffBitVector = packedSeqExtract ^ packedKey[i];
+     diffBitVector = (diffBitVector | (diffBitVector >> 1)) & SRA_CE_BIT_MASK;
+     mismatchInserted += __builtin_popcountll(diffBitVector);
+@@ -204,7 +204,7 @@ int CEPackedMismatchMatchingWithQuality(unsigned long long * packedKey, int pack
+         packedSeqExtract <<= seqShift * BIT_PER_CHAR;
+         packedSeqExtract |= packedDNA[seqIndex+2] >> ((CHAR_PER_WORD-seqShift)*BIT_PER_CHAR);
+     }
+-    packedSeqExtract >>= SRA_CE_BIT_PER_64 - ((len % CHAR_PER_64) * BIT_PER_CHAR);
++    packedSeqExtract >>= ( SRA_CE_BIT_PER_64 - ((len % CHAR_PER_64) * BIT_PER_CHAR) ) % SRA_CE_BIT_PER_64;
+ 
+     //CEDebugPrintPackedSequence(&packedSeqExtract,CHAR_PER_64);
+     //CEDebugPrintPackedSequence(&(packedKey[i]),CHAR_PER_64);
+--- 2bwt-lib/2BWT-Interface.c.orig
++++ 2bwt-lib/2BWT-Interface.c
+@@ -287,7 +287,7 @@ void BWTRetrievePositionFromSAIndex(Idx2BWT * idx2BWT,
+     BWT * bwt = idx2BWT->bwt;
+     BWT * rev_bwt = idx2BWT->rev_bwt;
+     HSP * hsp = idx2BWT->hsp;
+-    unsigned short * ambiguityMap = hsp->ambiguityMap;
++    unsigned int * ambiguityMap = hsp->ambiguityMap;
+     Translate * translate = hsp->translate;
+     
+     unsigned int ambPosition = BWTSaValue(bwt,saIndex);
+--- 2bwt-lib/BWT.h.orig
++++ 2bwt-lib/BWT.h
+@@ -86,7 +86,7 @@ typedef struct BWT {
+     unsigned int saValueSizeInWord;        // Temporary variable to hold the memory allocated
+     unsigned int inverseSaSizeInWord;    // Temporary variable to hold the memory allocated
+     unsigned int cachedSaIndexSizeInWord;    // Temporary variable to hold the memory allocated
+-    unsigned int (*_bwtSaValue)(const BWT*, unsigned int); //Function Pointer to SaValue function
++    unsigned int (*_bwtSaValue)(const struct BWT*, unsigned int); //Function Pointer to SaValue function
+ } BWT;
+ 
+ #define MAX_DIAGONAL_LEVEL 4                // Number of sub-pattern to keep for detecting diagonal hit
+--- 2bwt-lib/HSP.c.orig
++++ 2bwt-lib/HSP.c
+@@ -453,14 +453,14 @@ HSP *HSPLoad(MMPool *mmPool, const char *PackedDNAFileName, const char *Annotati
+         hsp->numOfRemovedSegment = removedSegmentCount;
+         hsp->numOfGridEntry = gridEntries;
+         hsp->seqActualOffset = (SeqActualOffset*) MMUnitAllocate((hsp->numOfSeq+1) * sizeof(SeqActualOffset));
+-        hsp->ambiguityMap = (unsigned short*) MMUnitAllocate((gridEntries) * sizeof(unsigned short));//MMUnitAllocate((gridEntries) * sizeof(unsigned short));
++        hsp->ambiguityMap = (unsigned int*) MMUnitAllocate((gridEntries) * sizeof(unsigned int));//MMUnitAllocate((gridEntries) * sizeof(unsigned int));
+         hsp->translate = (Translate*) MMUnitAllocate((hsp->numOfSeq+removedSegmentCount) * sizeof(Translate));//MMUnitAllocate((hsp->numOfSeq+hsp->numOfAmbiguity) * sizeof(Translate));
+         
+         unsigned int j=0;
+         while (!feof(translateFile) && j<gridEntries) {
+-                        unsigned short tmp;
+-            fscanf(translateFile, "%hu\n", &tmp);
+-                        hsp->ambiguityMap[j]=(unsigned short)tmp;j++;
++                        unsigned int tmp;
++            fscanf(translateFile, "%u\n", &tmp);
++                        hsp->ambiguityMap[j]=(unsigned int)tmp;j++;
+         }
+         if (j < gridEntries) {
+             fprintf(stderr, "Translate missing entries!\n");
+@@ -509,7 +509,7 @@ HSP *HSPLoad(MMPool *mmPool, const char *PackedDNAFileName, const char *Annotati
+         unsigned int gridEntries = (hsp->dnaLength/GRID_SAMPLING_FACTOR)+1;
+         hsp->numOfGridEntry = gridEntries;
+         hsp->seqActualOffset = (SeqActualOffset*) MMUnitAllocate((hsp->numOfSeq+1) * sizeof(SeqActualOffset));
+-        hsp->ambiguityMap = (unsigned short*) MMUnitAllocate((gridEntries) * sizeof(unsigned short));
++        hsp->ambiguityMap = (unsigned int*) MMUnitAllocate((gridEntries) * sizeof(unsigned int));
+         hsp->translate = (Translate*) MMUnitAllocate((hsp->numOfSeq) * sizeof(Translate));//MMUnitAllocate((hsp->numOfSeq+hsp->numOfAmbiguity) * sizeof(Translate));
+         unsigned int j=0;
+         while (!feof(translateFile) && j<gridEntries) {
+@@ -667,7 +667,7 @@ void HSPFree(MMPool *mmPool, HSP *hsp, const unsigned int trailerBufferInWord, c
+     MMUnitFree(hsp->annotation, (hsp->numOfSeq+1) * sizeof(Annotation));
+     MMUnitFree(hsp->ambiguity, (hsp->numOfAmbiguity+2) * sizeof(Ambiguity));
+     MMUnitFree(hsp->seqActualOffset, (hsp->numOfSeq+1) * sizeof(SeqActualOffset));
+-    MMUnitFree(hsp->ambiguityMap, (hsp->numOfGridEntry) * sizeof(unsigned short));
++    MMUnitFree(hsp->ambiguityMap, (hsp->numOfGridEntry) * sizeof(unsigned int));
+     MMUnitFree(hsp->translate, (hsp->numOfSeq+hsp->numOfRemovedSegment) * sizeof(Translate));
+ 
+     MMPoolReturn(mmPool, hsp, sizeof(hsp));
+@@ -934,7 +934,7 @@ unsigned int HSPParseFASTAToPacked(const char* FASTAFileName, const char* annota
+     
+     //Compute Translation Map
+     unsigned int gridEntries = (totalNumChar/GRID_SAMPLING_FACTOR)+1;
+-    unsigned short *ambiguityMap = (unsigned short*)malloc(sizeof(unsigned short)*gridEntries);
++    unsigned int *ambiguityMap = (unsigned int*)malloc(sizeof(unsigned int)*gridEntries);
+     Translate * translate = (Translate*) malloc(sizeof(Translate)*(numAmbiguity+numSeq));
+     unsigned int j,k;
+     j=0;
+--- 2bwt-lib/HSP.h.orig
++++ 2bwt-lib/HSP.h
+@@ -61,10 +61,6 @@
+ 
+ #define MAX_ALIGNMENT_LENGTH           131072
+ 
+-#ifdef __cplusplus
+-#define UINT32_MAX              ((uint32_t)-1)
+-#endif
+-
+ //=========================================
+ 
+ #define GRID_SAMPLING_FACTOR 262144
+@@ -213,7 +209,7 @@ typedef struct HSP {
+     Ambiguity* ambiguity;
+     unsigned int numOfRemovedSegment;
+     unsigned int numOfGridEntry;
+-    unsigned short* ambiguityMap;
++    unsigned int* ambiguityMap;
+     Translate* translate;
+     SeqActualOffset* seqActualOffset;
+ } HSP;
+--- 2bwt-lib/MemManager.c.orig
++++ 2bwt-lib/MemManager.c
+@@ -1064,7 +1064,7 @@ MMBulk *MMBulkLoad(MMPool *mmPool, FILE *input) {
+         //Advance the address by boundaryCushionSize
+         mmBulk->directory[i] += mmBulk->boundaryCushionSize;
+         
+-        fread(mmBulk->directory[i], mmBulk->itemSize << mmBulk->itemPerAllocationInPowerOf2, 1, input);
++        fread(mmBulk->directory[i], sizeof(unsigned char), mmBulk->itemSize << mmBulk->itemPerAllocationInPowerOf2, input);
+     }
+ 
+     mmBulk->directory[i] = (unsigned char *) MEMALIGN(mmBulk->boundaryCushionSize * 2 + 
+@@ -1078,7 +1078,7 @@ MMBulk *MMBulkLoad(MMPool *mmPool, FILE *input) {
+     mmBulk->directory[i] += mmBulk->boundaryCushionSize;
+ 
+     if (mmBulk->nextUnusedItem > 0) {
+-        fread(mmBulk->directory[i], mmBulk->itemSize * mmBulk->nextUnusedItem, 1, input);
++        fread(mmBulk->directory[i], sizeof(unsigned char), mmBulk->itemSize * mmBulk->nextUnusedItem, input);
+     }
+ 
+ 
+--- 2bwt-lib/devTools/2BWT-Benchmark.c.orig
++++ 2bwt-lib/devTools/2BWT-Benchmark.c
+@@ -53,6 +53,7 @@
+ 
+ #define BM_NUM_OF_THREAD       4
+ #define BM_TEST_CHARACTER_CODE 3
++#define REPETITIONS 8
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -110,7 +111,7 @@ void *ThreadFunc ( void * _arg ) {
+     BWT * bwt = arg->bwt;
+     unsigned int * body = arg->bucketBody;
+     for (k=startIdx;k<startIdx+arg->bucketSize;k++) {
+-        unsigned int result = BWTOccValue(bwt,body[k],BM_TEST_CHARACTER_CODE);
++        volatile unsigned int result = BWTOccValue(bwt,body[k],BM_TEST_CHARACTER_CODE);
+         #ifdef DEBUG_GENERATE_OUTPUT
+             printf("DEBUG PARAL %llu\t%u\t%u\n",k,body[k],result);
+         #endif
+@@ -145,10 +146,11 @@ int main(int argc,char ** argv) {
+     int sequenceId;
+     unsigned int saCount;
+     
++    if (argc<2) exit(-1);
+     // Load up the index with the below statement
+     printf("Loading index ... "); 
+     fflush(stdout);
+-    Idx2BWT * idx2BWT = BWTLoad2BWT("ncbi.genome1-5.fa.index",".sa");
++    Idx2BWT * idx2BWT = BWTLoad2BWT(argv[1],".sa");
+     printf("DONE\n\n"); 
+ 
+     
+@@ -159,13 +161,13 @@ int main(int argc,char ** argv) {
+         Generate(bwt->textLength);
+         return 0;
+     #endif
++    if (argc<3) exit(-1);
+     
+     startTime = setStartTime();
+     lastEventTime = startTime;
+     
+     // -- Settings for BM_NUM_OF_THREAD = 200;
+     unsigned long long testBwtIndexesCount = 10000000;
+-    unsigned int bucket = testBwtIndexesCount/BM_NUM_OF_THREAD;
+     
+     // -- Settings for BM_NUM_OF_THREAD = 244;
+     //unsigned long long testBwtIndexesCount = 24400000;
+@@ -175,10 +177,7 @@ int main(int argc,char ** argv) {
+     //unsigned long long testBwtIndexesCount = 244*1000000;
+     //unsigned int bucket = testBwtIndexesCount/BM_NUM_OF_THREAD;
+     
+-    FILE * fp;
+-    if (argc>1) {
+-        fp = fopen(argv[1],"r");
+-    }
++    FILE * fp = fopen(argv[2],"r");
+     unsigned int * testBwtIndexes = (unsigned int*) malloc(sizeof(unsigned int) * testBwtIndexesCount);
+     for (i=0;i<testBwtIndexesCount;i++) {
+         if (argc>1) {
+@@ -187,9 +186,7 @@ int main(int argc,char ** argv) {
+             testBwtIndexes[i] = rand() % bwt->textLength;
+         }
+     }
+-    if (argc>1) {
+-        fclose(fp);
+-    }
++    fclose(fp);
+     
+     timestamp = getElapsedTime(startTime);
+     printf("(Elapsed time (Generate Indexes) : %9.4f seconds)\n\n", timestamp);
+@@ -198,37 +195,43 @@ int main(int argc,char ** argv) {
+     printf("Test Data Size = %llu\n",testBwtIndexesCount);
+     
+ #ifdef DEBUG_PERFORM_DECODE
+-    ////////////////////////////////////////////////////////
+-    // Version of software that split the buffer to MIC cores
+-    ////////////////////////////////////////////////////////
+-    printf("MIC Parallelism %u\n",BM_NUM_OF_THREAD);
+-    for (j=0;j<BM_NUM_OF_THREAD;j++) {
+-        threadArgs[j].bwt=bwt;
+-        threadArgs[j].bucketStartIdx=j*bucket;
+-        threadArgs[j].bucketBody=testBwtIndexes;
+-        threadArgs[j].bucketSize=bucket;
+-    }
+-    #ifndef DEBUG_GENERATE_OUTPUT
+-    for (j=0;j<5;j++) {
+-    #endif
+-        for (i=0; i<BM_NUM_OF_THREAD; i++){
+-            if (pthread_create(&(threads[i]), NULL, ThreadFunc, (void*) &(threadArgs[i])))
+-                fprintf(stderr,"Can't create thread %d!\n",i), exit(1);
+-        }
+-        for (i=0; i<BM_NUM_OF_THREAD; i++){
+-            if (threads[i]!=0 ) {
+-                if (pthread_join(threads[i],NULL))
+-                    fprintf(stderr,"Thread %d crashed!\n",i), exit(1);
+-                threads[i]=0;
+-            }
+-        }
+-        timestamp = getElapsedTime(startTime);
+-        printf("(Elapsed time (Search Index) : %9.4f seconds)\n\n", timestamp - lastEventTime);
+-        lastEventTime = timestamp;
+-    #ifndef DEBUG_GENERATE_OUTPUT
++    for (int k=1;k<=BM_NUM_OF_THREAD;k++) {
++		////////////////////////////////////////////////////////
++		// Version of software that split the buffer to MIC cores
++		////////////////////////////////////////////////////////
++		//printf("Parallelism %u\n",k);
++		unsigned int bucket = testBwtIndexesCount/k;
++		for (j=0;j<k;j++) {
++		    threadArgs[j].bwt=bwt;
++		    threadArgs[j].bucketStartIdx=j*bucket;
++		    threadArgs[j].bucketBody=testBwtIndexes;
++		    threadArgs[j].bucketSize=bucket;
++		}
++		#ifndef DEBUG_GENERATE_OUTPUT
++		for (j=0;j<REPETITIONS;j++) {
++		#endif
++		    for (i=0; i<k; i++){
++		        if (pthread_create(&(threads[i]), NULL, ThreadFunc, (void*) &(threadArgs[i])))
++		            fprintf(stderr,"Can't create thread %d!\n",i), exit(1);
++		    }
++		    for (i=0; i<k; i++){
++		        if (threads[i]!=0 ) {
++		            if (pthread_join(threads[i],NULL))
++		                fprintf(stderr,"Thread %d crashed!\n",i), exit(1);
++		            threads[i]=0;
++		        }
++		    }
++		    //timestamp = getElapsedTime(startTime);
++		    //printf("(Elapsed time (Search Index) : %9.4f seconds)\n", timestamp - lastEventTime);
++		    //lastEventTime = timestamp;
++		#ifndef DEBUG_GENERATE_OUTPUT
++		}
++		#endif
++		timestamp = getElapsedTime(startTime);
++		printf("%d\t%9.4f\n", k,(timestamp - lastEventTime)/REPETITIONS);
++		lastEventTime = timestamp;
+     }
+-    #endif
+-    
++    /*
+     ////////////////////////////////////////////////////////
+     // Version of software that does it with one core only
+     ////////////////////////////////////////////////////////
+@@ -248,35 +251,49 @@ int main(int argc,char ** argv) {
+     #ifndef DEBUG_GENERATE_OUTPUT
+     }
+     #endif
++    */
+ #endif
+     
+     
+ #ifdef DEBUG_PERFORM_DECODE_ALL
+-    ////////////////////////////////////////////////////////
+-    // Version of software that split the buffer to MIC cores
+-    ////////////////////////////////////////////////////////
+-    printf("MIC ALL Parallelism %u\n",BM_NUM_OF_THREAD);
+-    #ifndef DEBUG_GENERATE_OUTPUT
+-    for (j=0;j<5;j++) {
+-    #endif
+-        for (i=0; i<BM_NUM_OF_THREAD; i++){
+-            if (pthread_create(&(threads[i]), NULL, ThreadFuncAll, (void*) &(threadArgs[i])))
+-                fprintf(stderr,"Can't create thread %d!\n",i), exit(1);
+-        }
+-        for (i=0; i<BM_NUM_OF_THREAD; i++){
+-            if (threads[i]!=0 ) {
+-                if (pthread_join(threads[i],NULL))
+-                    fprintf(stderr,"Thread %d crashed!\n",i), exit(1);
+-                threads[i]=0;
+-            }
+-        }
+-        timestamp = getElapsedTime(startTime);
+-        printf("(Elapsed time (Search Index) : %9.4f seconds)\n\n", timestamp - lastEventTime);
+-        lastEventTime = timestamp;
+-    #ifndef DEBUG_GENERATE_OUTPUT
++    for (int k=1;k<=BM_NUM_OF_THREAD;k++) {
++		////////////////////////////////////////////////////////
++		// Version of software that split the buffer to MIC cores
++		////////////////////////////////////////////////////////
++		//printf("MIC ALL Parallelism %u\n",k);
++		unsigned int bucket = testBwtIndexesCount/k;
++		for (j=0;j<k;j++) {
++		    threadArgs[j].bwt=bwt;
++		    threadArgs[j].bucketStartIdx=j*bucket;
++		    threadArgs[j].bucketBody=testBwtIndexes;
++		    threadArgs[j].bucketSize=bucket;
++		}
++		#ifndef DEBUG_GENERATE_OUTPUT
++		for (j=0;j<REPETITIONS;j++) {
++		#endif
++		    for (i=0; i<k; i++){
++		        if (pthread_create(&(threads[i]), NULL, ThreadFuncAll, (void*) &(threadArgs[i])))
++		            fprintf(stderr,"Can't create thread %d!\n",i), exit(1);
++		    }
++		    for (i=0; i<k; i++){
++		        if (threads[i]!=0 ) {
++		            if (pthread_join(threads[i],NULL))
++		                fprintf(stderr,"Thread %d crashed!\n",i), exit(1);
++		            threads[i]=0;
++		        }
++		    }
++		    //timestamp = getElapsedTime(startTime);
++		    //printf("(Elapsed time (Search Index) : %9.4f seconds)\n", timestamp - lastEventTime);
++		    //lastEventTime = timestamp;
++		#ifndef DEBUG_GENERATE_OUTPUT
++		}
++		#endif
++		timestamp = getElapsedTime(startTime);
++		printf("%d\t%9.4f\n", k,(timestamp - lastEventTime)/REPETITIONS);
++		lastEventTime = timestamp;
+     }
+-    #endif
+-    
++ 
++    /*
+     ////////////////////////////////////////////////////////
+     // Version of software that does it with one core only
+     ////////////////////////////////////////////////////////
+@@ -297,6 +314,7 @@ int main(int argc,char ** argv) {
+     #ifndef DEBUG_GENERATE_OUTPUT
+     }
+     #endif
++    */ 
+ #endif
+ 
+ 
+--- AlgnResult.cpp.orig
++++ AlgnResult.cpp
+@@ -234,6 +234,7 @@ void addReadIDToBothUnalignedPairs ( BothUnalignedPairs * bothUnalignedPairs, un
+         memcpy ( new_readIDs, bothUnalignedPairs->readIDs, sizeof ( unsigned int ) *bothUnalignedPairs->totalNum );
+         free ( bothUnalignedPairs->readIDs );
+         bothUnalignedPairs->readIDs = new_readIDs;
++        bothUnalignedPairs->size = new_size;
+     }
+ 
+     bothUnalignedPairs->readIDs[bothUnalignedPairs->totalNum] = readID;
+--- BGS-HostAlgnmtAlgo2.cpp.orig
++++ BGS-HostAlgnmtAlgo2.cpp
+@@ -279,8 +279,8 @@ unsigned long long BWTExactModelForward_Lookup2 ( SRAQueryInput * qInput,
+     unsigned long long rev_r = 0;
+     unsigned long long j;
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     SRAQueryInfo * qInfo = qInput->QueryInfo;
+@@ -461,8 +461,8 @@ unsigned long long BWTExactModelBackward_Lookup2 ( SRAQueryInput * qInput,
+     int ceThreshold = alignmentCase->steps[stepInCase].ceThreshold;
+ 
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+ 
+     unsigned int lookupLength = ( lookupTable->tableSize > len ) ? len : lookupTable->tableSize;
+@@ -564,8 +564,8 @@ unsigned long long BWTExactModelBackwardAnyDirection_Lookup2 ( SRAQueryInput * q
+     unsigned long long j;
+ 
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+ 
+@@ -750,8 +750,8 @@ unsigned long long BWTExactModelBackward2 ( SRAQueryInput * qInput, int i, int e
+     step = -1;
+ 
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+ 
+     int branchCount = 0;
+@@ -856,8 +856,8 @@ unsigned long long BWTExactModelAnyDirection2 ( SRAQueryInput * qInput, int i, i
+     //printf("[BWTExactModelAnyDirection] %d/%d\n", i,len);
+ 
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+ 
+@@ -968,8 +968,8 @@ unsigned long long BWTMismatchModelAnyDirection2 ( SRAQueryInput * qInput, int i
+     char branchChar = 0;
+     //printf("Alignment from %d to %d allowing %u-%u mismatches.\n", start,end, minMismatch, maxMismatch);
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     pos = start + step * i;
+@@ -1098,8 +1098,8 @@ unsigned long long BWTMismatchModelBackward2 ( SRAQueryInput * qInput, int i, in
+     unsigned char c;
+     //printf("Alignment from %d to %d allowing %u-%u mismatches. i = %d\n", start,end, minMismatch, maxMismatch,i);
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     int branchCount = 0;
+@@ -1220,8 +1220,8 @@ unsigned long long BWTEditModelAnyDirection2 ( SRAQueryInput * qInput, int i, in
+     //printf("[BWTEditModelAnyDirection] Read %llu Alignment from %d to %d, i = %d\n", qInfo->ReadId,start,end,i);
+     //printf("[BWTEditModelAnyDirection] ErrorType=%d  allowing %u-%u edits.\n", errType, minEdit, maxEdit);
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     nc = ALPHABET_SIZE + 1;
+@@ -1431,8 +1431,8 @@ unsigned long long BWTEditModelBackward2 ( SRAQueryInput * qInput, int i, int ed
+     //printf("[BWTEditModelBackward] Read %llu Alignment from %d to %d, i = %d\n", qInfo->ReadId,start,end,i);
+     //printf("[BWTEditModelBackward] ErrorType=%d  allowing %u-%u edits.\n", errType, minEdit, maxEdit);
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     pos = start + step * i;
+--- BGS-HostAlgnmtAlgoSingle.cpp.orig
++++ BGS-HostAlgnmtAlgoSingle.cpp
+@@ -270,8 +270,8 @@ unsigned long long BWTExactModelForward_Lookup3 ( SRAQueryInput * qInput,
+     unsigned long long rev_r = 0;
+     unsigned long long j;
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     SRAQueryInfo * qInfo = qInput->QueryInfo;
+@@ -452,8 +452,8 @@ unsigned long long BWTExactModelBackward_Lookup3 ( SRAQueryInput * qInput,
+     int ceThreshold = alignmentCase->steps[stepInCase].ceThreshold;
+ 
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+ 
+     unsigned int lookupLength = ( lookupTable->tableSize > len ) ? len : lookupTable->tableSize;
+@@ -553,8 +553,8 @@ unsigned long long BWTExactModelBackwardAnyDirection_Lookup3 ( SRAQueryInput * q
+     unsigned long long j;
+ 
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+ 
+@@ -739,8 +739,8 @@ unsigned long long BWTExactModelBackward3 ( SRAQueryInput * qInput, int i, int e
+     step = -1;
+ 
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+ 
+     int branchCount = 0;
+@@ -845,8 +845,8 @@ unsigned long long BWTExactModelAnyDirection3 ( SRAQueryInput * qInput, int i, i
+     //printf("[BWTExactModelAnyDirection] %d/%d\n", i,len);
+ 
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+ 
+@@ -957,8 +957,8 @@ unsigned long long BWTMismatchModelAnyDirection3 ( SRAQueryInput * qInput, int i
+     char branchChar = 0;
+     //printf("Alignment from %d to %d allowing %u-%u mismatches.\n", start,end, minMismatch, maxMismatch);
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     pos = start + step * i;
+@@ -1087,8 +1087,8 @@ unsigned long long BWTMismatchModelBackward3 ( SRAQueryInput * qInput, int i, in
+     unsigned char c;
+     //printf("Alignment from %d to %d allowing %u-%u mismatches. i = %d\n", start,end, minMismatch, maxMismatch,i);
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     int branchCount = 0;
+@@ -1209,8 +1209,8 @@ unsigned long long BWTEditModelAnyDirection3 ( SRAQueryInput * qInput, int i, in
+     //printf("[BWTEditModelAnyDirection] Read %llu Alignment from %d to %d, i = %d\n", qInfo->ReadId,start,end,i);
+     //printf("[BWTEditModelAnyDirection] ErrorType=%d  allowing %u-%u edits.\n", errType, minEdit, maxEdit);
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     nc = ALPHABET_SIZE + 1;
+@@ -1420,8 +1420,8 @@ unsigned long long BWTEditModelBackward3 ( SRAQueryInput * qInput, int i, int ed
+     //printf("[BWTEditModelBackward] Read %llu Alignment from %d to %d, i = %d\n", qInfo->ReadId,start,end,i);
+     //printf("[BWTEditModelBackward] ErrorType=%d  allowing %u-%u edits.\n", errType, minEdit, maxEdit);
+     //MARK_FOR_64_ENHANCEMENT ----
+-    unsigned int oL[ALPHABET_SIZE];
+-    unsigned int oR[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oL[ALPHABET_SIZE];
++    unsigned int ALIGN_16 oR[ALPHABET_SIZE];
+     unsigned int oCount[ALPHABET_SIZE];
+     //MARK_FOR_64_ENHANCEMENT ---
+     pos = start + step * i;
+--- BGS-IO.cpp.orig
++++ BGS-IO.cpp
+@@ -87,7 +87,7 @@ unsigned int OCCWriteOutputHeader ( HSP * hsp, FILE * outFilePtr,
+                                     unsigned int numOfReads,
+                                     int outputFormat )
+ {
+-    unsigned short * ambiguityMap = hsp->ambiguityMap;
++    unsigned int * ambiguityMap = hsp->ambiguityMap;
+     Translate * translate = hsp->translate;
+     unsigned int tp, approxIndex, approxValue;
+     unsigned int outputVersion = OCC_OUTPUT_FORMAT;
+@@ -204,7 +204,7 @@ void OCCFlushCachePlain ( OCC * occ, HSP * hsp, FILE * outFilePtr, SRAQueryInput
+ {
+     char strandStr[4] = "?+-";
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     OCCPositionCache lastDelimEntry;
+ 
+     if ( occ->occPositionCacheCount > 0 )
+@@ -287,7 +287,7 @@ void OCCFlushCachePlainDP ( OCC * occ, HSP * hsp, FILE * outFilePtr )
+ {
+     char strandStr[4] = "?+-";
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     OCCPositionCache lastDelimEntry;
+ 
+     if ( occ->occPositionCacheCount > 0 )
+@@ -412,7 +412,7 @@ void OCCFlushCachePlainDP ( OCC * occ, HSP * hsp, FILE * outFilePtr )
+ void OCCFlushCacheDefault ( OCC * occ, HSP * hsp, FILE * outFilePtr )
+ {
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+ 
+     if ( occ->occPositionCacheCount > 0 )
+     {
+@@ -499,7 +499,7 @@ void OCCDirectWritePairUnmapSAM ( SRAQueryInput * qInput, SRAOccurrence * sraOcc
+    SRAIndex * aIndex = qInput->AlgnmtIndex;
+    HSP * hsp = aIndex->hsp;
+    Translate * occTranslate = hsp->translate;
+-   unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++   unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+    // unsigned long long j=0, k=0;
+    unsigned long long ambPosition;
+    unsigned long long tp;
+@@ -574,7 +574,7 @@ void OCCDirectWritePairOccSAM ( SRAQueryInput * qInput, PEPairs * pePair )
+    FILE * outFilePtr = qSetting->OutFilePtr;
+    HSP * hsp = aIndex->hsp;
+    Translate * occTranslate = hsp->translate;
+-   unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++   unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+    // unsigned long long j=0, k=0;
+    unsigned long long ambPosition;
+    unsigned long long tp_1, tp_2;
+@@ -677,7 +677,7 @@ void OCCFlushCacheSAM ( SRAQueryInput * qInput )
+     OCC * occ = qSetting->occ;
+     HSP * hsp = aIndex->hsp;
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     unsigned long long j = 0, k = 0;
+     unsigned long long ambPosition;
+     unsigned long long tp;
+@@ -787,7 +787,7 @@ void OCCFlushCacheSAMAPI ( SRAQueryInput * qInput )
+     OCC * occ = qSetting->occ;
+     HSP * hsp = aIndex->hsp;
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     samfile_t * samFilePtr = qSetting->SAMOutFilePtr;
+     bam1_t * samAlgnmt = & ( occ->SAMOutBuffer );
+     unsigned long long i = 0, j = 0, k = 0;
+@@ -907,7 +907,7 @@ void OCCFlushCacheSAMAPIDP ( SRAQueryInput * qInput )
+     OCC * occ = qSetting->occ;
+     HSP * hsp = aIndex->hsp;
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     samfile_t * samFilePtr = qSetting->SAMOutFilePtr;
+     bam1_t * samAlgnmt = & ( occ->SAMOutBuffer );
+     unsigned long long i = 0, j = 0, k = 0;
+@@ -1066,7 +1066,7 @@ void OCCDirectWritePairOccSAMAPI ( SRAQueryInput * qInput, PEPairs * pePair, int
+     OCC * occ = qSetting->occ;
+     HSP * hsp = aIndex->hsp;
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     samfile_t * samFilePtr = qSetting->SAMOutFilePtr;
+     bam1_t * samAlgnmt = & ( occ->SAMOutBuffer );
+     unsigned long long i = 0; //, j=0, k=0;
+@@ -1237,7 +1237,7 @@ void OCCDirectWritePairOccSAMAPI2 ( SRAQueryInput * qInput, PEPairs * pePair, in
+     OCC * occ = qSetting->occ;
+     HSP * hsp = aIndex->hsp;
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     samfile_t * samFilePtr = qSetting->SAMOutFilePtr;
+     bam1_t * samAlgnmt = & ( occ->SAMOutBuffer );
+     unsigned long long i = 0; //, j=0, k=0;
+@@ -1408,7 +1408,7 @@ void OCCDirectWritePairOccSAMAPIwCIGAR ( SRAQueryInput * qInput, PEPairs * pePai
+     OCC * occ = qSetting->occ;
+     HSP * hsp = aIndex->hsp;
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     samfile_t * samFilePtr = qSetting->SAMOutFilePtr;
+     bam1_t * samAlgnmt = & ( occ->SAMOutBuffer );
+     unsigned long long i = 0; //, j=0, k=0;
+@@ -1581,7 +1581,7 @@ void OCCDirectWritePairOccSAMAPI2wCIGAR ( SRAQueryInput * qInput, PEPairs * pePa
+     OCC * occ = qSetting->occ;
+     HSP * hsp = aIndex->hsp;
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     samfile_t * samFilePtr = qSetting->SAMOutFilePtr;
+     bam1_t * samAlgnmt = & ( occ->SAMOutBuffer );
+     unsigned long long i = 0; //, j=0; //, k=0;
+@@ -1749,7 +1749,7 @@ unsigned int getChrAndPos ( SRAQueryInput * qInput, unsigned long long ambPos,
+     SRAIndex * aIndex = qInput->AlgnmtIndex;
+     // get the chromosome and the position for the position on the packed sequence
+     HSP * hsp = aIndex->hsp;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     Translate * occTranslate = hsp->translate;
+     unsigned int correctPosition;
+     unsigned int approxIndex, approxValue;
+@@ -1975,13 +1975,13 @@ int BoundaryCheckDP ( unsigned int pacPos, int chrID, unsigned int chrEndPos, in
+ }
+ 
+ // returns trimmed amount (bp). +ve indicates trimming on left side, -ve indicates right side.
+-int getChrAndPosWithBoundaryCheck ( SRAQueryInput * qInput, unsigned long long ambPos,
++int getChrAndPosWithBoundaryCheck ( SRAQueryInput * qInput, unsigned int readLength, unsigned long long ambPos,
+                                     unsigned long long * tp, unsigned short * chr_id, char ** buffer )
+ {
+     unsigned int segmentEndPos = getChrAndPos ( qInput, ambPos, tp, chr_id );
++
+     HSP * hsp = qInput->AlgnmtIndex->hsp;
+     unsigned int chrEndPos = hsp->seqOffset[ *chr_id - 1 ].endPos;
+-    unsigned long long readLength = qInput->QueryInfo->ReadLength;
+     unsigned int correctedPac;
+     int ret;
+ 
+@@ -2003,13 +2003,12 @@ int getChrAndPosWithBoundaryCheck ( SRAQueryInput * qInput, unsigned long long a
+ }
+ 
+ // returns trimmed amount (bp). +ve indicates trimming on left side, -ve indicates right side.
+-int getChrAndPosWithBoundaryCheckDP ( SRAQueryInput * qInput, unsigned long long ambPos, char * cigar,
++int getChrAndPosWithBoundaryCheckDP ( SRAQueryInput * qInput, unsigned int readLength, unsigned long long ambPos, char * cigar,
+                                       unsigned long long * tp, unsigned short * chr_id, char ** buffer )
+ {
+     unsigned int segmentEndPos = getChrAndPos ( qInput, ambPos, tp, chr_id );
+     HSP * hsp = qInput->AlgnmtIndex->hsp;
+     unsigned int chrEndPos = hsp->seqOffset[ *chr_id - 1 ].endPos;
+-    unsigned long long readLength = qInput->QueryInfo->ReadLength;
+     unsigned int correctedPac;
+     int ret;
+ 
+@@ -3105,7 +3104,7 @@ void unproperlypairDPOutputSAMAPI ( SRAQueryInput * qInput, Algnmt * algn_list1,
+ 
+         if ( bestAlgn1->isFromDP == 1 )
+         {
+-            boundTrim1 = getChrAndPosWithBoundaryCheckDP ( qInput, bestAlgn1->algnmt, bestAlgn1->cigarString, &tp_1, &chr_1, &newCigar1 );
++            boundTrim1 = getChrAndPosWithBoundaryCheckDP ( qInput, readlen1, bestAlgn1->algnmt, bestAlgn1->cigarString, &tp_1, &chr_1, &newCigar1 );
+             // to convert the the best special_cigar into normal cigar string
+             cigarStrLen1 = boundTrim1 ? convertToCigarStr ( newCigar1, cigarStr1 ) : convertToCigarStr ( bestAlgn1->cigarString, cigarStr1, &deletedEnd1 );
+             // to collect the mismatch information including MD string and # of mismatches
+@@ -3115,7 +3114,7 @@ void unproperlypairDPOutputSAMAPI ( SRAQueryInput * qInput, Algnmt * algn_list1,
+         }
+         else
+         {
+-            boundTrim1 = getChrAndPosWithBoundaryCheck ( qInput, bestAlgn1->algnmt, &tp_1, &chr_1, &newCigar1 );
++            boundTrim1 = getChrAndPosWithBoundaryCheck ( qInput, readlen1, bestAlgn1->algnmt, &tp_1, &chr_1, &newCigar1 );
+             // to get the md str
+             mdStrLen1 = getMdStr ( hsp, query1, qualities1, readlen1, bestAlgn1->algnmt, bestAlgn1->strand, bestAlgn1->editdist, mdStr1, &avg_mismatch_qual1, boundTrim1 );
+             bestMismatchNum1 = 0;
+@@ -3154,7 +3153,7 @@ void unproperlypairDPOutputSAMAPI ( SRAQueryInput * qInput, Algnmt * algn_list1,
+ 
+         if ( bestAlgn2->isFromDP == 1 )
+         {
+-            boundTrim2 = getChrAndPosWithBoundaryCheckDP ( qInput, bestAlgn2->algnmt, bestAlgn2->cigarString, &tp_2, &chr_2, &newCigar2 );
++            boundTrim2 = getChrAndPosWithBoundaryCheckDP ( qInput, readlen2, bestAlgn2->algnmt, bestAlgn2->cigarString, &tp_2, &chr_2, &newCigar2 );
+             // to convert the the best special_cigar into normal cigar string
+             cigarStrLen2 = boundTrim2 ? convertToCigarStr ( newCigar2, cigarStr2 ) : convertToCigarStr ( bestAlgn2->cigarString, cigarStr2, &deletedEnd2 );
+             // to collect the mismatch information including MD string and # of mismatches
+@@ -3165,7 +3164,7 @@ void unproperlypairDPOutputSAMAPI ( SRAQueryInput * qInput, Algnmt * algn_list1,
+         }
+         else
+         {
+-            boundTrim2 = getChrAndPosWithBoundaryCheck ( qInput, bestAlgn2->algnmt, &tp_2, &chr_2, &newCigar2 );
++            boundTrim2 = getChrAndPosWithBoundaryCheck ( qInput, readlen2, bestAlgn2->algnmt, &tp_2, &chr_2, &newCigar2 );
+             // to get the md str
+             mdStrLen2 = getMdStr ( hsp, query2, qualities2, readlen2, bestAlgn2->algnmt, bestAlgn2->strand, bestAlgn2->editdist, mdStr2, &avg_mismatch_qual2, boundTrim2 );
+             bestMismatchNum2 = 0;
+@@ -3518,8 +3517,8 @@ void pairOutputSAMAPI ( SRAQueryInput * qInput, PEOutput * pe_out, PEPairs * bes
+     if ( bestPair != NULL )
+     {
+ 
+-        boundTrim1 = getChrAndPosWithBoundaryCheck ( qInput, bestPair->algnmt_1, &tp_1, &chr_1, &newCigar1 );
+-        boundTrim2 = getChrAndPosWithBoundaryCheck ( qInput, bestPair->algnmt_2, &tp_2, &chr_2, &newCigar2 );
++        boundTrim1 = getChrAndPosWithBoundaryCheck ( qInput, readlen1, bestPair->algnmt_1, &tp_1, &chr_1, &newCigar1 );
++        boundTrim2 = getChrAndPosWithBoundaryCheck ( qInput, readlen2, bestPair->algnmt_2, &tp_2, &chr_2, &newCigar2 );
+ 
+         /*      if ((bestPair->strand_1 == QUERY_POS_STRAND &&
+              (bestPair->algnmt_1 > bestPair->algnmt_2 || bestPair->algnmt_1 + readlen1 > bestPair->algnmt_2 + readlen2)) ||
+@@ -3918,7 +3917,7 @@ void pairDeepDPOutputSAMAPI ( SRAQueryInput * qInput, DeepDPAlignResult * algnRe
+         // and the average quality values in the mismatch positions
+         if ( bestResult->algnmt_1 != 0xFFFFFFFF )
+         {
+-            boundTrim1 = getChrAndPosWithBoundaryCheckDP ( qInput, bestResult->algnmt_1, bestResult->cigarString_1, &tp_1, &chr_1, &newCigar1 );
++            boundTrim1 = getChrAndPosWithBoundaryCheckDP ( qInput, readlen1, bestResult->algnmt_1, bestResult->cigarString_1, &tp_1, &chr_1, &newCigar1 );
+             // to convert the the best special_cigar into normal cigar string
+             cigarStrLen1 = boundTrim1 ? convertToCigarStr ( newCigar1, cigarStr1 ) : convertToCigarStr ( bestResult->cigarString_1, cigarStr1 );
+             // to collect the mismatch information including MD string and # of mismatches
+@@ -3928,7 +3927,7 @@ void pairDeepDPOutputSAMAPI ( SRAQueryInput * qInput, DeepDPAlignResult * algnRe
+ 
+         if ( bestResult->algnmt_2 != 0xFFFFFFFF )
+         {
+-            boundTrim2 = getChrAndPosWithBoundaryCheckDP ( qInput, bestResult->algnmt_2, bestResult->cigarString_2, &tp_2, &chr_2, &newCigar2 );
++            boundTrim2 = getChrAndPosWithBoundaryCheckDP ( qInput, readlen2, bestResult->algnmt_2, bestResult->cigarString_2, &tp_2, &chr_2, &newCigar2 );
+             // to convert the the best special_cigar into normal cigar string
+             cigarStrLen2 = boundTrim2 ? convertToCigarStr ( newCigar2, cigarStr2 ) : convertToCigarStr ( bestResult->cigarString_2, cigarStr2 );
+             // to collect the mismatch information including MD string and # of mismatches
+@@ -4606,7 +4605,7 @@ void pairDPOutputSAMAPI ( SRAQueryInput * qInput, AlgnmtDPResult * algnResult,
+             {
+                 // to convert the the best special_cigar into normal cigar string
+                 char * tempCigar = NULL;
+-                boundTrim1 = getChrAndPosWithBoundaryCheckDP ( qInput, bestResult->algnmt_1, best_cigar1, &tp_1, &chr_1, &tempCigar );
++                boundTrim1 = getChrAndPosWithBoundaryCheckDP ( qInput, readlen1, bestResult->algnmt_1, best_cigar1, &tp_1, &chr_1, &tempCigar );
+                 cigarStrLen1 = boundTrim1 ? convertToCigarStr ( tempCigar, cigarStr1 ) : convertToCigarStr ( best_cigar1, cigarStr1 );
+                 r1 = readLengthWithCigar ( best_cigar1 );
+                 // to collect the mismatch information including MD string and # of mismatches
+@@ -4621,7 +4620,7 @@ void pairDPOutputSAMAPI ( SRAQueryInput * qInput, AlgnmtDPResult * algnResult,
+             }
+             else
+             {
+-                boundTrim1 = getChrAndPosWithBoundaryCheck ( qInput, bestResult->algnmt_1, &tp_1, &chr_1, &newCigar1 );
++                boundTrim1 = getChrAndPosWithBoundaryCheck ( qInput, readlen1, bestResult->algnmt_1, &tp_1, &chr_1, &newCigar1 );
+                 // get the MD string
+                 mdStrLen1 = getMdStr ( hsp, query1, qualities1, readlen1, bestResult->algnmt_1, best_strand1,
+                                        bestResult->score_1, mdStr1, &avg_mismatch_qual1, boundTrim1 );
+@@ -4645,7 +4644,7 @@ void pairDPOutputSAMAPI ( SRAQueryInput * qInput, AlgnmtDPResult * algnResult,
+             {
+                 // to convert the the best special_cigar into normal cigar string
+                 char * tempCigar = NULL;
+-                boundTrim2 = getChrAndPosWithBoundaryCheckDP ( qInput, bestResult->algnmt_2, best_cigar2, &tp_2, &chr_2, &tempCigar );
++                boundTrim2 = getChrAndPosWithBoundaryCheckDP ( qInput, readlen2, bestResult->algnmt_2, best_cigar2, &tp_2, &chr_2, &tempCigar );
+                 cigarStrLen2 = boundTrim2 ? convertToCigarStr ( tempCigar, cigarStr2 ) : convertToCigarStr ( best_cigar2, cigarStr2 );
+                 r2 = readLengthWithCigar ( best_cigar2 );
+                 // to collect the mismatch information including MD string and # of mismatches
+@@ -4660,7 +4659,7 @@ void pairDPOutputSAMAPI ( SRAQueryInput * qInput, AlgnmtDPResult * algnResult,
+             }
+             else
+             {
+-                boundTrim2 = getChrAndPosWithBoundaryCheck ( qInput, bestResult->algnmt_2, &tp_2, &chr_2, &newCigar2 );
++                boundTrim2 = getChrAndPosWithBoundaryCheck ( qInput, readlen2, bestResult->algnmt_2, &tp_2, &chr_2, &newCigar2 );
+                 // get the MD string
+                 mdStrLen2 = getMdStr ( hsp, query2, qualities2, readlen2, bestResult->algnmt_2, best_strand2,
+                                        bestResult->score_2, mdStr2, &avg_mismatch_qual2, boundTrim2 );
+@@ -5618,7 +5617,7 @@ void OCCOutputSAMAPI ( SRAQueryInput * qInput, OCCList * occ_list,
+ 
+         bestStrand = occ_list->occ[bestOccIndex].strand;
+ 
+-        boundTrim = getChrAndPosWithBoundaryCheck ( qInput, occ_list->occ[bestOccIndex].ambPosition, &bestTP, &bestChr, NULL ); // check good or not
++        boundTrim = getChrAndPosWithBoundaryCheck ( qInput, readlen, occ_list->occ[bestOccIndex].ambPosition, &bestTP, &bestChr, NULL ); // check good or not
+ 
+         if ( boundTrim ) // FOR CROSS-CHROMO BUG. the best alignment sucks... we try to find the best "good" alignment instead
+         {
+@@ -5630,7 +5629,7 @@ void OCCOutputSAMAPI ( SRAQueryInput * qInput, OCCList * occ_list,
+             for ( k = 0; k < occ_list->curr_size; k++ )
+             {
+                 // check whether it's good
+-                boundTrim = getChrAndPosWithBoundaryCheck ( qInput, occ_list->occ[k].ambPosition, &bestTP, &bestChr, NULL );
++                boundTrim = getChrAndPosWithBoundaryCheck ( qInput, readlen, occ_list->occ[k].ambPosition, &bestTP, &bestChr, NULL );
+ 
+                 if ( ! boundTrim )   // good alignment
+                 {
+@@ -5653,7 +5652,7 @@ void OCCOutputSAMAPI ( SRAQueryInput * qInput, OCCList * occ_list,
+                 bestHitNum = 1;
+             }
+ 
+-            boundTrim = getChrAndPosWithBoundaryCheck ( qInput, occ_list->occ[bestOccIndex].ambPosition, &bestTP, &bestChr, &newCIGAR );
++            boundTrim = getChrAndPosWithBoundaryCheck ( qInput, readlen, occ_list->occ[bestOccIndex].ambPosition, &bestTP, &bestChr, &newCIGAR );
+         } // end CROSS-CHROMO handling
+ 
+     }
+@@ -5678,7 +5677,7 @@ void OCCOutputSAMAPI ( SRAQueryInput * qInput, OCCList * occ_list,
+ 
+             currNumMisMatch = occ_list->occ[k].mismatchCount;
+             currStrand = occ_list->occ[k].strand;
+-            int boundTrimTemp = getChrAndPosWithBoundaryCheck ( qInput, occ_list->occ[k].ambPosition, &currTP, &currChr, NULL );
++            int boundTrimTemp = getChrAndPosWithBoundaryCheck ( qInput, readlen, occ_list->occ[k].ambPosition, &currTP, &currChr, NULL );
+ 
+             if ( boundTrimTemp ) { continue; } // don't allow cross-chromo alignments
+ 
+@@ -5903,6 +5902,7 @@ void SingleDPOutputSAMAPI ( SRAQueryInput * qInput, SingleAlgnmtResult * algnRes
+     int x1_t1 = 0; // # of suboptimals whose score >= 0.7 * bestDPScore
+     int x1_t2 = 0; // # of suboptimals whose score < 0.7 * bestDPScore
+ 
++    int readlen = qInfo->ReadLength;
+     int boundTrim = 0;
+ 
+     if ( !isUnaligned )
+@@ -5951,7 +5951,7 @@ void SingleDPOutputSAMAPI ( SRAQueryInput * qInput, SingleAlgnmtResult * algnRes
+         }
+ 
+         // HANDLE CROSS-CHROMO BUG.
+-        boundTrim = getChrAndPosWithBoundaryCheckDP ( qInput, bestResult->algnmt, bestResult->cigarString, &bestTP, &bestChr, NULL ); // check good or not
++        boundTrim = getChrAndPosWithBoundaryCheckDP ( qInput, readlen, bestResult->algnmt, bestResult->cigarString, &bestTP, &bestChr, NULL ); // check good or not
+ 
+         if ( boundTrim )
+         {
+@@ -5963,7 +5963,7 @@ void SingleDPOutputSAMAPI ( SRAQueryInput * qInput, SingleAlgnmtResult * algnRes
+             for ( k = 0; k < numResult; k++ )
+             {
+                 currAmbPos = algnResult[startIndex + k].algnmt;
+-                boundTrim = getChrAndPosWithBoundaryCheckDP ( qInput, currAmbPos, algnResult[startIndex + k].cigarString, &bestTP, &bestChr, NULL );
++                boundTrim = getChrAndPosWithBoundaryCheckDP ( qInput, readlen, currAmbPos, algnResult[startIndex + k].cigarString, &bestTP, &bestChr, NULL );
+ 
+                 if ( !boundTrim ) // good alignment
+                 {
+@@ -5985,7 +5985,7 @@ void SingleDPOutputSAMAPI ( SRAQueryInput * qInput, SingleAlgnmtResult * algnRes
+                 secBestScore = 0;
+             }
+ 
+-            boundTrim = getChrAndPosWithBoundaryCheckDP ( qInput, bestResult->algnmt, bestResult->cigarString, &bestTP, &bestChr, NULL ); // check good or not
++            boundTrim = getChrAndPosWithBoundaryCheckDP ( qInput, readlen, bestResult->algnmt, bestResult->cigarString, &bestTP, &bestChr, NULL ); // check good or not
+         }
+ 
+         // obtain x1_t1 and x1_t2
+@@ -6014,7 +6014,7 @@ void SingleDPOutputSAMAPI ( SRAQueryInput * qInput, SingleAlgnmtResult * algnRes
+                 currEditDist = algnResult[startIndex + k].editdist;
+                 currAmbPos = algnResult[startIndex + k].algnmt;
+ 
+-                if ( getChrAndPosWithBoundaryCheckDP ( qInput, algnResult[startIndex + k].algnmt, currSpCigar, &currTP, &currChr, NULL ) ) { continue; }
++                if ( getChrAndPosWithBoundaryCheckDP ( qInput, readlen, algnResult[startIndex + k].algnmt, currSpCigar, &currTP, &currChr, NULL ) ) { continue; }
+ 
+                 char * chr_name = samFilePtr->header->target_name[currChr - 1]; // chromosome name
+                 memcpy ( currOccStr, chr_name, strlen ( chr_name ) );
+@@ -6048,7 +6048,7 @@ void SingleDPOutputSAMAPI ( SRAQueryInput * qInput, SingleAlgnmtResult * algnRes
+ 
+         // to convert the the best special_cigar into normal cigar string
+         char * newSpCigar = NULL;
+-        boundTrim = getChrAndPosWithBoundaryCheckDP ( qInput, bestAmbPos, bestSpCigar, &bestTP, &bestChr, &newSpCigar );
++        boundTrim = getChrAndPosWithBoundaryCheckDP ( qInput, readlen, bestAmbPos, bestSpCigar, &bestTP, &bestChr, &newSpCigar );
+         cigarStrLen = convertToCigarStr ( boundTrim ? newSpCigar : bestSpCigar, cigarStr );
+         // to collect the mismatch information including MD string and # of mismatches
+         mdStrLen = getMisInfoForDP ( hsp, qInfo->ReadCode, qInfo->ReadQuality, qInfo->ReadLength, bestAmbPos, bestStrand,
+@@ -6131,7 +6131,7 @@ void OCCDirectWritePairUnmapSAMAPI ( SRAQueryInput * qInput, SRAOccurrence * sra
+     OCC * occ = qSetting->occ;
+     HSP * hsp = aIndex->hsp;
+     Translate * occTranslate = hsp->translate;
+-    unsigned short * occAmbiguityMap = hsp->ambiguityMap;
++    unsigned int * occAmbiguityMap = hsp->ambiguityMap;
+     samfile_t * samFilePtr = qSetting->SAMOutFilePtr;
+     bam1_t * samAlgnmt = & ( occ->SAMOutBuffer );
+     unsigned long long i = 0; // j=0;//, k=0;
+--- CPUfunctions.cpp.orig
++++ CPUfunctions.cpp
+@@ -2127,7 +2127,7 @@ inline uint hostKernel ( char * upkdQualities, char * upkdQueryNames, unsigned i
+                         OCCListReset ( occ_list2 );
+                         qInfo_Positive.ReadCode = thisQuery;
+                         qInfo_Positive.ReadLength = readLength;
+-                        ProcessOneMoreMismatchAllCases ( charMap, &qInput_Positive, &qInput_Negative, SRAMismatchModel2[readLength], SRAMismatchModel2_neg[preReadLength], sa_list2, occ_list2, numCases2 );
++                        ProcessOneMoreMismatchAllCases ( charMap, &qInput_Positive, &qInput_Negative, SRAMismatchModel2[readLength], SRAMismatchModel2_neg[readLength], sa_list2, occ_list2, numCases2 );
+ 
+                         //Store mismatch statistics and total number of occurrences for later process
+                         currentTotalOccurrences = rOutput->TotalOccurrences;
+@@ -3017,7 +3017,7 @@ void bwase_initialize ( int * g_log_n )
+ {
+     int i;
+ 
+-    for ( i = 1; i != 256; ++i ) { g_log_n[i] = ( int ) ( 4.343 * log ( i ) + 0.5 ); }
++    for ( i = 1; i != 256; ++i ) { g_log_n[i] = ( int ) ( 4.343 * log ( (float)i ) + 0.5 ); }
+ }
+ 
+ // A Thread Wrapper to perform the CPU task
+--- DV-DPfunctions.cu.orig
++++ DV-DPfunctions.cu
+@@ -62,8 +62,8 @@ __device__ void DPScoreNHitPos ( uint * packedDNASequence, uint DNALength, uint
+                                  uint * readSequence, uint readLength, uint maxReadLength,
+                                  int MatchScore, int MismatchScore,
+                                  int GapOpenScore, int GapExtendScore,
+-                                 uint clipLtCheckLoc, uint clipRtCheckLoc,
+-                                 uint anchorLeftLoc, uint anchorRightLoc,
++                                 int clipLtCheckLoc, int clipRtCheckLoc,
++                                 int anchorLeftLoc, int anchorRightLoc,
+                                  int & maxScore, uint & hitPos,
+                                  void * DPTable, uint threadId )
+ {
+@@ -73,7 +73,7 @@ __device__ void DPScoreNHitPos ( uint * packedDNASequence, uint DNALength, uint
+     uint TPARA = ( threadId & 0x1F ) << 1;
+     uint readTPARA = ( threadId >> 5 ) * ( MC_CeilDivide16 ( maxReadLength ) << 5 ) + ( threadId & 0x1F );
+     uint dnaTPARA = ( threadId >> 5 ) * ( MC_CeilDivide16 ( maxDNALength ) << 5 ) + ( threadId & 0x1F );
+-    uint i, j;
++    int i, j;
+     maxScore = DP_SCORE_NEG_INFINITY;
+     //Initialize the first column
+     MC_ScoreAddr ( score, 0, 0 ) = _LOW_THRESHOLD ( 0 );
+@@ -147,8 +147,8 @@ __device__ void GenerateDPTable ( uint * packedDNASequence, uint DNALength, uint
+                                   uint * readSequence, uint readLength, uint maxReadLength,
+                                   int MatchScore, int MismatchScore,
+                                   int GapOpenScore, int GapExtendScore,
+-                                  uint clipLtCheckLoc, uint clipRtCheckLoc,
+-                                  uint anchorLeftLoc, uint anchorRightLoc,
++                                  int clipLtCheckLoc, int clipRtCheckLoc,
++                                  int anchorLeftLoc, int anchorRightLoc,
+                                   uint refOffset, int & maxScore, uint & hitPos, uint & scRight,
+                                   uint & maxScoreCount,
+                                   void * DPTable, uint threadId )
+@@ -159,7 +159,7 @@ __device__ void GenerateDPTable ( uint * packedDNASequence, uint DNALength, uint
+     uint TPARA = ( threadId & 0x1F ) << 1;
+     uint readTPARA = ( threadId >> 5 ) * ( MC_CeilDivide16 ( maxReadLength ) << 5 ) + ( threadId & 0x1F );
+     uint dnaTPARA = ( threadId >> 5 ) * ( MC_CeilDivide16 ( maxDNALength ) << 5 ) + ( threadId & 0x1F );
+-    uint i, j;
++    int i, j;
+     maxScore = DP_SCORE_NEG_INFINITY;
+     maxScoreCount = 0;
+     //Initialize the first column
+@@ -2323,7 +2323,7 @@ void HalfEndAlignmentEngine::performAlignment (
+     engine->performAlignment ( numDPAlignedRead, numDPAlignment );
+     delete engine;
+ }
+-HalfEndAlignmentEngine::HalfEndAlignmentEngine * HalfEndAlignmentEngine::engine;
++HalfEndAlignmentEngine * HalfEndAlignmentEngine::engine;
+ 
+ // ****
+ void DP_Space::algnmtCPUThread ( int threadId, void *& empty )
+@@ -3808,10 +3808,10 @@ void DeepDP_Space::DP2CPUAlgnThread ( int threadId, void *& empty )
+ 
+             if ( result.algnmt_1 < result.algnmt_2 )
+                 result.insertSize = result.algnmt_2 - result.algnmt_1 +
+-                                    batch->lengths[i] + DIS[1];
++                                    batch->lengths[i] + DIS[mateSide];
+             else
+                 result.insertSize = result.algnmt_1 - result.algnmt_2 +
+-                                    batch->lengths[i] + DIS[1];
++                                    batch->lengths[i] + DIS[readSide];
+ 
+             result.num_sameScore_1 = batch->maxScoreCounts[readSide][i]; //TODO
+             result.num_sameScore_2 = batch->maxScoreCounts[mateSide][i];
+--- DV-Kernel.cu.orig
++++ DV-Kernel.cu
+@@ -441,8 +441,8 @@ void backward1Mismatch ( uint * query, uint start, uint len,
+                          uint maxSARangesAllowed,
+                          uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -485,8 +485,8 @@ void backward1MismatchAndExact ( uint * query, uint start, uint len,
+                                  uint maxSARangesAllowed,
+                                  uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -558,8 +558,8 @@ void backward2Mismatch ( uint * query, uint start, uint len,
+                          uint maxSARangesAllowed,
+                          uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -602,8 +602,8 @@ void backward2MismatchAnd1Mismatch ( uint * query, uint start, uint len,
+                                      uint maxSARangesAllowed,
+                                      uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -650,8 +650,8 @@ void backward2MismatchAnd1MismatchAndExact ( uint * query, uint start, uint len,
+         uint maxSARangesAllowed,
+         uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -724,8 +724,8 @@ void backward3Mismatch ( uint * query, uint start, uint len,
+                          uint maxSARangesAllowed,
+                          uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -768,8 +768,8 @@ void backward3MismatchAnd2Mismatch ( uint * query, uint start, uint len,
+                                      uint maxSARangesAllowed,
+                                      uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -816,8 +816,8 @@ void backward3MismatchAnd2MismatchAnd1MismatchAndExact ( uint * query, uint star
+         uint maxSARangesAllowed,
+         uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -891,8 +891,8 @@ void backward4MismatchAnd3MismatchAnd2MismatchAnd1MismatchAndExact ( uint * quer
+         uint maxSARangesAllowed,
+         uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -964,9 +964,9 @@ void revForward1Mismatch ( uint * query, uint start, uint len,
+                            uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1024,9 +1024,9 @@ void revForward1MismatchAndExact ( uint * query, uint start, uint len,
+                                    uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1110,9 +1110,9 @@ void revForward2Mismatch ( uint * query, uint start, uint len,
+                            uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1170,9 +1170,9 @@ void revForward2MismatchAnd1Mismatch ( uint * query, uint start, uint len,
+                                        uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1230,9 +1230,9 @@ void revForward2MismatchAnd1MismatchAndExact ( uint * query, uint start, uint le
+         uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1314,9 +1314,9 @@ void revForward3MismatchAnd2MismatchAnd1Mismatch ( uint * query, uint start, uin
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1372,9 +1372,9 @@ void revForward3MismatchAnd2MismatchAnd1MismatchAndExact ( uint * query, uint st
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1457,9 +1457,9 @@ void revForward4MismatchAnd3MismatchAnd2MismatchAnd1Mismatch ( uint * query, uin
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1665,9 +1665,9 @@ void revForward1MismatchAndBackward1Mismatch ( uint * query, uint start, uint le
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1726,9 +1726,9 @@ void revForward1MismatchAndForward1Mismatch ( uint * query, uint start, uint len
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1823,9 +1823,9 @@ void revForward1MismatchAndBackward2MismatchAnd1Mismatch ( uint * query, uint st
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -1914,8 +1914,8 @@ void backward1MismatchAndBackward2MismatchAnd1Mismatch ( uint * query, uint star
+         uint & saCount, uint * output,
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2006,9 +2006,9 @@ void backward1MismatchAndForward2Mismatch ( uint * query, uint start, uint len,
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2176,9 +2176,9 @@ void revForward1MismatchAndBackward3Mismatch ( uint * query, uint start, uint le
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2237,9 +2237,9 @@ void revForward1MismatchAndForward2Mismatch ( uint * query, uint start, uint len
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2297,9 +2297,9 @@ void revForward1MismatchAndForward2MismatchAnd1Mismatch ( uint * query, uint sta
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2356,9 +2356,9 @@ void revForward1MismatchAndForward3MismatchAnd2MismatchAnd1Mismatch ( uint * que
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2415,9 +2415,9 @@ void revForward2MismatchAndForward2MismatchAnd1Mismatch ( uint * query, uint sta
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2513,9 +2513,9 @@ void backward1MismatchAndForward2MismatchAnd1Mismatch ( uint * query, uint start
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2657,9 +2657,9 @@ void backward1MismatchAndForward1MismatchAndForward2MismatchAnd1Mismatch ( uint
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2725,9 +2725,9 @@ void backward1MismatchAndBackward1MismatchAndForward2MismatchAnd1Mismatch ( uint
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2790,9 +2790,9 @@ void revForward1MismatchAndBackward3MismatchAnd2Mismatch ( uint * query, uint st
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2878,8 +2878,8 @@ void backward1MismatchAndBackward3Mismatch ( uint * query, uint start, uint len,
+         uint & saCount, uint * output,
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -2967,9 +2967,9 @@ void backward2MismatchAndForward2MismatchAnd1Mismatch ( uint * query, uint start
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+@@ -3031,9 +3031,9 @@ void backward1MismatchAndForward3MismatchAnd2MismatchAnd1Mismatch ( uint * query
+         uint maxSARangesAllowed, uint strand, uint accumMismatches )
+ {
+     uint mkL, mkR, revMkL, revMkR;
+-    uint occCountPStart[ALPHABET_SIZE];
+-    uint occCountPEnd[ALPHABET_SIZE];
+-    uint occCountP[ALPHABET_SIZE];
++    uint __align__(16) occCountPStart[ALPHABET_SIZE];
++    uint __align__(16) occCountPEnd[ALPHABET_SIZE];
++    uint __align__(16) occCountP[ALPHABET_SIZE];
+     unsigned char c;
+     unsigned char ec;
+     uint i;
+--- IniParam.cpp.orig
++++ IniParam.cpp
+@@ -709,6 +709,11 @@ bool parseInputArgs ( int argc, char ** argv, InputOptions & input_options )
+             // print MD string and NM tag
+             input_options.isPrintMDNM = true;
+         }
++        else
++        {
++            fprintf ( stderr, "Unknown option \"%s\". Please refer to Usage.\n", argv[i]);
++            return false;
++        }
+     }
+ 
+     if ( input_options.readType == PAIR_END_READ )
+--- PE.cpp.orig
++++ PE.cpp
+@@ -68,7 +68,7 @@ int writeULLToStr ( unsigned long long num, char * str )
+ 
+     if ( num > 0 )
+     {
+-        digit = ( ( int ) log10 ( num ) ) + 1;
++        digit = ( ( int ) log10 ( (float)num ) ) + 1;
+     }
+ 
+     for ( int i = digit - 1; i >= 0; i-- )
+@@ -97,7 +97,7 @@ int writeNumToStr ( int num, char * str )
+ 
+     if ( num > 0 )
+     {
+-        digit = ( ( int ) log10 ( num ) ) + 1;
++        digit = ( ( int ) log10 ( (float)num ) ) + 1;
+     }
+ 
+     for ( int i = digit - 1; i >= 0; i-- )
+--- PEAlgnmt.cpp.orig
++++ PEAlgnmt.cpp
+@@ -91,7 +91,7 @@ void PERetrieveChromoPositioning ( BWT * bwt,
+                                    unsigned int ambPosition,
+                                    int * sequenceId, unsigned int * offset )
+ {
+-    unsigned short * ambiguityMap = hsp->ambiguityMap;
++    unsigned int * ambiguityMap = hsp->ambiguityMap;
+     Translate * translate = hsp->translate;
+     unsigned int approxIndex = ambPosition >> GRID_SAMPLING_FACTOR_2_POWER;
+     unsigned int approxValue = ambiguityMap[approxIndex];
+@@ -1165,7 +1165,7 @@ int writeNumToStr2 ( int num, char * str )
+ 
+     if ( num > 0 )
+     {
+-        digit = ( ( int ) log10 ( num ) ) + 1;
++        digit = ( ( int ) log10 ( (float)num ) ) + 1;
+     }
+ 
+     for ( int i = digit - 1; i >= 0; i-- )
+@@ -1204,7 +1204,7 @@ void inputSoap3AnsToArray ( AllHits * allHits, unsigned int readID, HSPAux * hsp
+     if ( ans != NULL && ( sa_num > 0 || occ_num > 0 ) )
+     {
+         // create the cigar
+-        cigar = ( char * ) malloc ( ( ( int ) log10 ( readLength ) ) + 3 );
++        cigar = ( char * ) malloc ( ( ( int ) log10 ( (float)readLength ) ) + 3 );
+         int pos = writeNumToStr2 ( readLength, cigar );
+         cigar[pos++] = 'M';
+         cigar[pos++] = '\0';
+--- SAM.cpp.orig
++++ SAM.cpp
+@@ -81,7 +81,7 @@ int SAMIUint8ConcatString ( uint8_t * data, int * curSize,
+ 
+ void SAMOutputHeaderConstruct ( bam_header_t * sheader, HSP * hsp, HSPAux * hspaux, int maxReadLength )
+ {
+-    unsigned short * ambiguityMap = hsp->ambiguityMap;
++    unsigned int * ambiguityMap = hsp->ambiguityMap;
+     Translate * translate = hsp->translate;
+     unsigned int tp, approxIndex, approxValue;
+     int i, j;
+--- SOAP3-DP.cu.orig
++++ SOAP3-DP.cu
+@@ -47,6 +47,10 @@
+ 
+ #include "aio_thread.h"
+ 
++#ifdef USEVPROF
++#include "vprof.h"
++#endif
++
+ int main ( int argc, char ** argv )
+ {
+     // ======================================================================================
+@@ -128,6 +132,9 @@ int main ( int argc, char ** argv )
+     MultiInputItem * multiInput = NULL;
+     int expNum = 0;
+     int currExp = 0;
++#ifdef USEVPROF
++    vprof_start();
++#endif
+     // ======================================================================================
+     // | Configuration on GPU functions                                                     |
+     // ======================================================================================
+@@ -831,6 +838,7 @@ int main ( int argc, char ** argv )
+         // ======================================================================================
+         // | SHOW THE COMMAND FOR MERGING THE OUTPUT FILES INTO ONE                             |
+         // ======================================================================================
++    	double outputStartTime = getElapsedTime ( startTime );
+         show_merge_file_command2 ( input_options, input_options.outputPrefix, ini_params.Ini_NumOfCpuThreads );
+ 
+         // update the output files
+@@ -924,6 +932,9 @@ int main ( int argc, char ** argv )
+             }
+         }
+ 
++    	double totalOutputTime = getElapsedTime ( startTime ) - outputStartTime;
++        printf ( "[Main] Output time  : %9.4f seconds\n", totalOutputTime);
++
+         // ======================================================================================
+         // | Load the next set of files                                                         |
+         // ======================================================================================
+@@ -1207,6 +1218,10 @@ int main ( int argc, char ** argv )
+     {
+         SAMOutputHeaderDestruct ( &samOutputHeader );
+     }
++#ifdef USEVPROF
++    vprof_stop();
++    vprof_write();
++#endif
+ 
+     return 0;
+ }
+--- aio_thread.cpp.orig
++++ aio_thread.cpp
+@@ -149,7 +149,7 @@ bool InputReadsBufferWaitForStatus ( InputReadsBuffer * irb, enum BufferStatus s
+         }
+         else
+         {
+-            sleep ( 1 );
++            usleep ( 1000 );
+         }
+     }
+ };
+@@ -212,7 +212,7 @@ bool AIOInputBufferWaitForStatus ( AIOInputBuffer * aiob, enum AIOInputBufferSta
+         }
+         else
+         {
+-            sleep ( 1 );
++            usleep ( 1000 );
+         }
+     }
+ };
+@@ -569,7 +569,7 @@ InputReadsBuffer * LoadReadsFromAIOBuffer ( AIOInputBuffer * aiob )
+         }
+         else
+         {
+-            sleep ( 1 );
++            usleep ( 1000 );
+ #ifdef DEBUG_AIO_THREAD
+ 
+             if ( !aiob->bufferFilled )
+--- samtools-0.1.18/bam_index.c.orig
++++ samtools-0.1.18/bam_index.c
+@@ -358,7 +358,7 @@ static bam_index_t *bam_index_load_core(FILE *fp)
+ 			if (bam_is_be) bam_swap_endian_4p(&p->n);
+ 			p->m = p->n;
+ 			p->list = (pair64_t*)malloc(p->m * 16);
+-			fread(p->list, 16, p->n, fp);
++			fread(p->list, sizeof(uint64_t), 2*p->n, fp);
+ 			if (bam_is_be) {
+ 				int x;
+ 				for (x = 0; x < p->n; ++x) {
+@@ -372,7 +372,7 @@ static bam_index_t *bam_index_load_core(FILE *fp)
+ 		if (bam_is_be) bam_swap_endian_4p(&index2->n);
+ 		index2->m = index2->n;
+ 		index2->offset = (uint64_t*)calloc(index2->m, 8);
+-		fread(index2->offset, index2->n, 8, fp);
++		fread(index2->offset, sizeof(uint64_t), index2->n, fp);
+ 		if (bam_is_be)
+ 			for (j = 0; j < index2->n; ++j) bam_swap_endian_8p(&index2->offset[j]);
+ 	}
+--- samtools-0.1.18/bgzf.c.orig
++++ samtools-0.1.18/bgzf.c
+@@ -354,8 +354,8 @@ deflate_block(BGZF* fp, int block_length)
+             report_error(fp, "remainder too large");
+             return -1;
+         }
+-        memcpy(fp->uncompressed_block,
+-               fp->uncompressed_block + input_length,
++        memcpy((Bytef*)fp->uncompressed_block,
++               (Bytef*)fp->uncompressed_block + input_length,
+                remaining);
+     }
+     fp->block_offset = remaining;
+--- samtools-0.1.18/razf.c.orig
++++ samtools-0.1.18/razf.c
+@@ -280,7 +280,7 @@ static void _razf_buffered_write(RAZF *rz, const void *data, int size){
+ 			n = RZ_BUFFER_SIZE - rz->buf_len;
+ 			for(i=0;i<n;i++) ((char*)rz->inbuf + rz->buf_len)[i] = ((char*)data)[i];
+ 			size -= n;
+-			data += n;
++			data = (char*)data+n;
+ 			rz->buf_len += n;
+ 		}
+ 	}
+@@ -294,7 +294,7 @@ int razf_write(RAZF* rz, const void *data, int size){
+ 	while(rz->in + rz->buf_len + size >= next_block){
+ 		n = next_block - rz->in - rz->buf_len;
+ 		_razf_buffered_write(rz, data, n);
+-		data += n;
++		data = (char*)data+n;
+ 		size -= n;
+ 		razf_flush(rz);
+ 		add_zindex(rz, rz->in, rz->out);
+@@ -397,7 +397,7 @@ static RAZF* razf_open_r(int fd, int _load_index){
+ 	rz->block_pos = rz->header_size;
+ 	rz->next_block_pos = rz->header_size;
+ 	rz->block_off = 0;
+-	if(ext_len < 7 || memcmp(rz->inbuf + ext_off, c, 4) != 0) return rz;
++	if(ext_len < 7 || memcmp((Bytef*)rz->inbuf + ext_off, c, 4) != 0) return rz;
+ 	if(((((unsigned char*)rz->inbuf)[ext_off + 5] << 8) | ((unsigned char*)rz->inbuf)[ext_off + 6]) != RZ_BLOCK_SIZE){
+ 		fprintf(stderr, " -- WARNING: RZ_BLOCK_SIZE is not %d, treat source as gz file.  in %s -- %s:%d --\n", RZ_BLOCK_SIZE, __FUNCTION__, __FILE__, __LINE__);
+ 		return rz;
+@@ -628,13 +628,13 @@ int razf_read(RAZF *rz, void *data, int size){
+ 				for(i=0;i<size;i++) ((char*)data)[i] = ((char*)rz->outbuf + rz->buf_off)[i];
+ 				rz->buf_off += size;
+ 				rz->buf_len -= size;
+-				data += size;
++				data =(char*)data+size;
+ 				rz->block_off += size;
+ 				size = 0;
+ 				break;
+ 			} else {
+ 				for(i=0;i<rz->buf_len;i++) ((char*)data)[i] = ((char*)rz->outbuf + rz->buf_off)[i];
+-				data += rz->buf_len;
++				data =(char*)data+ rz->buf_len;
+ 				size -= rz->buf_len;
+ 				rz->block_off += rz->buf_len;
+ 				rz->buf_off = 0;

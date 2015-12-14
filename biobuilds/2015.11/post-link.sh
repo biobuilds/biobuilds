@@ -95,7 +95,7 @@ EOF
 if [ `uname -s` == 'Linux' ]; then
     cat >>"${PREFIX}/conda-meta/pinned" <<EOF2
 barracuda 0.7.107b 0
-soap3-dp r177 0
+soap3-dp r177 1
 allpathslg 52488 0
 isaac 15.04.01 0
 EOF2
