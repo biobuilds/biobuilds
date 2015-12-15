@@ -1,0 +1,30 @@
+--- src/fasta_formatter/fasta_formatter.cpp.orig
++++ src/fasta_formatter/fasta_formatter.cpp
+@@ -23,8 +23,8 @@
+ #include <getopt.h>
+ #include <err.h>
+ 
+-#include <gtextutils/stream_wrapper.h>
+-#include <gtextutils/text_line_reader.h>
++#include <stream_wrapper.h>
++#include <text_line_reader.h>
+ 
+ #include "sequence_writers.h"
+ 
+--- src/fastx_uncollapser/fastx_uncollapser.cpp.orig
++++ src/fastx_uncollapser/fastx_uncollapser.cpp
+@@ -28,10 +28,10 @@
+ #include <ostream>
+ #include <fstream>
+ 
+-#include <gtextutils/stream_wrapper.h>
+-#include <gtextutils/text_line_reader.h>
+-#include <gtextutils/string_tokenize.h>
+-#include <gtextutils/container_join.h>
++#include <stream_wrapper.h>
++#include <text_line_reader.h>
++#include <string_tokenize.h>
++#include <container_join.h>
+ 
+ #include "config.h"
+ 

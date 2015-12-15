@@ -1,0 +1,43 @@
+package:
+  name: perl-gdgraph
+  version: "1.49"
+
+source:
+  fn: GDGraph-1.49.tar.gz
+  url: https://cpan.metacpan.org/authors/id/R/RU/RUZ/GDGraph-1.49.tar.gz
+  md5: 8bb270a30fea27491302b39b701b3d4e
+
+requirements:
+  build:
+    - perl
+    - perl-gd
+    - perl-gdtextutil
+
+  run:
+    - perl
+    - perl-gd
+    - perl-gdtextutil
+
+test:
+  # Perl 'use' tests done by recipe-supplied run_test.pl; needed because each
+  # subpackage has a different version than the top-level GD::Graph package.
+  #imports:
+  #  - GD::Graph
+  #  - GD::Graph::Data
+  #  - GD::Graph::Error
+  #  - GD::Graph::area
+  #  - GD::Graph::axestype
+  #  - GD::Graph::bars
+  #  - GD::Graph::colour
+  #  - GD::Graph::hbars
+  #  - GD::Graph::lines
+  #  - GD::Graph::linespoints
+  #  - GD::Graph::mixed
+  #  - GD::Graph::pie
+  #  - GD::Graph::points
+  #  - GD::Graph::utils
+
+about:
+  home: http://metacpan.org/pod/GDGraph
+  license: perl_5
+  summary: 'Produces charts with GD'

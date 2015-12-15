@@ -1,0 +1,64 @@
+package:
+  name: fastx-toolkit
+  version: "0.0.14"
+
+source:
+  fn: fastx_toolkit-0.0.14.tar.bz2
+  url: https://github.com/agordon/fastx_toolkit/releases/download/0.0.14/fastx_toolkit-0.0.14.tar.bz2
+  md5: bf1993c898626bb147de3d6695c20b40
+  patches:
+    - header-paths.patch
+    - usage-exit-0.patch
+
+requirements:
+  # OS X: use GCC instead of clang to avoid libstdc++/libc++ compatibility
+  # headaches when linking fastx-toolkit to libgtextutils; e.g., libgtextutils
+  # requires libstdc++ for symbols like "std::basic_stringbuf" at link time,
+  # while fastx-toolkit requires libc++ for the "unordered_map" header.
+  build:
+    - autoconf-update
+    - gcc     # [osx]
+    - libgtextutils
+  run:
+    - libgcc  # [osx]
+    - libgtextutils
+    - perl
+    - perl-perlio-gzip
+    - perl-gdgraph
+    - gnuplot
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - fasta_formatter -h
+    - fasta_nucleotide_changer -h
+    - fastq_masker -h
+    - fastq_quality_converter -h
+    - fastq_quality_filter -h
+    - fastq_quality_trimmer -h
+    - fastq_to_fasta -h
+    - fastx_artifacts_filter -h
+    - fastx_clipper -h
+    - fastx_collapser -h
+    - fastx_quality_stats -h
+    - fastx_renamer -h
+    - fastx_reverse_complement -h
+    - fastx_trimmer -h
+    - fastx_uncollapser -h
+    - fastq_quality_boxplot_graph.sh -h
+    - fastx_nucleotide_distribution_graph.sh -h
+    - fastx_nucleotide_distribution_line_graph.sh -h
+    - fasta_clipping_histogram.pl
+    - fastx_barcode_splitter.pl --help
+
+about:
+  home: http://hannonlab.cshl.edu/fastx_toolkit/index.html
+  license: AGPLv3
+  license_file: COPYING
+  summary: "Command line tools for short-read FASTA & FASTQ file preprocessing"

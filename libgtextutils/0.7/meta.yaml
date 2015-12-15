@@ -1,0 +1,32 @@
+package:
+  name: libgtextutils
+  version: "0.7"
+
+source:
+  fn: libgtextutils-0.7.tar.gz
+  url: https://github.com/agordon/libgtextutils/releases/download/0.7/libgtextutils-0.7.tar.gz
+  md5: 593c7c62e3c76ec49f5736eed4f96806
+
+requirements:
+  # OS X: use GCC instead of clang to avoid libstdc++/libc++ compatibility
+  # headaches when linking fastx-toolkit to libgtextutils; e.g., libgtextutils
+  # requires libstdc++ for symbols like "std::basic_stringbuf" at link time,
+  # while fastx-toolkit requires libc++ for the "unordered_map" header.
+  build:
+    - autoconf-update
+    - gcc     # [osx]
+  run:
+    - libgcc  # [osx]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: https://github.com/agordon/libgtextutils
+  license: AGPLv3
+  license_file: COPYING
+  summary: "C++ text utilities library by Assaf Gordon"

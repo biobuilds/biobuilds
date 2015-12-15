@@ -1,0 +1,25 @@
+package:
+  name: perl-module-build
+  version: "0.4214"
+
+source:
+  fn: Module-Build-0.4214.tar.gz
+  url: https://cpan.metacpan.org/authors/id/L/LE/LEONT/Module-Build-0.4214.tar.gz
+  md5: "7b7ca5a47bef48c50c8b5906ca3ac7fb"
+
+requirements:
+  build:
+    - perl
+
+  run:
+    - perl
+
+test:
+  # Perl 'use' tests
+  imports:
+    - Module::Build
+
+about:
+  home: http://metacpan.org/pod/Module-Build
+  license: perl_5
+  summary: 'Build and install Perl modules'

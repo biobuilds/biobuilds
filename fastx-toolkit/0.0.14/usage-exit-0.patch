@@ -1,0 +1,62 @@
+# Exit 0 instead of 1 when invoked with "-h" or "--help"; makes it possible to
+# quickly check that the applications built "correctly" without having to put
+# effort into generating a set of test cases for each application.
+--- src/libfastx/fastx_args.c.orig
++++ src/libfastx/fastx_args.c
+@@ -99,7 +99,7 @@
+ 		switch(opt) {
+ 		case 'h':
+ 			printf("%s", usage);
+-			exit(1);
++			exit(0);
+ 		
+ 		case 'v':
+ 			verbose = 1 ;
+--- scripts/fastx_barcode_splitter.pl.orig	2015-12-15 11:05:07.000000000 -0600
++++ scripts/fastx_barcode_splitter.pl	2015-12-15 11:07:26.000000000 -0600
+@@ -40,7 +40,7 @@
+ sub open_and_detect_input_format;
+ sub read_record;
+ sub write_record($);
+-sub usage();
++sub usage($);
+ 
+ # Global flags and arguments, 
+ # Set by command line argumens
+@@ -101,7 +101,7 @@
+ sub parse_command_line {
+ 	my $help;
+ 
+-	usage() if (scalar @ARGV==0);
++	usage(1) if (scalar @ARGV==0);
+ 
+ 	my $result = GetOptions ( "bcfile=s" => \$barcode_file,
+ 				  "eol"  => \$barcodes_at_eol,
+@@ -116,7 +116,8 @@
+ 				  "help" => \$help
+ 				  ) ;
+ 	
+-	usage() if ($help);
++	# don't exit with an error when explicitly invoked with "--help"
++	usage(0) if ($help);
+ 
+ 	die "Error: barcode file not specified (use '--bcfile [FILENAME]')\n" unless defined $barcode_file;
+ 	die "Error: prefix path/filename not specified (use '--prefix [PATH]')\n" unless defined $newfile_prefix;
+@@ -347,8 +348,9 @@
+ 	}
+ }
+ 
+-sub usage()
++sub usage($)
+ {
++    my $exit_code = shift;
+ print<<EOF;
+ Barcode Splitter, by Assaf Gordon (gordon\@cshl.edu), 11sep2008
+ 
+@@ -468,5 +470,5 @@
+ 
+ EOF
+ 
+-exit 1;
++exit $exit_code;
+ }

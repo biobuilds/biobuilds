@@ -1,0 +1,30 @@
+package:
+  name: perl-gdtextutil
+  version: "0.86"
+
+source:
+  fn: GDTextUtil-0.86.tar.gz
+  url: http://cpan.metacpan.org/authors/id/M/MV/MVERB/GDTextUtil-0.86.tar.gz
+  md5: 941ad06eadc86b47f3a32da405665c41
+
+requirements:
+  build:
+    - perl
+    - perl-gd
+
+  run:
+    - perl
+    - perl-gd
+
+test:
+  # Perl 'use' tests done by recipe-supplied run_test.pl; needed b/c each
+  # subpackage has a different version than top-level the GD::Text package.
+  #imports:
+  #  - GD::Text
+  #  - GD::Text::Align
+  #  - GD::Text::Wrap
+
+about:
+  home: http://metacpan.org/pod/GDTextUtil
+  license: unknown
+  summary: 'Text utilities for use with GD'
