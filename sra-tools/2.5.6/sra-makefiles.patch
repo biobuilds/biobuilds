@@ -1,0 +1,763 @@
+--- sra-tools-2.5.6/build/ld.linux.gcc.sh
++++ sra-tools-2.5.6/build/ld.linux.gcc.sh
+@@ -33,7 +33,7 @@
+ 
+ # build command
+ DLIB_CMD="$LD -shared"
+-EXE_CMD="$LD -static-libstdc++ -static-libgcc"
++EXE_CMD="$LD"
+ EXE_STATIC_CMD="$EXE_CMD"
+ #EXE_CMD="$LD"
+ #EXE_STATIC_CMD="$LD -static"
+--- sra-tools-2.5.6/test/fastq-loader/Makefile
++++ sra-tools-2.5.6/test/fastq-loader/Makefile
+@@ -58,7 +58,7 @@
+ 	-sfastqloader \
+ 	-sloader \
+ 	-sload \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/wb-test-fastq: $(FASTQ_TEST_OBJ)
+ 	$(LP) --exe -o $@ $^ $(FASTQ_TEST_LIB)
+--- sra-tools-2.5.6/test/general-loader/Makefile
++++ sra-tools-2.5.6/test/general-loader/Makefile
+@@ -58,7 +58,7 @@
+ 	$(addsuffix .$(OBJX),$(TEST_GEN_LOAD_SRC))
+ 
+ TEST_GEN_LOAD_LIB =   \
+-	-sncbi-wvdb-static  \
++	-sncbi-wvdb-static -lbz2 -lz  \
+     -sload              \
+ 	-skapp              \
+     -sktst              \
+@@ -132,7 +132,7 @@
+ 
+ $(TEST_BINDIR)/makeinputs: makeinputs.cpp
+ 	@# generate numbered input streams for tool tests
+-	$(CXX) makeinputs.cpp testsource.cpp -o $(TEST_BINDIR)/makeinputs -I$(INCDIRS) -L$(VDB_LIBDIR) -lncbi-vdb-static
++	$(CXX) makeinputs.cpp testsource.cpp -o $(TEST_BINDIR)/makeinputs -I$(INCDIRS) -L$(VDB_LIBDIR) -lncbi-vdb-static $(LDFLAGS) -lbz2 -lz
+ 
+ tool-tests: $(TEST_BINDIR)/makeinputs
+ 	@mkdir -p input && $(TEST_BINDIR)/makeinputs && rm $(TEST_BINDIR)/makeinputs
+--- sra-tools-2.5.6/test/network-test/Makefile
++++ sra-tools-2.5.6/test/network-test/Makefile
+@@ -92,7 +92,7 @@
+ 
+ TOOL_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/network-test: $(TOOL_OBJ)
+--- sra-tools-2.5.6/test/ngs-pileup/Makefile
++++ sra-tools-2.5.6/test/ngs-pileup/Makefile
+@@ -52,7 +52,7 @@
+ TEST_NGS_PILEUP_LIB =   \
+ 	-sngs-c++           \
+ 	-sncbi-ngs-c++      \
+-	-sncbi-vdb-static   \
++	-sncbi-vdb-static -lbz2 -lz   \
+ 	-skapp              \
+     -sktst              \
+ 
+--- sra-tools-2.5.6/test/samline/Makefile
++++ sra-tools-2.5.6/test/samline/Makefile
+@@ -93,7 +93,7 @@
+ 
+ TOOL_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/samline: $(TOOL_OBJ)
+--- sra-tools-2.5.6/test/vcf-loader/Makefile
++++ sra-tools-2.5.6/test/vcf-loader/Makefile
+@@ -63,7 +63,7 @@
+ VCF_TEST_LIB = \
+ 	-skapp \
+ 	-sktst \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+     -svcfloader 
+ 
+ $(TEST_BINDIR)/test-vcf-loader: $(VCF_TEST_OBJ)
+--- sra-tools-2.5.6/test/vschema/Makefile
++++ sra-tools-2.5.6/test/vschema/Makefile
+@@ -94,7 +94,7 @@
+ 
+ TEST_IDX_TEXT_CHECKLOOKUP_LIB =   \
+ 	-L$(LIBDIR) \
+-	-sncbi-vdb
++	-sncbi-vdb -lbz2 -lz
+ 
+ idx-text-checklookup: $(TEST_IDX_TEXT_CHECKLOOKUP_OBJ)
+ 	$(LP) --exe -o ./idx-text-checklookup $^ $(TEST_IDX_TEXT_CHECKLOOKUP_LIB)
+--- sra-tools-2.5.6/tools/align-cache/Makefile
++++ sra-tools-2.5.6/tools/align-cache/Makefile
+@@ -84,7 +84,7 @@
+ 
+ ALIGN_CACHE_LIB = \
+ 	-skapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-sxml2 \
+ 	-sm \
+ 	-sload
+--- sra-tools-2.5.6/tools/align-info/Makefile
++++ sra-tools-2.5.6/tools/align-info/Makefile
+@@ -83,7 +83,7 @@
+ 
+ ALIGN_INFO_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/align-info: $(ALIGN_INFO_OBJ)
+--- sra-tools-2.5.6/tools/bam-loader/Makefile
++++ sra-tools-2.5.6/tools/bam-loader/Makefile
+@@ -95,7 +95,7 @@
+ BAMLOAD_LIB = \
+ 	-lkapp \
+ 	-lload \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/bam-load: $(BAMLOAD_OBJ)
+--- sra-tools-2.5.6/tools/cache-mgr/Makefile
++++ sra-tools-2.5.6/tools/cache-mgr/Makefile
+@@ -91,7 +91,7 @@
+ 
+ TOOL_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/cache-mgr: $(TOOL_OBJ)
+--- sra-tools-2.5.6/tools/ccextract/Makefile
++++ sra-tools-2.5.6/tools/ccextract/Makefile
+@@ -99,7 +99,7 @@
+ 	-lkapp \
+     -lkxfs \
+     -lkxml \
+-	-sncbi-vdb
++	-sncbi-vdb -lbz2 -lz
+ 
+ $(BINDIR)/ccextract: $(CCEXTRACT_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(CCEXTRACT_LIB)
+--- sra-tools-2.5.6/tools/cg-load/Makefile
++++ sra-tools-2.5.6/tools/cg-load/Makefile
+@@ -102,7 +102,7 @@
+ CGLOAD_LIB = \
+ 	-lkapp \
+ 	-lload \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/cg-load: $(CGLOAD_OBJ)
+--- sra-tools-2.5.6/tools/copycat/Makefile
++++ sra-tools-2.5.6/tools/copycat/Makefile
+@@ -104,7 +104,7 @@
+ 
+ COPYCAT_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-skff \
+ 	-smagic-static
+ 
+--- sra-tools-2.5.6/tools/dbgap-mount/Makefile
++++ sra-tools-2.5.6/tools/dbgap-mount/Makefile
+@@ -111,7 +111,7 @@
+ ZDB_NFUS_OBJ = \
+ 	$(addsuffix .$(OBJX),$(ZDB_NFUS_SRC))
+ 
+-ZDB_NFUS_LIB = -lkapp -lncbi-vdb -lxfs $(DOCAN_LIBS)
++ZDB_NFUS_LIB = -lkapp -lncbi-vdb -lbz2 -lz -lxfs $(DOCAN_LIBS)
+ 
+ $(BINDIR)/demo: $(ZDB_NFUS_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(ZDB_NFUS_LIB)
+--- sra-tools-2.5.6/tools/fastq-dump/Makefile
++++ sra-tools-2.5.6/tools/fastq-dump/Makefile
+@@ -74,7 +74,7 @@
+ DUMP_LIBS = \
+ 	-lncbi-ngs-c++    \
+ 	-lngs-c++         \
+-	-lncbi-vdb-static \
++	-lncbi-vdb-static -lbz2 -lz \
+ 	-lkapp \
+ 
+ #-------------------------------------------------------------------------------
+--- sra-tools-2.5.6/tools/fastq-loader/Makefile
++++ sra-tools-2.5.6/tools/fastq-loader/Makefile
+@@ -148,7 +148,7 @@
+ 	-skapp \
+     -sloader \
+     -sload \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-sm
+ 
+ $(BINDIR)/latf-load: $(FASTQ_LOAD_OBJ)
+--- sra-tools-2.5.6/tools/fuse/Makefile
++++ sra-tools-2.5.6/tools/fuse/Makefile
+@@ -150,7 +150,7 @@
+ 
+ SRA_FUSER_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lfuse \
+ 	-lrt
+ 
+@@ -189,7 +189,7 @@
+ 
+ REMOTE_FUSER_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lfuse \
+ 	-lrt
+ 
+@@ -208,7 +208,7 @@
+ 
+ SRA_MAKEIDX_LIB = \
+ 	-lkapp \
+-	-lncbi-wvdb \
++	-lncbi-wvdb -lbz2 -lz \
+ 	-ssrareader \
+ 
+ $(BINDIR)/sra-makeidx: $(SRA_MAKEIDX_OBJ)
+--- sra-tools-2.5.6/tools/general-loader/Makefile
++++ sra-tools-2.5.6/tools/general-loader/Makefile
+@@ -119,7 +119,7 @@
+ 	$(addsuffix .$(OBJX),$(GEN_LOAD_SRC))
+ 
+ GEN_LOAD_LIBS = \
+-	-sncbi-wvdb-static \
++	-sncbi-wvdb-static -lbz2 -lz \
+ 	-sload \
+ 	-skapp \
+ 
+--- sra-tools-2.5.6/tools/kar/Makefile
++++ sra-tools-2.5.6/tools/kar/Makefile
+@@ -85,7 +85,7 @@
+ 
+ KAR_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/kar: $(KAR_OBJ)
+@@ -104,7 +104,7 @@
+ 
+ SRA_KAR_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(BINDIR)/sra-kar: $(SRA_KAR_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(SRA_KAR_LIB)
+--- sra-tools-2.5.6/tools/keyring-srv/Makefile
++++ sra-tools-2.5.6/tools/keyring-srv/Makefile
+@@ -98,7 +98,7 @@
+ 
+ KEYRING_SRV_LIB = \
+ 	-skapp \
+-	-lncbi-wvdb \
++	-lncbi-wvdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/keyring-srv: $(KEYRING_SRV_OBJ)
+--- sra-tools-2.5.6/tools/kget/Makefile
++++ sra-tools-2.5.6/tools/kget/Makefile
+@@ -91,7 +91,7 @@
+ 
+ TOOL_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/kget: $(TOOL_OBJ)
+--- sra-tools-2.5.6/tools/kqsh/Makefile
++++ sra-tools-2.5.6/tools/kqsh/Makefile
+@@ -214,7 +214,7 @@
+ 
+ KQSH_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/kqsh: $(KQSH_OBJ)
+--- sra-tools-2.5.6/tools/ngs-pileup/Makefile
++++ sra-tools-2.5.6/tools/ngs-pileup/Makefile
+@@ -82,7 +82,7 @@
+ 
+ NGS_PILEUP_LIBS = \
+ 	-sncbi-ngs-c++    \
+-	-sncbi-vdb-static \
++	-sncbi-vdb-static -lbz2 -lz \
+ 	-sngs-c++         \
+ 	-skapp \
+     
+--- sra-tools-2.5.6/tools/pacbio-load/Makefile
++++ sra-tools-2.5.6/tools/pacbio-load/Makefile
+@@ -129,7 +129,7 @@
+ 	-skdf5 \
+ 	-sload \
+ 	-shdf5 \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-sm \
+ 
+ ifdef HDF5_LIBDIR
+--- sra-tools-2.5.6/tools/pileup-stats/Makefile
++++ sra-tools-2.5.6/tools/pileup-stats/Makefile
+@@ -86,7 +86,7 @@
+ 	-L$(NGS_LIBDIR)   \
+ 	-sgeneral-writer  \
+ 	-sncbi-ngs-c++    \
+-	-sncbi-vdb-static \
++	-sncbi-vdb-static -lbz2 -lz \
+ 	-sngs-c++         \
+ 	-skapp \
+ 
+--- sra-tools-2.5.6/tools/prefetch/Makefile
++++ sra-tools-2.5.6/tools/prefetch/Makefile
+@@ -93,7 +93,7 @@
+ 
+ PREFETCH_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ 
+--- sra-tools-2.5.6/tools/qual-recalib-stat/Makefile
++++ sra-tools-2.5.6/tools/qual-recalib-stat/Makefile
+@@ -91,7 +91,7 @@
+ 
+ Q_RECAL_STAT_LIB = \
+ 	-lkapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/qual-recalib-stat: $(Q_RECAL_STAT_OBJ)
+--- sra-tools-2.5.6/tools/rd-filter-redact/Makefile
++++ sra-tools-2.5.6/tools/rd-filter-redact/Makefile
+@@ -92,7 +92,7 @@
+ 
+ READ_FILTER_REDACT_LIB = \
+ 	-lkapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ read-filter-redact.vers.h: read-filter-redact.vers
+@@ -112,7 +112,7 @@
+ 
+ TEST_READ_WRITE_CURSOR_LIB = \
+ 	-lkapp \
+-	-lncbi-wvdb \
++	-lncbi-wvdb -lbz2 -lz \
+ 
+ test-read-write-cursor.vers.h: test-read-write-cursor.vers
+ 	$(TOP)/build/make-vers-inc.sh TEST_READ_WRITE_CURSOR_VERS $^ > $@
+--- sra-tools-2.5.6/tools/ref-variation/Makefile
++++ sra-tools-2.5.6/tools/ref-variation/Makefile
+@@ -89,10 +89,10 @@
+ 
+ REF_VARIATION_LIB =   \
+ 	-sncbi-ngs-c++    \
+-	-sncbi-vdb-static \
++	-sncbi-vdb-static -lbz2 -lz \
+ 	-sngs-c++         \
+ 	-skapp            \
+-	-sncbi-vdb        \
++	-sncbi-vdb -lbz2 -lz        \
+ 	-sm               \
+ 	-sload
+ 
+@@ -115,10 +115,10 @@
+ 
+ VAR_EXPAND_LIB =   \
+ 	-sncbi-ngs-c++    \
+-	-sncbi-vdb-static \
++	-sncbi-vdb-static -lbz2 -lz \
+ 	-sngs-c++         \
+ 	-skapp            \
+-	-sncbi-vdb        \
++	-sncbi-vdb -lbz2 -lz        \
+ 	-sm               \
+ 	-sload
+ 
+--- sra-tools-2.5.6/tools/sra-dump/Makefile
++++ sra-tools-2.5.6/tools/sra-dump/Makefile
+@@ -85,7 +85,7 @@
+ 
+ DUMP_COMMON_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ #-------------------------------------------------------------------------------
+--- sra-tools-2.5.6/tools/sra-load/Makefile
++++ sra-tools-2.5.6/tools/sra-load/Makefile
+@@ -111,7 +111,7 @@
+ LOADER_LIB = \
+ 	-lkapp \
+ 	-lload \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	$(LIBXML) \
+ 	-lm
+ 
+--- sra-tools-2.5.6/tools/sra-pileup/Makefile
++++ sra-tools-2.5.6/tools/sra-pileup/Makefile
+@@ -110,7 +110,7 @@
+ 
+ TOOL_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/sra-pileup: $(TOOL_OBJ)
+@@ -142,7 +142,7 @@
+ 
+ SAMDUMP3_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ ifdef NCBI
+--- sra-tools-2.5.6/tools/sra-seq-count/Makefile
++++ sra-tools-2.5.6/tools/sra-seq-count/Makefile
+@@ -78,7 +78,7 @@
+ 	-skapp	\
+ 	-sngs-c++ \
+ 	-sncbi-ngs-c++ \
+-	-sncbi-vdb-static
++	-sncbi-vdb-static -lbz2 -lz
+ 
+ #-------------------------------------------------------------------------------
+ # fastq-dump
+--- sra-tools-2.5.6/tools/sra-shell/sra-gui/Makefile
++++ sra-tools-2.5.6/tools/sra-shell/sra-gui/Makefile
+@@ -87,7 +87,7 @@
+ 
+ SRA_GUI_LIB = \
+ 	-lkapp \
+-	-lncbi-vdb \
++	-lncbi-vdb -lbz2 -lz \
+ 
+ $(BINDIR)/sra-gui: $(SRA_GUI_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/sra-gui.vers -o $@ $^ $(SRA_GUI_LIB)
+--- sra-tools-2.5.6/tools/sra-shell/sra-shell/Makefile
++++ sra-tools-2.5.6/tools/sra-shell/sra-shell/Makefile
+@@ -94,7 +94,7 @@
+ 
+ SRA_SHELL_LIB = \
+ 	-lkapp \
+-	-lncbi-vdb \
++	-lncbi-vdb -lbz2 -lz \
+ 
+ $(BINDIR)/sra-shell: $(SRA_SHELL_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/sra-shell.vers -o $@ $^ $(SRA_SHELL_LIB)
+--- sra-tools-2.5.6/tools/sra-sort/Makefile
++++ sra-tools-2.5.6/tools/sra-sort/Makefile
+@@ -123,7 +123,7 @@
+ 
+ SRA_SORT_LIB = \
+ 	-lkapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/sra-sort: $(SRA_SORT_OBJ)
+@@ -139,7 +139,7 @@
+ 	$(addsuffix .$(OBJX),$(DBB_SRC))
+ 
+ DBB_LIB = \
+-	-lncbi-vdb \
++	-lncbi-vdb -lbz2 -lz \
+ 
+ $(BINDIR)/dump-blob-boundaries: $(DBB_OBJ)
+ 	$(LD) --exe -o $@ $^ $(DBB_LIB)
+--- sra-tools-2.5.6/tools/sra-stat/Makefile
++++ sra-tools-2.5.6/tools/sra-stat/Makefile
+@@ -85,7 +85,7 @@
+ 
+ SRASTAT_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-sload \
+ 	-lm \
+ 
+--- sra-tools-2.5.6/tools/sra/Makefile
++++ sra-tools-2.5.6/tools/sra/Makefile
+@@ -91,7 +91,7 @@
+ 
+ TABLE_VERS_LIB = \
+ 	-lkapp \
+-	-lncbi-vdb \
++	-lncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ table-vers.vers.h: table-vers.vers
+--- sra-tools-2.5.6/tools/srapath/Makefile
++++ sra-tools-2.5.6/tools/srapath/Makefile
+@@ -84,7 +84,7 @@
+ 
+ SRAPATH_LIB += \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(BINDIR)/srapath: $(SRAPATH_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(SRAPATH_LIB)
+--- sra-tools-2.5.6/tools/update-schema/Makefile
++++ sra-tools-2.5.6/tools/update-schema/Makefile
+@@ -91,7 +91,7 @@
+ 
+ UPDATE_SCHEMA_LIB = \
+ 	-skapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+     
+ update-schema.vers.h: update-schema.vers
+ 	$(TOP)/build/make-vers-inc.sh UPDATE_SCHEMA_VERS $^ > $@
+--- sra-tools-2.5.6/tools/util/Makefile
++++ sra-tools-2.5.6/tools/util/Makefile
+@@ -106,7 +106,7 @@
+ 
+ RCEXPLAIN_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(BINDIR)/rcexplain: $(RCEXPLAIN_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(RCEXPLAIN_LIB)
+@@ -123,7 +123,7 @@
+ 
+ KDBMETA_LIB = \
+ 	-skapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/kdbmeta: $(KDBMETA_OBJ)
+@@ -142,7 +142,7 @@
+ 
+ VDB_LOCK_LIB = \
+ 	-skapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-lock: $(VDB_LOCK_OBJ)
+@@ -161,7 +161,7 @@
+ 
+ VDB_UNLOCK_LIB = \
+ 	-skapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-unlock: $(VDB_UNLOCK_OBJ)
+@@ -179,7 +179,7 @@
+ 
+ TESTLD_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/testld: $(TESTLD_OBJ)
+@@ -199,7 +199,7 @@
+ 
+ T_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/test-sra: $(T_OBJ)
+@@ -216,7 +216,7 @@
+ 
+ TXT2KDB_LIB = \
+ 	-skapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/txt2kdb: $(TXT2KDB_OBJ)
+@@ -233,7 +233,7 @@
+ 
+ MD5CP_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/md5cp: $(MD5CP_OBJ)
+@@ -251,7 +251,7 @@
+ 
+ ROWWRITETEST_LIB = \
+ 	-skapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/rowwritetest: $(ROWWRITETEST_OBJ)
+@@ -270,7 +270,7 @@
+ 
+ CRC32SUM_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/crc32sum: $(CRC32SUM_OBJ)
+@@ -289,7 +289,7 @@
+ 
+ SAMVIEW_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/samview: $(SAMVIEW_OBJ)
+@@ -307,7 +307,7 @@
+ 
+ SORTREADTEST_LIB = \
+ 	-skapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/sortreadtest: $(SORTREADTEST_OBJ)
+@@ -326,7 +326,7 @@
+ 
+ VDB_PASSWD_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/vdb-passwd: $(VDB_PASSWD_OBJ)
+@@ -344,7 +344,7 @@
+ 
+ SCHEMA_REPLACE_LIB = \
+ 	-lkapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/schema-replace: $(SCHEMA_REPLACE_OBJ)
+@@ -361,7 +361,7 @@
+ 
+ PACBIO_CORRECT_LIB = \
+ 	-lkapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/pacbio-correct: $(PACBIO_CORRECT_OBJ)
+@@ -378,7 +378,7 @@
+ 
+ KDBINDEX_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(BINDIR)/kdb-index: $(KDBINDEX_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(KDBINDEX_LIB)
+--- sra-tools-2.5.6/tools/vdb-config/Makefile
++++ sra-tools-2.5.6/tools/vdb-config/Makefile
+@@ -89,7 +89,7 @@
+ 	-stui_cpp    \
+ 	-stui        \
+ 	-skapp       \
+-	-sncbi-vdb   \
++	-sncbi-vdb -lbz2 -lz   \
+ 	-sm
+ 
+ $(BINDIR)/vdb-config: $(VDB_CONFIG_OBJ)
+--- sra-tools-2.5.6/tools/vdb-copy/Makefile
++++ sra-tools-2.5.6/tools/vdb-copy/Makefile
+@@ -106,7 +106,7 @@
+ 
+ VDB_COPY_LIB = \
+ 	-lkapp \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-copy: $(VDB_COPY_OBJ)
+--- sra-tools-2.5.6/tools/vdb-decrypt/Makefile
++++ sra-tools-2.5.6/tools/vdb-decrypt/Makefile
+@@ -92,7 +92,7 @@
+ 
+ VDB_DECRYPT_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb
++	-sncbi-vdb -lbz2 -lz
+ 
+ $(BINDIR)/vdb-decrypt: $(VDB_DECRYPT_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(VDB_DECRYPT_LIB)
+@@ -111,7 +111,7 @@
+ 
+ VDB_ENCRYPT_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb
++	-sncbi-vdb -lbz2 -lz
+ 
+ $(BINDIR)/vdb-encrypt: $(VDB_ENCRYPT_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(VDB_ENCRYPT_LIB)
+--- sra-tools-2.5.6/tools/vdb-diff/Makefile
++++ sra-tools-2.5.6/tools/vdb-diff/Makefile
+@@ -94,7 +94,7 @@
+ 
+ VDB_DIFF_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-diff: $(VDB_DIFF_OBJ)
+--- sra-tools-2.5.6/tools/vdb-dump/Makefile
++++ sra-tools-2.5.6/tools/vdb-dump/Makefile
+@@ -103,7 +103,7 @@
+ 
+ VDB_DUMP_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-dump: $(VDB_DUMP_OBJ)
+--- sra-tools-2.5.6/tools/vdb-validate/Makefile
++++ sra-tools-2.5.6/tools/vdb-validate/Makefile
+@@ -92,7 +92,7 @@
+ 
+ VDB_VALIDATE_LIB = \
+ 	-lkapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-lm
+ 
+ vdb-validate.vers.h: vdb-validate.vers

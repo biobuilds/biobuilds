@@ -1,0 +1,50 @@
+package:
+  name: sra-tools
+  version: "2.5.6"
+
+source:
+  # Lab7-generated combined-source tarball since we need the full ncbi-vdb
+  # source tree is needed to build sra-tools; a "separately installed" ncbi-vdb
+  # package (i.e., one with just the headers and libraries from "make install")
+  # currently can't be used to build sra-tools due to an existing upstream bug.
+  # (see https://github.com/ncbi/sra-tools/issues/11 for details).
+  #
+  # Since nothing else builds on top of ncbi-vdb, roll both it and sra-tools
+  # into a single conda recipe and package.
+  fn: sratools+ncbi-vdb-2.5.6.tar.gz
+  url: http://download.lab7.io/sources/sratools+ncbi-vdb-2.5.6.tar.gz
+  md5: "d78b31bb78ab7c3781e7625ccfd2b533"
+  patches:
+    - vdb-makefiles.patch
+    - vdb-ppc64le-support.patch   # [ppc64le]
+    - sra-makefiles.patch
+    - sra-ppc64le-support.patch   # [ppc64le]
+
+requirements:
+  # Use conda's GCC 4.8 to avoid "redefinition of typedef 'VRefVariation'"
+  # errors (in libs/search/sw-search.c:79 & interfaces/search/grep.h:285) when
+  # linking sw-search.pic.o with the default GCC 4.4 toolchain on CentOS/RH 6.
+  build:
+    - gcc     # [not ppc64le]
+    - ncbi-ngs-sdk 1.2.3
+    - zlib
+    - libxml2
+    - bzip2
+  run:
+    - libgcc  # [not ppc64le]
+    - zlib
+    - libxml2
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  #detect_binary_files_with_prefix: True
+
+about:
+  home: "https://github.com/ncbi/sra-tools"
+  license: Public domain
+  license_file: sra-tools-2.5.6/LICENSE
+  summary: "Collection of tools and libraries for accessing the NCBI Sequence Read Archive (SRA)"

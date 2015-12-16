@@ -1,0 +1,556 @@
+# Force the build system to rebuild nucstrstr static library from C sources
+# instead of relying on pre-generated assembly
+--- ncbi-vdb-2.5.6/libs/search/Makefile
++++ ncbi-vdb-2.5.6/libs/search/Makefile
+@@ -82,13 +82,8 @@
+ 	agrep-dp \
+ 	sw-search
+ 
+-ifeq (linux,$(OS))
+-SEARCH_SRC += \
+-	nucstrstr-icc-$(ARCH)-$(BUILDTYPE)
+-else
+ SEARCH_SRC += \
+ 	nucstrstr
+-endif
+ 
+ SEARCH_OBJ = \
+ 	$(addsuffix .$(LOBX),$(SEARCH_SRC))
+# Skip Java & Python API component tests (since we aren't building them)
+--- ncbi-vdb-2.5.6/test/Makefile
++++ ncbi-vdb-2.5.6/test/Makefile
+@@ -50,8 +50,6 @@
+     vdb         \
+     ngs         \
+     ngs-c++     \
+-    ngs-java    \
+-    ngs-python  \
+ 	search	    \
+     vfs         \
+     sraxf       \
+# Don't build external libraries
+--- ncbi-vdb-2.5.6/libs/Makefile
++++ ncbi-vdb-2.5.6/libs/Makefile
+@@ -35,7 +35,6 @@
+ # default
+ #
+ SUBDIRS =    \
+-	ext      \
+ 	kfc      \
+ 	klib     \
+ 	kproc    \
+# Use conda-provided bzip2 and zlib instead of the NCBI-provided ones; avoids
+# PIC-compatibility issues that prevents the NCBI-provided zlib from linking
+# correctly to the conda-provided libxml2.
+--- ncbi-vdb-2.5.6/libs/ncbi-vdb/Makefile
++++ ncbi-vdb-2.5.6/libs/ncbi-vdb/Makefile
+@@ -100,9 +100,7 @@
+ 	klib         \
+ 	kproc        \
+ 	$(LIBKQ)     \
+-	kfc          \
+-	bz2          \
+-	z
++	kfc
+ 
+ VDB_LIB_RD =              \
+ 	align-reader          \
+@@ -122,7 +120,7 @@
+ 	$(addprefix $(ILIBDIR)/lib,$(addsuffix .a,$(VDB_LIB_RD)))
+ 
+ VDB_LIB = \
+-	$(addprefix -s,$(VDB_LIB_RD))
++	$(addprefix -s,$(VDB_LIB_RD)) -lbz2 -lz
+ 
+ $(LIBDIR)/libncbi-vdb.$(SHLX): $(VDB_OBJ)
+ 	$(LD) --dlib --vers $(SRCDIR) -o $@ $(VDB_LIB)
+# Update test Makefiles to support using conda-provided bzip2 and zlib
+--- ncbi-vdb-2.5.6/test/cc/Makefile
++++ ncbi-vdb-2.5.6/test/cc/Makefile
+@@ -52,7 +52,7 @@
+ 
+ ASM_TEST_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+     -sktst
+ 
+ $(TEST_BINDIR)/test-asm: $(ASM_TEST_OBJ)
+--- ncbi-vdb-2.5.6/test/ext/magic/Makefile
++++ ncbi-vdb-2.5.6/test/ext/magic/Makefile
+@@ -52,7 +52,7 @@
+ TEST_MAGIC_LIB = \
+ 	-skapp \
+     -smagic \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+     -sktst
+  
+  
+--- ncbi-vdb-2.5.6/test/judy_test/Makefile
++++ ncbi-vdb-2.5.6/test/judy_test/Makefile
+@@ -51,7 +51,7 @@
+ 
+ JUDYTEST_LIB = \
+ 	-skapp \
+-	-sncbi-vdb 
++	-sncbi-vdb -lbz2 -lz 
+ 
+ $(TEST_BINDIR)/judytest: $(JUDYTEST_OBJ)
+ 	$(LD) --exe $(SRCDIR) -o $@ $^ $(JUDYTEST_LIB)
+--- ncbi-vdb-2.5.6/test/kapp/Makefile
++++ ncbi-vdb-2.5.6/test/kapp/Makefile
+@@ -63,7 +63,7 @@
+     -sktst \
+ 	-skapp \
+     -sload \
+-    -sncbi-wvdb \
++    -sncbi-wvdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/kapp-test: $(ARGS_TEST_OBJ)
+ 	$(LP) --exe -o $@ $^ $(ARGS_TEST_LIB)
+@@ -80,7 +80,7 @@
+ QFILETEST_LIB = \
+ 	-skapp \
+     -sload \
+-    -sncbi-wvdb \
++    -sncbi-wvdb -lbz2 -lz \
+ 
+ 
+ $(TEST_BINDIR)/qfiletest: $(QFILETEST_OBJ)
+@@ -97,7 +97,7 @@
+ 
+ ENV_TEST_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-sload \
+ 	-lm
+ 
+@@ -115,7 +115,7 @@
+ 
+ SIG_CORE_TEST_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-sload \
+ 	-lm
+ 
+--- ncbi-vdb-2.5.6/test/kdb/Makefile
++++ ncbi-vdb-2.5.6/test/kdb/Makefile
+@@ -64,7 +64,7 @@
+ 
+ TEST_BTREE_LIB = \
+ 	-skapp \
+-	-sncbi-vdb
++	-sncbi-vdb -lbz2 -lz
+ 
+ $(BINDIR)/test-btree: $(TEST_BTREE_OBJ)
+ 	$(LD) --exe -o $@ $^ $(TEST_BTREE_LIB)
+@@ -81,7 +81,7 @@
+ TEST_KDB_LIB = \
+     -skapp \
+     -sktst \
+-	-sncbi-vdb
++	-sncbi-vdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/test-kdb: $(TEST_KDB_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_KDB_LIB)
+@@ -101,7 +101,7 @@
+ TEST_WKDB_LIB = \
+     -skapp \
+     -sktst \
+-	-sncbi-wvdb
++	-sncbi-wvdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/test-wkdb: $(TEST_WKDB_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_WKDB_LIB)
+--- ncbi-vdb-2.5.6/test/kfg/Makefile
++++ ncbi-vdb-2.5.6/test/kfg/Makefile
+@@ -56,7 +56,7 @@
+ TEST_LIB = \
+ 	-sktst \
+ 	-skapp \
+-    -sncbi-vdb
++    -sncbi-vdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/wb-test-kfg: $(TEST_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_LIB) 
+@@ -76,7 +76,7 @@
+ TEST_KFG_LIB = \
+ 	-sktst \
+ 	-skapp \
+-    -sncbi-vdb
++    -sncbi-vdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/test-kfg: $(TEST_KFG_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_KFG_LIB)
+@@ -96,7 +96,7 @@
+ TEST_REPOSITORY_LIB = \
+ 	-sktst \
+ 	-skapp \
+-    -sncbi-vdb
++    -sncbi-vdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/test-repository: $(TEST_REPOSITORY_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_REPOSITORY_LIB)
+@@ -116,7 +116,7 @@
+ TEST_KEYSTORE_LIB = \
+ 	-sktst \
+ 	-skapp \
+-    -sncbi-vdb
++    -sncbi-vdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/test-keystore: $(TEST_KEYSTORE_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_KEYSTORE_LIB)
+--- ncbi-vdb-2.5.6/test/kfs/Makefile
++++ ncbi-vdb-2.5.6/test/kfs/Makefile
+@@ -56,7 +56,7 @@
+ 
+ TEST_KFS_LIB = \
+ 	-lkapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-lktst
+ 
+ ifeq (1,$(HAVE_MAGIC))
+@@ -82,7 +82,7 @@
+ 
+ TEST_MD5_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-sktst
+ 
+ $(TEST_BINDIR)/test-kfs-md5: $(TEST_MD5_OBJ)
+@@ -100,7 +100,7 @@
+ 
+ TEST_RAMFILE_LIB = \
+ 	-lkapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-lktst
+ 
+ $(TEST_BINDIR)/test-ramfile: $(TEST_RAMFILE_OBJ)
+@@ -120,7 +120,7 @@
+ 
+ TEST_RESOLVE_LIB = \
+ 	-lkapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-lktst
+ 
+ $(TEST_BINDIR)/test-resolve: $(TEST_RESOLVE_OBJ)
+@@ -140,7 +140,7 @@
+ 
+ TEST_CACHETEE_LIB = \
+ 	-lkapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-lktst
+ 
+ $(TEST_BINDIR)/test-cachetee: $(TEST_CACHETEE_OBJ)
+--- ncbi-vdb-2.5.6/test/klib/Makefile
++++ ncbi-vdb-2.5.6/test/klib/Makefile
+@@ -58,7 +58,7 @@
+     
+ TEST_ASM_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-sktst \
+ 
+ $(TEST_BINDIR)/test-asm: $(TEST_ASM_OBJ)
+@@ -80,7 +80,7 @@
+     
+ TEST_MD5APPEND_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-sktst \
+ 
+ $(TEST_BINDIR)/test-md5append: $(TEST_MD5APPEND_OBJ)
+@@ -102,7 +102,7 @@
+     
+ TEST_PRINTF_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-sktst \
+ 
+ $(TEST_BINDIR)/test-printf: $(TEST_PRINTF_OBJ)
+@@ -124,7 +124,7 @@
+     
+ TEST_LOG_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-sktst \
+ 
+ $(TEST_BINDIR)/test-log: $(TEST_LOG_OBJ)
+@@ -146,7 +146,7 @@
+     
+ TEST_SRA_RELEASE_VERSION_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-sktst \
+ 
+ 
+@@ -169,7 +169,7 @@
+ 	$(addsuffix .$(OBJX),$(TEST_OUT_SRC))
+     
+ TEST_OUT_LIB = \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-sktst \
+ 
+ $(TEST_BINDIR)/test-out: $(TEST_OUT_OBJ)
+@@ -191,7 +191,7 @@
+ 
+ TEST_KLIB_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+ 	-sktst \
+ 
+ $(TEST_BINDIR)/test-klib: $(TEST_KLIB_OBJ)
+--- ncbi-vdb-2.5.6/test/kns/Makefile
++++ ncbi-vdb-2.5.6/test/kns/Makefile
+@@ -54,14 +54,14 @@
+ #
+ #TEST_LIB = \
+ #	-skapp-norsrc \
+-#	-sncbi-vdb \
++#	-sncbi-vdb -lbz2 -lz \
+ #
+ #$(TEST_BINDIR)/test-http: $(TEST_OBJ)
+ #	$(LD) --exe -o $@ $^ $(TEST_LIB)
+ 
+ KNSTEST_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+     -sktst \
+ 
+ #----------------------------------------------------------------
+--- ncbi-vdb-2.5.6/test/kproc/Makefile
++++ ncbi-vdb-2.5.6/test/kproc/Makefile
+@@ -49,7 +49,7 @@
+ TEST_KPROC_LIB = \
+ 	-skapp \
+ 	-sktst \
+-    -sncbi-vdb
++    -sncbi-vdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/test-kproc: $(TEST_KPROC_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_KPROC_LIB)
+--- ncbi-vdb-2.5.6/test/krypto/Makefile
++++ ncbi-vdb-2.5.6/test/krypto/Makefile
+@@ -97,7 +97,7 @@
+ 
+ TEST_MODES_LIB = \
+ 	-skapp \
+-    -sncbi-vdb
++    -sncbi-vdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/test-modes: $(TEST_MODES_OBJ)
+ 	$(LD) --exe -o $@ $^ $(TEST_MODES_LIB)
+@@ -114,7 +114,7 @@
+ TEST_AES_CIPHERS_LIB = \
+ 	-skryptotest \
+ 	-skapp \
+-    -sncbi-vdb
++    -sncbi-vdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/test-aes-ciphers: $(TEST_AES_CIPHERS_OBJ)
+ 	$(LD) --exe -o $@ $^ $(TEST_AES_CIPHERS_LIB)
+@@ -137,7 +137,7 @@
+ TEST_CIPHER_SPEED_LIB = \
+ 	-skryptotest \
+ 	-skapp \
+-    -sncbi-vdb
++    -sncbi-vdb -lbz2 -lz
+ 
+ $(TEST_BINDIR)/test-cipher-speed: $(TEST_CIPHER_SPEED_OBJ)
+ 	$(LD) --exe -o $@ $^ $(TEST_CIPHER_SPEED_LIB)
+@@ -153,7 +153,7 @@
+ 
+ TEST_CSPRNG_LIB = \
+ 	-skapp \
+-	-sncbi-vdb
++	-sncbi-vdb -lbz2 -lz
+ 
+ 
+ $(TEST_BINDIR)/test-csprng: $(TEST_CSPRNG_OBJ)
+@@ -171,7 +171,7 @@
+ 
+ TEST_ENCDEC_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+     -sktst
+ 
+ $(TEST_BINDIR)/test-encdec: $(TEST_ENCDEC_OBJ)
+@@ -189,7 +189,7 @@
+ 
+ TEST_REENC_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-sktst
+ 
+ $(TEST_BINDIR)/test-reenc: $(TEST_REENC_OBJ)
+@@ -207,7 +207,7 @@
+ 
+ TEST_KRYPTO_SLOW_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-sktst
+ 
+ 
+--- ncbi-vdb-2.5.6/test/ktst/Makefile
++++ ncbi-vdb-2.5.6/test/ktst/Makefile
+@@ -51,7 +51,7 @@
+ 
+ TEST_KFG_LIB = \
+ 	-skapp \
+-    -sncbi-vdb \
++    -sncbi-vdb -lbz2 -lz \
+     -sktst
+ 
+ 
+--- ncbi-vdb-2.5.6/test/loader/Makefile
++++ ncbi-vdb-2.5.6/test/loader/Makefile
+@@ -50,7 +50,7 @@
+ 	-skapp \
+     -sktst \
+     -sloader \
+-    -sncbi-wvdb \
++    -sncbi-wvdb -lbz2 -lz \
+     -sload \
+ 
+ $(TEST_BINDIR)/test-loader: $(TEST_LOADER_OBJ)
+--- ncbi-vdb-2.5.6/test/ngs-c++/Makefile
++++ ncbi-vdb-2.5.6/test/ngs-c++/Makefile
+@@ -76,7 +76,7 @@
+ 		  
+ TEST_NGS_CPP_LIB = \
+ 	-sncbi-ngs-c++ \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-skapp \
+     -sktst \
+     -L$(NGS_LIBDIR) \
+--- ncbi-vdb-2.5.6/test/ngs/Makefile
++++ ncbi-vdb-2.5.6/test/ngs/Makefile
+@@ -72,7 +72,7 @@
+           valgrind_csra1_pileup \
+ 
+ TEST_NGS_LIB = \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-skapp \
+     -sktst
+ 
+--- ncbi-vdb-2.5.6/test/search/Makefile
++++ ncbi-vdb-2.5.6/test/search/Makefile
+@@ -51,7 +51,7 @@
+ 
+ TEST_AGREP_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-sktst
+ 
+ $(TEST_BINDIR)/test-agrep: $(TEST_AGREP_OBJ)
+--- ncbi-vdb-2.5.6/test/sraxf/Makefile
++++ ncbi-vdb-2.5.6/test/sraxf/Makefile
+@@ -53,7 +53,7 @@
+ SRATEST_LIB = \
+ 	-skapp \
+ 	-sktst \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/test-fix_read_seg: $(SRATEST_OBJ)
+ 	$(LP) --exe -o $@ $^ $(SRATEST_LIB)
+--- ncbi-vdb-2.5.6/test/vdb/Makefile
++++ ncbi-vdb-2.5.6/test/vdb/Makefile
+@@ -69,7 +69,7 @@
+ TEST_VDB_LIB = \
+     -skapp \
+ 	-sktst \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/test-vdb: $(TEST_VDB_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_VDB_LIB)
+@@ -89,7 +89,7 @@
+ TEST_DEPS_LIB = \
+     -skapp \
+ 	-sktst \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/test-dependencies: $(TEST_DEPS_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_DEPS_LIB)
+@@ -109,7 +109,7 @@
+ TEST_WVDB_LIB = \
+     -skapp \
+ 	-sktst \
+-	-sncbi-wvdb \
++	-sncbi-wvdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/test-wvdb: $(TEST_WVDB_OBJ)
+ 	$(LP) --exe -o $@ $^ $(TEST_WVDB_LIB)
+@@ -130,7 +130,7 @@
+ 	$(addsuffix .$(OBJX),$(SYS_224064_SRC))
+ 
+ SYS_224064_LIB = \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/SYS-224064: $(SYS_224064_OBJ)
+ 	$(LP) --exe -o $@ $^ $(SYS_224064_LIB)
+--- ncbi-vdb-2.5.6/test/vfs/Makefile
++++ ncbi-vdb-2.5.6/test/vfs/Makefile
+@@ -55,7 +55,7 @@
+ 
+ TEST_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/path-test: $(TEST_OBJ)
+ 	$(LD) --exe -o $@ $^ $(TEST_LIB)
+@@ -76,7 +76,7 @@
+ PATHTEST_LIB = \
+ 	-skapp \
+ 	-sktst \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/test-path: $(PATHTEST_OBJ)
+ 	$(LP) --exe -o $@ $^ $(PATHTEST_LIB)
+@@ -97,7 +97,7 @@
+ MANAGERTEST_LIB = \
+ 	-skapp \
+ 	-sktst \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/test-vfsmanager: $(MANAGERTEST_OBJ)
+ 	$(LP) --exe -o $@ $^ $(MANAGERTEST_LIB)
+--- ncbi-vdb-2.5.6/test/vxf/Makefile
++++ ncbi-vdb-2.5.6/test/vxf/Makefile
+@@ -53,7 +53,7 @@
+ TEST_LIBS = \
+     -skapp \
+     -sktst \
+-	-sncbi-vdb \
++	-sncbi-vdb -lbz2 -lz \
+ 	-sxml2 \
+ 	-sm
+ 
