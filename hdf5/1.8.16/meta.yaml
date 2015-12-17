@@ -1,0 +1,30 @@
+package:
+  name: hdf5
+  version: "1.8.16"
+
+source:
+  fn: hdf5-1.8.16.tar.bz2
+  url: http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.16.tar.bz2
+  md5: "79c1593573ebddf734eee8d43ecfe483"
+
+requirements:
+  # Require gcc & libgcc to guarantee support for the FORTRAN and C++ libraries
+  build:
+    - autoconf-update
+    - gcc     # [not ppc64le]
+    - zlib
+  run:
+    - libgcc  # [not ppc64le]
+    - zlib
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://www.hdfgroup.org/HDF5/
+  license: BSD-like (http://www.hdfgroup.org/ftp/HDF5/current/src/unpacked/COPYING)
+  summary: Data model, library, and file format for storing and managing data
