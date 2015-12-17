@@ -1,6 +1,55 @@
+# Need extra room for install_name_tool to work its magic; need to do this here
+# b/c sra-tools' build system seems to ignore LDFLAGS passed to ./configure.
+--- sra-tools-2.5.6/build/ld.mac.clang.sh
++++ sra-tools-2.5.6/build/ld.mac.clang.sh
+@@ -36,7 +36,7 @@
+ then
+     LD="$LD -Wl,-arch_multiple"
+ else
+-    LD="$LD -Wl,-arch,$ARCH"
++    LD="$LD -Wl,-arch,$ARCH -headerpad_max_install_names"
+ fi
+ 
+ # build command
+--- sra-tools-2.5.6/build/ld.mac.gcc.sh
++++ sra-tools-2.5.6/build/ld.mac.gcc.sh
+@@ -36,7 +36,7 @@
+ then
+     LD="$LD -Wl,-arch_multiple"
+ else
+-    LD="$LD -Wl,-arch,$ARCH"
++    LD="$LD -Wl,-arch,$ARCH -headerpad_max_install_names"
+ fi
+ 
+ # build command
+
+# Force libxml2 to be dynamically linked on Linux
+--- sra-tools-2.5.6/build/ld.linux.exe.sh
++++ sra-tools-2.5.6/build/ld.linux.exe.sh
+@@ -298,7 +298,7 @@
+ then
+     if grep -q XML2_LIBDIR ${BUILD_DIR}/Makefile.config.linux.$ARCH > /dev/null
+     then
+-        XMLLIBDIR="-Wl,-Bstatic -L$(grep XML2_LIBDIR ${BUILD_DIR}/Makefile.config.linux.$ARCH | perl -e'while(<>){if(/XML2_LIBDIR = (.+)/){print $1}}')"
++        XMLLIBDIR="-L$(grep XML2_LIBDIR ${BUILD_DIR}/Makefile.config.linux.$ARCH | perl -e'while(<>){if(/XML2_LIBDIR = (.+)/){print $1}}')"
+     fi
+     if [ $HAVE_XML -ne 0 ]
+     then
+
+# Let ld decide whether the type of linking to do, instead of explicitly asking
+# for static or dynamic linking for certain libraries.
 --- sra-tools-2.5.6/build/ld.linux.gcc.sh
 +++ sra-tools-2.5.6/build/ld.linux.gcc.sh
-@@ -33,7 +33,7 @@
+@@ -26,14 +26,14 @@
+ # define linker params
+ LD_EXPORT_GLOBAL="-Wl,--export-dynamic"
+ LD_MULTIPLE_DEFS="-Wl,-zmuldefs"
+-LD_STATIC="-Wl,-Bstatic"
+-LD_DYNAMIC="-Wl,-Bdynamic"
++LD_STATIC=""
++LD_DYNAMIC=""
+ LD_ALL_SYMBOLS="-Wl,-whole-archive"
+ LD_REF_SYMBOLS="-Wl,-no-whole-archive"
  
  # build command
  DLIB_CMD="$LD -shared"
@@ -102,7 +151,7 @@
  ALIGN_CACHE_LIB = \
  	-skapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-sxml2 \
  	-sm \
  	-sload
@@ -113,7 +162,7 @@
  ALIGN_INFO_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/align-info: $(ALIGN_INFO_OBJ)
@@ -124,7 +173,7 @@
  	-lkapp \
  	-lload \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/bam-load: $(BAMLOAD_OBJ)
@@ -135,7 +184,7 @@
  TOOL_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/cache-mgr: $(TOOL_OBJ)
@@ -146,7 +195,7 @@
      -lkxfs \
      -lkxml \
 -	-sncbi-vdb
-+	-sncbi-vdb -lbz2 -lz
++	-lncbi-vdb -lbz2 -lz
  
  $(BINDIR)/ccextract: $(CCEXTRACT_OBJ)
  	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(CCEXTRACT_LIB)
@@ -157,7 +206,7 @@
  	-lkapp \
  	-lload \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/cg-load: $(CGLOAD_OBJ)
@@ -168,9 +217,10 @@
  COPYCAT_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-skff \
- 	-smagic-static
+-	-smagic-static
++	-lmagic
  
 --- sra-tools-2.5.6/tools/dbgap-mount/Makefile
 +++ sra-tools-2.5.6/tools/dbgap-mount/Makefile
@@ -190,7 +240,7 @@
  	-lncbi-ngs-c++    \
  	-lngs-c++         \
 -	-lncbi-vdb-static \
-+	-lncbi-vdb-static -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lkapp \
  
  #-------------------------------------------------------------------------------
@@ -201,7 +251,7 @@
      -sloader \
      -sload \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-sm
  
  $(BINDIR)/latf-load: $(FASTQ_LOAD_OBJ)
@@ -212,7 +262,7 @@
  SRA_FUSER_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lfuse \
  	-lrt
  
@@ -221,7 +271,7 @@
  REMOTE_FUSER_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lfuse \
  	-lrt
  
@@ -241,7 +291,7 @@
  
  GEN_LOAD_LIBS = \
 -	-sncbi-wvdb-static \
-+	-sncbi-wvdb-static -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-sload \
  	-skapp \
  
@@ -252,7 +302,7 @@
  KAR_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  
  $(BINDIR)/kar: $(KAR_OBJ)
@@ -261,7 +311,7 @@
  SRA_KAR_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  $(BINDIR)/sra-kar: $(SRA_KAR_OBJ)
  	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(SRA_KAR_LIB)
@@ -283,7 +333,7 @@
  TOOL_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/kget: $(TOOL_OBJ)
@@ -294,7 +344,7 @@
  KQSH_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  
  $(BINDIR)/kqsh: $(KQSH_OBJ)
@@ -305,7 +355,7 @@
  NGS_PILEUP_LIBS = \
  	-sncbi-ngs-c++    \
 -	-sncbi-vdb-static \
-+	-sncbi-vdb-static -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-sngs-c++         \
  	-skapp \
      
@@ -316,7 +366,7 @@
  	-sload \
  	-shdf5 \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-sm \
  
  ifdef HDF5_LIBDIR
@@ -327,7 +377,7 @@
  	-sgeneral-writer  \
  	-sncbi-ngs-c++    \
 -	-sncbi-vdb-static \
-+	-sncbi-vdb-static -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-sngs-c++         \
  	-skapp \
  
@@ -338,7 +388,7 @@
  PREFETCH_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  
@@ -349,7 +399,7 @@
  Q_RECAL_STAT_LIB = \
  	-lkapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/qual-recalib-stat: $(Q_RECAL_STAT_OBJ)
@@ -360,7 +410,7 @@
  READ_FILTER_REDACT_LIB = \
  	-lkapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  read-filter-redact.vers.h: read-filter-redact.vers
@@ -380,11 +430,11 @@
  REF_VARIATION_LIB =   \
  	-sncbi-ngs-c++    \
 -	-sncbi-vdb-static \
-+	-sncbi-vdb-static -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-sngs-c++         \
  	-skapp            \
 -	-sncbi-vdb        \
-+	-sncbi-vdb -lbz2 -lz        \
++	-lncbi-vdb -lbz2 -lz        \
  	-sm               \
  	-sload
  
@@ -393,11 +443,11 @@
  VAR_EXPAND_LIB =   \
  	-sncbi-ngs-c++    \
 -	-sncbi-vdb-static \
-+	-sncbi-vdb-static -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-sngs-c++         \
  	-skapp            \
 -	-sncbi-vdb        \
-+	-sncbi-vdb -lbz2 -lz        \
++	-lncbi-vdb -lbz2 -lz        \
  	-sm               \
  	-sload
  
@@ -408,7 +458,7 @@
  DUMP_COMMON_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  #-------------------------------------------------------------------------------
@@ -419,7 +469,7 @@
  	-lkapp \
  	-lload \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	$(LIBXML) \
  	-lm
  
@@ -430,7 +480,7 @@
  TOOL_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/sra-pileup: $(TOOL_OBJ)
@@ -439,7 +489,7 @@
  SAMDUMP3_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  ifdef NCBI
@@ -450,7 +500,7 @@
  	-sngs-c++ \
  	-sncbi-ngs-c++ \
 -	-sncbi-vdb-static
-+	-sncbi-vdb-static -lbz2 -lz
++	-lncbi-vdb -lbz2 -lz
  
  #-------------------------------------------------------------------------------
  # fastq-dump
@@ -483,7 +533,7 @@
  SRA_SORT_LIB = \
  	-lkapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/sra-sort: $(SRA_SORT_OBJ)
@@ -503,7 +553,7 @@
  SRASTAT_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-sload \
  	-lm \
  
@@ -525,7 +575,7 @@
  SRAPATH_LIB += \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  $(BINDIR)/srapath: $(SRAPATH_OBJ)
  	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(SRAPATH_LIB)
@@ -536,7 +586,7 @@
  UPDATE_SCHEMA_LIB = \
  	-skapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
      
  update-schema.vers.h: update-schema.vers
  	$(TOP)/build/make-vers-inc.sh UPDATE_SCHEMA_VERS $^ > $@
@@ -547,7 +597,7 @@
  RCEXPLAIN_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  $(BINDIR)/rcexplain: $(RCEXPLAIN_OBJ)
  	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(RCEXPLAIN_LIB)
@@ -556,7 +606,7 @@
  KDBMETA_LIB = \
  	-skapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/kdbmeta: $(KDBMETA_OBJ)
@@ -565,7 +615,7 @@
  VDB_LOCK_LIB = \
  	-skapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/vdb-lock: $(VDB_LOCK_OBJ)
@@ -574,7 +624,7 @@
  VDB_UNLOCK_LIB = \
  	-skapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/vdb-unlock: $(VDB_UNLOCK_OBJ)
@@ -583,7 +633,7 @@
  TESTLD_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  
  $(BINDIR)/testld: $(TESTLD_OBJ)
@@ -592,7 +642,7 @@
  T_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/test-sra: $(T_OBJ)
@@ -601,7 +651,7 @@
  TXT2KDB_LIB = \
  	-skapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  
  
  $(BINDIR)/txt2kdb: $(TXT2KDB_OBJ)
@@ -610,7 +660,7 @@
  MD5CP_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  
  $(BINDIR)/md5cp: $(MD5CP_OBJ)
@@ -619,7 +669,7 @@
  ROWWRITETEST_LIB = \
  	-skapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  
  
  $(BINDIR)/rowwritetest: $(ROWWRITETEST_OBJ)
@@ -628,7 +678,7 @@
  CRC32SUM_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  
  $(BINDIR)/crc32sum: $(CRC32SUM_OBJ)
@@ -637,7 +687,7 @@
  SAMVIEW_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  
  $(BINDIR)/samview: $(SAMVIEW_OBJ)
@@ -646,7 +696,7 @@
  SORTREADTEST_LIB = \
  	-skapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  
  
  $(BINDIR)/sortreadtest: $(SORTREADTEST_OBJ)
@@ -655,7 +705,7 @@
  VDB_PASSWD_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  
  $(BINDIR)/vdb-passwd: $(VDB_PASSWD_OBJ)
@@ -664,7 +714,7 @@
  SCHEMA_REPLACE_LIB = \
  	-lkapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/schema-replace: $(SCHEMA_REPLACE_OBJ)
@@ -673,7 +723,7 @@
  PACBIO_CORRECT_LIB = \
  	-lkapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  
  
  $(BINDIR)/pacbio-correct: $(PACBIO_CORRECT_OBJ)
@@ -682,7 +732,7 @@
  KDBINDEX_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  
  $(BINDIR)/kdb-index: $(KDBINDEX_OBJ)
  	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(KDBINDEX_LIB)
@@ -693,7 +743,7 @@
  	-stui        \
  	-skapp       \
 -	-sncbi-vdb   \
-+	-sncbi-vdb -lbz2 -lz   \
++	-lncbi-vdb -lbz2 -lz   \
  	-sm
  
  $(BINDIR)/vdb-config: $(VDB_CONFIG_OBJ)
@@ -704,7 +754,7 @@
  VDB_COPY_LIB = \
  	-lkapp \
 -	-sncbi-wvdb \
-+	-sncbi-wvdb -lbz2 -lz \
++	-lncbi-wvdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/vdb-copy: $(VDB_COPY_OBJ)
@@ -715,7 +765,7 @@
  VDB_DECRYPT_LIB = \
  	-lkapp \
 -	-sncbi-vdb
-+	-sncbi-vdb -lbz2 -lz
++	-lncbi-vdb -lbz2 -lz
  
  $(BINDIR)/vdb-decrypt: $(VDB_DECRYPT_OBJ)
  	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(VDB_DECRYPT_LIB)
@@ -724,7 +774,7 @@
  VDB_ENCRYPT_LIB = \
  	-lkapp \
 -	-sncbi-vdb
-+	-sncbi-vdb -lbz2 -lz
++	-lncbi-vdb -lbz2 -lz
  
  $(BINDIR)/vdb-encrypt: $(VDB_ENCRYPT_OBJ)
  	$(LD) --exe --vers $(SRCDIR) -o $@ $^ $(VDB_ENCRYPT_LIB)
@@ -735,7 +785,7 @@
  VDB_DIFF_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/vdb-diff: $(VDB_DIFF_OBJ)
@@ -746,7 +796,7 @@
  VDB_DUMP_LIB = \
  	-skapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  $(BINDIR)/vdb-dump: $(VDB_DUMP_OBJ)
@@ -757,7 +807,7 @@
  VDB_VALIDATE_LIB = \
  	-lkapp \
 -	-sncbi-vdb \
-+	-sncbi-vdb -lbz2 -lz \
++	-lncbi-vdb -lbz2 -lz \
  	-lm
  
  vdb-validate.vers.h: vdb-validate.vers

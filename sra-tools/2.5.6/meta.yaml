@@ -21,27 +21,68 @@ source:
     - sra-ppc64le-support.patch   # [ppc64le]
 
 requirements:
-  # Use conda's GCC 4.8 to avoid "redefinition of typedef 'VRefVariation'"
-  # errors (in libs/search/sw-search.c:79 & interfaces/search/grep.h:285) when
-  # linking sw-search.pic.o with the default GCC 4.4 toolchain on CentOS/RH 6.
+  # * Use conda's GCC 4.8 to avoid "redefinition of typedef 'VRefVariation'"
+  #   errors (in libs/search/sw-search.c:79 & interfaces/search/grep.h:285)
+  #   when linking sw-search.pic.o with default gcc-4.4 toolchain on CentOS 6.
+  # * HDF5 not needed at runtime since symbols are build into static ncbi-vdb.
   build:
-    - gcc     # [not ppc64le]
+    - gcc     # [linux64]
     - ncbi-ngs-sdk 1.2.3
     - zlib
     - libxml2
     - bzip2
+    - libmagic
+    - hdf5
   run:
-    - libgcc  # [not ppc64le]
+    - libgcc  # [linux64]
     - zlib
     - libxml2
+    - libmagic
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
     - BB_MAKE_JOBS
   #detect_binary_files_with_prefix: True
+
+test:
+  commands:
+    - abi-dump --help
+    - abi-load --help
+    - align-info --help
+    - bam-load --help
+    - cache-mgr --help
+    - cg-load --help
+    - fastq-dump --help
+    - fastq-load --help
+    - helicos-load --help
+    - illumina-dump --help
+    - illumina-load --help
+    - kar --help
+    - kdbmeta --help
+    - latf-load --help
+    - prefetch --help
+    - rcexplain --help
+    - sam-dump --help
+    - sff-dump --help
+    - sff-load --help
+    - srapath --help
+    - sra-pileup --help
+    - sra-sort --help
+    - sra-stat --help
+    - srf-load --help
+    - test-sra --help
+    - vdb-config --help
+    - vdb-copy --help
+    - vdb-decrypt --help
+    - vdb-dump --help
+    - vdb-encrypt --help
+    - vdb-lock --help
+    - vdb-unlock --help
+    - vdb-validate --help
+    #- vdb-passwd --help    # Obsolete! "--help" has non-zero exit
 
 about:
   home: "https://github.com/ncbi/sra-tools"

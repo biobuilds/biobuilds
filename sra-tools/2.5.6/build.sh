@@ -7,8 +7,9 @@ build_arch="$(uname -m)"
 # If available, pull in BioBuilds optimization flags
 [ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
 [ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
-CXXFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+export CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+export CXXFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
 
 # Make sure various libraries are available to "make test"
 if [ "$build_os" == "Darwin" ]; then
@@ -36,11 +37,17 @@ find "libs/search" -name '*.s' | xargs rm -f
 # fixes libxml2 linking issue (see makefiles.patch for details).
 rm -rf "libs/ext/zlib" "libs/ext/bzip2"
 
+# Remove sources for libmagic and use conda-provided library instead
+rm -rf "libs/ext/magic"
+
 # TODO: figure out how to pass CFLAGS, LDFLAGS to this build system
 ./configure --prefix="${PREFIX}" \
     --build-prefix="${PWD}/local-build" \
     --with-ngs-sdk-prefix="${PREFIX}" \
     --with-xml2-prefix="${PREFIX}" \
+    --with-magic-prefix="${PREFIX}" \
+    --with-hdf5-prefix="${PREFIX}" \
+    LDFLAGS="${LDFLAGS}" \
     2>&1 | tee configure.log
 
 make 2>&1 | tee build.log
@@ -49,7 +56,7 @@ make 2>&1 | tee build.log
 # moving quite a lot of data (650+ MB) across the Internet.
 #env LDFLAGS="${LDFLAGS} -L${PREFIX}/lib" make test 2>&1 | tee test.log
 
-#make install
+make install
 
 
 #--------------------------------------------------------------------------
@@ -64,13 +71,16 @@ rm -rf "local-build"
     --build-prefix="${PWD}/local-build" \
     --with-ngs-sdk-prefix="${PREFIX}" \
     --with-xml2-prefix="${PREFIX}" \
+    --with-magic-prefix="${PREFIX}" \
+    --with-hdf5-prefix="${PREFIX}" \
     --with-ncbi-vdb-sources="${PWD}/../ncbi-vdb-${PKG_VERSION}" \
     --with-ncbi-vdb-build="${PWD}/../ncbi-vdb-${PKG_VERSION}/local-build" \
+    LDFLAGS="${LDFLAGS}" \
     2>&1 | tee configure.log
 
 make 2>&1 | tee build.log
 
-env LDFLAGS="${LDFLAGS} -L${PREFIX}/lib" make test 2>&1 | tee test.log
+make test 2>&1 | tee test.log
 
 make install
 
@@ -78,4 +88,7 @@ make install
 #--------------------------------------------------------------------------
 # miscellaneous build steps
 
-rm -f "${PREFIX}/lib64"
+# Clean up the install
+cd "${PREFIX}"
+rm -f lib64                 # don't need lib64 symlink
+rm -rf include lib/*.a*     # don't need development headers & libraries

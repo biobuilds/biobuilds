@@ -39,6 +39,21 @@
  	kfc      \
  	klib     \
  	kproc    \
+# Use conda-provided libmagic
+--- ncbi-vdb-2.5.6/setup/package.prl
++++ ncbi-vdb-2.5.6/setup/package.prl
+@@ -46,6 +46,11 @@ sub REQ { ( { name    => 'ngs-sdk',
+               include => 'hdf5.h',
+               lib     => 'libhdf5.a',
+             },
++            { name    => 'magic',
++              option  => 'with-magic-prefix',
++              origin  => 'E',
++              type    => 'LIO',
++            },
+             { name    => 'xml2',
+               option  => 'with-xml2-prefix',
+               origin  => 'E',
 # Use conda-provided bzip2 and zlib instead of the NCBI-provided ones; avoids
 # PIC-compatibility issues that prevents the NCBI-provided zlib from linking
 # correctly to the conda-provided libxml2.
