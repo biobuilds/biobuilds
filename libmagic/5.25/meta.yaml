@@ -1,0 +1,18 @@
+package:
+  name: libmagic
+  version: 5.25
+
+source:
+  fn: file-5.25.tar.gz
+  url: ftp://ftp.astron.com/pub/file/file-5.25.tar.gz
+  md5: "e6a972d4e10d9e76407a432f4a63cd4c"
+
+requirements:
+  build:
+    - autoconf-update
+
+about:
+  home: "http://www.darwinsys.com/file/"
+  license: BSD
+  license_file: COPYING
+  summary: "File type guesser (library and binary)"
