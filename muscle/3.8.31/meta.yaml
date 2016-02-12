@@ -1,0 +1,28 @@
+package:
+  name: muscle
+  version: "3.8.31"
+
+source:
+  fn: muscle-3.8.31.tar.gz
+  url:
+    - http://www.drive5.com/muscle/downloads3.8.31/muscle3.8.31_src.tar.gz
+    - http://download.lab7.io/sources/muscle-3.8.31.tar.gz
+  md5: f767f00fd15f0c5db944d41936779e10
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  files:
+    - kras.fa
+  commands:
+    - muscle -in kras.fa -out krsa.afa
+
+about:
+  home: "http://www.drive5.com/muscle/"
+  license: Public domain
+  summary: "High-performance multiple sequence alignment tool"
