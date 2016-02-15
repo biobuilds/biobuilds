@@ -1,0 +1,40 @@
+package:
+  name: bcftools
+  version: "1.2.0"
+
+requirements:
+  build:
+    - zlib
+    - htslib 1.2.*
+  run:
+    - zlib
+    - htslib 1.2.*
+
+source:
+  fn: bcftools-1.2.0.tar.gz
+  url:
+    - https://github.com/samtools/bcftools/archive/1.2.tar.gz
+    - http://download.lab7.io/sources/bcftools-1.2.0.tar.gz
+  md5: 87efbd0092b6e4828c17842c9ae57ec9
+  patches:
+    - makefile.patch
+    - plugins.patch
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+  script_env:
+    - BB_MAKE_JOBS
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+
+test:
+  commands:
+    - bcftools -h
+    - bcftools plugin -l
+
+about:
+  home: http://www.htslib.org/
+  license: MIT
+  license_file: LICENSE
+  summary: "Tools for handling BCF2/VCF/gVCF files and analyzing SNPs/small indels"

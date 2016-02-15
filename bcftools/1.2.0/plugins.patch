@@ -1,0 +1,58 @@
+--- Makefile
++++ Makefile
+@@ -59,6 +59,7 @@
+ bindir      = $(exec_prefix)/bin
+ mandir      = $(prefix)/share/man
+ man1dir     = $(mandir)/man1
++plugindir   = $(prefix)/share/bcftools/plugins
+ 
+ MKDIR_P = mkdir -p
+ INSTALL = install -p
+@@ -169,9 +170,10 @@
+ docs: doc/bcftools.1 doc/bcftools.html
+ 
+ install: $(PROG) doc/bcftools.1
+-	$(INSTALL_DIR) $(bindir) $(man1dir)
++	$(INSTALL_DIR) $(bindir) $(man1dir) $(plugindir)
+ 	$(INSTALL_PROGRAM) $(PROG) plot-vcfstats vcfutils.pl $(bindir)
+ 	$(INSTALL_DATA) doc/bcftools.1 $(man1dir)
++	$(INSTALL_PROGRAM) $(PLUGINS) $(plugindir)
+ 
+ clean: testclean clean-plugins
+ 	-rm -f gmon.out *.o *~ $(PROG) version.h plugins/*.so plugins/*.P
+--- vcfplugin.c
++++ vcfplugin.c
+@@ -41,6 +41,8 @@
+ #include "vcmp.h"
+ #include "filter.h"
+ 
++const static char* DEFAULT_PLUGIN_PATH = "@@prefix@@/share/bcftools/plugins";
++
+ typedef struct _plugin_t plugin_t;
+ 
+ /**
+@@ -150,12 +152,10 @@
+ {
+     if ( args->nplugin_paths!=-1 ) return;
+ 
+-    char *path = getenv("BCFTOOLS_PLUGINS");
+-    if ( path )
+-    {
++        /* When building for conda, use pre-defined path to find plugins */
+         args->nplugin_paths = 1;
+         args->plugin_paths  = (char**) malloc(sizeof(char*));
+-        char *ss = args->plugin_paths[0] = strdup(path);
++        char *ss = args->plugin_paths[0] = strdup(DEFAULT_PLUGIN_PATH);
+         while ( *ss )
+         {
+             if ( *ss==':' )
+@@ -167,9 +167,6 @@
+             }
+             ss++;
+         }
+-    }
+-    else
+-        args->nplugin_paths = 0;
+ }
+ 
+ static void *dlopen_plugin(args_t *args, const char *fname)
