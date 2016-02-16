@@ -11,7 +11,9 @@ requirements:
 
 source:
   fn: EMBOSS-6.5.7.tar.gz
-  url: ftp://emboss.open-bio.org/pub/EMBOSS/EMBOSS-6.5.7.tar.gz
+  url:
+    - ftp://emboss.open-bio.org/pub/EMBOSS/EMBOSS-6.5.7.tar.gz
+    - http://download.lab7.io/sources/EMBOSS-6.5.7.tar.gz
   md5: 6a2cb3f93d5e9415c74ab0f6b1ede5f0
 
 build:
