@@ -1,0 +1,31 @@
+package:
+  name: barracuda
+  version: "0.7.107d"
+
+requirements:
+  build:
+    - veclib-headers  # [ppc64le]
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: barracuda_0.7.107d.tar.gz
+  url: "http://downloads.sourceforge.net/project/seqbarracuda/Source%20Code/Version%200.7.0/barracuda_0.7.107d.tar.gz"
+  md5: "1f87c302dcdf02fd49d7577eb77f8522"
+  patches:
+    - makefile.patch
+    - ppc64le-support.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://seqbarracuda.sourceforge.net/index.html"
+  license: GPLv3
+  license_file: COPYING
+  summary: "GPU-accelerated implementation of the BWA short read aligner"

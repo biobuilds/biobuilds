@@ -1,0 +1,84 @@
+--- Makefile
++++ Makefile
+@@ -2,6 +2,10 @@
+ # Configuration for BarraCUDA project
+ #######################################################
+ 
++# Use bash so we can set the "pipefail" option; otherwise, make still succeeds
++# (i.e., returns 0) even when some commands (e.g., nvcc ... | sed ...) fail.
++SHELL=/bin/bash -e -o pipefail
++
+ #WBL 25 Aug 2015 Avoid need for LD_LIBRARY_PATH by using libcudart_static.a in place of libcudart.so
+ #WBL 28 Feb 2015 compile for Tesla K20 etc (sm_35)
+ 
+@@ -128,8 +132,8 @@
+ 
+ # Compiler-specific flags
+ NVCCFLAGS := #--ptxas-options=-v #additional information on kernels
+-CXXFLAGS  := $(CXXWARN_FLAGS)
+-CFLAGS    := $(CWARN_FLAGS)
++CXXFLAGS  := $(CXXWARN_FLAGS) $(CXXFLAGS_extra)
++CFLAGS    := $(CWARN_FLAGS) $(CFLAGS_extra)
+ 
+ # Common flags
+ COMMONFLAGS += $(INCLUDES) -DUNIX
+@@ -145,8 +149,8 @@
+ 	BINSUBDIR   := release
+ 	LIBSUFFIX   :=
+ 	NVCCFLAGS   += --compiler-options -fno-strict-aliasing --compiler-options -fno-inline -w
+-	CXXFLAGS    += -fno-strict-aliasing -O2 -w
+-	CFLAGS      += -fno-strict-aliasing -O2 -w
++	CXXFLAGS    += -fno-strict-aliasing -w
++	CFLAGS      += -fno-strict-aliasing -w
+ endif
+ 
+ # append optional arch/SM version flags (such as -arch sm_11)
+@@ -195,15 +199,11 @@
+ 	TARGETDIR := $(BINDIR)/$(BINSUBDIR)
+ #	TARGET    := $(TARGETDIR)/$(EXECUTABLE)
+ 	TARGET    := $(TARGETDIR)/barracuda
+-	LINKLINE  = $(LINK) -o $(TARGET) $(OBJS) $(LIB)
++	LINKLINE  = $(LINK) -o $(TARGET) $(OBJS) $(LDFLAGS) $(LIB)
+ endif
+ 
+-# check if verbose 
+-ifeq ($(verbose), 1)
+-	VERBOSE :=
+-else
+-	VERBOSE := @
+-endif
++# Force verbose makefile
++VERBOSE :=
+ 
+ ################################################################################
+ # Check for input flags and set compiler flags appropriately
+@@ -264,16 +264,16 @@
+ # Rules
+ ################################################################################
+ $(OBJDIR)/%.c.o : $(SRCDIR)%.c $(C_DEPS)
+-	$(VERBOSE)$(CC) $(CFLAGS) -M $< | sed 's|^.*.o:|$(OBJDIR)/$<.o:|' > $(OBJDIR)/$<.d
+-	$(VERBOSE)$(CC) $(CFLAGS) -o $@ -c $<
++	$(VERBOSE)$(CC) $(CPPFLAGS) $(CFLAGS) -M $< | sed 's|^.*.o:|$(OBJDIR)/$<.o:|' > $(OBJDIR)/$<.d
++	$(VERBOSE)$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
+ 
+ $(OBJDIR)/%.cpp.o : $(SRCDIR)%.cpp $(C_DEPS)
+ 	#$(VERBOSE)$(CXX) $(CXXFLAGS) -M $< | sed 's|^.*.o:|$(OBJDIR)/$<.o:|' > $(OBJDIR)/$<.d
+-	$(VERBOSE)$(CXX) $(CXXFLAGS) -o $@ -c $<
++	$(VERBOSE)$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ -c $<
+ 
+ $(OBJDIR)/%.cu.o : $(SRCDIR)%.cu $(CU_DEPS)
+-	$(VERBOSE)$(NVCC) $(NVCCFLAGS) $(SMVERSIONFLAGS) -M $< | sed 's|^.*.o :|$(OBJDIR)/$<.o :|' > $(OBJDIR)/$<.d
+-	$(VERBOSE)$(NVCC) $(NVCCFLAGS) $(SMVERSIONFLAGS) -o $@ -c $< 2>&1 | sed 's/(\([0-9]*\)):/:\1:/'
++	$(VERBOSE)$(NVCC) $(CPPFLAGS) $(NVCCFLAGS) $(SMVERSIONFLAGS) -M $< | sed 's|^.*.o :|$(OBJDIR)/$<.o :|' > $(OBJDIR)/$<.d
++	$(VERBOSE)$(NVCC) $(CPPFLAGS) $(NVCCFLAGS) $(SMVERSIONFLAGS) -o $@ -c $< 2>&1 | sed 's/(\([0-9]*\)):/:\1:/'
+ 
+ $(CUBINDIR)/%.cubin : $(SRCDIR)%.cu cubindirectory
+ 	$(VERBOSE)$(NVCC) $(CUBIN_ARCH_FLAG) $(NVCCFLAGS) $(SMVERSIONFLAGS) -o $@ -cubin $<
+@@ -311,7 +311,6 @@
+ all:$(TARGET)
+ $(TARGET): makedirectories $(OBJS) $(CUBINS) $(PTXBINS) Makefile
+ 	$(VERBOSE)$(LINKLINE)
+-	$(VERBOSE)echo "Done!"
+ 
+ cubindirectory:
+ 	$(VERBOSE)mkdir -p $(CUBINDIR)
