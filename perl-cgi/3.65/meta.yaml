@@ -1,0 +1,27 @@
+package:
+  name: perl-cgi
+  version: "3.65"
+
+source:
+  fn: CGI-3.65.tar.gz
+  url: 'http://www.cpan.org/authors/id/M/MA/MARKSTOS/CGI.pm-3.65.tar.gz'
+  md5: ca72eb908ce8a147831ed88d2bed8506
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+
+  run:
+    - perl
+
+test:
+  # Perl 'use' tests: relying on "run_test.pl" due to version differences
+  # between the top-level and sub- packages.
+
+about:
+  home: 'http://search.cpan.org/~markstos/CGI.pm-3.65/'
+  license: perl_5
+  summary: 'Module for processing and preparing HTTP requests and responses'

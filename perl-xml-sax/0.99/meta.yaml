@@ -1,0 +1,31 @@
+package:
+  name: perl-xml-sax
+  version: "0.99"
+
+source:
+  fn: XML-SAX-0.99.tar.gz
+  url: http://cpan.metacpan.org/authors/id/G/GR/GRANTM/XML-SAX-0.99.tar.gz
+  md5: 290f5375ae87fdebfdb5bc3854019f24
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-xml-namespacesupport
+    - perl-xml-sax-base
+
+  run:
+    - perl
+    - perl-xml-namespacesupport
+    - perl-xml-sax-base
+
+test:
+  # Perl 'use' tests: relying on "run_test.pl" due to version differences
+  # between the top-level and sub- packages.
+
+about:
+  home: http://metacpan.org/pod/XML-SAX
+  license: unknown
+  summary: 'Simple API for XML'

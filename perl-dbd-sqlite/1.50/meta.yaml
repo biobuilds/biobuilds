@@ -1,0 +1,34 @@
+package:
+  name: perl-dbd-sqlite
+  version: "1.50"
+
+source:
+  fn: DBD-SQLite-1.50.tar.gz
+  url: https://cpan.metacpan.org/authors/id/I/IS/ISHIGAKI/DBD-SQLite-1.50.tar.gz
+  md5: d56eebfb5f2a14be9413b025e7dca9fe
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-dbi
+
+  run:
+    - perl
+    - perl-dbi
+
+test:
+  # Perl 'use' tests
+  imports:
+    - DBD::SQLite
+    - DBD::SQLite::Constants
+    - DBD::SQLite::VirtualTable
+    - DBD::SQLite::VirtualTable::FileContent
+    - DBD::SQLite::VirtualTable::PerlData
+
+about:
+  home: http://metacpan.org/pod/DBD-SQLite
+  license: perl_5
+  summary: 'Self Contained SQLite RDBMS in a DBI Driver'

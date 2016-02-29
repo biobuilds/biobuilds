@@ -1,0 +1,28 @@
+package:
+  name: perl-text-soundex
+  version: "3.05"
+
+source:
+  fn: Text-Soundex-3.05.tar.gz
+  url: 'http://www.cpan.org/authors/id/R/RJ/RJBS/Text-Soundex-3.05.tar.gz'
+  md5: cb40ded7a5d27aa3a411d274d6ec18ae
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+
+  run:
+    - perl
+
+test:
+  # Perl 'use' tests
+  imports:
+    - Text::Soundex
+
+about:
+  home: http://metacpan.org/pod/Text-Soundex
+  license: unknown
+  summary: 'Implementation of the soundex algorithm.'

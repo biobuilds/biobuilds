@@ -1,0 +1,31 @@
+package:
+  name: perl-dbi
+  version: "1.634"
+
+source:
+  fn: DBI-1.634.tar.gz
+  url: https://cpan.metacpan.org/authors/id/T/TI/TIMB/DBI-1.634.tar.gz
+  md5: 4ad15a9c2cc9b68e3fe1f5cadf9cdb30
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-mldbm
+    - perl-sql-statement
+
+  run:
+    - perl
+    - perl-mldbm
+    - perl-sql-statement
+
+test:
+  # Perl 'use' tests: relying on "run_test.pl" due to version differences
+  # between the top-level and sub- packages.
+
+about:
+  home: http://dbi.perl.org/
+  license: perl_5
+  summary: 'Database independent interface for Perl'
