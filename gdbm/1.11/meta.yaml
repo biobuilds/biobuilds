@@ -1,0 +1,18 @@
+package:
+  name: gdbm
+  version: "1.11"
+
+source:
+  fn: gdbm-1.11.tar.gz
+  url: ftp://ftp.gnu.org/gnu/gdbm/gdbm-1.11.tar.gz
+  md5: 72c832680cf0999caedbe5b265c8c1bd
+
+build:
+  number: 0
+  script_env:
+    - BB_MAKE_JOBS
+
+about:
+  home: http://www.gnu.org.ua/software/gdbm/
+  license: GPLv3
+  summary: library of database functions

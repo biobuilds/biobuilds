@@ -1,0 +1,19 @@
+package:
+  name: db
+  version: "6.1.26"
+
+source:
+  fn: db-6.1.26.tar.gz
+  url: 'http://download.oracle.com/berkeley-db/db-6.1.26.tar.gz'
+  md5: 9525aa57a282d49e5d1bf5e48ffa8a56
+
+build:
+  number: 0
+  script_env:
+    - BB_MAKE_JOBS
+
+about:
+  home: http://www.oracle.com/us/products/database/berkeley-db/index.html
+  license: AGPLv3
+  license_family: AGPL
+  summary: Databases for Humans
