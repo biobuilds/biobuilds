@@ -8,7 +8,7 @@ requirements:
     - autoconf-update
   run:
     - libgcc >=4.8  # [not ppc64le]
-    - graphviz
+    - graphviz 2.38.0 bb0
     - picard
 
 source:
@@ -20,7 +20,7 @@ source:
 
 build:
   skip: True  # [osx]
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS

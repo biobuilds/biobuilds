@@ -10,7 +10,7 @@ source:
      - gvconfig_libdir.patch
 
 build:
-  number: 0
+  string: "bb0"
   binary_relocation: true
   script_env:
     - BB_ARCH_FLAGS
