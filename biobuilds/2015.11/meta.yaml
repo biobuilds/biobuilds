@@ -3,7 +3,7 @@ package:
   version: 2015.11
 
 build:
-  number: 2
+  number: 3
 
 requirements:
   run:
@@ -29,7 +29,7 @@ requirements:
     - fasta 36.3.8b 0
     - fastqc 0.11.4 0
     - gnuplot 5.0.0 0
-    - graphviz 2.38.0 0
+    - graphviz 2.38.0 bb0
     - hmmer 3.1b2 0
     - htseq 0.6.1 np19py27_0
     - htslib 1.2.1 0
@@ -94,7 +94,7 @@ requirements:
     - barracuda 0.7.107b 0    # [not osx]
     - soap3-dp r177 1         # [not osx]
     # Applications using Linux-specific system calls
-    - allpathslg 52488 0      # [linux]
+    - allpathslg 52488 1      # [linux]
     - isaac 15.04.01 0        # [linux]
 
 about:
