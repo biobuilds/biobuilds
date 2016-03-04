@@ -6,9 +6,14 @@ source:
   fn: libgd-2.1.0.tar.gz
   url: http://download.lab7.io/sources/libgd-2.1.0.tar.gz
   md5: 20a8eeae51cef7d7850679b1e53ce2b5
+  patches:
+    # Fixes NULL pointer deference that could be used to trigger a DoS-attack.
+    # Seems to be mostly a PHP issue but better to be paranoid than pwned; for
+    # details, see https://access.redhat.com/security/cve/cve-2014-2497.
+    - cve-2014-2497.patch
 
 build:
-  number: 0
+  number: 1
   binary_relocation: true
   script_env:
     - BB_ARCH_FLAGS
