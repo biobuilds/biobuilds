@@ -10,7 +10,7 @@ source:
      - gvconfig_libdir.patch
 
 build:
-  string: "bb0"
+  string: "bb1"
   binary_relocation: true
   script_env:
     - BB_ARCH_FLAGS
@@ -18,10 +18,14 @@ build:
     - BB_MAKE_JOBS
 
 requirements:
+  # NOTE: Not specifying the libgd build as there's a bug in conda that
+  # prevents it from correctly and recursively install all the libgd
+  # dependencies when we run "conda install gnuplot=5.0.0=1".
+  # For details, see: https://github.com/conda/conda/issues/2066
   build:
-    - libgd
+    - libgd 2.1.0
   run:
-    - libgd
+    - libgd 2.1.0
 
 test:
   files:

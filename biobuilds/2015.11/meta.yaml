@@ -3,7 +3,7 @@ package:
   version: 2015.11
 
 build:
-  number: 3
+  number: 4
 
 requirements:
   run:
@@ -25,11 +25,11 @@ requirements:
     - bwa 0.7.12 0
     - clustalw 2.1 0
     - cufflinks 2.2.1 py27_2
-    - emboss 6.5.7 0
+    - emboss 6.5.7 1
     - fasta 36.3.8b 0
     - fastqc 0.11.4 0
-    - gnuplot 5.0.0 0
-    - graphviz 2.38.0 bb0
+    - gnuplot 5.0.0 1
+    - graphviz 2.38.0 bb1
     - hmmer 3.1b2 0
     - htseq 0.6.1 np19py27_0
     - htslib 1.2.1 0
@@ -94,7 +94,7 @@ requirements:
     - barracuda 0.7.107b 0    # [not osx]
     - soap3-dp r177 1         # [not osx]
     # Applications using Linux-specific system calls
-    - allpathslg 52488 1      # [linux]
+    - allpathslg 52488 2      # [linux]
     - isaac 15.04.01 0        # [linux]
 
 about:

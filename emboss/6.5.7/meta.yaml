@@ -3,11 +3,15 @@ package:
   version: "6.5.7"
 
 requirements:
+  # NOTE: Not specifying the libgd build as there's a bug in conda that
+  # prevents it from correctly and recursively install all the libgd
+  # dependencies when we run "conda install gnuplot=5.0.0=1".
+  # For details, see: https://github.com/conda/conda/issues/2066
   build:
     - autoconf-update
-    - libgd
+    - libgd 2.1.0
   run:
-    - libgd
+    - libgd 2.1.0
 
 source:
   fn: EMBOSS-6.5.7.tar.gz
@@ -17,7 +21,7 @@ source:
   md5: 6a2cb3f93d5e9415c74ab0f6b1ede5f0
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
