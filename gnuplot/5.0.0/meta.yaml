@@ -8,19 +8,23 @@ source:
   md5: 23628e321ff2428d3f171e1cd4245486
 
 requirements:
+  # NOTE: Not specifying the libgd build as there's a bug in conda that
+  # prevents it from correctly and recursively install all the libgd
+  # dependencies when we run "conda install gnuplot=5.0.0=1".
+  # For details, see: https://github.com/conda/conda/issues/2066
   build:
     - readline
     - ncurses
-    - libgd
+    - libgd 2.1.0
 #    - cairo    # [linux]
   run:
     - readline
     - ncurses
-    - libgd
+    - libgd 2.1.0
 #    - cairo    # [linux]
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
