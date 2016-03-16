@@ -1,0 +1,138 @@
+--- build/test-index.pl
++++ build/test-index.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/usr/bin/env perl
+ 
+ # 
+ # Generate html index page for T-Coffee integration tests.
+--- build/uploader.pl
++++ build/uploader.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/usr/bin/env perl
+ use File::stat;
+ 
+ use strict;
+--- lib/perl/lib/filters/RNAplfold2tclib.pl
++++ lib/perl/lib/filters/RNAplfold2tclib.pl
+@@ -1,5 +1,5 @@
+-#!/usr/bin/perl -w
+-#!/usr/bin/env perl
++#!/usr/bin/env perl -w
++
+ # ----------------------------------------------------------------------
+ #
+ # Copyright (C) 2007 Andreas Wilm <andreas.wilm@ucd.ie>
+--- lib/perl/lib/filters/blast_aln2fasta_aln.pl
++++ lib/perl/lib/filters/blast_aln2fasta_aln.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/usr/bin/env perl
+ #
+ #
+ #date : 12/10/
+--- lib/perl/lib/filters/blast_io2fasta_aln.pl
++++ lib/perl/lib/filters/blast_io2fasta_aln.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/usr/bin/env perl
+ #
+ #
+ #date : 12/10/
+--- lib/perl/lib/filters/clean_tree.pl
++++ lib/perl/lib/filters/clean_tree.pl
+@@ -1,4 +1,4 @@
+-#! /usr/bin/perl
++#!/usr/bin/env perl
+ $version="5.09";
+ $pg="clean_tree";
+ 
+--- lib/perl/lib/filters/cog2fasta.pl
++++ lib/perl/lib/filters/cog2fasta.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/usr/bin/env perl
+ $whog="whog.txt";
+ $myva="myva.txt";
+ 
+--- lib/perl/lib/filters/coglist2cogfile.pl
++++ lib/perl/lib/filters/coglist2cogfile.pl
+@@ -1,4 +1,4 @@
+-#! /usr/bin/perl
++#!/usr/bin/env perl
+ $version="5.09";
+ 
+ if ($#ARGV==-1)
+--- lib/perl/lib/filters/coglist2conc.pl
++++ lib/perl/lib/filters/coglist2conc.pl
+@@ -1,4 +1,4 @@
+-#! /usr/bin/perl
++#!/usr/bin/env perl
+ $version="1.00";
+ 
+ # Read   the command line
+--- lib/perl/lib/filters/fasta_seq2consan_aln.pl
++++ lib/perl/lib/filters/fasta_seq2consan_aln.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl -w
++#!/usr/bin/env perl -w
+ 
+ 
+ # Andreas Wilm <andreas.wilm@ucd.ie>
+--- lib/perl/lib/filters/gibbs2tc_lib.pl
++++ lib/perl/lib/filters/gibbs2tc_lib.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/usr/bin/env perl
+ 
+ 
+ my $PROBTRESH = 0.3;# base pairs below this prob threshold will be ignored
+--- lib/perl/lib/filters/webblast.pl
++++ lib/perl/lib/filters/webblast.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl
++#!/usr/bin/env perl
+ #
+ #
+ #date : 12/10/
+--- lib/perl/lib/scripts/analyse_genome.pl
++++ lib/perl/lib/scripts/analyse_genome.pl
+@@ -1,4 +1,4 @@
+-#! /usr/bin/perl
++#!/usr/bin/env perl
+ 
+ 
+ if ( -e $ARGV[0])
+--- lib/perl/lib/scripts/msa2bootstrap.pl
++++ lib/perl/lib/scripts/msa2bootstrap.pl
+@@ -1,4 +1,4 @@
+-#! /usr/bin/perl
++#!/usr/bin/env perl
+ $version="1.00";
+ $rseed= int(rand(100000))+1;
+ # Read   the command line
+--- lib/perl/lib/scripts/multi_thread.pl
++++ lib/perl/lib/scripts/multi_thread.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl -w
++#!/usr/bin/env perl -w
+ #FILE:    pprun.pl
+ #AUTHOR:  Karsten Suhre
+ #DATE:    Thu Feb 9 13:56:40 CET 2006
+--- lib/perl/lib/scripts/seq2frag.pl
++++ lib/perl/lib/scripts/seq2frag.pl
+@@ -1,4 +1,4 @@
+-#! /usr/bin/perl
++#!/usr/bin/env perl
+ 
+ 
+ $len=100;
+--- lib/perl/lib/webservices/blastpgp.pl
++++ lib/perl/lib/webservices/blastpgp.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/perl 
++#!/usr/bin/env perl
+ 
+ # ======================================================================
+ # WSBlastpgp Perl client.

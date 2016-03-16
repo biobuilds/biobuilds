@@ -1,0 +1,33 @@
+package:
+  name: t-coffee
+  version: "11.00.00_8cbe486"
+
+requirements:
+  build:
+    - perl
+    - gcc     # [osx]
+  run:
+    - libgcc  # [osx]
+
+source:
+  fn: "t-coffee-11.00.00_8cbe486.zip"
+  url: "https://github.com/cbcrg/tcoffee/archive/8cbe486.zip"
+  md5: 8514d7520f041c772c58eea66db0e194
+  patches:
+    - use-env-perl.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - t_coffee -version
+
+about:
+  home: "http://www.tcoffee.org/Projects/tcoffee/"
+  license: GPLv2
+  summary: "Multiple sequence alignment package for DNA, RNA, and protein sequences"
