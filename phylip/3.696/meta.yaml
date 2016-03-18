@@ -1,0 +1,44 @@
+package:
+  name: phylip
+  version: "3.696"
+
+requirements:
+  build: []
+  run: []
+
+source:
+  fn: phylip-3.696.tar.gz
+  url: "http://evolution.gs.washington.edu/phylip/download/phylip-3.696.tar.gz"
+  md5: dbe5abc26f6089ead3dba41c2db526ee
+  patches:
+    - makefile.patch
+    - font-paths.patch
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  # Test files were copied from the Debian "jessie" phylip package; refer to
+  # "tests/Makefile" for further attribution details.
+  files:
+    - tests/Makefile
+    - tests/distance.data
+    - tests/dna.data
+    - tests/dnaml.ok
+    - tests/dnapars.ok
+    - tests/neighbor.ok
+    - tests/neighbor.version-3.5.x
+    - tests/prot.data
+    - tests/tree.data
+  commands:
+    - make test
+
+about:
+  home: "http://evolution.genetics.washington.edu/phylip/"
+  license: BSD
+  summary: "Package of programs for inferring phylogenies"
