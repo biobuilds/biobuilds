@@ -1,0 +1,45 @@
+package:
+  name: sailfish
+  version: "0.9.0"
+
+requirements:
+  build:
+    - gcc >=4.8.2     # [not ppc64le]
+    - boost ==1.54
+    - zlib
+  run:
+    - libgcc >=4.8.2  # [not ppc64le]
+    - boost ==1.54
+    - zlib
+
+source:
+  # Using this "combined" tarball to avoid having to re-download source
+  # archives for 3rd-party support libraries (e.g., Intel TBB, libgff, etc.)
+  # every time we run "conda build"; saves a lot of network traffic when
+  # developing/debugging this conda recipe.
+  fn: sailfish-0.9.0-combined.tar.bz2
+  url: http://download.lab7.io/sources/sailfish-0.9.0-combined.tar.bz2
+  md5: bfe1dc082dcafe903b21c59a22fb99d5
+  patches:
+    - skip-downloads.patch
+    - build-config.patch
+    - test-fixes.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  files:
+    # Test data from upstream sources; duplicating it in this recipe so we can
+    # run "conda build --test" without having to unpack the source tarball.
+    - sample_data.tgz
+
+about:
+  home: "http://www.cs.cmu.edu/~ckingsf/software/sailfish/"
+  license: GPLv3
+  license_file: LICENSE
+  summary: "Fast, accurate expectation-maximization algorithm for quantifying isoform abundance"
