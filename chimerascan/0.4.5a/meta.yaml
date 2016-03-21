@@ -1,0 +1,43 @@
+package:
+  name: chimerascan
+  version: 0.4.5a
+
+source:
+  fn: chimerascan-0.4.5a.tar.gz
+  url: 
+    - "https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/chimerascan/chimerascan-0.4.5a.tar.gz"
+    - "http://download.lab7.io/sources/chimerascan-0.4.5a.tar.gz"
+  md5:
+
+requirements:
+  # This release of chimerascan includes its own version of the pysam package
+  # instead of the one already available through pypi; therefore, we need
+  # "zlib" instead of "pysam" as a dependency.
+  build:
+    - python
+    - zlib
+    - cython
+  run:
+    - python
+    - zlib
+    - bowtie
+
+build:
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  imports:
+    - chimerascan
+    - chimerascan.pysam
+  commands:
+    - chimerascan_index.py -h
+    - chimerascan_run.py -h
+
+about:
+  home: "https://code.google.com/archive/p/chimerascan/"
+  license: GPLv3
+  license_file: COPYING
+  summary: "Detection of chimeric transcripts in high-throughput sequencing data"
