@@ -1,0 +1,83 @@
+# Modify makefile to make use of "system" boost and htslib
+--- Makefile
++++ Makefile
+@@ -1,16 +1,20 @@
+ DEBUG ?= 0
+ PARALLEL ?= 0
+ STATIC ?= 0
++PREFIX ?= /usr/local
+ 
+ # Submodules
+ PWD = $(shell pwd)
+ SEQTK_ROOT ?= ${PWD}/src/htslib/
+ BOOST_ROOT ?= ${PWD}/src/modular-boost
+ 
++# Linker option for libhts, which can be overriden from the make command line
++LIBHTS = -lhts
++
+ # Flags
+ CXX=g++
+-CXXFLAGS += -isystem ${SEQTK_ROOT} -isystem ${BOOST_ROOT} -pedantic -W -Wall -Wno-unknown-pragmas
+-LDFLAGS += -L${SEQTK_ROOT} -L${BOOST_ROOT}/stage/lib -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time 
++CXXFLAGS += -pedantic -W -Wall -Wno-unknown-pragmas
++LDFLAGS += -lboost_iostreams -lboost_filesystem -lboost_system -lboost_program_options -lboost_date_time
+ 
+ # Additional flags for release/debug
+ ifeq (${PARALLEL}, 1)
+@@ -21,9 +25,9 @@
+ 
+ # Additional flags for release/debug
+ ifeq (${STATIC}, 1)
+-	LDFLAGS += -static -static-libgcc -pthread -lhts -lz
++	LDFLAGS += -static -static-libgcc -pthread $(LIBHTS) -lz
+ else
+-	LDFLAGS += -lhts -lz -Wl,-rpath,${SEQTK_ROOT},-rpath,${BOOST_ROOT}/stage/lib
++	LDFLAGS += $(LIBHTS) -lz
+ endif
+ ifeq (${DEBUG}, 1)
+ 	CXXFLAGS += -g -O0 -fno-inline -DDEBUG
+@@ -41,7 +45,7 @@
+ DELLYSOURCES = $(wildcard src/*.h) $(wildcard src/*.cpp)
+ 
+ # Targets
+-TARGETS = .htslib .boost src/delly src/extract src/cov src/iover src/stats
++TARGETS = src/delly src/delly-extract src/delly-cov src/delly-iover src/delly-stats
+ 
+ all:   	$(TARGETS)
+ 
+@@ -51,22 +55,24 @@
+ .boost: $(BOOSTSOURCES)
+ 	cd src/modular-boost && ./bootstrap.sh --prefix=${PWD}/src/modular-boost --without-icu --with-libraries=iostreams,filesystem,system,program_options,date_time && ./b2 && ./b2 headers && cd ../../ && touch .boost
+ 
+-src/delly: .htslib .boost $(DELLYSOURCES)
++src/delly: $(DELLYSOURCES)
+ 	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
+ 
+-src/extract: .htslib .boost $(DELLYSOURCES)
+-	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
++src/delly-extract: $(DELLYSOURCES)
++	$(CXX) $(CXXFLAGS) $(subst delly-,,$@).cpp -o $@ $(LDFLAGS)
+ 
+-src/cov: .htslib .boost $(DELLYSOURCES)
+-	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
++src/delly-cov: $(DELLYSOURCES)
++	$(CXX) $(CXXFLAGS) $(subst delly-,,$@).cpp -o $@ $(LDFLAGS)
+ 
+-src/iover: .htslib .boost $(DELLYSOURCES)
+-	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
++src/delly-iover: $(DELLYSOURCES)
++	$(CXX) $(CXXFLAGS) $(subst delly-,,$@).cpp -o $@ $(LDFLAGS)
+ 
+-src/stats: .htslib .boost $(DELLYSOURCES)
+-	$(CXX) $(CXXFLAGS) $@.cpp -o $@ $(LDFLAGS)
++src/delly-stats: $(DELLYSOURCES)
++	$(CXX) $(CXXFLAGS) $(subst delly-,,$@).cpp -o $@ $(LDFLAGS)
+ 
+ clean:
+-	cd src/htslib && make clean
+-	cd src/modular-boost && ./b2 --clean-all
+ 	rm -f $(TARGETS) $(TARGETS:=.o) .htslib .boost
++
++install: $(TARGETS)
++	install -d $(PREFIX)/bin
++	install $(TARGETS) $(PREFIX)/bin
