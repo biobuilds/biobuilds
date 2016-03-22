@@ -1,0 +1,22 @@
+# For OS X, we must explicilty link to libhts.dylib for *everything*, or the
+# plugin link steps will fail with multiple "undefined symbol" errors.
+--- Makefile
++++ Makefile
+@@ -38,7 +38,7 @@
+ CPPFLAGS =
+ CFLAGS   += -Wall -Wc++-compat
+ LDFLAGS  ?=
+-LIBS     =
++LIBS     = -lhts
+ 
+ OBJS     = main.o vcfindex.o tabix.o \
+            vcfstats.o vcfisec.o vcfmerge.o vcfquery.o vcffilter.o filter.o vcfsom.o \
+@@ -180,7 +180,7 @@
+ 	$(CC) $(LDFLAGS) -o $@ $^ -lm $(LIBS)
+ 
+ bcftools: $(OBJS)
+-	$(CC) -rdynamic $(LDFLAGS) -o $@ $(OBJS) $(HTSLIB) $(LDFLAGS) -lpthread -lz -lm -ldl $(GSL_LIBS) $(LIBS)
++	$(CC) -Wl,-export_dynamic $(LDFLAGS) -o $@ $(OBJS) $(LDFLAGS) -lpthread -lz -lm -ldl $(GSL_LIBS) $(LIBS)
+ 
+ doc/bcftools.1: doc/bcftools.txt
+ 	cd doc && a2x -adate="$(DOC_DATE)" -aversion=$(DOC_VERSION) --doctype manpage --format manpage bcftools.txt

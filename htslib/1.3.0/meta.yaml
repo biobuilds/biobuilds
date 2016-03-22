@@ -1,0 +1,34 @@
+package:
+  name: htslib
+  # Added ".0" minor number so 1.3.x updates don't break conda versioning
+  version: "1.3.0"
+
+requirements:
+  build:
+    - zlib
+    - curl 7.45.0
+#    - gcc     # [linux-64]
+  run:
+    - zlib
+    - curl 7.45.0
+#    - libgcc  # [linux-64]
+
+source:
+  fn: htslib-1.3.0.tar.bz2
+  url:
+    - https://github.com/samtools/htslib/releases/download/1.3/htslib-1.3.tar.bz2
+    - http://download.lab7.io/sources/htslib-1.3.0.tar.bz2
+  md5: 39d475730a66401e4d45398c95c414f7
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: http://www.htslib.org/
+  license: MIT
+  license_file: LICENSE
+  summary: "unified library for accessing common file formats used for high-throughput sequencing data"

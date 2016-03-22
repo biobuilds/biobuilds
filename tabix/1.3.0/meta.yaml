@@ -1,0 +1,13 @@
+package:
+  name: tabix
+  # Added ".0" minor number so 1.3.x updates don't break conda versioning
+  version: "1.3.0"
+
+requirements:
+  run:
+    - htslib ==1.3.0
+
+about:
+  home: http://www.htslib.org/doc/tabix.html
+  license: MIT
+  summary: "Generic indexer for tab-delimited genome position files"
