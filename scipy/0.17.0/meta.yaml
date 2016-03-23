@@ -1,0 +1,33 @@
+package:
+  name: scipy
+  version: 0.17.0
+
+source:
+  fn: scipy-0.17.0.tar.gz
+  url:
+    - https://github.com/scipy/scipy/releases/download/v0.17.0/scipy-0.17.0.tar.gz
+  md5: 5ff2971e1ce90e762c59d2cd84837224
+
+build:
+  skip: True  [not ppc64le]
+  number: 0
+
+requirements:
+  build:
+    - python
+    - numpy x.x
+    - openblas
+  run:
+    - python
+    - numpy x.x
+    - openblas
+
+test:
+  requires:
+    - nose
+
+about:
+  home: "http://www.scipy.org/"
+  license: BSD
+  license_file: LICENSE.txt
+  summary: "Scientific Computing Library for Python"
