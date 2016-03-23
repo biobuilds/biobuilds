@@ -1,0 +1,11 @@
+--- setup.py
++++ setup.py
+@@ -43,7 +43,7 @@
+ #         pysam.
+ # external: use shared libhts.so compiled outside of
+ #           pysam
+-HTSLIB_MODE = "separate"
++HTSLIB_MODE = "external"
+ HTSLIB_LIBRARY_DIR = os.environ.get('HTSLIB_LIBRARY_DIR', None)
+ HTSLIB_INCLUDE_DIR = os.environ.get('HTSLIB_INCLUDE_DIR', None)
+ 

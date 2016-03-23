@@ -1,0 +1,34 @@
+package:
+  name: pysam
+  version: 0.8.4
+
+source:
+  fn: pysam-0.8.4.tar.gz
+  url: https://pypi.python.org/packages/source/p/pysam/pysam-0.8.4.tar.gz
+  md5: 1357038e50e49b79ba02868ac2dbe2c1
+  patches:
+    - external-htslib.patch
+
+requirements:
+  build:
+    - python
+    - htslib >=1.2.1
+    - cython
+  run:
+    - python
+    - htslib >=1.2.1
+
+build:
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+
+test:
+  imports:
+    - pysam
+
+about:
+  home: "https://github.com/pysam-developers/pysam"
+  license: MIT
+  license_file: COPYING
+  summary: "Python module for reading and manipulating samfiles"
