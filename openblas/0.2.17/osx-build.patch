@@ -1,0 +1,13 @@
+--- Makefile.system
++++ Makefile.system
+@@ -218,6 +218,10 @@
+ 
+ ifeq ($(OSNAME), Darwin)
+ export MACOSX_DEPLOYMENT_TARGET=10.6
++ifeq ($(ARCH), x86_64)
++CCOMMON_OPT += -arch x86_64 -Wa,-q
++FCOMMON_OPT += -arch x86_64 -Wa,-q
++endif
+ MD5SUM = md5 -r
+ endif
+ 
