@@ -1,0 +1,28 @@
+package:
+  name: "star-fusion"
+  version: "0.7.0"
+
+source:
+  fn: STAR-Fusion_v0.7.0_FULL.tar.gz
+  url:
+    - https://github.com/STAR-Fusion/STAR-Fusion/releases/download/v0.7.0/STAR-Fusion_v0.7.0_FULL.tar.gz
+    - http://download.lab7.io/sources/STAR-Fusion_v0.7.0_FULL.tar.gz
+  md5: 201fab5605cb06936d96633613fe6b27
+  patches:
+    - path-munge.patch
+
+build:
+  number: 0
+
+requirements:
+  run:
+    - perl
+    - perl-set-intervaltree
+    - perl-uri
+    - star >=2.5.0a
+
+about:
+  home: "https://github.com/STAR-Fusion/STAR-Fusion"
+  license: BSD
+  license_file: LICENSE
+  summary: "Tool for identifying candidate fusion transcripts supported by Illumina reads"

@@ -1,0 +1,28 @@
+package:
+  name: perl-set-intervaltree
+  version: "0.10"
+
+source:
+  fn: Set-IntervalTree-0.10.tar.gz
+  url: http://cpan.metacpan.org/authors/id/B/BE/BENBOOTH/Set-IntervalTree-0.10.tar.gz
+  md5: 42efe9369f1b30e7fd04e10c07226b06
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+
+  run:
+    - perl
+
+test:
+  # Perl 'use' tests
+  imports:
+    - Set::IntervalTree
+
+about:
+  home: http://metacpan.org/pod/Set-IntervalTree
+  license: unknown
+  summary: 'Perform range-based lookups on sets of ranges.'
