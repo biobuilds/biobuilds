@@ -1,0 +1,11 @@
+--- source/Makefile
++++ source/Makefile
+@@ -18,7 +18,7 @@
+ LDFLAGS_Mac_static :=-pthread -lz -static-libgcc htslib/libhts.a
+ LDFLAGS_gdb := $(LDFLAGS_shared)
+ 
+-COMPTIMEPLACE := -D'COMPILATION_TIME_PLACE="$(shell echo `date` $(HOSTNAME):`pwd`)"'
++COMPTIMEPLACE := -D'COMPILATION_TIME_PLACE="biobuilds-2016.04"'
+ 
+ CXXFLAGS_common := -pipe -std=c++11 -Wall -Wextra -fopenmp $(COMPTIMEPLACE)
+ CXXFLAGS_main := -O3 $(CXXFLAGS_common)

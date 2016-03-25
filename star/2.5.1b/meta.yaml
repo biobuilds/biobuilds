@@ -1,0 +1,40 @@
+package:
+  name: star
+  version: "2.5.1b"
+
+requirements:
+  build:
+    - gcc >=4.7     # [not ppc64le]
+    - htslib
+    - zlib
+  run:
+    - libgcc >=4.7  # [not ppc64le]
+    - htslib
+    - zlib
+
+source:
+  fn: star-2.5.1b.tar.gz
+  url:
+    - https://github.com/alexdobin/STAR/archive/2.5.1b.tar.gz
+  md5: de7b99f7f136982fd764f72c077e43f1
+  patches:
+    - compile-id.patch
+    - local-htslib.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - STAR --help
+    - STARlong --help
+
+about:
+  home: "https://github.com/alexdobin/STAR"
+  license: GPLv3
+  license_file: LICENSE
+  summary: "Ultrafast, universal RNA-seq aligner"
