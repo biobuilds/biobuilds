@@ -1,0 +1,43 @@
+package:
+  name: breakdancer
+  version: "1.4.5"
+
+source:
+  fn: breakdancer-1.4.5.tar.gz
+  url:
+    - https://github.com/genome/breakdancer/archive/v1.4.5.tar.gz
+    - http://download.lab7.io/sources/breakdancer-1.4.5.tar.gz
+  md5: 3a3fcb3731b0d9e0573c528bdcaeb18b
+  patches:
+    - missing-header.patch
+    # Use "local" (i.e., BioBuilds-provided) versions of boost and
+    # samtools, instead of re-building them from source
+    - use-local-libs.patch
+    # Modify expected test results to overlook differences in NaN signs
+    - tweak-test-data.patch   # [ppc64le or osx]
+
+requirements:
+  build:
+    - gcc     # [osx]
+    - perl
+    - boost 1.54.0
+    - samtools 0.1.19
+  run:
+    - libgcc  # [osx]
+    - perl
+    - boost 1.54.0
+    - perl-statistics-descriptive
+    - perl-math-cdf
+    - perl-gdgraph-histogram
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "https://github.com/genome/breakdancer"
+  license: GPLv3
+  summary: "Package that provides genome-wide detection of structural variants from NGS paired-end reads"

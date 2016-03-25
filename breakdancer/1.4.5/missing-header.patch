@@ -1,0 +1,17 @@
+commit eb5cd52bb22ee78e08d9848f1d9a222d43b11167
+Author: Dave Larson <dlarson@genome.wustl.edu>
+Date:   Wed Jun 10 12:40:13 2015 -0500
+
+need to include std::string or we get a compile error
+
+--- src/lib/common/ReadFlags.hpp
++++ src/lib/common/ReadFlags.hpp
+@@ -4,6 +4,7 @@
+ 
+ #include <boost/array.hpp>
+ #include <cassert>
++#include <string>
+ 
+ enum strand_e {
+     FWD = 0,
+

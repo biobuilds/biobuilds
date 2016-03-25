@@ -1,0 +1,82 @@
+--- CMakeLists.txt
++++ CMakeLists.txt
+@@ -56,22 +56,28 @@
+ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CXX11_FLAGS}")
+ 
+ ###########################################################################
+-# Build dependencies (samtools and boost)
++# Use provided libraries instead of rebuilding from source
+ add_custom_target(deps ALL)
+ 
+-set(SAMTOOLS_URL ${CMAKE_SOURCE_DIR}/vendor/samtools-0.1.19.tar.gz)
+-set(BOOST_URL ${CMAKE_SOURCE_DIR}/vendor/boost-1.54-breakdancer.tar.gz)
++# Boost
++set(Boost_USE_STATIC_LIBS      OFF)
++set(Boost_USE_STATIC_RUNTIME   OFF)
++set(Boost_USE_MULTITHREADED    ON)
+ set(REQUIRED_BOOST_LIBS filesystem program_options serialization system chrono regex)
+-
+-build_boost(${BOOST_URL} ${CMAKE_BINARY_DIR}/vendor/boost ${REQUIRED_BOOST_LIBS})
++find_package(Boost 1.54.0 COMPONENTS ${REQUIRED_BOOST_LIBS})
+ include_directories(${Boost_INCLUDE_DIRS})
+ 
+-build_samtools(${SAMTOOLS_URL} ${CMAKE_BINARY_DIR}/vendor/samtools)
+-include_directories(${Samtools_INCLUDE_DIRS})
++# samtools
++find_package(Samtools)
++include_directories(${Samtools_INCLUDE_DIR})
+ 
+ # make sure to pick up headers from library dirs
+ include_directories("src/lib")
+ 
++# make sure we include "conda build" paths for  headers and libraries
++include_directories(${CMAKE_INSTALL_PREFIX}/include)
++link_directories(${CMAKE_INSTALL_PREFIX}/lib)
++
+ ###########################################################################
+ ## Main project
+ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+--- build-common/cmake/FindSamtools.cmake
++++ build-common/cmake/FindSamtools.cmake
+@@ -6,17 +6,25 @@
+ #  Samtools_LIBRARIES - link these to use Samtools
+ 
+ set(SAMTOOLS_SEARCH_DIRS
+-    ${SAMTOOLS_SEARCH_DIRS}
+     $ENV{SAMTOOLS_ROOT}
+-    /gsc/pkg/bio/samtools
+-    /usr
++    ${CMAKE_INSTALL_PREFIX}
+ )
+ 
+ set(_samtools_ver_path "samtools-${Samtools_FIND_VERSION}")
+ include(LibFindMacros)
+ 
+-# Dependencies
+-libfind_package(Samtools ZLIB)
++# Dependencies for the samtools library
++
++## Make sure we use the BioBuilds/conda zlib, not the system one
++#find_library(zlib_LIBRARY NAMES z
++#             PATHS ${CMAKE_INSTALL_PREFIX}/lib
++#             NO_DEFAULT_PATH)
++#message("*** zlib_LIBRARY    = ${zlib_LIBRARY}")
++
++# Needed because our libbam was build with pthread support, and the ppc64le
++# linker does not like -lpthread appearing before /path/to/libbam.a".
++find_library(pthread_LIBRARY NAMES pthread)
++message("*** pthread_LIBRARY = ${pthread_LIBRARY}")
+ 
+ # Include dir
+ find_path(Samtools_INCLUDE_DIR
+@@ -39,8 +47,8 @@
+ 
+ # Set the include dir variables and the libraries and let libfind_process do the rest.
+ # NOTE: Singular variables for this library, plural for libraries this lib depends on.
+-set(Samtools_PROCESS_INCLUDES Samtools_INCLUDE_DIR ZLIB_INCLUDE_DIR)
+-set(Samtools_PROCESS_LIBS Samtools_LIBRARY ZLIB_LIBRARIES)
++set(Samtools_PROCESS_INCLUDES Samtools_INCLUDE_DIR)
++set(Samtools_PROCESS_LIBS Samtools_LIBRARY pthread_LIBRARY zlib_LIBRARY)
+ libfind_process(Samtools)
+ message(" - Samtools include dirs: ${Samtools_INCLUDE_DIRS}")
+ message(" - Samtools libraries: ${Samtools_LIBRARIES}")
