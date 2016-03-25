@@ -12,9 +12,26 @@ LDFLAGS="${LDFLAGS} $(pkg-config --libs-only-L htslib)"
 # Favor environment-provided g++ over "system" one
 [ -x "${PREFIX}/bin/g++" ] && CXX="${PREFIX}/bin/g++" || CXX="g++"
 
-# Disable certain SHMEM constants when building on OS X
 if [ `uname -s` == "Darwin" ]; then
+    # Disable certain SHMEM constants when building on OS X
     CXXFLAGS="${CXXFLAGS} -DCOMPILE_FOR_MAC"
+
+    #--------------------------------------------------------------------------
+    # Remove "-rpath" arguments from LDFLAGS; without this, binaries built
+    # using the XCode 6.2 toolchain (on OS X 10.9) will segfault or crash with
+    # an "Illegal instruction: 4" error. This seems to be caused by a bug in
+    # install_name_tool when it's invoked by the conda post-build.sh process.
+    # Running "otool -L" on the defective binaries results in:
+    #
+    #   /path/to/conda/envs/_test/bin/STAR:
+    #       <... other libs ...>
+    #       @rpath/libgcc_s.1.dylib (compatibility version 1.0.0, current version 1.0.0)
+    #   load command 20 size zero (can't advance to other load commands)
+    #
+    # For more details, see <https://github.com/conda/conda-build/issues/206>
+    # and <http://public.kitware.com/pipermail/cmake/2014-October/058860.html>.
+    #--------------------------------------------------------------------------
+    LDFLAGS=$(sed 's/-Wl,-rpath,[^ ]*//g;' <<< "$LDFLAGS")
 fi
 
 # Ensure gcc treats plain char (i.e., those w/o explicit sign) declarations

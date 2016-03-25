@@ -20,9 +20,10 @@ source:
   patches:
     - compile-id.patch
     - local-htslib.patch
+    - osx-link.patch  # [osx]
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
