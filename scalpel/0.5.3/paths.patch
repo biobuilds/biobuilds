@@ -1,0 +1,175 @@
+--- FindDenovos.pl
++++ FindDenovos.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ ###################################################################
+ # FindDenovos.pl
+@@ -14,8 +14,7 @@
+ use warnings;
+ use strict;
+ use POSIX;
+-use FindBin qw($Bin);
+-use lib $Bin; # add $Bin directory to @INC
++use lib "@@sharedir@@";
+ use Usage;
+ use Utils qw(:DEFAULT $findVariants $findDenovos $findSomatic $exportTool $bamtools $samtools $bcftools);
+ use HashesIO;
+--- FindSomatic.pl
++++ FindSomatic.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ ###################################################################
+ # FindSomatic.pl
+@@ -14,8 +14,7 @@
+ use warnings;
+ use strict;
+ use POSIX;
+-use FindBin qw($Bin);
+-use lib $Bin; # add $Bin directory to @INC
++use lib "@@sharedir@@";
+ use Usage;
+ use Utils qw(:DEFAULT $findVariants $findDenovos $findSomatic $exportTool $bamtools $samtools $bcftools);
+ use HashesIO;
+--- FindVariants.pl
++++ FindVariants.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ #################################s##################################
+ # FindVariants.pl
+@@ -14,8 +14,7 @@
+ use warnings;
+ use strict;
+ use POSIX;
+-use FindBin qw($Bin);
+-use lib $Bin; # add $Bin directory to @INC
++use lib "@@sharedir@@";
+ use Usage;
+ use Utils qw(:DEFAULT $findVariants $findDenovos $findSomatic $exportTool $bamtools $samtools $bcftools);
+ use SequenceIO;
+@@ -76,7 +75,7 @@
+ my $USEFAIDX = 0;
+ 
+ # programs via absolute path
+-my $microassembler = "$Bin/Microassembler/Microassembler";
++my $microassembler = "@@prefix@@/bin/Microassembler";
+ 
+ my $rgfile = "readgroups.txt";
+ 
+--- HashesIO.pm
++++ HashesIO.pm
+@@ -16,8 +16,7 @@
+ 
+ use strict;
+ use warnings;
+-use FindBin qw($Bin);
+-use lib $Bin; # add $Bin directory to @INC
++use lib "@@sharedir@@";
+ use Utils;
+ 
+ #use Tie::Cache;
+--- SequenceIO.pm
++++ SequenceIO.pm
+@@ -16,13 +16,12 @@
+ 
+ use strict;
+ use warnings;
+-use FindBin qw($Bin);
+-use lib $Bin; # add $Bin directory to @INC
++use lib "@@sharedir@@";
+ use Utils;
+ use HashesIO;
+ use Digest::MD5 qw(md5_hex);
+ 
+-my $bamtools = "$Bin/bamtools-2.3.0/bin/bamtools";
++my $bamtools = "@@prefix@@/bin/bamtools";
+ 
+ ## extract coordinates from file
+ #####################################################
+--- Usage.pm
++++ Usage.pm
+@@ -418,4 +418,4 @@
+ exit;
+ }
+ 
+-1;
+\ No newline at end of file
++1;
+--- Utils.pm
++++ Utils.pm
+@@ -18,18 +18,17 @@
+ use strict;
+ use warnings;
+ use POSIX;
+-use FindBin qw($Bin);
+-use lib $Bin; # add $Bin directory to @INC
++use lib "@@sharedir@@";
+ 
+ # programs via absolute path
+-our $findVariants = "$Bin/FindVariants.pl";
+-our $findDenovos  = "$Bin/FindDenovos.pl";
+-our $findSomatic  = "$Bin/FindSomatic.pl";
+-#our $exportTool   = "$Bin/ExportVariants.pl";
+-our $exportTool   = "$Bin/scalpel-export";
+-our $bamtools     = "$Bin/bamtools-2.3.0/bin/bamtools";
+-our $samtools     = "$Bin/samtools-1.1/samtools";
+-our $bcftools     = "$Bin/bcftools-1.1/bcftools";
++our $findVariants = "@@sharedir@@/FindVariants.pl";
++our $findDenovos  = "@@sharedir@@/FindDenovos.pl";
++our $findSomatic  = "@@sharedir@@/FindSomatic.pl";
++#our $exportTool   = "@@sharedir@@/ExportVariants.pl";
++our $exportTool   = "@@prefix@@/bin/scalpel-export";
++our $bamtools     = "@@prefix@@/bin/bamtools";
++our $samtools     = "@@prefix@@/bin/samtools";
++our $bcftools     = "@@prefix@@/bin/bcftools";
+ 
+ # Run system command 
+ #####################################################
+@@ -327,4 +326,4 @@
+         return log($n)/log(10);
+ }
+ 
+-1;
+\ No newline at end of file
++1;
+--- scalpel-discovery
++++ scalpel-discovery
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ ###################################################################
+ # scalpel
+@@ -16,8 +16,7 @@
+ use warnings;
+ use strict;
+ use POSIX;
+-use FindBin qw($Bin);
+-use lib $Bin; # add $Bin directory to @INC
++use lib "@@sharedir@@";
+ use Usage;
+ use SequenceIO;
+ use Utils qw(:DEFAULT $findVariants $findDenovos $findSomatic $bamtools);
+--- scalpel-export
++++ scalpel-export
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ ###################################################################
+ # ExportVariants.pl
+@@ -14,8 +14,7 @@
+ use strict;
+ #use POSIX;
+ use POSIX qw(strftime);
+-use FindBin qw($Bin);
+-use lib $Bin; # add $Bin directory to @INC
++use lib "@@sharedir@@";
+ use Usage;
+ use Utils;
+ use SequenceIO;

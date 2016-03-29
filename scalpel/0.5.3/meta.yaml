@@ -1,0 +1,51 @@
+package:
+  name: scalpel
+  version: "0.5.3"
+
+source:
+  fn: scalpel-0.5.3.tar.gz
+  url:
+    - http://downloads.sourceforge.net/project/scalpel/scalpel-0.5.3.tar.gz
+    - http://download.lab7.io/sources/scalpel-0.5.3.tar.gz
+  md5: 29fb7c48bc3cecd4e7f62f3e1f21c3f8
+  patches:
+    - makefile.patch
+    - paths.patch
+
+requirements:
+  build:
+    - perl
+    - perl-mldbm
+    - perl-mldbm-sync
+    - perl-parallel-forkmanager
+    - perl-text-nsp
+    - samtools >=1.1
+    - bamtools >=2.3
+  run:
+    - perl
+    - perl-mldbm
+    - perl-mldbm-sync
+    - perl-parallel-forkmanager
+    - perl-text-nsp
+    - bcftools >=1.1
+    - samtools >=1.1
+    - bamtools >=2.3
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - Microassembler
+    - scalpel-discovery --help
+    - scalpel-export --help
+
+about:
+  home: "http://scalpel.sourceforge.net/"
+  license: MIT
+  license_file: LICENSE
+  summary: "micro-assembly pipeline for detecting indels in NGS data"
