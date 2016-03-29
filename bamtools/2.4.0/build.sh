@@ -15,9 +15,9 @@ LDFLAGS="${LDFLAGS} $(pkg-config --libs zlib)"
 if [ "$build_os" == 'Darwin' ]; then
     MACOSX_VERSION_MIN=10.8
     CXXFLAGS="${CXXFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-    #CXXFLAGS="${CXXFLAGS} -stdlib=libstdc++"
+    CXXFLAGS="${CXXFLAGS} -stdlib=libc++"
     LDFLAGS="${LDFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-    #LDFLAGS="${LDFLAGS} -stdlib=libstdc++"
+    LDFLAGS="${LDFLAGS} -stdlib=libc++"
 fi
 
 [ -d "build" ] || mkdir -p build
