@@ -1,0 +1,37 @@
+--- src/Makefile
++++ src/Makefile
+@@ -33,18 +33,18 @@
+ 
+ # Normal version of pindel	
+ pindel:	$(SOURCES:.cpp=.o)
+-	$(CXX) $(LDFLAGS) $(HTSLIB_LDFLAGS) $^ -O3 -fopenmp -lhts -lm -lz -o $@
++	$(CXX) $(LDFLAGS) $(HTSLIB_LDFLAGS) $^ -fopenmp -lhts -lm -lz -o $@
+ #	$(CXX) $(LDFLAGS) $(HTSLIB_LDFLAGS) $^ -O3 -fopenmp -Bstatic -static-libgcc -static  -lhts -lm -lz -o $@
+-	$(CXX) -O3 SAM_2_PINDEL_cin_2011Sept26.cpp -o sam2pindel
+-	$(CXX) -O3 vcfcreator.cpp -o pindel2vcf
+-	$(CXX) -O3 vcfcreator4tcga.cpp -o pindel2vcf4tcga
++	$(CXX) $(CXXFLAGS) SAM_2_PINDEL_cin_2011Sept26.cpp $(LDFLAGS) -o sam2pindel
++	$(CXX) $(CXXFLAGS) vcfcreator.cpp $(LDFLAGS) -o pindel2vcf
++	$(CXX) $(CXXFLAGS) vcfcreator4tcga.cpp $(LDFLAGS) -o pindel2vcf4tcga
+ clean:
+ 	$(RM) pindel pindel2vcf pindel2vcf4tcga pindel-debug $(OBJECTS) $(OBJECTS_DEBUG) $(CPPCHECKS) \
+ 	    *.gcov *.gcda *.gcno gmon.out *.d *.o
+ 
+ # Pattern rule to create normal .o files	
+ %.o: %.cpp
+-	$(CXX) $(CXXFLAGS) $(HTSLIB_CPPFLAGS) -Wall -g -c -O3 -fopenmp $< -o $@
++	$(CXX) $(CXXFLAGS) $(HTSLIB_CPPFLAGS) -Wall -g -c -fopenmp $< -o $@
+ #	$(CXX) $(CXXFLAGS) $(HTSLIB_CPPFLAGS) -Wall -g -c -O3 -Bstatic -static-libgcc -static -fopenmp $< -o $@
+ 
+ # Pattern rule to create debug version of .o files
+--- test/SmallTest/Makefile
++++ test/SmallTest/Makefile
+@@ -34,7 +34,7 @@
+ 	$(PINDEL) -T 1 $(SIM1CHRVS20305_ARGS) > sim1chrVs20305.log
+ 	$(PINDEL) -T 1 $(COLOWOBD15_ARGS) > colowobd15.log
+ 	$(PINDEL) -T 1 $(COLOUSINGBD15_ARGS) > colousingbd15.log
+-	./compare.sh
++	./compare.sh > compare.log
+ 
+ # Verify that the time to execute will not increase
+ execution-time:
