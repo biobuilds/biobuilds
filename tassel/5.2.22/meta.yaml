@@ -1,0 +1,25 @@
+package:
+  name: tassel
+  version: "5.2.22"
+
+source:
+  fn: tassel-5.2.22.tar.bz2
+  url:
+    - https://bitbucket.org/tasseladmin/tassel-5-standalone/get/V5.2.22.tar.bz2
+    - http://download.lab7.io/sources/tassel-5.2.22.tar.bz2
+  md5: 0aa6031c02a473563cab9517f0a798dc
+  patches:
+    - munge-paths.patch
+    - check-java-version.patch
+
+requirements:
+  run:
+    - perl    # needed by launch scripts
+
+build:
+  number: 0
+
+about:
+  home: "http://www.maizegenetics.net/#!tassel/c17q9"
+  license: LGPL
+  summary: ""
