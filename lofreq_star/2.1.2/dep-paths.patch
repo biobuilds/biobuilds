@@ -1,0 +1,75 @@
+--- configure
++++ configure
+@@ -14387,9 +14387,9 @@
+ $as_echo "$as_me: error: Htslib directory not defined. Please use HTSLIB=/fullpath/to/htslibdir/" >&2;}
+    { (exit 1); exit 1; }; }
+ fi
+-as_ac_File=`$as_echo "ac_cv_file_${SAMTOOLS}/bam.h" | $as_tr_sh`
+-{ $as_echo "$as_me:$LINENO: checking for ${SAMTOOLS}/bam.h" >&5
+-$as_echo_n "checking for ${SAMTOOLS}/bam.h... " >&6; }
++as_ac_File=`$as_echo "ac_cv_file_${SAMTOOLS}/include/samtools/bam.h" | $as_tr_sh`
++{ $as_echo "$as_me:$LINENO: checking for ${SAMTOOLS}/include/samtools/bam.h" >&5
++$as_echo_n "checking for ${SAMTOOLS}/include/samtools/bam.h... " >&6; }
+ if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
+   $as_echo_n "(cached) " >&6
+ else
+@@ -14397,7 +14397,7 @@
+   { { $as_echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+ $as_echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+    { (exit 1); exit 1; }; }
+-if test -r "${SAMTOOLS}/bam.h"; then
++if test -r "${SAMTOOLS}/include/samtools/bam.h"; then
+   eval "$as_ac_File=yes"
+ else
+   eval "$as_ac_File=no"
+@@ -14417,9 +14417,9 @@
+    { (exit 1); exit 1; }; }
+ fi
+ 
+-as_ac_File=`$as_echo "ac_cv_file_${HTSLIB}/htslib/hts.h" | $as_tr_sh`
+-{ $as_echo "$as_me:$LINENO: checking for ${HTSLIB}/htslib/hts.h" >&5
+-$as_echo_n "checking for ${HTSLIB}/htslib/hts.h... " >&6; }
++as_ac_File=`$as_echo "ac_cv_file_${HTSLIB}/include/htslib/hts.h" | $as_tr_sh`
++{ $as_echo "$as_me:$LINENO: checking for ${HTSLIB}/include/htslib/hts.h" >&5
++$as_echo_n "checking for ${HTSLIB}/include/htslib/hts.h... " >&6; }
+ if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
+   $as_echo_n "(cached) " >&6
+ else
+@@ -14427,7 +14427,7 @@
+   { { $as_echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+ $as_echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+    { (exit 1); exit 1; }; }
+-if test -r "${HTSLIB}/htslib/hts.h"; then
++if test -r "${HTSLIB}/include/htslib/hts.h"; then
+   eval "$as_ac_File=yes"
+ else
+   eval "$as_ac_File=no"
+--- src/lofreq/Makefile.in
++++ src/lofreq/Makefile.in
+@@ -58,7 +58,7 @@
+ 	samutils.$(OBJEXT) snpcaller.$(OBJEXT) utils.$(OBJEXT) \
+ 	vcf.$(OBJEXT) viterbi.$(OBJEXT)
+ lofreq_OBJECTS = $(am_lofreq_OBJECTS)
+-lofreq_DEPENDENCIES = @HTSLIB@/libhts.a @SAMTOOLS@/libbam.a \
++lofreq_DEPENDENCIES = \
+ 	../cdflib90/libcdf.a
+ DEFAULT_INCLUDES = -I.@am__isrc@
+ depcomp = $(SHELL) $(top_srcdir)/depcomp
+@@ -80,7 +80,7 @@
+ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+ ACLOCAL = @ACLOCAL@
+ AMTAR = @AMTAR@
+-AM_CFLAGS = -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -Wall -I../cdflib90/ -I../uthash -I@HTSLIB@ -I@SAMTOOLS@ @AM_CFLAGS@
++AM_CFLAGS = -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -Wall -I../cdflib90/ -I../uthash @AM_CFLAGS@
+ AM_LDFLAGS = @AM_LDFLAGS@
+ AR = @AR@
+ AUTOCONF = @AUTOCONF@
+@@ -234,7 +234,7 @@
+ 
+ # note: order matters
+ #lofreq_LDADD = @htslib_dir@/libhts.a @samtools_dir@/libbam.a
+-lofreq_LDADD = @HTSLIB@/libhts.a @SAMTOOLS@/libbam.a ../cdflib90/libcdf.a
++lofreq_LDADD = @HTSLIB@/lib/libhts.a @SAMTOOLS@/lib/libbam.a ../cdflib90/libcdf.a
+ all: all-am
+ 
+ .SUFFIXES:

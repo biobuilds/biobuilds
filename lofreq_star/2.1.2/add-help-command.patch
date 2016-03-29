@@ -1,0 +1,21 @@
+--- src/lofreq/lofreq_main.c
++++ src/lofreq/lofreq_main.c
+@@ -162,6 +162,7 @@
+      fprintf(stderr, "\n");     
+      fprintf(stderr, "Usage: %s <command> [options]\n\n", myname);
+      fprintf(stderr, "  Main Commands:\n");
++     fprintf(stderr, "    help          : Show this help\n");
+      fprintf(stderr, "    call          : Call variants\n");
+      fprintf(stderr, "    call-parallel : Call variants in parallel\n");
+      fprintf(stderr, "    somatic       : Call somatic variants\n");
+@@ -207,6 +208,10 @@
+           usage(BASENAME(argv[0]));
+           return 1;
+      }
++     if (strcmp(argv[1], "help") == 0)  {
++          usage(BASENAME(argv[0]));
++          return 0;
++     }
+      if (strcmp(argv[1], "call") == 0)  {
+           return main_call(argc, argv);
+ 
