@@ -1,0 +1,10 @@
+--- util/cmake/SeqAnBuildSystem.cmake
++++ util/cmake/SeqAnBuildSystem.cmake
+@@ -252,7 +252,6 @@
+ 
+         # SeqAn has conflicts with -march=native and -m32 build on 64 bit source
+         # platforms, thus disabling -march=native for 32bit target platforms
+-        set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} -march=native")
+         if (COMPILER_IS_INTEL)
+             set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} -xHOST -ipo -no-prec-div -fp-model fast=2")
+         endif (COMPILER_IS_INTEL)
