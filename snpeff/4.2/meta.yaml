@@ -1,0 +1,25 @@
+package:
+  name: snpeff
+  version: "4.2"
+
+source:
+  fn: snpEff-4.2.zip
+  url:
+    - http://downloads.sourceforge.net/project/snpeff/snpEff_v4_2_core.zip
+    - http://download.lab7.io/sources/snpEff-4.2.zip
+  md5: 25ae5b062d57072de6cfb8677ca3625a
+
+build:
+  number: 0
+  no_link:
+    # Don't link config files to avoid conflicts among environments
+    - share/snpeff/snpEff.config
+  has_prefix_files:
+    # Make sure conda knows to munge the path so the SnpEff data directory ends
+    # up in the "share" subdirectory of the appropriate environment.
+    - share/snpeff/snpEff.config
+
+about:
+  home: "http://snpeff.sourceforge.net/"
+  license: LGPL
+  summary: "Genetic variant annotation and effect prediction toolbox"
