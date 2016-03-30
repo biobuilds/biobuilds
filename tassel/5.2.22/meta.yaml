@@ -17,9 +17,9 @@ requirements:
     - perl    # needed by launch scripts
 
 build:
-  number: 0
+  number: 1
 
 about:
   home: "http://www.maizegenetics.net/#!tassel/c17q9"
   license: LGPL
-  summary: ""
+  summary: "Java platform for analysis of crop genomic diversity"
