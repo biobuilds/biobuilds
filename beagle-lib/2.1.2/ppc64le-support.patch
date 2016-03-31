@@ -1,0 +1,87 @@
+--- libhmsbeagle/CPU/BeagleCPU4StateSSEImpl.hpp
++++ libhmsbeagle/CPU/BeagleCPU4StateSSEImpl.hpp
+@@ -53,12 +53,12 @@
+ #else // Load four partials in two 128-bit memory transactions
+ #define SSE_PREFETCH_PARTIALS(dest, src, v) \
+ 		V_Real tmp_##dest##01, tmp_##dest##23; \
+-		tmp_##dest##01 = _mm_load_pd(&src[v + 0]); \
+-		tmp_##dest##23 = _mm_load_pd(&src[v + 2]); \
+-		dest##0 = _mm_shuffle_pd(tmp_##dest##01, tmp_##dest##01, _MM_SHUFFLE2(0,0)); \
+-		dest##1 = _mm_shuffle_pd(tmp_##dest##01, tmp_##dest##01, _MM_SHUFFLE2(1,1)); \
+-		dest##2 = _mm_shuffle_pd(tmp_##dest##23, tmp_##dest##23, _MM_SHUFFLE2(0,0)); \
+-		dest##3 = _mm_shuffle_pd(tmp_##dest##23, tmp_##dest##23, _MM_SHUFFLE2(1,1));
++		tmp_##dest##01 = vec_load2dpaligned(&src[v + 0]); \
++		tmp_##dest##23 = vec_load2dpaligned(&src[v + 2]); \
++		dest##0 = vec_permute2dp(tmp_##dest##01, tmp_##dest##01, _MM_SHUFFLE2(0,0)); \
++		dest##1 = vec_permute2dp(tmp_##dest##01, tmp_##dest##01, _MM_SHUFFLE2(1,1)); \
++		dest##2 = vec_permute2dp(tmp_##dest##23, tmp_##dest##23, _MM_SHUFFLE2(0,0)); \
++		dest##3 = vec_permute2dp(tmp_##dest##23, tmp_##dest##23, _MM_SHUFFLE2(1,1));
+ #endif
+ 
+ /* Loads (transposed) finite-time transition matrices into SSE vectors */
+--- libhmsbeagle/CPU/SSEDefinitions.h
++++ libhmsbeagle/CPU/SSEDefinitions.h
+@@ -34,12 +34,13 @@
+ 
+ #if defined(DLS_USE_SSE2)
+ #	if !defined(DLS_MACOS)
+-#		include <emmintrin.h>
++#		include <vec128int.h>
+ #	endif
+-#	include <xmmintrin.h>
++#	include <vec128sp.h>
++#	include <vec128dp.h>
+ #endif
+ typedef double VecEl_t;
+-
++#define _MM_SHUFFLE2(a, b) ((intlit8) (a*2+b))
+ #ifdef __GNUC__
+ #define ALIGN16 __attribute__((aligned(16)))
+ #else
+@@ -51,28 +52,28 @@
+ 	typedef double RealType;
+ 	typedef __m128d	V_Real;
+ #	define REALS_PER_VEC	2	/* number of elements per vector */
+-#	define VEC_LOAD(a)			_mm_load_pd(a)
+-#	define VEC_LOAD_SCALAR(a)	_mm_load1_pd(a)
+-#	define VEC_STORE(a, b)		_mm_store_pd((a), (b))
+-#   define VEC_STORE_SCALAR(a, b) _mm_store_sd((a), (b))
+-#	define VEC_MULT(a, b)		_mm_mul_pd((a), (b))
+-#	define VEC_DIV(a, b)		_mm_div_pd((a), (b))
+-#	define VEC_MADD(a, b, c)	_mm_add_pd(_mm_mul_pd((a), (b)), (c))
+-#	define VEC_SPLAT(a)			_mm_set1_pd(a)
+-#	define VEC_ADD(a, b)		_mm_add_pd(a, b)
+-#   define VEC_SWAP(a)			_mm_shuffle_pd(a, a, _MM_SHUFFLE2(0,1))
+-# 	define VEC_SETZERO()		_mm_setzero_pd()
+-#	define VEC_SET1(a)			_mm_set_sd((a))
+-#	define VEC_SET(a, b)		_mm_set_pd((a), (b))
+-#   define VEC_MOVE(a, b)		_mm_move_sd((a), (b))
++#	define VEC_LOAD(a)			vec_load2dpaligned(a)
++#	define VEC_LOAD_SCALAR(a)	vec_load1dp(a)
++#	define VEC_STORE(a, b)		vec_store2dpto2dpd((a), (b))
++#   define VEC_STORE_SCALAR(a, b) vec_storelower1dpof2dp((a), (b))
++#	define VEC_MULT(a, b)		vec_multiply2dp((a), (b))
++#	define VEC_DIV(a, b)		vec_divide2dp((a), (b))
++#	define VEC_MADD(a, b, c)	vec_add2dp(vec_multiply2dp((a), (b)), (c))
++#	define VEC_SPLAT(a)			vec_splat2dp(a)
++#	define VEC_ADD(a, b)		vec_add2dp(a, b)
++#   define VEC_SWAP(a)			vec_permute2dp(a, a, _MM_SHUFFLE2(0,1))
++# 	define VEC_SETZERO()		vec_zero2dp()
++#	define VEC_SET1(a)			vec_SetLower1dp((a))
++#	define VEC_SET(a, b)		vec_set2dp((a), (b))
++#   define VEC_MOVE(a, b)		vec_insertlower1dp((a), (b))
+ #else
+ 	typedef float RealType;
+ 	typedef __m128	V_Real;
+ #	define REALS_PER_VEC	4	/* number of elements per vector */
+-#	define VEC_MULT(a, b)		_mm_mul_ps((a), (b))
+-#	define VEC_MADD(a, b, c)	_mm_add_ps(_mm_mul_ps((a), (b)), (c))
+-#	define VEC_SPLAT(a)			_mm_set1_ps(a)
+-#	define VEC_ADD(a, b)		_mm_add_ps(a, b)
++#	define VEC_MULT(a, b)		vec_multiply4sp((a), (b))
++#	define VEC_MADD(a, b, c)	vec_add4sp(vec_multiply4sp((a), (b)), (c))
++#	define VEC_SPLAT(a)			vec_splat4sp(a)
++#	define VEC_ADD(a, b)		vec_add4sp(a, b)
+ #endif
+ typedef union 			/* for copying individual elements to and from vector floats */
+ 	{

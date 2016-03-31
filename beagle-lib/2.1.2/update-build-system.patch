@@ -1,0 +1,2470 @@
+# Build system updates to match upstream master (commit f592377)
+# Fixes an SSE-related error in configure and updates m4 scripts
+--- configure.ac
++++ configure.ac
+@@ -232,6 +232,7 @@
+ if test  "$enable_sse" = yes; then
+ 	AX_EXT
+ 	AC_CHECK_HEADERS([cpuid.h])
++	AM_CONDITIONAL(HAVE_SSE2,true)
+ else
+ 	AM_CONDITIONAL(HAVE_SSE2,false)
+ fi
+deleted file mode 100644
+--- m4/ac_jni_include_dir.m4
++++ /dev/null
+@@ -1,117 +0,0 @@
+-# ===========================================================================
+-#       http://www.nongnu.org/autoconf-archive/ac_jni_include_dir.html
+-# ===========================================================================
+-#
+-# SYNOPSIS
+-#
+-#   AC_JNI_INCLUDE_DIR
+-#
+-# DESCRIPTION
+-#
+-#   AC_JNI_INCLUDE_DIR finds include directories needed for compiling
+-#   programs using the JNI interface.
+-#
+-#   JNI include directories are usually in the java distribution This is
+-#   deduced from the value of JAVAC. When this macro completes, a list of
+-#   directories is left in the variable JNI_INCLUDE_DIRS.
+-#
+-#   Example usage follows:
+-#
+-#       AC_JNI_INCLUDE_DIR
+-#
+-#       for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS
+-#       do
+-#               CPPFLAGS="$CPPFLAGS -I$JNI_INCLUDE_DIR"
+-#       done
+-#
+-#   If you want to force a specific compiler:
+-#
+-#   - at the configure.in level, set JAVAC=yourcompiler before calling
+-#   AC_JNI_INCLUDE_DIR
+-#
+-#   - at the configure level, setenv JAVAC
+-#
+-#   Note: This macro can work with the autoconf M4 macros for Java programs.
+-#   This particular macro is not part of the original set of macros.
+-#
+-# LICENSE
+-#
+-#   Copyright (c) 2008 Don Anderson <dda@sleepycat.com>
+-#
+-#   Copying and distribution of this file, with or without modification, are
+-#   permitted in any medium without royalty provided the copyright notice
+-#   and this notice are preserved.
+-
+-AC_DEFUN([AC_JNI_INCLUDE_DIR],[
+-
+-JNI_INCLUDE_DIRS=""
+-
+-test "x$JAVAC" = x && AC_MSG_NOTICE(['\$JAVAC' undefined]) && with_jdk=no
+-if test "x$JAVAPREFIX" = x; then
+-	AC_PATH_PROG(_ACJNI_JAVAC, $JAVAC, no)
+-else
+-	AC_PATH_PROG(_ACJNI_JAVAC, $JAVAC, no, $JAVAPREFIX)
+-fi
+-test "x$_ACJNI_JAVAC" = xno && AC_MSG_NOTICE([$JAVAC could not be found in path]) && with_jdk=no
+-
+-_ACJNI_FOLLOW_SYMLINKS("$_ACJNI_JAVAC")
+-_JTOPDIR=`echo "$_ACJNI_FOLLOWED" | sed -e 's://*:/:g' -e 's:/[[^/]]*$::'`
+-case "$host_os" in
+-        darwin*)        _JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
+-                        _JINC="$_JTOPDIR/Headers";;
+-        *)              _JINC="$_JTOPDIR/include";;
+-esac
+-if test -f "$_JINC/jni.h"; then
+-        JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JINC"
+-else
+-        _JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
+-        if test -f "$_JTOPDIR/include/jni.h"; then
+-                JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include"
+-        elif test -f "$_JTOPDIR/Headers/jni.h"; then
+-                JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/Headers"
+-        else
+-                AC_MSG_NOTICE([cannot find java include files])
+-		with_jdk=no
+-        fi
+-fi
+-
+-# get the likely subdirectories for system specific java includes
+-case "$host_os" in
+-bsdi*)          _JNI_INC_SUBDIRS="bsdos";;
+-linux*)         _JNI_INC_SUBDIRS="linux genunix";;
+-osf*)           _JNI_INC_SUBDIRS="alpha";;
+-solaris*)       _JNI_INC_SUBDIRS="solaris";;
+-mingw*)			_JNI_INC_SUBDIRS="win32";;
+-cygwin*)		_JNI_INC_SUBDIRS="win32";;
+-*)              _JNI_INC_SUBDIRS="genunix";;
+-esac
+-
+-# add any subdirectories that are present
+-for JINCSUBDIR in $_JNI_INC_SUBDIRS
+-do
+-        if test -d "$_JTOPDIR/include/$JINCSUBDIR"; then
+-                JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include/$JINCSUBDIR"
+-        fi
+-done
+-])
+-
+-# _ACJNI_FOLLOW_SYMLINKS <path>
+-# Follows symbolic links on <path>,
+-# finally setting variable _ACJNI_FOLLOWED
+-# --------------------
+-AC_DEFUN([_ACJNI_FOLLOW_SYMLINKS],[
+-# find the include directory relative to the javac executable
+-_cur="$1"
+-while ls -ld "$_cur" 2>/dev/null | grep " -> " >/dev/null; do
+-        AC_MSG_CHECKING(symlink for $_cur)
+-        _slink=`ls -ld "$_cur" | sed 's/.* -> //'`
+-        case "$_slink" in
+-        /*) _cur="$_slink";;
+-        # 'X' avoids triggering unwanted echo options.
+-        *) _cur=`echo "X$_cur" | sed -e 's/^X//' -e 's:[[^/]]*$::'`"$_slink";;
+-        esac
+-        AC_MSG_RESULT($_cur)
+-done
+-_ACJNI_FOLLOWED="$_cur"
+-])# _ACJNI
+-
+deleted file mode 100644
+--- m4/ac_prog_javac.m4
++++ /dev/null
+@@ -1,77 +0,0 @@
+-# ===========================================================================
+-#          http://www.nongnu.org/autoconf-archive/ac_prog_javac.html
+-# ===========================================================================
+-#
+-# SYNOPSIS
+-#
+-#   AC_PROG_JAVAC
+-#
+-# DESCRIPTION
+-#
+-#   AC_PROG_JAVAC tests an existing Java compiler. It uses the environment
+-#   variable JAVAC then tests in sequence various common Java compilers. For
+-#   political reasons, it starts with the free ones.
+-#
+-#   If you want to force a specific compiler:
+-#
+-#   - at the configure.in level, set JAVAC=yourcompiler before calling
+-#   AC_PROG_JAVAC
+-#
+-#   - at the configure level, setenv JAVAC
+-#
+-#   You can use the JAVAC variable in your Makefile.in, with @JAVAC@.
+-#
+-#   *Warning*: its success or failure can depend on a proper setting of the
+-#   CLASSPATH env. variable.
+-#
+-#   TODO: allow to exclude compilers (rationale: most Java programs cannot
+-#   compile with some compilers like guavac).
+-#
+-#   Note: This is part of the set of autoconf M4 macros for Java programs.
+-#   It is VERY IMPORTANT that you download the whole set, some macros depend
+-#   on other. Unfortunately, the autoconf archive does not support the
+-#   concept of set of macros, so I had to break it for submission. The
+-#   general documentation, as well as the sample configure.in, is included
+-#   in the AC_PROG_JAVA macro.
+-#
+-# LICENSE
+-#
+-#   Copyright (c) 2008 Stephane Bortzmeyer <bortzmeyer@pasteur.fr>
+-#
+-#   This program is free software; you can redistribute it and/or modify it
+-#   under the terms of the GNU General Public License as published by the
+-#   Free Software Foundation; either version 2 of the License, or (at your
+-#   option) any later version.
+-#
+-#   This program is distributed in the hope that it will be useful, but
+-#   WITHOUT ANY WARRANTY; without even the implied warranty of
+-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+-#   Public License for more details.
+-#
+-#   You should have received a copy of the GNU General Public License along
+-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+-#
+-#   As a special exception, the respective Autoconf Macro's copyright owner
+-#   gives unlimited permission to copy, distribute and modify the configure
+-#   scripts that are the output of Autoconf when processing the Macro. You
+-#   need not follow the terms of the GNU General Public License when using
+-#   or distributing such scripts, even though portions of the text of the
+-#   Macro appear in them. The GNU General Public License (GPL) does govern
+-#   all other use of the material that constitutes the Autoconf Macro.
+-#
+-#   This special exception to the GPL applies to versions of the Autoconf
+-#   Macro released by the Autoconf Archive. When you make and distribute a
+-#   modified version of the Autoconf Macro, you may extend this special
+-#   exception to the GPL to apply to your modified version as well.
+-
+-AC_DEFUN([AC_PROG_JAVAC],[
+-AC_REQUIRE([AC_EXEEXT])dnl
+-if test "x$JAVAPREFIX" = x; then
+-        test "x$JAVAC" = x && AC_CHECK_PROGS(JAVAC, javac$EXEEXT jikes$EXEEXT "gcj$EXEEXT -C" guavac$EXEEXT )
+-else
+-        test "x$JAVAC" = x && AC_CHECK_PROGS(JAVAC, javac$EXEEXT jikes$EXEEXT "gcj$EXEEXT -C" guavac$EXEEXT, $JAVAPREFIX)
+-fi
+-test "x$JAVAC" = x && AC_MSG_NOTICE([no acceptable Java compiler found in \$PATH]) && with_jdk=no
+-AC_PROVIDE([$0])dnl
+-])
+-
+deleted file mode 100644
+--- m4/acx_pthread.m4
++++ /dev/null
+@@ -1,243 +0,0 @@
+-dnl @synopsis ACX_PTHREAD([ACTION-IF-FOUND[, ACTION-IF-NOT-FOUND]])
+-dnl
+-dnl @summary figure out how to build C programs using POSIX threads
+-dnl
+-dnl This macro figures out how to build C programs using POSIX threads.
+-dnl It sets the PTHREAD_LIBS output variable to the threads library and
+-dnl linker flags, and the PTHREAD_CFLAGS output variable to any special
+-dnl C compiler flags that are needed. (The user can also force certain
+-dnl compiler flags/libs to be tested by setting these environment
+-dnl variables.)
+-dnl
+-dnl Also sets PTHREAD_CC to any special C compiler that is needed for
+-dnl multi-threaded programs (defaults to the value of CC otherwise).
+-dnl (This is necessary on AIX to use the special cc_r compiler alias.)
+-dnl
+-dnl NOTE: You are assumed to not only compile your program with these
+-dnl flags, but also link it with them as well. e.g. you should link
+-dnl with $PTHREAD_CC $CFLAGS $PTHREAD_CFLAGS $LDFLAGS ... $PTHREAD_LIBS
+-dnl $LIBS
+-dnl
+-dnl If you are only building threads programs, you may wish to use
+-dnl these variables in your default LIBS, CFLAGS, and CC:
+-dnl
+-dnl        LIBS="$PTHREAD_LIBS $LIBS"
+-dnl        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+-dnl        CC="$PTHREAD_CC"
+-dnl
+-dnl In addition, if the PTHREAD_CREATE_JOINABLE thread-attribute
+-dnl constant has a nonstandard name, defines PTHREAD_CREATE_JOINABLE to
+-dnl that name (e.g. PTHREAD_CREATE_UNDETACHED on AIX).
+-dnl
+-dnl ACTION-IF-FOUND is a list of shell commands to run if a threads
+-dnl library is found, and ACTION-IF-NOT-FOUND is a list of commands to
+-dnl run it if it is not found. If ACTION-IF-FOUND is not specified, the
+-dnl default action will define HAVE_PTHREAD.
+-dnl
+-dnl Please let the authors know if this macro fails on any platform, or
+-dnl if you have any other suggestions or comments. This macro was based
+-dnl on work by SGJ on autoconf scripts for FFTW (www.fftw.org) (with
+-dnl help from M. Frigo), as well as ac_pthread and hb_pthread macros
+-dnl posted by Alejandro Forero Cuervo to the autoconf macro repository.
+-dnl We are also grateful for the helpful feedback of numerous users.
+-dnl
+-dnl @category InstalledPackages
+-dnl @author Steven G. Johnson <stevenj@alum.mit.edu>
+-dnl @version 2006-05-29
+-dnl @license GPLWithACException
+-
+-AC_DEFUN([ACX_PTHREAD], [
+-AC_REQUIRE([AC_CANONICAL_HOST])
+-AC_LANG_SAVE
+-AC_LANG_C
+-acx_pthread_ok=no
+-
+-# We used to check for pthread.h first, but this fails if pthread.h
+-# requires special compiler flags (e.g. on True64 or Sequent).
+-# It gets checked for in the link test anyway.
+-
+-# First of all, check if the user has set any of the PTHREAD_LIBS,
+-# etcetera environment variables, and if threads linking works using
+-# them:
+-if test x"$PTHREAD_LIBS$PTHREAD_CFLAGS" != x; then
+-        save_CFLAGS="$CFLAGS"
+-        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+-        save_LIBS="$LIBS"
+-        LIBS="$PTHREAD_LIBS $LIBS"
+-        AC_MSG_CHECKING([for pthread_join in LIBS=$PTHREAD_LIBS with CFLAGS=$PTHREAD_CFLAGS])
+-        AC_TRY_LINK_FUNC(pthread_join, acx_pthread_ok=yes)
+-        AC_MSG_RESULT($acx_pthread_ok)
+-        if test x"$acx_pthread_ok" = xno; then
+-                PTHREAD_LIBS=""
+-                PTHREAD_CFLAGS=""
+-        fi
+-        LIBS="$save_LIBS"
+-        CFLAGS="$save_CFLAGS"
+-fi
+-
+-# We must check for the threads library under a number of different
+-# names; the ordering is very important because some systems
+-# (e.g. DEC) have both -lpthread and -lpthreads, where one of the
+-# libraries is broken (non-POSIX).
+-
+-# Create a list of thread flags to try.  Items starting with a "-" are
+-# C compiler flags, and other items are library names, except for "none"
+-# which indicates that we try without any flags at all, and "pthread-config"
+-# which is a program returning the flags for the Pth emulation library.
+-
+-acx_pthread_flags="pthreads none -Kthread -kthread lthread -pthread -pthreads -mthreads pthread --thread-safe -mt pthread-config"
+-
+-# The ordering *is* (sometimes) important.  Some notes on the
+-# individual items follow:
+-
+-# pthreads: AIX (must check this before -lpthread)
+-# none: in case threads are in libc; should be tried before -Kthread and
+-#       other compiler flags to prevent continual compiler warnings
+-# -Kthread: Sequent (threads in libc, but -Kthread needed for pthread.h)
+-# -kthread: FreeBSD kernel threads (preferred to -pthread since SMP-able)
+-# lthread: LinuxThreads port on FreeBSD (also preferred to -pthread)
+-# -pthread: Linux/gcc (kernel threads), BSD/gcc (userland threads)
+-# -pthreads: Solaris/gcc
+-# -mthreads: Mingw32/gcc, Lynx/gcc
+-# -mt: Sun Workshop C (may only link SunOS threads [-lthread], but it
+-#      doesn't hurt to check since this sometimes defines pthreads too;
+-#      also defines -D_REENTRANT)
+-#      ... -mt is also the pthreads flag for HP/aCC
+-# pthread: Linux, etcetera
+-# --thread-safe: KAI C++
+-# pthread-config: use pthread-config program (for GNU Pth library)
+-
+-case "${host_cpu}-${host_os}" in
+-        *solaris*)
+-
+-        # On Solaris (at least, for some versions), libc contains stubbed
+-        # (non-functional) versions of the pthreads routines, so link-based
+-        # tests will erroneously succeed.  (We need to link with -pthreads/-mt/
+-        # -lpthread.)  (The stubs are missing pthread_cleanup_push, or rather
+-        # a function called by this macro, so we could check for that, but
+-        # who knows whether they'll stub that too in a future libc.)  So,
+-        # we'll just look for -pthreads and -lpthread first:
+-
+-        acx_pthread_flags="-pthreads pthread -mt -pthread $acx_pthread_flags"
+-        ;;
+-esac
+-
+-if test x"$acx_pthread_ok" = xno; then
+-for flag in $acx_pthread_flags; do
+-
+-        case $flag in
+-                none)
+-                AC_MSG_CHECKING([whether pthreads work without any flags])
+-                ;;
+-
+-                -*)
+-                AC_MSG_CHECKING([whether pthreads work with $flag])
+-                PTHREAD_CFLAGS="$flag"
+-                ;;
+-
+-		pthread-config)
+-		AC_CHECK_PROG(acx_pthread_config, pthread-config, yes, no)
+-		if test x"$acx_pthread_config" = xno; then continue; fi
+-		PTHREAD_CFLAGS="`pthread-config --cflags`"
+-		PTHREAD_LIBS="`pthread-config --ldflags` `pthread-config --libs`"
+-		;;
+-
+-                *)
+-                AC_MSG_CHECKING([for the pthreads library -l$flag])
+-                PTHREAD_LIBS="-l$flag"
+-                ;;
+-        esac
+-
+-        save_LIBS="$LIBS"
+-        save_CFLAGS="$CFLAGS"
+-        LIBS="$PTHREAD_LIBS $LIBS"
+-        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+-
+-        # Check for various functions.  We must include pthread.h,
+-        # since some functions may be macros.  (On the Sequent, we
+-        # need a special flag -Kthread to make this header compile.)
+-        # We check for pthread_join because it is in -lpthread on IRIX
+-        # while pthread_create is in libc.  We check for pthread_attr_init
+-        # due to DEC craziness with -lpthreads.  We check for
+-        # pthread_cleanup_push because it is one of the few pthread
+-        # functions on Solaris that doesn't have a non-functional libc stub.
+-        # We try pthread_create on general principles.
+-        AC_TRY_LINK([#include <pthread.h>],
+-                    [pthread_t th; pthread_join(th, 0);
+-                     pthread_attr_init(0); pthread_cleanup_push(0, 0);
+-                     pthread_create(0,0,0,0); pthread_cleanup_pop(0); ],
+-                    [acx_pthread_ok=yes])
+-
+-        LIBS="$save_LIBS"
+-        CFLAGS="$save_CFLAGS"
+-
+-        AC_MSG_RESULT($acx_pthread_ok)
+-        if test "x$acx_pthread_ok" = xyes; then
+-                break;
+-        fi
+-
+-        PTHREAD_LIBS=""
+-        PTHREAD_CFLAGS=""
+-done
+-fi
+-
+-# Various other checks:
+-if test "x$acx_pthread_ok" = xyes; then
+-        save_LIBS="$LIBS"
+-        LIBS="$PTHREAD_LIBS $LIBS"
+-        save_CFLAGS="$CFLAGS"
+-        CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+-
+-        # Detect AIX lossage: JOINABLE attribute is called UNDETACHED.
+-	AC_MSG_CHECKING([for joinable pthread attribute])
+-	attr_name=unknown
+-	for attr in PTHREAD_CREATE_JOINABLE PTHREAD_CREATE_UNDETACHED; do
+-	    AC_TRY_LINK([#include <pthread.h>], [int attr=$attr; return attr;],
+-                        [attr_name=$attr; break])
+-	done
+-        AC_MSG_RESULT($attr_name)
+-        if test "$attr_name" != PTHREAD_CREATE_JOINABLE; then
+-            AC_DEFINE_UNQUOTED(PTHREAD_CREATE_JOINABLE, $attr_name,
+-                               [Define to necessary symbol if this constant
+-                                uses a non-standard name on your system.])
+-        fi
+-
+-        AC_MSG_CHECKING([if more special flags are required for pthreads])
+-        flag=no
+-        case "${host_cpu}-${host_os}" in
+-            *-aix* | *-freebsd* | *-darwin*) flag="-D_THREAD_SAFE";;
+-            *solaris* | *-osf* | *-hpux*) flag="-D_REENTRANT";;
+-        esac
+-        AC_MSG_RESULT(${flag})
+-        if test "x$flag" != xno; then
+-            PTHREAD_CFLAGS="$flag $PTHREAD_CFLAGS"
+-        fi
+-
+-        LIBS="$save_LIBS"
+-        CFLAGS="$save_CFLAGS"
+-
+-        # More AIX lossage: must compile with xlc_r or cc_r
+-	if test x"$GCC" != xyes; then
+-          AC_CHECK_PROGS(PTHREAD_CC, xlc_r cc_r, ${CC})
+-        else
+-          PTHREAD_CC=$CC
+-	fi
+-else
+-        PTHREAD_CC="$CC"
+-fi
+-
+-AC_SUBST(PTHREAD_LIBS)
+-AC_SUBST(PTHREAD_CFLAGS)
+-AC_SUBST(PTHREAD_CC)
+-
+-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+-if test x"$acx_pthread_ok" = xyes; then
+-        ifelse([$1],,AC_DEFINE(HAVE_PTHREAD,1,[Define if you have POSIX threads libraries and header files.]),[$1])
+-        :
+-else
+-        acx_pthread_ok=no
+-        $2
+-fi
+-AC_LANG_RESTORE
+-])dnl ACX_PTHREAD
+-
+--- m4/ax_check_compile_flag.m4
++++ m4/ax_check_compile_flag.m4
+@@ -4,7 +4,7 @@
+ #
+ # SYNOPSIS
+ #
+-#   AX_CHECK_COMPILE_FLAG(FLAG, [ACTION-SUCCESS], [ACTION-FAILURE], [EXTRA-FLAGS])
++#   AX_CHECK_COMPILE_FLAG(FLAG, [ACTION-SUCCESS], [ACTION-FAILURE], [EXTRA-FLAGS], [INPUT])
+ #
+ # DESCRIPTION
+ #
+@@ -19,6 +19,8 @@
+ #   the flags: "CFLAGS EXTRA-FLAGS FLAG".  This can for example be used to
+ #   force the compiler to issue an error when a bad flag is given.
+ #
++#   INPUT gives an alternative input source to AC_COMPILE_IFELSE.
++#
+ #   NOTE: Implementation based on AX_CFLAGS_GCC_OPTION. Please keep this
+ #   macro in sync with AX_CHECK_{PREPROC,LINK}_FLAG.
+ #
+@@ -53,19 +55,19 @@
+ #   modified version of the Autoconf Macro, you may extend this special
+ #   exception to the GPL to apply to your modified version as well.
+ 
+-#serial 2
++#serial 4
+ 
+ AC_DEFUN([AX_CHECK_COMPILE_FLAG],
+-[AC_PREREQ(2.59)dnl for _AC_LANG_PREFIX
++[AC_PREREQ(2.64)dnl for _AC_LANG_PREFIX and AS_VAR_IF
+ AS_VAR_PUSHDEF([CACHEVAR],[ax_cv_check_[]_AC_LANG_ABBREV[]flags_$4_$1])dnl
+ AC_CACHE_CHECK([whether _AC_LANG compiler accepts $1], CACHEVAR, [
+   ax_check_save_flags=$[]_AC_LANG_PREFIX[]FLAGS
+   _AC_LANG_PREFIX[]FLAGS="$[]_AC_LANG_PREFIX[]FLAGS $4 $1"
+-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM()],
++  AC_COMPILE_IFELSE([m4_default([$5],[AC_LANG_PROGRAM()])],
+     [AS_VAR_SET(CACHEVAR,[yes])],
+     [AS_VAR_SET(CACHEVAR,[no])])
+   _AC_LANG_PREFIX[]FLAGS=$ax_check_save_flags])
+-AS_IF([test x"AS_VAR_GET(CACHEVAR)" = xyes],
++AS_VAR_IF(CACHEVAR,yes,
+   [m4_default([$2], :)],
+   [m4_default([$3], :)])
+ AS_VAR_POPDEF([CACHEVAR])dnl
+--- m4/ax_compare_version.m4
++++ m4/ax_compare_version.m4
+@@ -175,4 +175,3 @@
+     m4_ifvaln([$5],[else $5])dnl
+   fi
+ ]) dnl AX_COMPARE_VERSION
+-
+new file mode 100644
+--- /dev/null
++++ m4/ax_compiler_vendor.m4
+@@ -0,0 +1,87 @@
++# ===========================================================================
++#    http://www.gnu.org/software/autoconf-archive/ax_compiler_vendor.html
++# ===========================================================================
++#
++# SYNOPSIS
++#
++#   AX_COMPILER_VENDOR
++#
++# DESCRIPTION
++#
++#   Determine the vendor of the C/C++ compiler, e.g., gnu, intel, ibm, sun,
++#   hp, borland, comeau, dec, cray, kai, lcc, metrowerks, sgi, microsoft,
++#   watcom, etc. The vendor is returned in the cache variable
++#   $ax_cv_c_compiler_vendor for C and $ax_cv_cxx_compiler_vendor for C++.
++#
++# LICENSE
++#
++#   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
++#   Copyright (c) 2008 Matteo Frigo
++#
++#   This program is free software: you can redistribute it and/or modify it
++#   under the terms of the GNU General Public License as published by the
++#   Free Software Foundation, either version 3 of the License, or (at your
++#   option) any later version.
++#
++#   This program is distributed in the hope that it will be useful, but
++#   WITHOUT ANY WARRANTY; without even the implied warranty of
++#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
++#   Public License for more details.
++#
++#   You should have received a copy of the GNU General Public License along
++#   with this program. If not, see <http://www.gnu.org/licenses/>.
++#
++#   As a special exception, the respective Autoconf Macro's copyright owner
++#   gives unlimited permission to copy, distribute and modify the configure
++#   scripts that are the output of Autoconf when processing the Macro. You
++#   need not follow the terms of the GNU General Public License when using
++#   or distributing such scripts, even though portions of the text of the
++#   Macro appear in them. The GNU General Public License (GPL) does govern
++#   all other use of the material that constitutes the Autoconf Macro.
++#
++#   This special exception to the GPL applies to versions of the Autoconf
++#   Macro released by the Autoconf Archive. When you make and distribute a
++#   modified version of the Autoconf Macro, you may extend this special
++#   exception to the GPL to apply to your modified version as well.
++
++#serial 15
++
++AC_DEFUN([AX_COMPILER_VENDOR],
++[AC_CACHE_CHECK([for _AC_LANG compiler vendor], ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor,
++  dnl Please add if possible support to ax_compiler_version.m4
++  [# note: don't check for gcc first since some other compilers define __GNUC__
++  vendors="intel:     __ICC,__ECC,__INTEL_COMPILER
++           ibm:       __xlc__,__xlC__,__IBMC__,__IBMCPP__
++           pathscale: __PATHCC__,__PATHSCALE__
++           clang:     __clang__
++           cray:      _CRAYC
++           fujitsu:   __FUJITSU
++           gnu:       __GNUC__
++           sun:       __SUNPRO_C,__SUNPRO_CC
++           hp:        __HP_cc,__HP_aCC
++           dec:       __DECC,__DECCXX,__DECC_VER,__DECCXX_VER
++           borland:   __BORLANDC__,__CODEGEARC__,__TURBOC__
++           comeau:    __COMO__
++           kai:       __KCC
++           lcc:       __LCC__
++           sgi:       __sgi,sgi
++           microsoft: _MSC_VER
++           metrowerks: __MWERKS__
++           watcom:    __WATCOMC__
++           portland:  __PGI
++	   tcc:       __TINYC__
++           unknown:   UNKNOWN"
++  for ventest in $vendors; do
++    case $ventest in
++      *:) vendor=$ventest; continue ;;
++      *)  vencpp="defined("`echo $ventest | sed 's/,/) || defined(/g'`")" ;;
++    esac
++    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[
++      #if !($vencpp)
++        thisisanerror;
++      #endif
++    ])], [break])
++  done
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor=`echo $vendor | cut -d: -f1`
++ ])
++])
+new file mode 100644
+--- /dev/null
++++ m4/ax_compiler_version.m4
+@@ -0,0 +1,492 @@
++# ===========================================================================
++#    http://www.gnu.org/software/autoconf-archive/ax_compiler_version.html
++# ===========================================================================
++#
++# SYNOPSIS
++#
++#   AX_COMPILER_VERSION
++#
++# DESCRIPTION
++#
++#   This macro retrieves the compiler version and returns it in the cache
++#   variable $ax_cv_c_compiler_version for C and $ax_cv_cxx_compiler_version
++#   for C++.
++#
++#   Version is returned as epoch:major.minor.patchversion
++#
++#   Epoch is used in order to have an increasing version number in case of
++#   marketing change.
++#
++#   Epoch use: * borland compiler use chronologically 0turboc for turboc
++#   era,
++#
++#     1borlanc BORLANC++ before 5, 2cppbuilder for cppbuilder era,
++#     3borlancpp for return of BORLANC++ (after version 5.5),
++#     4cppbuilder for cppbuilder with year version,
++#     and 5xe for XE era.
++#
++#   An empty string is returned otherwise.
++#
++# LICENSE
++#
++#   Copyright (c) 2014 Bastien ROUCARIES <roucaries.bastien+autoconf@gmail.com>
++#
++#   Copying and distribution of this file, with or without modification, are
++#   permitted in any medium without royalty provided the copyright notice
++#   and this notice are preserved. This file is offered as-is, without any
++#   warranty.
++
++#serial 4
++
++# for intel
++AC_DEFUN([_AX_COMPILER_VERSION_INTEL],
++  [ dnl
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    [__INTEL_COMPILER/100],,
++    AC_MSG_FAILURE([[[$0]] unknown intel compiler version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    [(__INTEL_COMPILER%100)/10],,
++    AC_MSG_FAILURE([[[$0]] unknown intel compiler version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++    [(__INTEL_COMPILER%10)],,
++    AC_MSG_FAILURE([[[$0]] unknown intel compiler version]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++  ])
++
++# for IBM
++AC_DEFUN([_AX_COMPILER_VERSION_IBM],
++  [ dnl
++  dnl check between z/OS C/C++  and XL C/C++
++  AC_COMPILE_IFELSE([
++    AC_LANG_PROGRAM([],
++      [
++        #if defined(__COMPILER_VER__)
++        choke me;
++        #endif
++      ])],
++    [
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++        [__xlC__/100],,
++      	AC_MSG_FAILURE([[[$0]] unknown IBM compiler major version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++        [__xlC__%100],,
++      	AC_MSG_FAILURE([[[$0]] unknown IBM compiler minor version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++        [__xlC_ver__/0x100],,
++      	AC_MSG_FAILURE([[[$0]] unknown IBM compiler patch version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_build,
++        [__xlC_ver__%0x100],,
++      	AC_MSG_FAILURE([[[$0]] unknown IBM compiler build version]))
++      ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_build"
++    ],
++    [
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++        [__xlC__%1000],,
++      	AC_MSG_FAILURE([[[$0]] unknown IBM compiler patch version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++        [(__xlC__/10000)%10],,
++      	AC_MSG_FAILURE([[[$0]] unknown IBM compiler minor version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++        [(__xlC__/100000)%10],,
++      	AC_MSG_FAILURE([[[$0]] unknown IBM compiler major version]))
++      ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++    ])
++])
++
++# for pathscale
++AC_DEFUN([_AX_COMPILER_VERSION_PATHSCALE],[
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    __PATHCC__,,
++    AC_MSG_FAILURE([[[$0]] unknown pathscale major]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    __PATHCC_MINOR__,,
++    AC_MSG_FAILURE([[[$0]] unknown pathscale minor]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++    [__PATHCC_PATCHLEVEL__],,
++    AC_MSG_FAILURE([[[$0]] unknown pathscale patch level]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++  ])
++
++# for clang
++AC_DEFUN([_AX_COMPILER_VERSION_CLANG],[
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    __clang_major__,,
++    AC_MSG_FAILURE([[[$0]] unknown clang major]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    __clang_minor__,,
++    AC_MSG_FAILURE([[[$0]] unknown clang minor]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++    [__clang_patchlevel__],,0)
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++  ])
++
++# for crayc
++AC_DEFUN([_AX_COMPILER_VERSION_CRAY],[
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    _RELEASE,,
++    AC_MSG_FAILURE([[[$0]] unknown crayc release]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    _RELEASE_MINOR,,
++    AC_MSG_FAILURE([[[$0]] unknown crayc minor]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor"
++  ])
++
++# for fujitsu
++AC_DEFUN([_AX_COMPILER_VERSION_FUJITSU],[
++  AC_COMPUTE_INT(ax_cv_[]_AC_LANG_ABBREV[]_compiler_version,
++                 __FCC_VERSION,,
++		 AC_MSG_FAILURE([[[$0]]unknown fujitsu release]))
++  ])
++
++# for GNU
++AC_DEFUN([_AX_COMPILER_VERSION_GNU],[
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    __GNUC__,,
++    AC_MSG_FAILURE([[[$0]] unknown gcc major]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    __GNUC_MINOR__,,
++    AC_MSG_FAILURE([[[$0]] unknown gcc minor]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++    [__GNUC_PATCHLEVEL__],,
++    AC_MSG_FAILURE([[[$0]] unknown gcc patch level]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++  ])
++
++# For sun
++AC_DEFUN([_AX_COMPILER_VERSION_SUN],[
++  m4_define([_AX_COMPILER_VERSION_SUN_NUMBER],
++            [
++	     #if defined(__SUNPRO_CC)
++	     __SUNPRO_CC
++	     #else
++	     __SUNPRO_C
++	     #endif
++	    ])
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_until59,
++    !!(_AX_COMPILER_VERSION_SUN_NUMBER < 0x1000),,
++    AC_MSG_FAILURE([[[$0]] unknown sun release version]))
++  AS_IF([test "X$_ax_[]_AC_LANG_ABBREV[]_compiler_version_until59" = X1],
++    [dnl
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++        _AX_COMPILER_VERSION_SUN_NUMBER % 0x10,,
++	AC_MSG_FAILURE([[[$0]] unknown sun patch version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++        (_AX_COMPILER_VERSION_SUN_NUMBER / 0x10) % 0x10,,
++        AC_MSG_FAILURE([[[$0]] unknown sun minor version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++        (_AX_COMPILER_VERSION_SUN_NUMBER / 0x100),,
++        AC_MSG_FAILURE([[[$0]] unknown sun major version]))
++    ],
++    [dnl
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++        _AX_COMPILER_VERSION_SUN_NUMBER % 0x10,,
++        AC_MSG_FAILURE([[[$0]] unknown sun patch version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++        (_AX_COMPILER_VERSION_SUN_NUMBER / 0x100) % 0x100,,
++        AC_MSG_FAILURE([[[$0]] unknown sun minor version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++        (_AX_COMPILER_VERSION_SUN_NUMBER / 0x1000),,
++        AC_MSG_FAILURE([[[$0]] unknown sun major version]))
++    ])
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++])
++
++AC_DEFUN([_AX_COMPILER_VERSION_HP],[
++  m4_define([_AX_COMPILER_VERSION_HP_NUMBER],
++            [
++	     #if defined(__HP_cc)
++	     __HP_cc
++	     #else
++	     __HP_aCC
++	     #endif
++	    ])
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_untilA0121,
++    !!(_AX_COMPILER_VERSION_HP_NUMBER <= 1),,
++    AC_MSG_FAILURE([[[$0]] unknown hp release version]))
++  AS_IF([test "X$_ax_[]_AC_LANG_ABBREV[]_compiler_version_untilA0121" = X1],
++    [dnl By default output last version with this behavior.
++     dnl it is so old
++      ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="01.21.00"
++    ],
++    [dnl
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++        (_AX_COMPILER_VERSION_HP_NUMBER % 100),,
++        AC_MSG_FAILURE([[[$0]] unknown hp release version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++        ((_AX_COMPILER_VERSION_HP_NUMBER / 100)%100),,
++        AC_MSG_FAILURE([[[$0]] unknown hp minor version]))
++      AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++        ((_AX_COMPILER_VERSION_HP_NUMBER / 10000)%100),,
++        AC_MSG_FAILURE([[[$0]] unknown hp major version]))
++      ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++    ])
++])
++
++AC_DEFUN([_AX_COMPILER_VERSION_DEC],[dnl
++  m4_define([_AX_COMPILER_VERSION_DEC_NUMBER],
++            [
++	     #if defined(__DECC_VER)
++	     __DECC_VER
++	     #else
++	     __DECCXX_VER
++	     #endif
++	    ])
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++    (_AX_COMPILER_VERSION_DEC_NUMBER % 10000),,
++    AC_MSG_FAILURE([[[$0]] unknown dec release version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    ((_AX_COMPILER_VERSION_DEC_NUMBER / 100000UL)%100),,
++    AC_MSG_FAILURE([[[$0]] unknown dec minor version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    ((_AX_COMPILER_VERSION_DEC_NUMBER / 10000000UL)%100),,
++    AC_MSG_FAILURE([[[$0]] unknown dec major version]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++  ])
++
++# borland
++AC_DEFUN([_AX_COMPILER_VERSION_BORLAND],[dnl
++  m4_define([_AX_COMPILER_VERSION_TURBOC_NUMBER],
++            [
++	     #if defined(__TURBOC__)
++	     __TURBOC__
++	     #else
++	     choke me
++	     #endif
++	    ])
++  m4_define([_AX_COMPILER_VERSION_BORLANDC_NUMBER],
++            [
++	     #if defined(__BORLANDC__)
++	     __BORLANDC__
++	     #else
++	     __CODEGEARC__
++	     #endif
++	    ])
++ AC_COMPILE_IFELSE(
++   [AC_LANG_PROGRAM(,
++     _AX_COMPILER_VERSION_TURBOC_NUMBER)],
++   [dnl TURBOC
++     AC_COMPUTE_INT(
++       _ax_[]_AC_LANG_ABBREV[]_compiler_version_turboc_raw,
++       _AX_COMPILER_VERSION_TURBOC_NUMBER,,
++       AC_MSG_FAILURE([[[$0]] unknown turboc version]))
++     AS_IF(
++       [test $_ax_[]_AC_LANG_ABBREV[]_compiler_version_turboc_raw -lt 661 || test $_ax_[]_AC_LANG_ABBREV[]_compiler_version_turboc_raw -gt 1023],
++       [dnl compute normal version
++        AC_COMPUTE_INT(
++	  _ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++	  _AX_COMPILER_VERSION_TURBOC_NUMBER % 0x100,,
++	  AC_MSG_FAILURE([[[$0]] unknown turboc minor version]))
++	AC_COMPUTE_INT(
++	  _ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++	  (_AX_COMPILER_VERSION_TURBOC_NUMBER/0x100)%0x100,,
++	  AC_MSG_FAILURE([[[$0]] unknown turboc major version]))
++	ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="0turboc:$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor"],
++      [dnl special version
++       AS_CASE([$_ax_[]_AC_LANG_ABBREV[]_compiler_version_turboc_raw],
++         [661],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="0turboc:1.00"],
++	 [662],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="0turboc:1.01"],
++         [663],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="0turboc:2.00"],
++	 [
++	 AC_MSG_WARN([[[$0]] unknown turboc version between 0x295 and 0x400 please report bug])
++	 ax_cv_[]_AC_LANG_ABBREV[]_compiler_version=""
++	 ])
++      ])
++    ],
++    # borlandc
++    [
++    AC_COMPUTE_INT(
++      _ax_[]_AC_LANG_ABBREV[]_compiler_version_borlandc_raw,
++      _AX_COMPILER_VERSION_BORLANDC_NUMBER,,
++      AC_MSG_FAILURE([[[$0]] unknown borlandc version]))
++    AS_CASE([$_ax_[]_AC_LANG_ABBREV[]_compiler_version_borlandc_raw],
++      dnl BORLANC++ before 5.5
++      [512] ,[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="1borlanc:2.00"],
++      [1024],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="1borlanc:3.00"],
++      [1024],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="1borlanc:3.00"],
++      [1040],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="1borlanc:3.1"],
++      [1106],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="1borlanc:4.0"],
++      [1280],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="1borlanc:5.0"],
++      [1312],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="1borlanc:5.02"],
++      dnl C++ Builder era
++      [1328],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="2cppbuilder:3.0"],
++      [1344],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="2cppbuilder:4.0"],
++      dnl BORLANC++ after 5.5
++      [1360],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="3borlancpp:5.5"],
++      [1361],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="3borlancpp:5.51"],
++      [1378],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="3borlancpp:5.6.4"],
++      dnl C++ Builder with year number
++      [1392],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="4cppbuilder:2006"],
++      [1424],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="4cppbuilder:2007"],
++      [1555],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="4cppbuilder:2009"],
++      [1569],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="4cppbuilder:2010"],
++      dnl XE version
++      [1584],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="5xe"],
++      [1600],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="5xe:2"],
++      [1616],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="5xe:3"],
++      [1632],[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="5xe:4"],
++      [
++      AC_MSG_WARN([[[$0]] Unknow borlanc compiler version $_ax_[]_AC_LANG_ABBREV[]_compiler_version_borlandc_raw please report bug])
++      ])
++    ])
++  ])
++
++# COMO
++AC_DEFUN([_AX_COMPILER_VERSION_COMEAU],
++  [ dnl
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    [__COMO_VERSION__%100],,
++    AC_MSG_FAILURE([[[$0]] unknown comeau compiler minor version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    [(__COMO_VERSION__/100)%10],,
++    AC_MSG_FAILURE([[[$0]] unknown comeau compiler major version]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor"
++  ])
++
++# KAI
++AC_DEFUN([_AX_COMPILER_VERSION_KAI],[
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++    [__KCC_VERSION%100],,
++    AC_MSG_FAILURE([[[$0]] unknown kay compiler patch version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    [(__KCC_VERSION/100)%10],,
++    AC_MSG_FAILURE([[[$0]] unknown kay compiler minor version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    [(__KCC_VERSION/1000)%10],,
++    AC_MSG_FAILURE([[[$0]] unknown kay compiler major version]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++  ])
++
++dnl LCC
++dnl LCC does not output version...
++
++# SGI
++AC_DEFUN([_AX_COMPILER_VERSION_SGI],[
++   m4_define([_AX_COMPILER_VERSION_SGI_NUMBER],
++            [
++	     #if defined(_COMPILER_VERSION)
++	     _COMPILER_VERSION
++	     #else
++	     _SGI_COMPILER_VERSION
++	     #endif
++	    ])
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++    [_AX_COMPILER_VERSION_SGI_NUMBER%10],,
++    AC_MSG_FAILURE([[[$0]] unknown SGI compiler patch version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    [(_AX_COMPILER_VERSION_SGI_NUMBER/10)%10],,
++    AC_MSG_FAILURE([[[$0]] unknown SGI compiler minor version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    [(_AX_COMPILER_VERSION_SGI_NUMBER/100)%10],,
++    AC_MSG_FAILURE([[[$0]] unknown SGI compiler major version]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++  ])
++
++# microsoft
++AC_DEFUN([_AX_COMPILER_VERSION_MICROSOFT],[
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    _MSC_VER%100,,
++    AC_MSG_FAILURE([[[$0]] unknown microsoft compiler minor version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    (_MSC_VER/100)%100,,
++    AC_MSG_FAILURE([[[$0]] unknown microsoft compiler major version]))
++  dnl could be overriden
++  _ax_[]_AC_LANG_ABBREV[]_compiler_version_patch=0
++  _ax_[]_AC_LANG_ABBREV[]_compiler_version_build=0
++  # special case for version 6
++  AS_IF([test "X$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major" = "X12"],
++    [AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++       _MSC_FULL_VER%1000,,
++       _ax_[]_AC_LANG_ABBREV[]_compiler_version_patch=0)])
++  # for version 7
++  AS_IF([test "X$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major" = "X13"],
++    [AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++       _MSC_FULL_VER%1000,,
++       AC_MSG_FAILURE([[[$0]] unknown microsoft compiler patch version]))
++    ])
++  # for version > 8
++ AS_IF([test $_ax_[]_AC_LANG_ABBREV[]_compiler_version_major -ge 14],
++    [AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++       _MSC_FULL_VER%10000,,
++       AC_MSG_FAILURE([[[$0]] unknown microsoft compiler patch version]))
++    ])
++ AS_IF([test $_ax_[]_AC_LANG_ABBREV[]_compiler_version_major -ge 15],
++    [AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_build,
++       _MSC_BUILD,,
++       AC_MSG_FAILURE([[[$0]] unknown microsoft compiler build version]))
++    ])
++ ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_build"
++ ])
++
++# for metrowerks
++AC_DEFUN([_AX_COMPILER_VERSION_METROWERKS],[dnl
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++    __MWERKS__%0x100,,
++    AC_MSG_FAILURE([[[$0]] unknown metrowerks compiler patch version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    (__MWERKS__/0x100)%0x10,,
++    AC_MSG_FAILURE([[[$0]] unknown metrowerks compiler minor version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    (__MWERKS__/0x1000)%0x10,,
++    AC_MSG_FAILURE([[[$0]] unknown metrowerks compiler major version]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++  ])
++
++# for watcom
++AC_DEFUN([_AX_COMPILER_VERSION_WATCOM],[dnl
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    __WATCOMC__%100,,
++    AC_MSG_FAILURE([[[$0]] unknown watcom compiler minor version]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    (__WATCOMC__/100)%100,,
++    AC_MSG_FAILURE([[[$0]] unknown watcom compiler major version]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor"
++  ])
++
++# for PGI
++AC_DEFUN([_AX_COMPILER_VERSION_PORTLAND],[
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_major,
++    __PGIC__,,
++    AC_MSG_FAILURE([[[$0]] unknown pgi major]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor,
++    __PGIC_MINOR__,,
++    AC_MSG_FAILURE([[[$0]] unknown pgi minor]))
++  AC_COMPUTE_INT(_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch,
++    [__PGIC_PATCHLEVEL__],,
++    AC_MSG_FAILURE([[[$0]] unknown pgi patch level]))
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version="$_ax_[]_AC_LANG_ABBREV[]_compiler_version_major.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_minor.$_ax_[]_AC_LANG_ABBREV[]_compiler_version_patch"
++  ])
++
++# tcc
++AC_DEFUN([_AX_COMPILER_VERSION_TCC],[
++  ax_cv_[]_AC_LANG_ABBREV[]_compiler_version=[`tcc -v | $SED 's/^[ ]*tcc[ ]\+version[ ]\+\([0-9.]\+\).*/\1/g'`]
++  ])
++# main entry point
++AC_DEFUN([AX_COMPILER_VERSION],[dnl
++  AC_REQUIRE([AX_COMPILER_VENDOR])
++  AC_REQUIRE([AC_PROG_SED])
++  AC_CACHE_CHECK([for _AC_LANG compiler version],
++    ax_cv_[]_AC_LANG_ABBREV[]_compiler_version,
++    [ dnl
++      AS_CASE([$ax_cv_[]_AC_LANG_ABBREV[]_compiler_vendor],
++        [intel],[_AX_COMPILER_VERSION_INTEL],
++	[ibm],[_AX_COMPILER_VERSION_IBM],
++	[pathscale],[_AX_COMPILER_VERSION_PATHSCALE],
++	[clang],[_AX_COMPILER_VERSION_CLANG],
++	[cray],[_AX_COMPILER_VERSION_CRAY],
++	[fujitsu],[_AX_COMPILER_VERSION_FUJITSU],
++        [gnu],[_AX_COMPILER_VERSION_GNU],
++	[sun],[_AX_COMPILER_VERSION_SUN],
++	[hp],[_AX_COMPILER_VERSION_HP],
++	[dec],[_AX_COMPILER_VERSION_DEC],
++	[borland],[_AX_COMPILER_VERSION_BORLAND],
++	[comeau],[_AX_COMPILER_VERSION_COMEAU],
++	[kai],[_AX_COMPILER_VERSION_KAI],
++	[sgi],[_AX_COMPILER_VERSION_SGI],
++	[microsoft],[_AX_COMPILER_VERSION_MICROSOFT],
++	[metrowerks],[_AX_COMPILER_VERSION_METROWERKS],
++	[watcom],[_AX_COMPILER_VERSION_WATCOM],
++	[portland],[_AX_COMPILER_VERSION_PORTLAND],
++	[tcc],[_AX_COMPILER_VERSION_TCC],
++  	[ax_cv_[]_AC_LANG_ABBREV[]_compiler_version=""])
++    ])
++])
+--- m4/ax_ext.m4
++++ m4/ax_ext.m4
+@@ -8,143 +8,296 @@
+ #
+ # DESCRIPTION
+ #
+-#   Find supported SIMD extensions by requesting cpuid. When an SIMD
+-#   extension is found, the -m"simdextensionname" is added to SIMD_FLAGS
+-#   (only if compilator support it) (ie : if "sse2" is available "-msse2" is
+-#   added to SIMD_FLAGS)
++#   Find supported SIMD extensions by requesting cpuid. When a SIMD
++#   extension is found, the -m"simdextensionname" is added to SIMD_FLAGS if
++#   compiler supports it. For example, if "sse2" is available then "-msse2"
++#   is added to SIMD_FLAGS.
++#
++#   Find other supported CPU extensions by requesting cpuid. When a
++#   processor extension is found, the -m"extensionname" is added to
++#   CPUEXT_FLAGS if compiler supports it. For example, if "bmi2" is
++#   available then "-mbmi2" is added to CPUEXT_FLAGS.
+ #
+ #   This macro calls:
+ #
+ #     AC_SUBST(SIMD_FLAGS)
++#     AC_SUBST(CPUEXT_FLAGS)
+ #
+ #   And defines:
+ #
+-#     HAVE_MMX / HAVE_SSE / HAVE_SSE2 / HAVE_SSE3 / HAVE_SSSE3 /
+-#     HAVE_SSE41 / HAVE_SSE42 / HAVE_AVX
++#     HAVE_RDRND / HAVE_BMI1 / HAVE_BMI2 / HAVE_ADX / HAVE_MPX
++#     HAVE_PREFETCHWT1 / HAVE_ABM / HAVE_MMX / HAVE_SSE / HAVE_SSE2
++#     HAVE_SSE3 / HAVE_SSSE3 / HAVE_SSE4_1 / HAVE_SSE4_2 / HAVE_SSE4a
++#     HAVE_SHA / HAVE_AES / HAVE_AVX / HAVE_FMA3 / HAVE_FMA4 / HAVE_XOP
++#     HAVE_AVX2 / HAVE_AVX512_F / HAVE_AVX512_CD / HAVE_AVX512_PF
++#     HAVE_AVX512_ER / HAVE_AVX512_VL / HAVE_AVX512_BW / HAVE_AVX512_DQ
++#     HAVE_AVX512_IFMA / HAVE_AVX512_VBMI
+ #
+ # LICENSE
+ #
+-#   Copyright (c) 2008 Christophe Tournayre <turn3r@users.sourceforge.net>
++#   Copyright (c) 2007 Christophe Tournayre <turn3r@users.sourceforge.net>
++#   Copyright (c) 2013,2015 Michael Petch <mpetch@capp-sysware.com>
+ #
+ #   Copying and distribution of this file, with or without modification, are
+ #   permitted in any medium without royalty provided the copyright notice
+ #   and this notice are preserved. This file is offered as-is, without any
+ #   warranty.
+ 
+-#serial 9
++#serial 15
+ 
+ AC_DEFUN([AX_EXT],
+ [
+-  AC_REQUIRE([AX_GCC_X86_CPUID])
+-
+-  AX_GCC_X86_CPUID(0x00000001)
+-  ecx=`echo $ax_cv_gcc_x86_cpuid_0x00000001 | cut -d ":" -f 3`
+-  edx=`echo $ax_cv_gcc_x86_cpuid_0x00000001 | cut -d ":" -f 4`
+-
+- AC_CACHE_CHECK([whether mmx is supported], [ax_cv_have_mmx_ext],
+-  [
+-    ax_cv_have_mmx_ext=no
+-    if test "$((0x$edx>>23&0x01))" = 1; then
+-      ax_cv_have_mmx_ext=yes
+-    fi
+-  ])
+-
+- AC_CACHE_CHECK([whether sse is supported], [ax_cv_have_sse_ext],
+-  [
+-    ax_cv_have_sse_ext=no
+-    if test "$((0x$edx>>25&0x01))" = 1; then
+-      ax_cv_have_sse_ext=yes
+-    fi
+-  ])
+-
+- AC_CACHE_CHECK([whether sse2 is supported], [ax_cv_have_sse2_ext],
+-  [
+-    ax_cv_have_sse2_ext=no
+-    if test "$((0x$edx>>26&0x01))" = 1; then
+-      ax_cv_have_sse2_ext=yes
+-      AM_CONDITIONAL(HAVE_SSE2, true)
+-    fi
+-  ])
+-
+- AC_CACHE_CHECK([whether sse3 is supported], [ax_cv_have_sse3_ext],
+-  [
+-    ax_cv_have_sse3_ext=no
+-    if test "$((0x$ecx&0x01))" = 1; then
+-      ax_cv_have_sse3_ext=yes
+-    fi
+-  ])
+-
+- AC_CACHE_CHECK([whether ssse3 is supported], [ax_cv_have_ssse3_ext],
+-  [
+-    ax_cv_have_ssse3_ext=no
+-    if test "$((0x$ecx>>9&0x01))" = 1; then
+-      ax_cv_have_ssse3_ext=yes
+-    fi
+-  ])
+-
+- AC_CACHE_CHECK([whether sse4.1 is supported], [ax_cv_have_sse41_ext],
+-  [
+-    ax_cv_have_sse41_ext=no
+-    if test "$((0x$ecx>>19&0x01))" = 1; then
+-      ax_cv_have_sse41_ext=yes
+-    fi
+-  ])
+-
+- AC_CACHE_CHECK([whether sse4.2 is supported], [ax_cv_have_sse42_ext],
+-  [
+-    ax_cv_have_sse42_ext=no
+-    if test "$((0x$ecx>>20&0x01))" = 1; then
+-      ax_cv_have_sse42_ext=yes
+-    fi
+-  ])
+-
+- AC_CACHE_CHECK([whether avx is supported], [ax_cv_have_avx_ext],
+-  [
+-    ax_cv_have_avx_ext=no
+-    if test "$((0x$ecx>>28&0x01))" = 1; then
+-      ax_cv_have_avx_ext=yes
+-    fi
+-  ])
+-
+-  if test "$ax_cv_have_mmx_ext" = yes; then
+-    AC_DEFINE(HAVE_MMX,, [Support MMX instructions])
+-    AX_CHECK_COMPILE_FLAG(-mmmx, SIMD_FLAGS="$SIMD_FLAGS -mmmx", [])
+-  fi
+-
+-  if test "$ax_cv_have_sse_ext" = yes; then
+-    AC_DEFINE(HAVE_SSE,, [Support SSE (Streaming SIMD Extensions) instructions])
+-    AX_CHECK_COMPILE_FLAG(-msse, SIMD_FLAGS="$SIMD_FLAGS -msse", [])
+-  fi
+-
+-  if test "$ax_cv_have_sse2_ext" = yes; then
+-    AC_DEFINE(HAVE_SSE2,, [Support SSE2 (Streaming SIMD Extensions 2) instructions])
+-    AX_CHECK_COMPILE_FLAG(-msse2, SIMD_FLAGS="$SIMD_FLAGS -msse2", [])
+-  fi
+-
+-  if test "$ax_cv_have_sse3_ext" = yes; then
+-    AC_DEFINE(HAVE_SSE3,, [Support SSE3 (Streaming SIMD Extensions 3) instructions])
+-    AX_CHECK_COMPILE_FLAG(-msse3, SIMD_FLAGS="$SIMD_FLAGS -msse3", [])
+-  fi
+-
+-  if test "$ax_cv_have_ssse3_ext" = yes; then
+-    AC_DEFINE(HAVE_SSSE3,, [Support SSSE3 (Supplemental Streaming SIMD Extensions 3) instructions])
+-    AX_CHECK_COMPILE_FLAG(-mssse3, SIMD_FLAGS="$SIMD_FLAGS -mssse3", [])
+-  fi
+-
+-  if test "$ax_cv_have_sse41_ext" = yes; then
+-    AC_DEFINE(HAVE_SSE41,, [Support SSE4.1 (Streaming SIMD Extensions 4.1) instructions])
+-    AX_CHECK_COMPILE_FLAG(-msse4.1, SIMD_FLAGS="$SIMD_FLAGS -msse4.1", [])
+-  fi
+-
+-  if test "$ax_cv_have_sse42_ext" = yes; then
+-    AC_DEFINE(HAVE_SSE42, 1,[Support SSE4.2 (Streaming SIMD Extensions 4.2) instructions])
+-    AX_CHECK_COMPILE_FLAG(-msse4.2, SIMD_FLAGS="$SIMD_FLAGS -msse4.2", [])
+-  fi
+-
+-  if test "$ax_cv_have_avx_ext" = yes; then
+-    AC_DEFINE(HAVE_AVX,,[Support AVX (Advanced Vector Extensions) instructions])
+-    AX_CHECK_COMPILE_FLAG(-mavx, SIMD_FLAGS="$SIMD_FLAGS -mavx", [])
+-  fi
++  AC_REQUIRE([AC_CANONICAL_HOST])
++  AC_REQUIRE([AC_PROG_CC])
++
++  CPUEXT_FLAGS=""
++  SIMD_FLAGS=""
++
++  case $host_cpu in
++    powerpc*)
++      AC_CACHE_CHECK([whether altivec is supported], [ax_cv_have_altivec_ext],
++          [
++            if test `/usr/sbin/sysctl -a 2>/dev/null| grep -c hw.optional.altivec` != 0; then
++                if test `/usr/sbin/sysctl -n hw.optional.altivec` = 1; then
++                  ax_cv_have_altivec_ext=yes
++                fi
++            fi
++          ])
++
++          if test "$ax_cv_have_altivec_ext" = yes; then
++            AC_DEFINE(HAVE_ALTIVEC,,[Support Altivec instructions])
++            AX_CHECK_COMPILE_FLAG(-faltivec, SIMD_FLAGS="$SIMD_FLAGS -faltivec", [])
++          fi
++    ;;
++
++    i[[3456]]86*|x86_64*|amd64*)
++
++#      AC_REQUIRE([AX_GCC_X86_CPUID])
++#      AC_REQUIRE([AX_GCC_X86_CPUID_COUNT])
++#      AC_REQUIRE([AX_GCC_X86_AVX_XGETBV])
++
++      eax_cpuid0=0
++      AX_GCC_X86_CPUID(0x00000000)
++      if test "$ax_cv_gcc_x86_cpuid_0x00000000" != "unknown";
++      then
++        eax_cpuid0=`echo $ax_cv_gcc_x86_cpuid_0x00000000 | cut -d ":" -f 1`
++      fi
++
++      eax_cpuid80000000=0
++      AX_GCC_X86_CPUID(0x80000000)
++      if test "$ax_cv_gcc_x86_cpuid_0x80000000" != "unknown";
++      then
++        eax_cpuid80000000=`echo $ax_cv_gcc_x86_cpuid_0x80000000 | cut -d ":" -f 1`
++      fi
++
++      ecx_cpuid1=0
++      edx_cpuid1=0
++      if test "$((0x$eax_cpuid0))" -ge 1 ; then
++        AX_GCC_X86_CPUID(0x00000001)
++        if test "$ax_cv_gcc_x86_cpuid_0x00000001" != "unknown";
++        then
++          ecx_cpuid1=`echo $ax_cv_gcc_x86_cpuid_0x00000001 | cut -d ":" -f 3`
++          edx_cpuid1=`echo $ax_cv_gcc_x86_cpuid_0x00000001 | cut -d ":" -f 4`
++        fi
++      fi
++
++      ebx_cpuid7=0
++      ecx_cpuid7=0
++      if test "$((0x$eax_cpuid0))" -ge 7 ; then
++        AX_GCC_X86_CPUID_COUNT(0x00000007, 0x00)
++        if test "$ax_cv_gcc_x86_cpuid_0x00000007" != "unknown";
++        then
++          ebx_cpuid7=`echo $ax_cv_gcc_x86_cpuid_0x00000007 | cut -d ":" -f 2`
++          ecx_cpuid7=`echo $ax_cv_gcc_x86_cpuid_0x00000007 | cut -d ":" -f 3`
++        fi
++      fi
++
++      ecx_cpuid80000001=0
++      edx_cpuid80000001=0
++      if test "$((0x$eax_cpuid80000000))" -ge "$((0x80000001))" ; then
++        AX_GCC_X86_CPUID(0x80000001)
++        if test "$ax_cv_gcc_x86_cpuid_0x80000001" != "unknown";
++        then
++          ecx_cpuid80000001=`echo $ax_cv_gcc_x86_cpuid_0x80000001 | cut -d ":" -f 3`
++          edx_cpuid80000001=`echo $ax_cv_gcc_x86_cpuid_0x80000001 | cut -d ":" -f 4`
++        fi
++      fi
++
++      AC_CACHE_VAL([ax_cv_have_mmx_os_support_ext],
++      [
++        ax_cv_have_mmx_os_support_ext=yes
++      ])
++
++      ax_cv_have_none_os_support_ext=yes
++
++      AC_CACHE_VAL([ax_cv_have_sse_os_support_ext],
++      [
++        ax_cv_have_sse_os_support_ext=no,
++        if test "$((0x$edx_cpuid1>>25&0x01))" = 1; then
++          AC_LANG_PUSH([C])
++          AC_TRY_RUN([
++#include <signal.h>
++#include <stdlib.h>
++            /* No way at ring1 to ring3 in protected mode to check the CR0 and CR4
++               control registers directly. Execute an SSE instruction.
++               If it raises SIGILL then OS doesn't support SSE based instructions */
++            void sig_handler(int signum){ exit(1); }
++            int main(){
++              signal(SIGILL, sig_handler);
++              /* SSE instruction xorps  %xmm0,%xmm0 */
++              __asm__ __volatile__ (".byte 0x0f, 0x57, 0xc0");
++              return 0;
++            }],
++            ax_cv_have_sse_os_support_ext=yes,
++            ax_cv_have_sse_os_support_ext=no,
++            ax_cv_have_sse_os_support_ext=no)
++          AC_LANG_POP([C])
++        fi
++      ])
++
++      xgetbv_eax=0
++      if test "$((0x$ecx_cpuid1>>28&0x01))" = 1; then
++        AX_GCC_X86_AVX_XGETBV(0x00000000)
++
++        if test x"$ax_cv_gcc_x86_avx_xgetbv_0x00000000" != x"unknown"; then
++          xgetbv_eax=`echo $ax_cv_gcc_x86_avx_xgetbv_0x00000000 | cut -d ":" -f 1`
++        fi
++
++        AC_CACHE_VAL([ax_cv_have_avx_os_support_ext],
++        [
++          ax_cv_have_avx_os_support_ext=no
++          if test "$((0x$ecx_cpuid1>>27&0x01))" = 1; then
++            if test "$((0x$xgetbv_eax&0x6))" = 6; then
++              ax_cv_have_avx_os_support_ext=yes
++            fi
++          fi
++        ])
++      fi
++
++      AC_CACHE_VAL([ax_cv_have_avx512_os_support_ext],
++      [
++        ax_cv_have_avx512_os_support_ext=no
++        if test "$ax_cv_have_avx_os_support_ext" = yes; then
++          if test "$((0x$xgetbv_eax&0xe6))" = "$((0xe6))"; then
++            ax_cv_have_avx512_os_support_ext=yes
++          fi
++        fi
++      ])
++
++      for ac_instr_info dnl
++      in "none;rdrnd;RDRND;ecx_cpuid1,30;-mrdrnd;HAVE_RDRND;CPUEXT_FLAGS" dnl
++         "none;bmi1;BMI1;ebx_cpuid7,3;-mbmi;HAVE_BMI1;CPUEXT_FLAGS" dnl
++         "none;bmi2;BMI2;ebx_cpuid7,8;-mbmi2;HAVE_BMI2;CPUEXT_FLAGS" dnl
++         "none;adx;ADX;ebx_cpuid7,19;-madx;HAVE_ADX;CPUEXT_FLAGS" dnl
++         "none;mpx;MPX;ebx_cpuid7,14;-mmpx;HAVE_MPX;CPUEXT_FLAGS" dnl
++         "none;prefetchwt1;PREFETCHWT1;ecx_cpuid7,0;-mprefetchwt1;HAVE_PREFETCHWT1;CPUEXT_FLAGS" dnl
++         "none;abm;ABM;ecx_cpuid80000001,5;-mabm;HAVE_ABM;CPUEXT_FLAGS" dnl
++         "mmx;mmx;MMX;edx_cpuid1,23;-mmmx;HAVE_MMX;SIMD_FLAGS" dnl
++         "sse;sse;SSE;edx_cpuid1,25;-msse;HAVE_SSE;SIMD_FLAGS" dnl
++         "sse;sse2;SSE2;edx_cpuid1,26;-msse2;HAVE_SSE2;SIMD_FLAGS" dnl
++         "sse;sse3;SSE3;ecx_cpuid1,1;-msse3;HAVE_SSE3;SIMD_FLAGS" dnl
++         "sse;ssse3;SSSE3;ecx_cpuid1,9;-mssse3;HAVE_SSSE3;SIMD_FLAGS" dnl
++         "sse;sse41;SSE4.1;ecx_cpuid1,19;-msse4.1;HAVE_SSE4_1;SIMD_FLAGS" dnl
++         "sse;sse42;SSE4.2;ecx_cpuid1,20;-msse4.2;HAVE_SSE4_2;SIMD_FLAGS" dnl
++         "sse;sse4a;SSE4a;ecx_cpuid80000001,6;-msse4a;HAVE_SSE4a;SIMD_FLAGS" dnl
++         "sse;sha;SHA;ebx_cpuid7,29;-msha;HAVE_SHA;SIMD_FLAGS" dnl
++         "sse;aes;AES;ecx_cpuid1,25;-maes;HAVE_AES;SIMD_FLAGS" dnl
++         "avx;avx;AVX;ecx_cpuid1,28;-mavx;HAVE_AVX;SIMD_FLAGS" dnl
++         "avx;fma3;FMA3;ecx_cpuid1,12;-mfma;HAVE_FMA3;SIMD_FLAGS" dnl
++         "avx;fma4;FMA4;ecx_cpuid80000001,16;-mfma4;HAVE_FMA4;SIMD_FLAGS" dnl
++         "avx;xop;XOP;ecx_cpuid80000001,11;-mxop;HAVE_XOP;SIMD_FLAGS" dnl
++         "avx;avx2;AVX2;ebx_cpuid7,5;-mavx2;HAVE_AVX2;SIMD_FLAGS" dnl
++         "avx512;avx512f;AVX512-F;ebx_cpuid7,16;-mavx512f;HAVE_AVX512_F;SIMD_FLAGS" dnl
++         "avx512;avx512cd;AVX512-CD;ebx_cpuid7,28;-mavx512cd;HAVE_AVX512_CD;SIMD_FLAGS" dnl
++         "avx512;avx512pf;AVX512-PF;ebx_cpuid7,26;-mavx512pf;HAVE_AVX512_PF;SIMD_FLAGS" dnl
++         "avx512;avx512er;AVX512-ER;ebx_cpuid7,27;-mavx512er;HAVE_AVX512_ER;SIMD_FLAGS" dnl
++         "avx512;avx512vl;AVX512-VL;ebx_cpuid7,31;-mavx512vl;HAVE_AVX512_VL;SIMD_FLAGS" dnl
++         "avx512;avx512bw;AVX512-BW;ebx_cpuid7,30;-mavx512bw;HAVE_AVX512_BW;SIMD_FLAGS" dnl
++         "avx512;avx512dq;AVX512-DQ;ebx_cpuid7,17;-mavx512dq;HAVE_AVX512_DQ;SIMD_FLAGS" dnl
++         "avx512;avx512ifma;AVX512-IFMA;ebx_cpuid7,21;-mavx512ifma;HAVE_AVX512_IFMA;SIMD_FLAGS" dnl
++         "avx512;avx512vbmi;AVX512-VBMI;ecx_cpuid7,1;-mavx512vbmi;HAVE_AVX512_VBMI;SIMD_FLAGS" dnl
++         #
++      do ac_instr_os_support=$(eval echo \$ax_cv_have_$(echo $ac_instr_info | cut -d ";" -f 1)_os_support_ext)
++         ac_instr_acvar=$(echo $ac_instr_info | cut -d ";" -f 2)
++         ac_instr_shortname=$(echo $ac_instr_info | cut -d ";" -f 3)
++         ac_instr_chk_loc=$(echo $ac_instr_info | cut -d ";" -f 4)
++         ac_instr_chk_reg=0x$(eval echo \$$(echo $ac_instr_chk_loc | cut -d "," -f 1))
++         ac_instr_chk_bit=$(echo $ac_instr_chk_loc | cut -d "," -f 2)
++         ac_instr_compiler_flags=$(echo $ac_instr_info | cut -d ";" -f 5)
++         ac_instr_have_define=$(echo $ac_instr_info | cut -d ";" -f 6)
++         ac_instr_flag_type=$(echo $ac_instr_info | cut -d ";" -f 7)
++
++         AC_CACHE_CHECK([whether ${ac_instr_shortname} is supported by the processor], [ax_cv_have_${ac_instr_acvar}_cpu_ext],
++         [
++           eval ax_cv_have_${ac_instr_acvar}_cpu_ext=no
++           if test "$((${ac_instr_chk_reg}>>${ac_instr_chk_bit}&0x01))" = 1 ; then
++             eval ax_cv_have_${ac_instr_acvar}_cpu_ext=yes
++           fi
++         ])
++
++         if test x"$(eval echo \$ax_cv_have_${ac_instr_acvar}_cpu_ext)" = x"yes"; then
++           AC_CACHE_CHECK([whether ${ac_instr_shortname} is supported by the processor and OS], [ax_cv_have_${ac_instr_acvar}_ext],
++           [
++             eval ax_cv_have_${ac_instr_acvar}_ext=no
++             if test x"${ac_instr_os_support}" = x"yes"; then
++               eval ax_cv_have_${ac_instr_acvar}_ext=yes
++             fi
++           ])
++
++           if test "$(eval echo \$ax_cv_have_${ac_instr_acvar}_ext)" = yes; then
++             AX_CHECK_COMPILE_FLAG(${ac_instr_compiler_flags}, eval ax_cv_support_${ac_instr_acvar}_ext=yes,
++                                                               eval ax_cv_support_${ac_instr_acvar}_ext=no)
++             if test x"$(eval echo \$ax_cv_support_${ac_instr_acvar}_ext)" = x"yes"; then
++               eval ${ac_instr_flag_type}=\"\$${ac_instr_flag_type} ${ac_instr_compiler_flags}\"
++               AC_DEFINE_UNQUOTED([${ac_instr_have_define}])
++             else
++               AC_MSG_WARN([Your processor and OS supports ${ac_instr_shortname} instructions but not your compiler, can you try another compiler?])
++             fi
++           else
++             if test x"${ac_instr_os_support}" = x"no"; then
++               AC_CACHE_VAL(ax_cv_support_${ac_instr_acvar}_ext, eval ax_cv_support_${ac_instr_acvar}_ext=no)
++               AC_MSG_WARN([Your processor supports ${ac_instr_shortname}, but your OS doesn't])
++             fi
++           fi
++         else
++           AC_CACHE_VAL(ax_cv_have_${ac_instr_acvar}_ext, eval ax_cv_have_${ac_instr_acvar}_ext=no)
++           AC_CACHE_VAL(ax_cv_support_${ac_instr_acvar}_ext, eval ax_cv_support_${ac_instr_acvar}_ext=no)
++         fi
++      done
++  ;;
++  esac
+ 
++  AH_TEMPLATE([HAVE_RDRND],[Define to 1 to support Digital Random Number Generator])
++  AH_TEMPLATE([HAVE_BMI1],[Define to 1 to support Bit Manipulation Instruction Set 1])
++  AH_TEMPLATE([HAVE_BMI2],[Define to 1 to support Bit Manipulation Instruction Set 2])
++  AH_TEMPLATE([HAVE_ADX],[Define to 1 to support Multi-Precision Add-Carry Instruction Extensions])
++  AH_TEMPLATE([HAVE_MPX],[Define to 1 to support Memory Protection Extensions])
++  AH_TEMPLATE([HAVE_PREFETCHWT1],[Define to 1 to support Prefetch Vector Data Into Caches WT1])
++  AH_TEMPLATE([HAVE_ABM],[Define to 1 to support Advanced Bit Manipulation])
++  AH_TEMPLATE([HAVE_MMX],[Define to 1 to support Multimedia Extensions])
++  AH_TEMPLATE([HAVE_SSE],[Define to 1 to support Streaming SIMD Extensions])
++  AH_TEMPLATE([HAVE_SSE2],[Define to 1 to support Streaming SIMD Extensions])
++  AH_TEMPLATE([HAVE_SSE3],[Define to 1 to support Streaming SIMD Extensions 3])
++  AH_TEMPLATE([HAVE_SSSE3],[Define to 1 to support Supplemental Streaming SIMD Extensions 3])
++  AH_TEMPLATE([HAVE_SSE4_1],[Define to 1 to support Streaming SIMD Extensions 4.1])
++  AH_TEMPLATE([HAVE_SSE4_2],[Define to 1 to support Streaming SIMD Extensions 4.2])
++  AH_TEMPLATE([HAVE_SSE4a],[Define to 1 to support AMD Streaming SIMD Extensions 4a])
++  AH_TEMPLATE([HAVE_SHA],[Define to 1 to support Secure Hash Algorithm Extension])
++  AH_TEMPLATE([HAVE_AES],[Define to 1 to support Advanced Encryption Standard New Instruction Set (AES-NI)])
++  AH_TEMPLATE([HAVE_AVX],[Define to 1 to support Advanced Vector Extensions])
++  AH_TEMPLATE([HAVE_FMA3],[Define to 1 to support  Fused Multiply-Add Extensions 3])
++  AH_TEMPLATE([HAVE_FMA4],[Define to 1 to support Fused Multiply-Add Extensions 4])
++  AH_TEMPLATE([HAVE_XOP],[Define to 1 to support eXtended Operations Extensions])
++  AH_TEMPLATE([HAVE_AVX2],[Define to 1 to support Advanced Vector Extensions 2])
++  AH_TEMPLATE([HAVE_AVX512_F],[Define to 1 to support AVX-512 Foundation Extensions])
++  AH_TEMPLATE([HAVE_AVX512_CD],[Define to 1 to support AVX-512 Conflict Detection Instructions])
++  AH_TEMPLATE([HAVE_AVX512_PF],[Define to 1 to support AVX-512 Conflict Prefetch Instructions])
++  AH_TEMPLATE([HAVE_AVX512_ER],[Define to 1 to support AVX-512 Exponential & Reciprocal Instructions])
++  AH_TEMPLATE([HAVE_AVX512_VL],[Define to 1 to support AVX-512 Vector Length Extensions])
++  AH_TEMPLATE([HAVE_AVX512_BW],[Define to 1 to support AVX-512 Byte and Word Instructions])
++  AH_TEMPLATE([HAVE_AVX512_DQ],[Define to 1 to support AVX-512 Doubleword and Quadword Instructions])
++  AH_TEMPLATE([HAVE_AVX512_IFMA],[Define to 1 to support AVX-512 Integer Fused Multiply Add Instructions])
++  AH_TEMPLATE([HAVE_AVX512_VBMI],[Define to 1 to support AVX-512 Vector Byte Manipulation Instructions])
+   AC_SUBST(SIMD_FLAGS)
++  AC_SUBST(CPUEXT_FLAGS)
+ ])
+deleted file mode 100644
+--- m4/ax_gcc_option.m4
++++ /dev/null
+@@ -1,129 +0,0 @@
+-# ===========================================================================
+-#       http://www.gnu.org/software/autoconf-archive/ax_gcc_option.html
+-# ===========================================================================
+-#
+-# SYNOPSIS
+-#
+-#   AX_GCC_OPTION(OPTION,EXTRA-OPTIONS,TEST-PROGRAM,ACTION-IF-SUCCESSFUL,ACTION-IF-NOT-SUCCESFUL)
+-#
+-# DESCRIPTION
+-#
+-#   AX_GCC_OPTION checks wheter gcc accepts the passed OPTION. If it accepts
+-#   the OPTION then ACTION-IF-SUCCESSFUL will be executed, otherwise
+-#   ACTION-IF-UNSUCCESSFUL.
+-#
+-#   NOTE: This macro will be obsoleted by AX_C_CHECK_FLAG AX_CXX_CHECK_FLAG,
+-#   AX_CPP_CHECK_FLAG, AX_CXXCPP_CHECK_FLAG and AX_LD_CHECK_FLAG.
+-#
+-#   A typical usage should be the following one:
+-#
+-#     AX_GCC_OPTION([-fomit-frame-pointer],[],[],[
+-#       AC_MSG_NOTICE([The option is supported])],[
+-#       AC_MSG_NOTICE([No luck this time])
+-#     ])
+-#
+-#   The macro doesn't discriminate between languages so, if you are testing
+-#   for an option that works for C++ but not for C you should use '-x c++'
+-#   as EXTRA-OPTIONS:
+-#
+-#     AX_GCC_OPTION([-fno-rtti],[-x c++],[],[ ... ],[ ... ])
+-#
+-#   OPTION is tested against the following code:
+-#
+-#     int main()
+-#     {
+-#             return 0;
+-#     }
+-#
+-#   The optional TEST-PROGRAM comes handy when the default main() is not
+-#   suited for the option being checked
+-#
+-#   So, if you need to test for -fstrict-prototypes option you should
+-#   probably use the macro as follows:
+-#
+-#     AX_GCC_OPTION([-fstrict-prototypes],[-x c++],[
+-#       int main(int argc, char ** argv)
+-#       {
+-#               (void) argc;
+-#               (void) argv;
+-#
+-#               return 0;
+-#       }
+-#     ],[ ... ],[ ... ])
+-#
+-#   Note that the macro compiles but doesn't link the test program so it is
+-#   not suited for checking options that are passed to the linker, like:
+-#
+-#     -Wl,-L<a-library-path>
+-#
+-#   In order to avoid such kind of problems you should think about usinguse
+-#   the AX_*_CHECK_FLAG family macros
+-#
+-# LICENSE
+-#
+-#   Copyright (c) 2008 Francesco Salvestrini <salvestrini@users.sourceforge.net>
+-#   Copyright (c) 2008 Bogdan Drozdowski <bogdandr@op.pl>
+-#
+-#   This program is free software; you can redistribute it and/or modify it
+-#   under the terms of the GNU General Public License as published by the
+-#   Free Software Foundation; either version 2 of the License, or (at your
+-#   option) any later version.
+-#
+-#   This program is distributed in the hope that it will be useful, but
+-#   WITHOUT ANY WARRANTY; without even the implied warranty of
+-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+-#   Public License for more details.
+-#
+-#   You should have received a copy of the GNU General Public License along
+-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+-#
+-#   As a special exception, the respective Autoconf Macro's copyright owner
+-#   gives unlimited permission to copy, distribute and modify the configure
+-#   scripts that are the output of Autoconf when processing the Macro. You
+-#   need not follow the terms of the GNU General Public License when using
+-#   or distributing such scripts, even though portions of the text of the
+-#   Macro appear in them. The GNU General Public License (GPL) does govern
+-#   all other use of the material that constitutes the Autoconf Macro.
+-#
+-#   This special exception to the GPL applies to versions of the Autoconf
+-#   Macro released by the Autoconf Archive. When you make and distribute a
+-#   modified version of the Autoconf Macro, you may extend this special
+-#   exception to the GPL to apply to your modified version as well.
+-
+-#serial 12
+-
+-AC_DEFUN([AX_GCC_OPTION], [
+-  AC_REQUIRE([AC_PROG_CC])
+-
+-  AC_MSG_CHECKING([if gcc accepts $1 option])
+-
+-  AS_IF([ test "x$GCC" = "xyes" ],[
+-    AS_IF([ test -z "$3" ],[
+-      ax_gcc_option_test="int main()
+-{
+-	return 0;
+-}"
+-    ],[
+-      ax_gcc_option_test="$3"
+-    ])
+-
+-    # Dump the test program to file
+-    cat <<EOF > conftest.c
+-$ax_gcc_option_test
+-EOF
+-
+-    # Dump back the file to the log, useful for debugging purposes
+-    AC_TRY_COMMAND(cat conftest.c 1>&AS_MESSAGE_LOG_FD)
+-
+-    AS_IF([ AC_TRY_COMMAND($CC $2 $1 -c conftest.c 1>&AS_MESSAGE_LOG_FD) ],[
+-		AC_MSG_RESULT([yes])
+-	$4
+-    ],[
+-		AC_MSG_RESULT([no])
+-	$5
+-    ])
+-  ],[
+-    AC_MSG_RESULT([no gcc available])
+-  ])
+-])
+-
+--- m4/ax_gcc_version.m4
++++ m4/ax_gcc_version.m4
+@@ -2,6 +2,10 @@
+ #      http://www.gnu.org/software/autoconf-archive/ax_gcc_version.html
+ # ===========================================================================
+ #
++# OBSOLETE MACRO
++#
++#   Use AX_COMPILER_VERSION instead
++#
+ # SYNOPSIS
+ #
+ #   AX_GCC_VERSION
+@@ -41,26 +45,20 @@
+ #   modified version of the Autoconf Macro, you may extend this special
+ #   exception to the GPL to apply to your modified version as well.
+ 
+-#serial 7
++#serial 10
+ 
+ AC_DEFUN([AX_GCC_VERSION], [
++  AC_OBSOLETE([$0], [;please use AX_COMPILER_VERSION instead])
++  AC_LANG_PUSH([C])
++  AC_REQUIRE([AX_COMPILER_VENDOR])
++  AC_REQUIRE([AX_COMPILER_VERSION])
++  AC_LANG_POP([C])
+   GCC_VERSION=""
+-  AX_GCC_OPTION([-dumpversion],[],[],[
+-    ax_gcc_version_option=yes
+-  ],[
+-    ax_gcc_version_option=no
+-  ])
+-  AS_IF([test "x$GCC" = "xyes"],[
+-    AS_IF([test "x$ax_gcc_version_option" != "xno"],[
+-      AC_CACHE_CHECK([gcc version],[ax_cv_gcc_version],[
+-        ax_cv_gcc_version="`$CC -dumpversion`"
+-        AS_IF([test "x$ax_cv_gcc_version" = "x"],[
+-          ax_cv_gcc_version=""
+-        ])
+-      ])
+-      GCC_VERSION=$ax_cv_gcc_version
++  ax_cv_gcc_version=""
++  AS_IF([test "X$ax_cv_c_compiler_vendor" = "Xgnu"],
++    [dnl
++    ax_cv_gcc_version=$ax_cv_c_compiler_version
++    GCC_VERSION=$ax_cv_gcc_version
+     ])
+-  ])
+   AC_SUBST([GCC_VERSION])
+ ])
+-
+new file mode 100644
+--- /dev/null
++++ m4/ax_gcc_x86_avx_xgetbv.m4
+@@ -0,0 +1,79 @@
++# ===========================================================================
++#   http://www.gnu.org/software/autoconf-archive/ax_gcc_x86_avx_xgetbv.html
++# ===========================================================================
++#
++# SYNOPSIS
++#
++#   AX_GCC_X86_AVX_XGETBV
++#
++# DESCRIPTION
++#
++#   On later x86 processors with AVX SIMD support, with gcc or a compiler
++#   that has a compatible syntax for inline assembly instructions, run a
++#   small program that executes the xgetbv instruction with input OP. This
++#   can be used to detect if the OS supports AVX instruction usage.
++#
++#   On output, the values of the eax and edx registers are stored as
++#   hexadecimal strings as "eax:edx" in the cache variable
++#   ax_cv_gcc_x86_avx_xgetbv.
++#
++#   If the xgetbv instruction fails (because you are running a
++#   cross-compiler, or because you are not using gcc, or because you are on
++#   a processor that doesn't have this instruction),
++#   ax_cv_gcc_x86_avx_xgetbv_OP is set to the string "unknown".
++#
++#   This macro mainly exists to be used in AX_EXT.
++#
++# LICENSE
++#
++#   Copyright (c) 2013 Michael Petch <mpetch@capp-sysware.com>
++#
++#   This program is free software: you can redistribute it and/or modify it
++#   under the terms of the GNU General Public License as published by the
++#   Free Software Foundation, either version 3 of the License, or (at your
++#   option) any later version.
++#
++#   This program is distributed in the hope that it will be useful, but
++#   WITHOUT ANY WARRANTY; without even the implied warranty of
++#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
++#   Public License for more details.
++#
++#   You should have received a copy of the GNU General Public License along
++#   with this program. If not, see <http://www.gnu.org/licenses/>.
++#
++#   As a special exception, the respective Autoconf Macro's copyright owner
++#   gives unlimited permission to copy, distribute and modify the configure
++#   scripts that are the output of Autoconf when processing the Macro. You
++#   need not follow the terms of the GNU General Public License when using
++#   or distributing such scripts, even though portions of the text of the
++#   Macro appear in them. The GNU General Public License (GPL) does govern
++#   all other use of the material that constitutes the Autoconf Macro.
++#
++#   This special exception to the GPL applies to versions of the Autoconf
++#   Macro released by the Autoconf Archive. When you make and distribute a
++#   modified version of the Autoconf Macro, you may extend this special
++#   exception to the GPL to apply to your modified version as well.
++
++#serial 2
++
++AC_DEFUN([AX_GCC_X86_AVX_XGETBV],
++[AC_REQUIRE([AC_PROG_CC])
++AC_LANG_PUSH([C])
++AC_CACHE_CHECK(for x86-AVX xgetbv $1 output, ax_cv_gcc_x86_avx_xgetbv_$1,
++ [AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <stdio.h>], [
++     int op = $1, eax, edx;
++     FILE *f;
++      /* Opcodes for xgetbv */
++      __asm__ __volatile__ (".byte 0x0f, 0x01, 0xd0"
++        : "=a" (eax), "=d" (edx)
++        : "c" (op));
++     f = fopen("conftest_xgetbv", "w"); if (!f) return 1;
++     fprintf(f, "%x:%x\n", eax, edx);
++     fclose(f);
++     return 0;
++])],
++     [ax_cv_gcc_x86_avx_xgetbv_$1=`cat conftest_xgetbv`; rm -f conftest_xgetbv],
++     [ax_cv_gcc_x86_avx_xgetbv_$1=unknown; rm -f conftest_xgetbv],
++     [ax_cv_gcc_x86_avx_xgetbv_$1=unknown])])
++AC_LANG_POP([C])
++])
+--- m4/ax_gcc_x86_cpuid.m4
++++ m4/ax_gcc_x86_cpuid.m4
+@@ -5,13 +5,15 @@
+ # SYNOPSIS
+ #
+ #   AX_GCC_X86_CPUID(OP)
++#   AX_GCC_X86_CPUID_COUNT(OP, COUNT)
+ #
+ # DESCRIPTION
+ #
+ #   On Pentium and later x86 processors, with gcc or a compiler that has a
+ #   compatible syntax for inline assembly instructions, run a small program
+ #   that executes the cpuid instruction with input OP. This can be used to
+-#   detect the CPU type.
++#   detect the CPU type. AX_GCC_X86_CPUID_COUNT takes an additional COUNT
++#   parameter that gets passed into register ECX before calling cpuid.
+ #
+ #   On output, the values of the eax, ebx, ecx, and edx registers are stored
+ #   as hexadecimal strings as "eax:ebx:ecx:edx" in the cache variable
+@@ -28,6 +30,7 @@
+ #
+ #   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
+ #   Copyright (c) 2008 Matteo Frigo
++#   Copyright (c) 2015 Michael Petch <mpetch@capp-sysware.com>
+ #
+ #   This program is free software: you can redistribute it and/or modify it
+ #   under the terms of the GNU General Public License as published by the
+@@ -55,18 +58,25 @@
+ #   modified version of the Autoconf Macro, you may extend this special
+ #   exception to the GPL to apply to your modified version as well.
+ 
+-#serial 7
++#serial 8
+ 
+ AC_DEFUN([AX_GCC_X86_CPUID],
++[AX_GCC_X86_CPUID_COUNT($1, 0)
++])
++
++AC_DEFUN([AX_GCC_X86_CPUID_COUNT],
+ [AC_REQUIRE([AC_PROG_CC])
+ AC_LANG_PUSH([C])
+ AC_CACHE_CHECK(for x86 cpuid $1 output, ax_cv_gcc_x86_cpuid_$1,
+  [AC_RUN_IFELSE([AC_LANG_PROGRAM([#include <stdio.h>], [
+-     int op = $1, eax, ebx, ecx, edx;
++     int op = $1, level = $2, eax, ebx, ecx, edx;
+      FILE *f;
+-      __asm__("cpuid"
+-        : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx)
+-        : "a" (op));
++      __asm__ __volatile__ ("xchg %%ebx, %1\n"
++        "cpuid\n"
++        "xchg %%ebx, %1\n"
++        : "=a" (eax), "=r" (ebx), "=c" (ecx), "=d" (edx)
++        : "a" (op), "2" (level));
++
+      f = fopen("conftest_cpuid", "w"); if (!f) return 1;
+      fprintf(f, "%x:%x:%x:%x\n", eax, ebx, ecx, edx);
+      fclose(f);
+new file mode 100644
+--- /dev/null
++++ m4/ax_jni_include_dir.m4
+@@ -0,0 +1,132 @@
++# ===========================================================================
++#    http://www.gnu.org/software/autoconf-archive/ax_jni_include_dir.html
++# ===========================================================================
++#
++# SYNOPSIS
++#
++#   AX_JNI_INCLUDE_DIR
++#
++# DESCRIPTION
++#
++#   AX_JNI_INCLUDE_DIR finds include directories needed for compiling
++#   programs using the JNI interface.
++#
++#   JNI include directories are usually in the Java distribution. This is
++#   deduced from the value of $JAVA_HOME, $JAVAC, or the path to "javac", in
++#   that order. When this macro completes, a list of directories is left in
++#   the variable JNI_INCLUDE_DIRS.
++#
++#   Example usage follows:
++#
++#     AX_JNI_INCLUDE_DIR
++#
++#     for JNI_INCLUDE_DIR in $JNI_INCLUDE_DIRS
++#     do
++#             CPPFLAGS="$CPPFLAGS -I$JNI_INCLUDE_DIR"
++#     done
++#
++#   If you want to force a specific compiler:
++#
++#   - at the configure.in level, set JAVAC=yourcompiler before calling
++#   AX_JNI_INCLUDE_DIR
++#
++#   - at the configure level, setenv JAVAC
++#
++#   Note: This macro can work with the autoconf M4 macros for Java programs.
++#   This particular macro is not part of the original set of macros.
++#
++# LICENSE
++#
++#   Copyright (c) 2008 Don Anderson <dda@sleepycat.com>
++#
++#   Copying and distribution of this file, with or without modification, are
++#   permitted in any medium without royalty provided the copyright notice
++#   and this notice are preserved. This file is offered as-is, without any
++#   warranty.
++
++#serial 11
++
++AU_ALIAS([AC_JNI_INCLUDE_DIR], [AX_JNI_INCLUDE_DIR])
++AC_DEFUN([AX_JNI_INCLUDE_DIR],[
++
++JNI_INCLUDE_DIRS=""
++
++if test "x$JAVA_HOME" != x; then
++	_JTOPDIR="$JAVA_HOME"
++else
++	if test "x$JAVAC" = x; then
++		JAVAC=javac
++	fi
++	AC_PATH_PROG([_ACJNI_JAVAC], [$JAVAC], [no])
++	if test "x$_ACJNI_JAVAC" = xno; then
++		AC_MSG_ERROR([cannot find JDK; try setting \$JAVAC or \$JAVA_HOME])
++	fi
++	_ACJNI_FOLLOW_SYMLINKS("$_ACJNI_JAVAC")
++	_JTOPDIR=`echo "$_ACJNI_FOLLOWED" | sed -e 's://*:/:g' -e 's:/[[^/]]*$::'`
++fi
++
++case "$host_os" in
++        darwin*)        # Apple JDK is at /System location and has headers symlinked elsewhere
++                        case "$_JTOPDIR" in
++                        /System/Library/Frameworks/JavaVM.framework/*)
++				_JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
++				_JINC="$_JTOPDIR/Headers";;
++			*)      _JINC="$_JTOPDIR/include";;
++                        esac;;
++        *)              _JINC="$_JTOPDIR/include";;
++esac
++_AS_ECHO_LOG([_JTOPDIR=$_JTOPDIR])
++_AS_ECHO_LOG([_JINC=$_JINC])
++
++# On Mac OS X 10.6.4, jni.h is a symlink:
++# /System/Library/Frameworks/JavaVM.framework/Versions/Current/Headers/jni.h
++# -> ../../CurrentJDK/Headers/jni.h.
++AC_CHECK_FILE([$_JINC/jni.h],
++	[JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JINC"],
++	[_JTOPDIR=`echo "$_JTOPDIR" | sed -e 's:/[[^/]]*$::'`
++	 AC_CHECK_FILE([$_JTOPDIR/include/jni.h],
++		[JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include"],
++                AC_MSG_ERROR([cannot find JDK header files]))
++	])
++
++# get the likely subdirectories for system specific java includes
++case "$host_os" in
++bsdi*)          _JNI_INC_SUBDIRS="bsdos";;
++freebsd*)       _JNI_INC_SUBDIRS="freebsd";;
++darwin*)        _JNI_INC_SUBDIRS="darwin";;
++linux*)         _JNI_INC_SUBDIRS="linux genunix";;
++osf*)           _JNI_INC_SUBDIRS="alpha";;
++solaris*)       _JNI_INC_SUBDIRS="solaris";;
++mingw*)		_JNI_INC_SUBDIRS="win32";;
++cygwin*)	_JNI_INC_SUBDIRS="win32";;
++*)              _JNI_INC_SUBDIRS="genunix";;
++esac
++
++# add any subdirectories that are present
++for JINCSUBDIR in $_JNI_INC_SUBDIRS
++do
++    if test -d "$_JTOPDIR/include/$JINCSUBDIR"; then
++         JNI_INCLUDE_DIRS="$JNI_INCLUDE_DIRS $_JTOPDIR/include/$JINCSUBDIR"
++    fi
++done
++])
++
++# _ACJNI_FOLLOW_SYMLINKS <path>
++# Follows symbolic links on <path>,
++# finally setting variable _ACJNI_FOLLOWED
++# ----------------------------------------
++AC_DEFUN([_ACJNI_FOLLOW_SYMLINKS],[
++# find the include directory relative to the javac executable
++_cur="$1"
++while ls -ld "$_cur" 2>/dev/null | grep " -> " >/dev/null; do
++        AC_MSG_CHECKING([symlink for $_cur])
++        _slink=`ls -ld "$_cur" | sed 's/.* -> //'`
++        case "$_slink" in
++        /*) _cur="$_slink";;
++        # 'X' avoids triggering unwanted echo options.
++        *) _cur=`echo "X$_cur" | sed -e 's/^X//' -e 's:[[^/]]*$::'`"$_slink";;
++        esac
++        AC_MSG_RESULT([$_cur])
++done
++_ACJNI_FOLLOWED="$_cur"
++])# _ACJNI
+--- m4/ax_openmp.m4
++++ m4/ax_openmp.m4
+@@ -1,5 +1,5 @@
+ # ===========================================================================
+-#            http://www.nongnu.org/autoconf-archive/ax_openmp.html
++#         http://www.gnu.org/software/autoconf-archive/ax_openmp.html
+ # ===========================================================================
+ #
+ # SYNOPSIS
+@@ -21,9 +21,9 @@
+ #
+ #   If you want to compile everything with OpenMP, you should set:
+ #
+-#       CFLAGS="$CFLAGS $OPENMP_CFLAGS"
+-#       #OR#  CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
+-#       #OR#  FFLAGS="$FFLAGS $OPENMP_FFLAGS"
++#     CFLAGS="$CFLAGS $OPENMP_CFLAGS"
++#     #OR#  CXXFLAGS="$CXXFLAGS $OPENMP_CXXFLAGS"
++#     #OR#  FFLAGS="$FFLAGS $OPENMP_FFLAGS"
+ #
+ #   (depending on the selected language).
+ #
+@@ -38,6 +38,7 @@
+ # LICENSE
+ #
+ #   Copyright (c) 2008 Steven G. Johnson <stevenj@alum.mit.edu>
++#   Copyright (c) 2015 John W. Peterson <jwpeterson@gmail.com>
+ #
+ #   This program is free software: you can redistribute it and/or modify it
+ #   under the terms of the GNU General Public License as published by the
+@@ -65,8 +66,10 @@
+ #   modified version of the Autoconf Macro, you may extend this special
+ #   exception to the GPL to apply to your modified version as well.
+ 
++#serial 11
++
+ AC_DEFUN([AX_OPENMP], [
+-AC_PREREQ(2.59) dnl for _AC_LANG_PREFIX
++AC_PREREQ([2.69]) dnl for _AC_LANG_PREFIX
+ 
+ AC_CACHE_CHECK([for OpenMP flag of _AC_LANG compiler], ax_cv_[]_AC_LANG_ABBREV[]_openmp, [save[]_AC_LANG_PREFIX[]FLAGS=$[]_AC_LANG_PREFIX[]FLAGS
+ ax_cv_[]_AC_LANG_ABBREV[]_openmp=unknown
+@@ -81,8 +84,27 @@
+     none) []_AC_LANG_PREFIX[]FLAGS=$save[]_AC_LANG_PREFIX[] ;;
+     *) []_AC_LANG_PREFIX[]FLAGS="$save[]_AC_LANG_PREFIX[]FLAGS $ax_openmp_flag" ;;
+   esac
+-  AC_TRY_LINK_FUNC(omp_set_num_threads,
+-	[ax_cv_[]_AC_LANG_ABBREV[]_openmp=$ax_openmp_flag; break])
++  AC_LINK_IFELSE([AC_LANG_SOURCE([[
++@%:@include <omp.h>
++
++static void
++parallel_fill(int * data, int n)
++{
++  int i;
++@%:@pragma omp parallel for
++  for (i = 0; i < n; ++i)
++    data[i] = i;
++}
++
++int
++main()
++{
++  int arr[100000];
++  omp_set_num_threads(2);
++  parallel_fill(arr, 100000);
++  return 0;
++}
++]])],[ax_cv_[]_AC_LANG_ABBREV[]_openmp=$ax_openmp_flag; break],[])
+ done
+ []_AC_LANG_PREFIX[]FLAGS=$save[]_AC_LANG_PREFIX[]FLAGS
+ ])
+@@ -95,4 +117,3 @@
+   m4_default([$1], [AC_DEFINE(HAVE_OPENMP,1,[Define if OpenMP is enabled])])
+ fi
+ ])dnl AX_OPENMP
+-
+new file mode 100644
+--- /dev/null
++++ m4/ax_prog_java.m4
+@@ -0,0 +1,115 @@
++# ===========================================================================
++#       http://www.gnu.org/software/autoconf-archive/ax_prog_java.html
++# ===========================================================================
++#
++# SYNOPSIS
++#
++#   AX_PROG_JAVA
++#
++# DESCRIPTION
++#
++#   Here is a summary of the main macros:
++#
++#   AX_PROG_JAVAC: finds a Java compiler.
++#
++#   AX_PROG_JAVA: finds a Java virtual machine.
++#
++#   AX_CHECK_CLASS: finds if we have the given class (beware of CLASSPATH!).
++#
++#   AX_CHECK_RQRD_CLASS: finds if we have the given class and stops
++#   otherwise.
++#
++#   AX_TRY_COMPILE_JAVA: attempt to compile user given source.
++#
++#   AX_TRY_RUN_JAVA: attempt to compile and run user given source.
++#
++#   AX_JAVA_OPTIONS: adds Java configure options.
++#
++#   AX_PROG_JAVA tests an existing Java virtual machine. It uses the
++#   environment variable JAVA then tests in sequence various common Java
++#   virtual machines. For political reasons, it starts with the free ones.
++#   You *must* call [AX_PROG_JAVAC] before.
++#
++#   If you want to force a specific VM:
++#
++#   - at the configure.in level, set JAVA=yourvm before calling AX_PROG_JAVA
++#
++#     (but after AC_INIT)
++#
++#   - at the configure level, setenv JAVA
++#
++#   You can use the JAVA variable in your Makefile.in, with @JAVA@.
++#
++#   *Warning*: its success or failure can depend on a proper setting of the
++#   CLASSPATH env. variable.
++#
++#   TODO: allow to exclude virtual machines (rationale: most Java programs
++#   cannot run with some VM like kaffe).
++#
++#   Note: This is part of the set of autoconf M4 macros for Java programs.
++#   It is VERY IMPORTANT that you download the whole set, some macros depend
++#   on other. Unfortunately, the autoconf archive does not support the
++#   concept of set of macros, so I had to break it for submission.
++#
++#   A Web page, with a link to the latest CVS snapshot is at
++#   <http://www.internatif.org/bortzmeyer/autoconf-Java/>.
++#
++#   This is a sample configure.in Process this file with autoconf to produce
++#   a configure script.
++#
++#     AC_INIT(UnTag.java)
++#
++#     dnl Checks for programs.
++#     AC_CHECK_CLASSPATH
++#     AX_PROG_JAVAC
++#     AX_PROG_JAVA
++#
++#     dnl Checks for classes
++#     AX_CHECK_RQRD_CLASS(org.xml.sax.Parser)
++#     AX_CHECK_RQRD_CLASS(com.jclark.xml.sax.Driver)
++#
++#     AC_OUTPUT(Makefile)
++#
++# LICENSE
++#
++#   Copyright (c) 2008 Stephane Bortzmeyer <bortzmeyer@pasteur.fr>
++#
++#   This program is free software; you can redistribute it and/or modify it
++#   under the terms of the GNU General Public License as published by the
++#   Free Software Foundation; either version 2 of the License, or (at your
++#   option) any later version.
++#
++#   This program is distributed in the hope that it will be useful, but
++#   WITHOUT ANY WARRANTY; without even the implied warranty of
++#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
++#   Public License for more details.
++#
++#   You should have received a copy of the GNU General Public License along
++#   with this program. If not, see <http://www.gnu.org/licenses/>.
++#
++#   As a special exception, the respective Autoconf Macro's copyright owner
++#   gives unlimited permission to copy, distribute and modify the configure
++#   scripts that are the output of Autoconf when processing the Macro. You
++#   need not follow the terms of the GNU General Public License when using
++#   or distributing such scripts, even though portions of the text of the
++#   Macro appear in them. The GNU General Public License (GPL) does govern
++#   all other use of the material that constitutes the Autoconf Macro.
++#
++#   This special exception to the GPL applies to versions of the Autoconf
++#   Macro released by the Autoconf Archive. When you make and distribute a
++#   modified version of the Autoconf Macro, you may extend this special
++#   exception to the GPL to apply to your modified version as well.
++
++#serial 9
++
++AU_ALIAS([AC_PROG_JAVA], [AX_PROG_JAVA])
++AC_DEFUN([AX_PROG_JAVA],[
++m4_define([m4_ax_prog_java_list], [kaffe java])dnl
++AS_IF([test "x$JAVAPREFIX" = x],
++      [test x$JAVA = x && AC_CHECK_PROGS([JAVA], [m4_ax_prog_java_list])],
++      [test x$JAVA = x && AC_CHECK_PROGS([JAVA], [m4_ax_prog_java_list], [], [$JAVAPREFIX/bin])])
++test x$JAVA = x && AC_MSG_ERROR([no acceptable Java virtual machine found in \$PATH])
++m4_undefine([m4_ax_prog_java_list])dnl
++AX_PROG_JAVA_WORKS
++AC_PROVIDE([$0])dnl
++])
+new file mode 100644
+--- /dev/null
++++ m4/ax_prog_java_works.m4
+@@ -0,0 +1,134 @@
++# ===========================================================================
++#    http://www.gnu.org/software/autoconf-archive/ax_prog_java_works.html
++# ===========================================================================
++#
++# SYNOPSIS
++#
++#   AX_PROG_JAVA_WORKS
++#
++# DESCRIPTION
++#
++#   Internal use ONLY.
++#
++#   Note: This is part of the set of autoconf M4 macros for Java programs.
++#   It is VERY IMPORTANT that you download the whole set, some macros depend
++#   on other. Unfortunately, the autoconf archive does not support the
++#   concept of set of macros, so I had to break it for submission. The
++#   general documentation, as well as the sample configure.in, is included
++#   in the AX_PROG_JAVA macro.
++#
++# LICENSE
++#
++#   Copyright (c) 2008 Stephane Bortzmeyer <bortzmeyer@pasteur.fr>
++#
++#   This program is free software; you can redistribute it and/or modify it
++#   under the terms of the GNU General Public License as published by the
++#   Free Software Foundation; either version 2 of the License, or (at your
++#   option) any later version.
++#
++#   This program is distributed in the hope that it will be useful, but
++#   WITHOUT ANY WARRANTY; without even the implied warranty of
++#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
++#   Public License for more details.
++#
++#   You should have received a copy of the GNU General Public License along
++#   with this program. If not, see <http://www.gnu.org/licenses/>.
++#
++#   As a special exception, the respective Autoconf Macro's copyright owner
++#   gives unlimited permission to copy, distribute and modify the configure
++#   scripts that are the output of Autoconf when processing the Macro. You
++#   need not follow the terms of the GNU General Public License when using
++#   or distributing such scripts, even though portions of the text of the
++#   Macro appear in them. The GNU General Public License (GPL) does govern
++#   all other use of the material that constitutes the Autoconf Macro.
++#
++#   This special exception to the GPL applies to versions of the Autoconf
++#   Macro released by the Autoconf Archive. When you make and distribute a
++#   modified version of the Autoconf Macro, you may extend this special
++#   exception to the GPL to apply to your modified version as well.
++
++#serial 9
++
++AU_ALIAS([AC_PROG_JAVA_WORKS], [AX_PROG_JAVA_WORKS])
++AC_DEFUN([AX_PROG_JAVA_WORKS], [
++AC_PATH_PROG(UUDECODE, uudecode, [no])
++if test x$UUDECODE != xno; then
++AC_CACHE_CHECK([if uudecode can decode base 64 file], ac_cv_prog_uudecode_base64, [
++dnl /**
++dnl  * Test.java: used to test if java compiler works.
++dnl  */
++dnl public class Test
++dnl {
++dnl
++dnl public static void
++dnl main( String[] argv )
++dnl {
++dnl     System.exit (0);
++dnl }
++dnl
++dnl }
++cat << \EOF > Test.uue
++begin-base64 644 Test.class
++yv66vgADAC0AFQcAAgEABFRlc3QHAAQBABBqYXZhL2xhbmcvT2JqZWN0AQAE
++bWFpbgEAFihbTGphdmEvbGFuZy9TdHJpbmc7KVYBAARDb2RlAQAPTGluZU51
++bWJlclRhYmxlDAAKAAsBAARleGl0AQAEKEkpVgoADQAJBwAOAQAQamF2YS9s
++YW5nL1N5c3RlbQEABjxpbml0PgEAAygpVgwADwAQCgADABEBAApTb3VyY2VG
++aWxlAQAJVGVzdC5qYXZhACEAAQADAAAAAAACAAkABQAGAAEABwAAACEAAQAB
++AAAABQO4AAyxAAAAAQAIAAAACgACAAAACgAEAAsAAQAPABAAAQAHAAAAIQAB
++AAEAAAAFKrcAErEAAAABAAgAAAAKAAIAAAAEAAQABAABABMAAAACABQ=
++====
++EOF
++if $UUDECODE Test.uue; then
++        ac_cv_prog_uudecode_base64=yes
++else
++        echo "configure: __oline__: uudecode had trouble decoding base 64 file 'Test.uue'" >&AS_MESSAGE_LOG_FD
++        echo "configure: failed file was:" >&AS_MESSAGE_LOG_FD
++        cat Test.uue >&AS_MESSAGE_LOG_FD
++        ac_cv_prog_uudecode_base64=no
++fi
++rm -f Test.uue])
++fi
++if test x$ac_cv_prog_uudecode_base64 != xyes; then
++        rm -f Test.class
++        AC_MSG_WARN([I have to compile Test.class from scratch])
++        if test x$ac_cv_prog_javac_works = xno; then
++                AC_MSG_ERROR([Cannot compile java source. $JAVAC does not work properly])
++        fi
++        if test x$ac_cv_prog_javac_works = x; then
++                AX_PROG_JAVAC
++        fi
++fi
++AC_CACHE_CHECK(if $JAVA works, ac_cv_prog_java_works, [
++JAVA_TEST=Test.java
++CLASS_TEST=Test.class
++TEST=Test
++changequote(, )dnl
++cat << \EOF > $JAVA_TEST
++/* [#]line __oline__ "configure" */
++public class Test {
++public static void main (String args[]) {
++        System.exit (0);
++} }
++EOF
++changequote([, ])dnl
++if test x$ac_cv_prog_uudecode_base64 != xyes; then
++        if AC_TRY_COMMAND($JAVAC $JAVACFLAGS $JAVA_TEST) && test -s $CLASS_TEST; then
++                :
++        else
++          echo "configure: failed program was:" >&AS_MESSAGE_LOG_FD
++          cat $JAVA_TEST >&AS_MESSAGE_LOG_FD
++          AC_MSG_ERROR(The Java compiler $JAVAC failed (see config.log, check the CLASSPATH?))
++        fi
++fi
++if AC_TRY_COMMAND($JAVA -classpath . $JAVAFLAGS $TEST) >/dev/null 2>&1; then
++  ac_cv_prog_java_works=yes
++else
++  echo "configure: failed program was:" >&AS_MESSAGE_LOG_FD
++  cat $JAVA_TEST >&AS_MESSAGE_LOG_FD
++  AC_MSG_ERROR(The Java VM $JAVA failed (see config.log, check the CLASSPATH?))
++fi
++rm -fr $JAVA_TEST $CLASS_TEST Test.uue
++])
++AC_PROVIDE([$0])dnl
++]
++)
+new file mode 100644
+--- /dev/null
++++ m4/ax_prog_javac.m4
+@@ -0,0 +1,79 @@
++# ===========================================================================
++#       http://www.gnu.org/software/autoconf-archive/ax_prog_javac.html
++# ===========================================================================
++#
++# SYNOPSIS
++#
++#   AX_PROG_JAVAC
++#
++# DESCRIPTION
++#
++#   AX_PROG_JAVAC tests an existing Java compiler. It uses the environment
++#   variable JAVAC then tests in sequence various common Java compilers. For
++#   political reasons, it starts with the free ones.
++#
++#   If you want to force a specific compiler:
++#
++#   - at the configure.in level, set JAVAC=yourcompiler before calling
++#   AX_PROG_JAVAC
++#
++#   - at the configure level, setenv JAVAC
++#
++#   You can use the JAVAC variable in your Makefile.in, with @JAVAC@.
++#
++#   *Warning*: its success or failure can depend on a proper setting of the
++#   CLASSPATH env. variable.
++#
++#   TODO: allow to exclude compilers (rationale: most Java programs cannot
++#   compile with some compilers like guavac).
++#
++#   Note: This is part of the set of autoconf M4 macros for Java programs.
++#   It is VERY IMPORTANT that you download the whole set, some macros depend
++#   on other. Unfortunately, the autoconf archive does not support the
++#   concept of set of macros, so I had to break it for submission. The
++#   general documentation, as well as the sample configure.in, is included
++#   in the AX_PROG_JAVA macro.
++#
++# LICENSE
++#
++#   Copyright (c) 2008 Stephane Bortzmeyer <bortzmeyer@pasteur.fr>
++#
++#   This program is free software; you can redistribute it and/or modify it
++#   under the terms of the GNU General Public License as published by the
++#   Free Software Foundation; either version 2 of the License, or (at your
++#   option) any later version.
++#
++#   This program is distributed in the hope that it will be useful, but
++#   WITHOUT ANY WARRANTY; without even the implied warranty of
++#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
++#   Public License for more details.
++#
++#   You should have received a copy of the GNU General Public License along
++#   with this program. If not, see <http://www.gnu.org/licenses/>.
++#
++#   As a special exception, the respective Autoconf Macro's copyright owner
++#   gives unlimited permission to copy, distribute and modify the configure
++#   scripts that are the output of Autoconf when processing the Macro. You
++#   need not follow the terms of the GNU General Public License when using
++#   or distributing such scripts, even though portions of the text of the
++#   Macro appear in them. The GNU General Public License (GPL) does govern
++#   all other use of the material that constitutes the Autoconf Macro.
++#
++#   This special exception to the GPL applies to versions of the Autoconf
++#   Macro released by the Autoconf Archive. When you make and distribute a
++#   modified version of the Autoconf Macro, you may extend this special
++#   exception to the GPL to apply to your modified version as well.
++
++#serial 7
++
++AU_ALIAS([AC_PROG_JAVAC], [AX_PROG_JAVAC])
++AC_DEFUN([AX_PROG_JAVAC],[
++m4_define([m4_ax_prog_javac_list],["gcj -C" guavac jikes javac])dnl
++AS_IF([test "x$JAVAPREFIX" = x],
++      [test "x$JAVAC" = x && AC_CHECK_PROGS([JAVAC], [m4_ax_prog_javac_list])],
++      [test "x$JAVAC" = x && AC_CHECK_PROGS([JAVAC], [m4_ax_prog_javac_list], [], [$JAVAPREFIX/bin])])
++m4_undefine([m4_ax_prog_javac_list])dnl
++test "x$JAVAC" = x && AC_MSG_ERROR([no acceptable Java compiler found in \$PATH])
++AX_PROG_JAVAC_WORKS
++AC_PROVIDE([$0])dnl
++])
+new file mode 100644
+--- /dev/null
++++ m4/ax_prog_javac_works.m4
+@@ -0,0 +1,72 @@
++# ===========================================================================
++#    http://www.gnu.org/software/autoconf-archive/ax_prog_javac_works.html
++# ===========================================================================
++#
++# SYNOPSIS
++#
++#   AX_PROG_JAVAC_WORKS
++#
++# DESCRIPTION
++#
++#   Internal use ONLY.
++#
++#   Note: This is part of the set of autoconf M4 macros for Java programs.
++#   It is VERY IMPORTANT that you download the whole set, some macros depend
++#   on other. Unfortunately, the autoconf archive does not support the
++#   concept of set of macros, so I had to break it for submission. The
++#   general documentation, as well as the sample configure.in, is included
++#   in the AX_PROG_JAVA macro.
++#
++# LICENSE
++#
++#   Copyright (c) 2008 Stephane Bortzmeyer <bortzmeyer@pasteur.fr>
++#
++#   This program is free software; you can redistribute it and/or modify it
++#   under the terms of the GNU General Public License as published by the
++#   Free Software Foundation; either version 2 of the License, or (at your
++#   option) any later version.
++#
++#   This program is distributed in the hope that it will be useful, but
++#   WITHOUT ANY WARRANTY; without even the implied warranty of
++#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
++#   Public License for more details.
++#
++#   You should have received a copy of the GNU General Public License along
++#   with this program. If not, see <http://www.gnu.org/licenses/>.
++#
++#   As a special exception, the respective Autoconf Macro's copyright owner
++#   gives unlimited permission to copy, distribute and modify the configure
++#   scripts that are the output of Autoconf when processing the Macro. You
++#   need not follow the terms of the GNU General Public License when using
++#   or distributing such scripts, even though portions of the text of the
++#   Macro appear in them. The GNU General Public License (GPL) does govern
++#   all other use of the material that constitutes the Autoconf Macro.
++#
++#   This special exception to the GPL applies to versions of the Autoconf
++#   Macro released by the Autoconf Archive. When you make and distribute a
++#   modified version of the Autoconf Macro, you may extend this special
++#   exception to the GPL to apply to your modified version as well.
++
++#serial 6
++
++AU_ALIAS([AC_PROG_JAVAC_WORKS], [AX_PROG_JAVAC_WORKS])
++AC_DEFUN([AX_PROG_JAVAC_WORKS],[
++AC_CACHE_CHECK([if $JAVAC works], ac_cv_prog_javac_works, [
++JAVA_TEST=Test.java
++CLASS_TEST=Test.class
++cat << \EOF > $JAVA_TEST
++/* [#]line __oline__ "configure" */
++public class Test {
++}
++EOF
++if AC_TRY_COMMAND($JAVAC $JAVACFLAGS $JAVA_TEST) >/dev/null 2>&1; then
++  ac_cv_prog_javac_works=yes
++else
++  AC_MSG_ERROR([The Java compiler $JAVAC failed (see config.log, check the CLASSPATH?)])
++  echo "configure: failed program was:" >&AS_MESSAGE_LOG_FD
++  cat $JAVA_TEST >&AS_MESSAGE_LOG_FD
++fi
++rm -f $JAVA_TEST $CLASS_TEST
++])
++AC_PROVIDE([$0])dnl
++])

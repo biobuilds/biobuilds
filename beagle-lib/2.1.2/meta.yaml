@@ -1,0 +1,47 @@
+package:
+  name: beagle-lib
+  version: "2.1.2"
+
+source:
+  fn: beagle-lib-2.1.2.tar.gz
+  url:
+    - https://github.com/beagle-dev/beagle-lib/archive/beagle_release_2_1_2.tar.gz
+    - http://download.lab7.io/sources/beagle-lib-2.1.2.tar.gz
+  md5: 1107614e86f652f8ee45c1c92f2af3d4
+  patches:
+    - update-build-system.patch
+    - disable-cpu-extensions.patch  # [not ppc64le]
+    - ppc64le-support.patch         # [ppc64le]
+
+requirements:
+  # Notes:
+  # * OS X: gcc/libgcc needed for OpenMP support. autoconf/automake needed
+  #   since these aren't supplied by Xcode. (GNU) libtool needed since the
+  #   Xcode version doesn't play nice with the configure.ac provided.
+  # * Linux on x86_64: autoconf/automake needed since CentOS 6 packages are too
+  #   old to process the provided configure.ac. (GNU) libtool needed since the
+  #   CentOS 6 version doesn't play nice with these autoconf/automake releases;
+  #   note that we don't need the libtool runtime on Linux as the resuling
+  #   shared libraries (.so files) link to libdl.so instead of libtldl.so.
+  build:
+    - autoconf >=2.69       # [not ppc64le]
+    - automake >=1.14       # [not ppc64le]
+    - libtool               # [not ppc64le]
+    - gcc                   # [osx]
+    - veclib-headers        # [ppc64le]
+  run:
+    - libtool               # [osx]
+    - libgcc                # [osx]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "https://github.com/beagle-dev/beagle-lib"
+  license: GPLv3
+  license_file: COPYING
+  summary: "General purpose library for evaluating the likelihood of sequence evolution on trees"
