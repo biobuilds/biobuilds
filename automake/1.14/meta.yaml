@@ -1,0 +1,31 @@
+package:
+  name: automake
+  version: "1.14"
+
+source:
+  fn: automake-1.14.tar.gz
+  url:
+    - http://ftp.gnu.org/gnu/automake/automake-1.14.tar.gz
+    - http://download.lab7.io/sources/automake-1.14.tar.gz
+  md5: a3c0d9298c6112f5f2c26c639ccaaed7
+
+requirements:
+  # For Linux, assume "m4" provided via distro package
+  build:
+    - m4  # [not linux]
+    - autoconf
+  run:
+    - m4  # [not linux]
+    - autoconf
+
+build:
+  number: 0
+
+test:
+  commands:
+    - automake --help
+
+about:
+  home: http://www.gnu.org/software/automake/
+  license: GPLv3
+  license_file: COPYING
