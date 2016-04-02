@@ -1,0 +1,1663 @@
+--- src/bayes.c
++++ src/bayes.c
+@@ -852,14 +852,19 @@
+ 
+ void PrintHeader (void)
+ {
+-    char arch[4];
++#ifdef __PPC64__
++    const char* arch = "ppc64le";
++#elif __X86_64__
++    const char* arch = "x86_64";
++#else
++    const char* arch = "x86";
++#endif
++
+ #   ifndef RELEASE
+     unsigned rev = FindMaxRevision (10, svnRevisionBayesC,svnRevisionBestC,svnRevisionCommandC,svnRevisionLikeliC,svnRevisionMbbeagleC,
+                                         svnRevisionMcmcC,svnRevisionModelC,svnRevisionProposalC,svnRevisionSumptC,svnRevisionUtilsC);
+ #   endif
+ 
+-    strcpy(arch,(sizeof(void*)==4)?"x86":"x64");
+-
+     MrBayesPrint ("\n\n");
+ #   ifdef RELEASE
+     MrBayesPrint ("                            MrBayes v%s %s\n\n", VERSION_NUMBER,arch);
+--- src/bayes.h
++++ src/bayes.h
+@@ -97,7 +97,7 @@
+ #  else
+ #    define GCC_SSE
+ #    undef ICC_SSE
+-#    include <xmmintrin.h>
++#    include <vec128sp.h>
+ #  endif
+ #endif
+ 
+--- src/configure.in
++++ src/configure.in
+@@ -53,14 +53,23 @@
+     AC_RUN_IFELSE(
+     [AC_LANG_SOURCE(
+     [
++    #include <stddef.h>
++    #ifdef __PPC64__
++    #include <vec128sp.h>
++    #else
+     #include <xmmintrin.h>
++    #endif
+     int main(){
+     int res;
+     __m128          m1, m2;
+     void *ptr = (void *) NULL;
+     const size_t align = 32;
+     res = posix_memalign(&ptr, align, align);
++    #ifdef __PPC64__
++    m1 = vec_add4sp (m2, m1);
++    #else
+     m1 = _mm_add_ps (m2, m1);
++    #endif
+     return 0;
+     }
+     ])],
+--- src/likelihood.c
++++ src/likelihood.c
+@@ -150,35 +150,35 @@
+         {
+         for (c=0; c<m->numSSEChars; c++)
+             {
+-            m1 = _mm_load1_ps (&tiPL[0]);
+-            m2 = _mm_load1_ps (&tiPR[0]);
+-            m5 = _mm_mul_ps (m1, clL[0]);
+-            m6 = _mm_mul_ps (m2, clR[0]);
++            m1 = vec_loadsplat4sp (&tiPL[0]);
++            m2 = vec_loadsplat4sp (&tiPR[0]);
++            m5 = vec_multiply4sp (m1, clL[0]);
++            m6 = vec_multiply4sp (m2, clR[0]);
+ 
+-            m1 = _mm_load1_ps (&tiPL[1]);
+-            m2 = _mm_load1_ps (&tiPR[1]);
+-            m3 = _mm_mul_ps (m1, clL[1]);
+-            m4 = _mm_mul_ps (m2, clR[1]);
++            m1 = vec_loadsplat4sp (&tiPL[1]);
++            m2 = vec_loadsplat4sp (&tiPR[1]);
++            m3 = vec_multiply4sp (m1, clL[1]);
++            m4 = vec_multiply4sp (m2, clR[1]);
+ 
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
+ 
+-            *clP++ = _mm_mul_ps (m5, m6);
++            *clP++ = vec_multiply4sp (m5, m6);
+ 
+-            m1 = _mm_load1_ps (&tiPL[2]);
+-            m2 = _mm_load1_ps (&tiPR[2]);
+-            m5 = _mm_mul_ps (m1, clL[0]);
+-            m6 = _mm_mul_ps (m2, clR[0]);
++            m1 = vec_loadsplat4sp (&tiPL[2]);
++            m2 = vec_loadsplat4sp (&tiPR[2]);
++            m5 = vec_multiply4sp (m1, clL[0]);
++            m6 = vec_multiply4sp (m2, clR[0]);
+ 
+-            m1 = _mm_load1_ps (&tiPL[3]);
+-            m2 = _mm_load1_ps (&tiPR[3]);
+-            m3 = _mm_mul_ps (m1, clL[1]);
+-            m4 = _mm_mul_ps (m2, clR[1]);
++            m1 = vec_loadsplat4sp (&tiPL[3]);
++            m2 = vec_loadsplat4sp (&tiPR[3]);
++            m3 = vec_multiply4sp (m1, clL[1]);
++            m4 = vec_multiply4sp (m2, clR[1]);
+ 
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
+            
+-            *clP++ = _mm_mul_ps (m5, m6);
++            *clP++ = vec_multiply4sp (m5, m6);
+             clL += 2;
+             clR += 2;
+             }
+@@ -482,18 +482,18 @@
+                     {
+                     for (i=h=0; i<nStates; i++)
+                         {
+-                        mAcumL = _mm_setzero_ps();
+-                        mAcumR = _mm_setzero_ps();
++                        mAcumL = vec_zero4sp();
++                        mAcumR = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h]);
+-                            mTiPR  = _mm_load1_ps (&tiPR[h++]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h]);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h++]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
++                            mAcumR = vec_add4sp (mR, mAcumR);
+                             }
+-                        *(clP++) = _mm_mul_ps (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL, mAcumR);
+                         }
+                     clL += nStates;
+                     clR += nStates;
+@@ -515,15 +515,15 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumL = _mm_set_ps (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
+-                        mAcumR = _mm_setzero_ps();
++                        mAcumL = vec_set4sp (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
++                        mAcumR = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPR  = _mm_load1_ps (&tiPR[h++]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h++]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mAcumR = vec_add4sp (mR, mAcumR);
+                             }
+-                        *(clP++) = _mm_mul_ps (mAcumL,mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL,mAcumR);
+                         }
+                     clR += nStates;
+                     }
+@@ -543,15 +543,15 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumR = _mm_set_ps (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
+-                        mAcumL = _mm_setzero_ps();
++                        mAcumR = vec_set4sp (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
++                        mAcumL = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h++]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h++]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
+                             }
+-                        *(clP++) = _mm_mul_ps (mAcumL,mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL,mAcumR);
+                         }
+                     clL += nStates;
+                     }
+@@ -571,9 +571,9 @@
+                     for (i=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following 2 statments we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mL = _mm_set_ps (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
+-                        mR = _mm_set_ps (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
+-                        *(clP++) = _mm_mul_ps (mL,mR);
++                        mL = vec_set4sp (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
++                        mR = vec_set4sp (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
++                        *(clP++) = vec_multiply4sp (mL,mR);
+                         }
+                     }
+                 }
+@@ -1144,117 +1144,117 @@
+         {
+         for (c=0; c<m->numSSEChars; c++)
+             {
+-            m1 = _mm_load1_ps (&tiPL[AA]);
+-            m2 = _mm_load1_ps (&tiPR[AA]);
+-            m5 = _mm_mul_ps (m1, clL[A]);
+-            m6 = _mm_mul_ps (m2, clR[A]);
+-
+-            m1 = _mm_load1_ps (&tiPL[AC]);
+-            m2 = _mm_load1_ps (&tiPR[AC]);
+-            m3 = _mm_mul_ps (m1, clL[C]);
+-            m4 = _mm_mul_ps (m2, clR[C]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[AG]);
+-            m2 = _mm_load1_ps (&tiPR[AG]);
+-            m3 = _mm_mul_ps (m1, clL[G]);
+-            m4 = _mm_mul_ps (m2, clR[G]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[AT]);
+-            m2 = _mm_load1_ps (&tiPR[AT]);
+-            m3 = _mm_mul_ps (m1, clL[T]);
+-            m4 = _mm_mul_ps (m2, clR[T]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            *clP++ = _mm_mul_ps (m5, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[CA]);
+-            m2 = _mm_load1_ps (&tiPR[CA]);
+-            m5 = _mm_mul_ps (m1, clL[A]);
+-            m6 = _mm_mul_ps (m2, clR[A]);
+-
+-            m1 = _mm_load1_ps (&tiPL[CC]);
+-            m2 = _mm_load1_ps (&tiPR[CC]);
+-            m3 = _mm_mul_ps (m1, clL[C]);
+-            m4 = _mm_mul_ps (m2, clR[C]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[CG]);
+-            m2 = _mm_load1_ps (&tiPR[CG]);
+-            m3 = _mm_mul_ps (m1, clL[G]);
+-            m4 = _mm_mul_ps (m2, clR[G]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[CT]);
+-            m2 = _mm_load1_ps (&tiPR[CT]);
+-            m3 = _mm_mul_ps (m1, clL[T]);
+-            m4 = _mm_mul_ps (m2, clR[T]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            *clP++ = _mm_mul_ps (m5, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[GA]);
+-            m2 = _mm_load1_ps (&tiPR[GA]);
+-            m5 = _mm_mul_ps (m1, clL[A]);
+-            m6 = _mm_mul_ps (m2, clR[A]);
+-
+-            m1 = _mm_load1_ps (&tiPL[GC]);
+-            m2 = _mm_load1_ps (&tiPR[GC]);
+-            m3 = _mm_mul_ps (m1, clL[C]);
+-            m4 = _mm_mul_ps (m2, clR[C]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[GG]);
+-            m2 = _mm_load1_ps (&tiPR[GG]);
+-            m3 = _mm_mul_ps (m1, clL[G]);
+-            m4 = _mm_mul_ps (m2, clR[G]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[GT]);
+-            m2 = _mm_load1_ps (&tiPR[GT]);
+-            m3 = _mm_mul_ps (m1, clL[T]);
+-            m4 = _mm_mul_ps (m2, clR[T]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            *clP++ = _mm_mul_ps (m5, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[TA]);
+-            m2 = _mm_load1_ps (&tiPR[TA]);
+-            m5 = _mm_mul_ps (m1, clL[A]);
+-            m6 = _mm_mul_ps (m2, clR[A]);
+-
+-            m1 = _mm_load1_ps (&tiPL[TC]);
+-            m2 = _mm_load1_ps (&tiPR[TC]);
+-            m3 = _mm_mul_ps (m1, clL[C]);
+-            m4 = _mm_mul_ps (m2, clR[C]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[TG]);
+-            m2 = _mm_load1_ps (&tiPR[TG]);
+-            m3 = _mm_mul_ps (m1, clL[G]);
+-            m4 = _mm_mul_ps (m2, clR[G]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            m1 = _mm_load1_ps (&tiPL[TT]);
+-            m2 = _mm_load1_ps (&tiPR[TT]);
+-            m3 = _mm_mul_ps (m1, clL[T]);
+-            m4 = _mm_mul_ps (m2, clR[T]);
+-            m5 = _mm_add_ps (m3, m5);
+-            m6 = _mm_add_ps (m4, m6);
+-
+-            *clP++ = _mm_mul_ps (m5, m6);
++            m1 = vec_loadsplat4sp (&tiPL[AA]);
++            m2 = vec_loadsplat4sp (&tiPR[AA]);
++            m5 = vec_multiply4sp (m1, clL[A]);
++            m6 = vec_multiply4sp (m2, clR[A]);
++
++            m1 = vec_loadsplat4sp (&tiPL[AC]);
++            m2 = vec_loadsplat4sp (&tiPR[AC]);
++            m3 = vec_multiply4sp (m1, clL[C]);
++            m4 = vec_multiply4sp (m2, clR[C]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[AG]);
++            m2 = vec_loadsplat4sp (&tiPR[AG]);
++            m3 = vec_multiply4sp (m1, clL[G]);
++            m4 = vec_multiply4sp (m2, clR[G]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[AT]);
++            m2 = vec_loadsplat4sp (&tiPR[AT]);
++            m3 = vec_multiply4sp (m1, clL[T]);
++            m4 = vec_multiply4sp (m2, clR[T]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            *clP++ = vec_multiply4sp (m5, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[CA]);
++            m2 = vec_loadsplat4sp (&tiPR[CA]);
++            m5 = vec_multiply4sp (m1, clL[A]);
++            m6 = vec_multiply4sp (m2, clR[A]);
++
++            m1 = vec_loadsplat4sp (&tiPL[CC]);
++            m2 = vec_loadsplat4sp (&tiPR[CC]);
++            m3 = vec_multiply4sp (m1, clL[C]);
++            m4 = vec_multiply4sp (m2, clR[C]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[CG]);
++            m2 = vec_loadsplat4sp (&tiPR[CG]);
++            m3 = vec_multiply4sp (m1, clL[G]);
++            m4 = vec_multiply4sp (m2, clR[G]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[CT]);
++            m2 = vec_loadsplat4sp (&tiPR[CT]);
++            m3 = vec_multiply4sp (m1, clL[T]);
++            m4 = vec_multiply4sp (m2, clR[T]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            *clP++ = vec_multiply4sp (m5, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[GA]);
++            m2 = vec_loadsplat4sp (&tiPR[GA]);
++            m5 = vec_multiply4sp (m1, clL[A]);
++            m6 = vec_multiply4sp (m2, clR[A]);
++
++            m1 = vec_loadsplat4sp (&tiPL[GC]);
++            m2 = vec_loadsplat4sp (&tiPR[GC]);
++            m3 = vec_multiply4sp (m1, clL[C]);
++            m4 = vec_multiply4sp (m2, clR[C]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[GG]);
++            m2 = vec_loadsplat4sp (&tiPR[GG]);
++            m3 = vec_multiply4sp (m1, clL[G]);
++            m4 = vec_multiply4sp (m2, clR[G]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[GT]);
++            m2 = vec_loadsplat4sp (&tiPR[GT]);
++            m3 = vec_multiply4sp (m1, clL[T]);
++            m4 = vec_multiply4sp (m2, clR[T]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            *clP++ = vec_multiply4sp (m5, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[TA]);
++            m2 = vec_loadsplat4sp (&tiPR[TA]);
++            m5 = vec_multiply4sp (m1, clL[A]);
++            m6 = vec_multiply4sp (m2, clR[A]);
++
++            m1 = vec_loadsplat4sp (&tiPL[TC]);
++            m2 = vec_loadsplat4sp (&tiPR[TC]);
++            m3 = vec_multiply4sp (m1, clL[C]);
++            m4 = vec_multiply4sp (m2, clR[C]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[TG]);
++            m2 = vec_loadsplat4sp (&tiPR[TG]);
++            m3 = vec_multiply4sp (m1, clL[G]);
++            m4 = vec_multiply4sp (m2, clR[G]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            m1 = vec_loadsplat4sp (&tiPL[TT]);
++            m2 = vec_loadsplat4sp (&tiPR[TT]);
++            m3 = vec_multiply4sp (m1, clL[T]);
++            m4 = vec_multiply4sp (m2, clR[T]);
++            m5 = vec_add4sp (m3, m5);
++            m6 = vec_add4sp (m4, m6);
++
++            *clP++ = vec_multiply4sp (m5, m6);
+             clL += 4;
+             clR += 4;
+             }
+@@ -1511,18 +1511,18 @@
+                     {
+                     for (i=h=0; i<nStates; i++)
+                         {
+-                        mAcumL = _mm_setzero_ps();
+-                        mAcumR = _mm_setzero_ps();
++                        mAcumL = vec_zero4sp();
++                        mAcumR = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h]);
+-                            mTiPR  = _mm_load1_ps (&tiPR[h++]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h]);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h++]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
++                            mAcumR = vec_add4sp (mR, mAcumR);
+                             }
+-                        *(clP++) = _mm_mul_ps (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL, mAcumR);
+                         }
+                     clL += nStates;
+                     clR += nStates;
+@@ -1544,15 +1544,15 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumL = _mm_set_ps (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
+-                        mAcumR = _mm_setzero_ps();
++                        mAcumL = vec_set4sp (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
++                        mAcumR = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPR  = _mm_load1_ps (&tiPR[h++]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h++]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mAcumR = vec_add4sp (mR, mAcumR);
+                             }
+-                        *(clP++) = _mm_mul_ps (mAcumL,mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL,mAcumR);
+                         }
+                     clR += nStates;
+                     }
+@@ -1572,15 +1572,15 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumR = _mm_set_ps (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
+-                        mAcumL = _mm_setzero_ps();
++                        mAcumR = vec_set4sp (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
++                        mAcumL = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h++]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h++]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
+                             }
+-                        *(clP++) = _mm_mul_ps (mAcumL,mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL,mAcumR);
+                         }
+                     clL += nStates;
+                     }
+@@ -1600,9 +1600,9 @@
+                     for (i=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following 2 statments we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mL = _mm_set_ps (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
+-                        mR = _mm_set_ps (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
+-                        *(clP++) = _mm_mul_ps (mL,mR);
++                        mL = vec_set4sp (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
++                        mR = vec_set4sp (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
++                        *(clP++) = vec_multiply4sp (mL,mR);
+                         }
+                     }
+                 }
+@@ -1785,56 +1785,56 @@
+         {
+         for (c=0; c<m->numSSEChars; c++)
+             {
+-            m1 = _mm_load1_ps (&tiPL[0]);
++            m1 = vec_loadsplat4sp (&tiPL[0]);
+             m5 = *clL++;
+-            m2 = _mm_mul_ps (m1, m5);
+-            m1 = _mm_load1_ps (&tiPL[2]);
+-            m6 = _mm_mul_ps (m1, m5);
++            m2 = vec_multiply4sp (m1, m5);
++            m1 = vec_loadsplat4sp (&tiPL[2]);
++            m6 = vec_multiply4sp (m1, m5);
+ 
+-            m1 = _mm_load1_ps (&tiPL[1]);
++            m1 = vec_loadsplat4sp (&tiPL[1]);
+             m5 = *clL++;
+-            m3 = _mm_mul_ps (m1, m5);
+-            m1 = _mm_load1_ps (&tiPL[3]);
+-            m5 = _mm_mul_ps (m1, m5);
++            m3 = vec_multiply4sp (m1, m5);
++            m1 = vec_loadsplat4sp (&tiPL[3]);
++            m5 = vec_multiply4sp (m1, m5);
+ 
+-            m4 = _mm_add_ps (m2, m3); /* in m4 we get (tiPL[0]*clL[0] + tiPL[1]*clL[1]) */
+-            m6 = _mm_add_ps (m5, m6); /* in m6 we get (tiPL[2]*clL[0] + tiPL[3]*clL[1]) */
++            m4 = vec_add4sp (m2, m3); /* in m4 we get (tiPL[0]*clL[0] + tiPL[1]*clL[1]) */
++            m6 = vec_add4sp (m5, m6); /* in m6 we get (tiPL[2]*clL[0] + tiPL[3]*clL[1]) */
+ 
+-            m1 = _mm_load1_ps (&tiPR[0]);
++            m1 = vec_loadsplat4sp (&tiPR[0]);
+             m5 = *clR++;
+-            m2 = _mm_mul_ps (m1, m5);
+-            m1 = _mm_load1_ps (&tiPR[2]);
+-            m7 = _mm_mul_ps (m1, m5);
++            m2 = vec_multiply4sp (m1, m5);
++            m1 = vec_loadsplat4sp (&tiPR[2]);
++            m7 = vec_multiply4sp (m1, m5);
+ 
+-            m1 = _mm_load1_ps (&tiPR[1]);
++            m1 = vec_loadsplat4sp (&tiPR[1]);
+             m5 = *clR++;
+-            m3 = _mm_mul_ps (m1, m5);
+-            m1 = _mm_load1_ps (&tiPR[3]);
+-            m5 = _mm_mul_ps (m1, m5);
++            m3 = vec_multiply4sp (m1, m5);
++            m1 = vec_loadsplat4sp (&tiPR[3]);
++            m5 = vec_multiply4sp (m1, m5);
+ 
+-            m1 = _mm_add_ps (m2, m3); /* in m1 we get (tiPR[0]*clR[0] + tiPR[1]*clR[1]) */
+-            m7 = _mm_add_ps (m5, m7); /* in m7 we get (tiPR[2]*clR[0] + tiPR[3]*clR[1]) */
++            m1 = vec_add4sp (m2, m3); /* in m1 we get (tiPR[0]*clR[0] + tiPR[1]*clR[1]) */
++            m7 = vec_add4sp (m5, m7); /* in m7 we get (tiPR[2]*clR[0] + tiPR[3]*clR[1]) */
+ 
+-            m4 = _mm_mul_ps (m1, m4); /* in m4 we get (tiPL[0]*clL[0] + tiPL[1]*clL[1])*(tiPR[0]*clR[0] + tiPR[1]*clR[1]) */
+-            m7 = _mm_mul_ps (m6, m7); /* in m7 we get (tiPL[2]*clL[0] + tiPL[3]*clL[1])*(tiPR[2]*clR[0] + tiPR[3]*clR[1]) */
++            m4 = vec_multiply4sp (m1, m4); /* in m4 we get (tiPL[0]*clL[0] + tiPL[1]*clL[1])*(tiPR[0]*clR[0] + tiPR[1]*clR[1]) */
++            m7 = vec_multiply4sp (m6, m7); /* in m7 we get (tiPL[2]*clL[0] + tiPL[3]*clL[1])*(tiPR[2]*clR[0] + tiPR[3]*clR[1]) */
+ 
+-            m1 = _mm_load1_ps (&tiPA[0]);
++            m1 = vec_loadsplat4sp (&tiPA[0]);
+             m5 = *clA++;
+-            m2 = _mm_mul_ps (m1, m5);
+-            m1 = _mm_load1_ps (&tiPA[2]);
+-            m6 = _mm_mul_ps (m1, m5);
++            m2 = vec_multiply4sp (m1, m5);
++            m1 = vec_loadsplat4sp (&tiPA[2]);
++            m6 = vec_multiply4sp (m1, m5);
+ 
+-            m1 = _mm_load1_ps (&tiPA[1]);
++            m1 = vec_loadsplat4sp (&tiPA[1]);
+             m5 = *clA++;
+-            m3 = _mm_mul_ps (m1, m5);
+-            m1 = _mm_load1_ps (&tiPA[3]);
+-            m1 = _mm_mul_ps (m1, m5);
++            m3 = vec_multiply4sp (m1, m5);
++            m1 = vec_loadsplat4sp (&tiPA[3]);
++            m1 = vec_multiply4sp (m1, m5);
+ 
+-            m2 = _mm_add_ps (m2, m3); /* in m1 we get (tiPA[0]*clA[0] + tiPA[1]*clA[1]) */
+-            m1 = _mm_add_ps (m1, m6); /* in m1 we get (tiPA[2]*clA[0] + tiPA[3]*clA[1]) */
++            m2 = vec_add4sp (m2, m3); /* in m1 we get (tiPA[0]*clA[0] + tiPA[1]*clA[1]) */
++            m1 = vec_add4sp (m1, m6); /* in m1 we get (tiPA[2]*clA[0] + tiPA[3]*clA[1]) */
+ 
+-            *clP++ = _mm_mul_ps (m2, m4);
+-            *clP++ = _mm_mul_ps (m1, m7);
++            *clP++ = vec_multiply4sp (m2, m4);
++            *clP++ = vec_multiply4sp (m1, m7);
+ 
+             }
+         tiPL += 4;
+@@ -2248,23 +2248,23 @@
+                     {
+                     for (i=h=0; i<nStates; i++)
+                         {
+-                        mAcumL = _mm_setzero_ps();
+-                        mAcumR = _mm_setzero_ps();
+-                        mAcumA = _mm_setzero_ps();
++                        mAcumL = vec_zero4sp();
++                        mAcumR = vec_zero4sp();
++                        mAcumA = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h]);
+-                            mTiPR  = _mm_load1_ps (&tiPR[h]);
+-                            mTiPA  = _mm_load1_ps (&tiPA[h++]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mA     = _mm_mul_ps (mTiPA, clA[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
+-                            mAcumA = _mm_add_ps (mA, mAcumA);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h]);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h]);
++                            mTiPA  = vec_loadsplat4sp (&tiPA[h++]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mA     = vec_multiply4sp (mTiPA, clA[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
++                            mAcumR = vec_add4sp (mR, mAcumR);
++                            mAcumA = vec_add4sp (mA, mAcumA);
+                             }
+-                        mAcumL = _mm_mul_ps (mAcumL, mAcumR);
+-                        *(clP++) = _mm_mul_ps (mAcumL, mAcumA);
++                        mAcumL = vec_multiply4sp (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL, mAcumA);
+                         }
+                     clL += nStates;
+                     clR += nStates;
+@@ -2289,20 +2289,20 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumA = _mm_set_ps (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
+-                        mAcumL = _mm_setzero_ps();
+-                        mAcumR = _mm_setzero_ps();
++                        mAcumA = vec_set4sp (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
++                        mAcumL = vec_zero4sp();
++                        mAcumR = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
+-                            mTiPR  = _mm_load1_ps (&tiPR[h++]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h++]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mAcumR = vec_add4sp (mR, mAcumR);
+                             }
+-                        mAcumL = _mm_mul_ps (mAcumL, mAcumR);
+-                        *(clP++) = _mm_mul_ps (mAcumL, mAcumA);
++                        mAcumL = vec_multiply4sp (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL, mAcumA);
+                         }
+                     clR += nStates;
+                     clL += nStates;
+@@ -2325,17 +2325,17 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumL = _mm_set_ps (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
+-                        mAcumA = _mm_set_ps (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
+-                        mAcumR = _mm_setzero_ps();
++                        mAcumL = vec_set4sp (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
++                        mAcumA = vec_set4sp (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
++                        mAcumR = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPR  = _mm_load1_ps (&tiPR[h++]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h++]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mAcumR = vec_add4sp (mR, mAcumR);
+                             }
+-                        mAcumL = _mm_mul_ps (mAcumL, mAcumR);
+-                        *(clP++) = _mm_mul_ps (mAcumL, mAcumA);
++                        mAcumL = vec_multiply4sp (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL, mAcumA);
+                         }
+                     clR += nStates;
+                     }
+@@ -2356,17 +2356,17 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumR = _mm_set_ps (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
+-                        mAcumA = _mm_set_ps (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
+-                        mAcumL = _mm_setzero_ps();
++                        mAcumR = vec_set4sp (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
++                        mAcumA = vec_set4sp (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
++                        mAcumL = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h++]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h++]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
+                             }
+-                        mAcumL = _mm_mul_ps (mAcumL, mAcumR);
+-                        *(clP++) = _mm_mul_ps (mAcumL,mAcumA);
++                        mAcumL = vec_multiply4sp (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL,mAcumA);
+                         }
+                     clL += nStates;
+                     }
+@@ -2387,11 +2387,11 @@
+                     for (i=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following 2 statments we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mL = _mm_set_ps (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
+-                        mR = _mm_set_ps (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
+-                        mA = _mm_set_ps (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
+-                        mL = _mm_mul_ps (mL,mR);
+-                        *(clP++) = _mm_mul_ps (mL,mA);
++                        mL = vec_set4sp (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
++                        mR = vec_set4sp (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
++                        mA = vec_set4sp (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
++                        mL = vec_multiply4sp (mL,mR);
++                        *(clP++) = vec_multiply4sp (mL,mA);
+                         }
+                     }
+                 }
+@@ -3145,165 +3145,165 @@
+         {
+         for (c=0; c<m->numSSEChars; c++)
+             {
+-            m1 = _mm_load1_ps (&tiPL[AA]);
+-            m2 = _mm_load1_ps (&tiPR[AA]);
+-            m3 = _mm_load1_ps (&tiPA[AA]);
+-            m7 = _mm_mul_ps (m1, clL[A]);
+-            m8 = _mm_mul_ps (m2, clR[A]);
+-            m9 = _mm_mul_ps (m3, clA[A]);
+-
+-            m1 = _mm_load1_ps (&tiPL[AC]);
+-            m2 = _mm_load1_ps (&tiPR[AC]);
+-            m3 = _mm_load1_ps (&tiPA[AC]);
+-            m4 = _mm_mul_ps (m1, clL[C]);
+-            m5 = _mm_mul_ps (m2, clR[C]);
+-            m6 = _mm_mul_ps (m3, clA[C]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[AG]);
+-            m2 = _mm_load1_ps (&tiPR[AG]);
+-            m3 = _mm_load1_ps (&tiPA[AG]);
+-            m4 = _mm_mul_ps (m1, clL[G]);
+-            m5 = _mm_mul_ps (m2, clR[G]);
+-            m6 = _mm_mul_ps (m3, clA[G]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[AT]);
+-            m2 = _mm_load1_ps (&tiPR[AT]);
+-            m3 = _mm_load1_ps (&tiPA[AT]);
+-            m4 = _mm_mul_ps (m1, clL[T]);
+-            m5 = _mm_mul_ps (m2, clR[T]);
+-            m6 = _mm_mul_ps (m3, clA[T]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m7 = _mm_mul_ps (m7, m8);
+-            *clP++ = _mm_mul_ps (m7, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[CA]);
+-            m2 = _mm_load1_ps (&tiPR[CA]);
+-            m3 = _mm_load1_ps (&tiPA[CA]);
+-            m7 = _mm_mul_ps (m1, clL[A]);
+-            m8 = _mm_mul_ps (m2, clR[A]);
+-            m9 = _mm_mul_ps (m3, clA[A]);
+-
+-            m1 = _mm_load1_ps (&tiPL[CC]);
+-            m2 = _mm_load1_ps (&tiPR[CC]);
+-            m3 = _mm_load1_ps (&tiPA[CC]);
+-            m4 = _mm_mul_ps (m1, clL[C]);
+-            m5 = _mm_mul_ps (m2, clR[C]);
+-            m6 = _mm_mul_ps (m3, clA[C]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[CG]);
+-            m2 = _mm_load1_ps (&tiPR[CG]);
+-            m3 = _mm_load1_ps (&tiPA[CG]);
+-            m4 = _mm_mul_ps (m1, clL[G]);
+-            m5 = _mm_mul_ps (m2, clR[G]);
+-            m6 = _mm_mul_ps (m3, clA[G]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[CT]);
+-            m2 = _mm_load1_ps (&tiPR[CT]);
+-            m3 = _mm_load1_ps (&tiPA[CT]);
+-            m4 = _mm_mul_ps (m1, clL[T]);
+-            m5 = _mm_mul_ps (m2, clR[T]);
+-            m6 = _mm_mul_ps (m3, clA[T]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m7 = _mm_mul_ps (m7, m8);
+-            *clP++ = _mm_mul_ps (m7, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[GA]);
+-            m2 = _mm_load1_ps (&tiPR[GA]);
+-            m3 = _mm_load1_ps (&tiPA[GA]);
+-            m7 = _mm_mul_ps (m1, clL[A]);
+-            m8 = _mm_mul_ps (m2, clR[A]);
+-            m9 = _mm_mul_ps (m3, clA[A]);
+-
+-            m1 = _mm_load1_ps (&tiPL[GC]);
+-            m2 = _mm_load1_ps (&tiPR[GC]);
+-            m3 = _mm_load1_ps (&tiPA[GC]);
+-            m4 = _mm_mul_ps (m1, clL[C]);
+-            m5 = _mm_mul_ps (m2, clR[C]);
+-            m6 = _mm_mul_ps (m3, clA[C]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[GG]);
+-            m2 = _mm_load1_ps (&tiPR[GG]);
+-            m3 = _mm_load1_ps (&tiPA[GG]);
+-            m4 = _mm_mul_ps (m1, clL[G]);
+-            m5 = _mm_mul_ps (m2, clR[G]);
+-            m6 = _mm_mul_ps (m3, clA[G]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[GT]);
+-            m2 = _mm_load1_ps (&tiPR[GT]);
+-            m3 = _mm_load1_ps (&tiPA[GT]);
+-            m4 = _mm_mul_ps (m1, clL[T]);
+-            m5 = _mm_mul_ps (m2, clR[T]);
+-            m6 = _mm_mul_ps (m3, clA[T]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m7 = _mm_mul_ps (m7, m8);
+-            *clP++ = _mm_mul_ps (m7, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[TA]);
+-            m2 = _mm_load1_ps (&tiPR[TA]);
+-            m3 = _mm_load1_ps (&tiPA[TA]);
+-            m7 = _mm_mul_ps (m1, clL[A]);
+-            m8 = _mm_mul_ps (m2, clR[A]);
+-            m9 = _mm_mul_ps (m3, clA[A]);
+-
+-            m1 = _mm_load1_ps (&tiPL[TC]);
+-            m2 = _mm_load1_ps (&tiPR[TC]);
+-            m3 = _mm_load1_ps (&tiPA[TC]);
+-            m4 = _mm_mul_ps (m1, clL[C]);
+-            m5 = _mm_mul_ps (m2, clR[C]);
+-            m6 = _mm_mul_ps (m3, clA[C]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[TG]);
+-            m2 = _mm_load1_ps (&tiPR[TG]);
+-            m3 = _mm_load1_ps (&tiPA[TG]);
+-            m4 = _mm_mul_ps (m1, clL[G]);
+-            m5 = _mm_mul_ps (m2, clR[G]);
+-            m6 = _mm_mul_ps (m3, clA[G]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m1 = _mm_load1_ps (&tiPL[TT]);
+-            m2 = _mm_load1_ps (&tiPR[TT]);
+-            m3 = _mm_load1_ps (&tiPA[TT]);
+-            m4 = _mm_mul_ps (m1, clL[T]);
+-            m5 = _mm_mul_ps (m2, clR[T]);
+-            m6 = _mm_mul_ps (m3, clA[T]);
+-            m7 = _mm_add_ps (m4, m7);
+-            m8 = _mm_add_ps (m5, m8);
+-            m9 = _mm_add_ps (m6, m9);
+-
+-            m7 = _mm_mul_ps (m7, m8);
+-            *clP++ = _mm_mul_ps (m7, m9);
++            m1 = vec_loadsplat4sp (&tiPL[AA]);
++            m2 = vec_loadsplat4sp (&tiPR[AA]);
++            m3 = vec_loadsplat4sp (&tiPA[AA]);
++            m7 = vec_multiply4sp (m1, clL[A]);
++            m8 = vec_multiply4sp (m2, clR[A]);
++            m9 = vec_multiply4sp (m3, clA[A]);
++
++            m1 = vec_loadsplat4sp (&tiPL[AC]);
++            m2 = vec_loadsplat4sp (&tiPR[AC]);
++            m3 = vec_loadsplat4sp (&tiPA[AC]);
++            m4 = vec_multiply4sp (m1, clL[C]);
++            m5 = vec_multiply4sp (m2, clR[C]);
++            m6 = vec_multiply4sp (m3, clA[C]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[AG]);
++            m2 = vec_loadsplat4sp (&tiPR[AG]);
++            m3 = vec_loadsplat4sp (&tiPA[AG]);
++            m4 = vec_multiply4sp (m1, clL[G]);
++            m5 = vec_multiply4sp (m2, clR[G]);
++            m6 = vec_multiply4sp (m3, clA[G]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[AT]);
++            m2 = vec_loadsplat4sp (&tiPR[AT]);
++            m3 = vec_loadsplat4sp (&tiPA[AT]);
++            m4 = vec_multiply4sp (m1, clL[T]);
++            m5 = vec_multiply4sp (m2, clR[T]);
++            m6 = vec_multiply4sp (m3, clA[T]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m7 = vec_multiply4sp (m7, m8);
++            *clP++ = vec_multiply4sp (m7, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[CA]);
++            m2 = vec_loadsplat4sp (&tiPR[CA]);
++            m3 = vec_loadsplat4sp (&tiPA[CA]);
++            m7 = vec_multiply4sp (m1, clL[A]);
++            m8 = vec_multiply4sp (m2, clR[A]);
++            m9 = vec_multiply4sp (m3, clA[A]);
++
++            m1 = vec_loadsplat4sp (&tiPL[CC]);
++            m2 = vec_loadsplat4sp (&tiPR[CC]);
++            m3 = vec_loadsplat4sp (&tiPA[CC]);
++            m4 = vec_multiply4sp (m1, clL[C]);
++            m5 = vec_multiply4sp (m2, clR[C]);
++            m6 = vec_multiply4sp (m3, clA[C]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[CG]);
++            m2 = vec_loadsplat4sp (&tiPR[CG]);
++            m3 = vec_loadsplat4sp (&tiPA[CG]);
++            m4 = vec_multiply4sp (m1, clL[G]);
++            m5 = vec_multiply4sp (m2, clR[G]);
++            m6 = vec_multiply4sp (m3, clA[G]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[CT]);
++            m2 = vec_loadsplat4sp (&tiPR[CT]);
++            m3 = vec_loadsplat4sp (&tiPA[CT]);
++            m4 = vec_multiply4sp (m1, clL[T]);
++            m5 = vec_multiply4sp (m2, clR[T]);
++            m6 = vec_multiply4sp (m3, clA[T]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m7 = vec_multiply4sp (m7, m8);
++            *clP++ = vec_multiply4sp (m7, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[GA]);
++            m2 = vec_loadsplat4sp (&tiPR[GA]);
++            m3 = vec_loadsplat4sp (&tiPA[GA]);
++            m7 = vec_multiply4sp (m1, clL[A]);
++            m8 = vec_multiply4sp (m2, clR[A]);
++            m9 = vec_multiply4sp (m3, clA[A]);
++
++            m1 = vec_loadsplat4sp (&tiPL[GC]);
++            m2 = vec_loadsplat4sp (&tiPR[GC]);
++            m3 = vec_loadsplat4sp (&tiPA[GC]);
++            m4 = vec_multiply4sp (m1, clL[C]);
++            m5 = vec_multiply4sp (m2, clR[C]);
++            m6 = vec_multiply4sp (m3, clA[C]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[GG]);
++            m2 = vec_loadsplat4sp (&tiPR[GG]);
++            m3 = vec_loadsplat4sp (&tiPA[GG]);
++            m4 = vec_multiply4sp (m1, clL[G]);
++            m5 = vec_multiply4sp (m2, clR[G]);
++            m6 = vec_multiply4sp (m3, clA[G]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[GT]);
++            m2 = vec_loadsplat4sp (&tiPR[GT]);
++            m3 = vec_loadsplat4sp (&tiPA[GT]);
++            m4 = vec_multiply4sp (m1, clL[T]);
++            m5 = vec_multiply4sp (m2, clR[T]);
++            m6 = vec_multiply4sp (m3, clA[T]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m7 = vec_multiply4sp (m7, m8);
++            *clP++ = vec_multiply4sp (m7, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[TA]);
++            m2 = vec_loadsplat4sp (&tiPR[TA]);
++            m3 = vec_loadsplat4sp (&tiPA[TA]);
++            m7 = vec_multiply4sp (m1, clL[A]);
++            m8 = vec_multiply4sp (m2, clR[A]);
++            m9 = vec_multiply4sp (m3, clA[A]);
++
++            m1 = vec_loadsplat4sp (&tiPL[TC]);
++            m2 = vec_loadsplat4sp (&tiPR[TC]);
++            m3 = vec_loadsplat4sp (&tiPA[TC]);
++            m4 = vec_multiply4sp (m1, clL[C]);
++            m5 = vec_multiply4sp (m2, clR[C]);
++            m6 = vec_multiply4sp (m3, clA[C]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[TG]);
++            m2 = vec_loadsplat4sp (&tiPR[TG]);
++            m3 = vec_loadsplat4sp (&tiPA[TG]);
++            m4 = vec_multiply4sp (m1, clL[G]);
++            m5 = vec_multiply4sp (m2, clR[G]);
++            m6 = vec_multiply4sp (m3, clA[G]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m1 = vec_loadsplat4sp (&tiPL[TT]);
++            m2 = vec_loadsplat4sp (&tiPR[TT]);
++            m3 = vec_loadsplat4sp (&tiPA[TT]);
++            m4 = vec_multiply4sp (m1, clL[T]);
++            m5 = vec_multiply4sp (m2, clR[T]);
++            m6 = vec_multiply4sp (m3, clA[T]);
++            m7 = vec_add4sp (m4, m7);
++            m8 = vec_add4sp (m5, m8);
++            m9 = vec_add4sp (m6, m9);
++
++            m7 = vec_multiply4sp (m7, m8);
++            *clP++ = vec_multiply4sp (m7, m9);
+ 
+             clL += 4;
+             clR += 4;
+@@ -3651,23 +3651,23 @@
+                     {
+                     for (i=h=0; i<nStates; i++)
+                         {
+-                        mAcumL = _mm_setzero_ps();
+-                        mAcumR = _mm_setzero_ps();
+-                        mAcumA = _mm_setzero_ps();
++                        mAcumL = vec_zero4sp();
++                        mAcumR = vec_zero4sp();
++                        mAcumA = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h]);
+-                            mTiPR  = _mm_load1_ps (&tiPR[h]);
+-                            mTiPA  = _mm_load1_ps (&tiPA[h++]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mA     = _mm_mul_ps (mTiPA, clA[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
+-                            mAcumA = _mm_add_ps (mA, mAcumA);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h]);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h]);
++                            mTiPA  = vec_loadsplat4sp (&tiPA[h++]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mA     = vec_multiply4sp (mTiPA, clA[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
++                            mAcumR = vec_add4sp (mR, mAcumR);
++                            mAcumA = vec_add4sp (mA, mAcumA);
+                             }
+-                        mAcumL = _mm_mul_ps (mAcumL, mAcumR);
+-                        *(clP++) = _mm_mul_ps (mAcumL, mAcumA);
++                        mAcumL = vec_multiply4sp (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL, mAcumA);
+                         }
+                     clL += nStates;
+                     clR += nStates;
+@@ -3692,20 +3692,20 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumA = _mm_set_ps (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
+-                        mAcumL = _mm_setzero_ps();
+-                        mAcumR = _mm_setzero_ps();
++                        mAcumA = vec_set4sp (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
++                        mAcumL = vec_zero4sp();
++                        mAcumR = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
+-                            mTiPR  = _mm_load1_ps (&tiPR[h++]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h++]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mAcumR = vec_add4sp (mR, mAcumR);
+                             }
+-                        mAcumL = _mm_mul_ps (mAcumL, mAcumR);
+-                        *(clP++) = _mm_mul_ps (mAcumL, mAcumA);
++                        mAcumL = vec_multiply4sp (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL, mAcumA);
+                         }
+                     clR += nStates;
+                     clL += nStates;
+@@ -3728,17 +3728,17 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumL = _mm_set_ps (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
+-                        mAcumA = _mm_set_ps (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
+-                        mAcumR = _mm_setzero_ps();
++                        mAcumL = vec_set4sp (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
++                        mAcumA = vec_set4sp (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
++                        mAcumR = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPR  = _mm_load1_ps (&tiPR[h++]);
+-                            mR     = _mm_mul_ps (mTiPR, clR[j]);
+-                            mAcumR = _mm_add_ps (mR, mAcumR);
++                            mTiPR  = vec_loadsplat4sp (&tiPR[h++]);
++                            mR     = vec_multiply4sp (mTiPR, clR[j]);
++                            mAcumR = vec_add4sp (mR, mAcumR);
+                             }
+-                        mAcumL = _mm_mul_ps (mAcumL, mAcumR);
+-                        *(clP++) = _mm_mul_ps (mAcumL, mAcumA);
++                        mAcumL = vec_multiply4sp (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL, mAcumA);
+                         }
+                     clR += nStates;
+                     }
+@@ -3759,17 +3759,17 @@
+                     for (i=h=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following statment we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mAcumR = _mm_set_ps (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
+-                        mAcumA = _mm_set_ps (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
+-                        mAcumL = _mm_setzero_ps();
++                        mAcumR = vec_set4sp (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
++                        mAcumA = vec_set4sp (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
++                        mAcumL = vec_zero4sp();
+                         for (j=0; j<nStates; j++)
+                             {
+-                            mTiPL  = _mm_load1_ps (&tiPL[h++]);
+-                            mL     = _mm_mul_ps (mTiPL, clL[j]);
+-                            mAcumL = _mm_add_ps (mL, mAcumL);
++                            mTiPL  = vec_loadsplat4sp (&tiPL[h++]);
++                            mL     = vec_multiply4sp (mTiPL, clL[j]);
++                            mAcumL = vec_add4sp (mL, mAcumL);
+                             }
+-                        mAcumL = _mm_mul_ps (mAcumL, mAcumR);
+-                        *(clP++) = _mm_mul_ps (mAcumL,mAcumA);
++                        mAcumL = vec_multiply4sp (mAcumL, mAcumR);
++                        *(clP++) = vec_multiply4sp (mAcumL,mAcumA);
+                         }
+                     clL += nStates;
+                     }
+@@ -3790,11 +3790,11 @@
+                     for (i=0; i<nStates; i++)
+                         {
+                         assert (FLOATS_PER_VEC == 4); /* In the following 2 statments we assume that SSE register can hold exactly 4 ClFlts. */
+-                        mL = _mm_set_ps (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
+-                        mR = _mm_set_ps (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
+-                        mA = _mm_set_ps (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
+-                        mL = _mm_mul_ps (mL,mR);
+-                        *(clP++) = _mm_mul_ps (mL,mA);
++                        mL = vec_set4sp (*(preLikeLV[3]++), *(preLikeLV[2]++), *(preLikeLV[1]++), *(preLikeLV[0]++));
++                        mR = vec_set4sp (*(preLikeRV[3]++), *(preLikeRV[2]++), *(preLikeRV[1]++), *(preLikeRV[0]++));
++                        mA = vec_set4sp (*(preLikeAV[3]++), *(preLikeAV[2]++), *(preLikeAV[1]++), *(preLikeAV[0]++));
++                        mL = vec_multiply4sp (mL,mR);
++                        *(clP++) = vec_multiply4sp (mL,mA);
+                         }
+                     }
+                 }
+@@ -4367,15 +4367,15 @@
+     for (c=0; c<m->numSSEChars; c++)
+         {
+         //scaler = 0.0;
+-        m1 = _mm_setzero_ps ();
++        m1 = vec_zero4sp ();
+         for (k=0; k<m->numGammaCats; k++)
+             {
+             for (n=0; n<nStates; n++)
+                 {
+-                m1 = _mm_max_ps (m1, clP[k][n]);
++                m1 = vec_max4sp (m1, clP[k][n]);
+                 }
+             }
+-        _mm_store_ps (scP,  m1);
++        vec_store4sp (scP,  m1);
+         scP += FLOATS_PER_VEC;
+ 
+ #   if defined (FAST_LOG)
+@@ -4387,7 +4387,7 @@
+             {
+             for (n=0; n<nStates; n++)
+                 {
+-                *clP[k] = _mm_div_ps (*clP[k], m1);
++                *clP[k] = vec_divide4sp (*clP[k], m1);
+                 clP[k]++;
+                 }
+             }
+@@ -4608,24 +4608,24 @@
+     /* rescale */
+     for (c=0; c<m->numSSEChars; c++)
+         {
+-        m1 = _mm_setzero_ps ();
++        m1 = vec_zero4sp ();
+         for (k=0; k<m->numGammaCats; k++)
+             {
+-            m1 = _mm_max_ps (m1, clP[k][A]);
+-            m1 = _mm_max_ps (m1, clP[k][C]);
+-            m1 = _mm_max_ps (m1, clP[k][G]);
+-            m1 = _mm_max_ps (m1, clP[k][T]);
++            m1 = vec_max4sp (m1, clP[k][A]);
++            m1 = vec_max4sp (m1, clP[k][C]);
++            m1 = vec_max4sp (m1, clP[k][G]);
++            m1 = vec_max4sp (m1, clP[k][T]);
+             }
+ 
+         for (k=0; k<m->numGammaCats; k++)
+             {
+-            *clP[k] = _mm_div_ps (*clP[k], m1);
++            *clP[k] = vec_divide4sp (*clP[k], m1);
+             clP[k]++;
+-            *clP[k] = _mm_div_ps (*clP[k], m1);
++            *clP[k] = vec_divide4sp (*clP[k], m1);
+             clP[k]++;
+-            *clP[k] = _mm_div_ps (*clP[k], m1);
++            *clP[k] = vec_divide4sp (*clP[k], m1);
+             clP[k]++;
+-            *clP[k] = _mm_div_ps (*clP[k], m1);
++            *clP[k] = vec_divide4sp (*clP[k], m1);
+             clP[k]++;
+             }
+ 
+@@ -4846,15 +4846,15 @@
+     for (c=0; c<m->numSSEChars; c++)
+         {
+         //scaler = 0.0;
+-        m1 = _mm_setzero_ps ();
++        m1 = vec_zero4sp ();
+         for (k=0; k<m->numOmegaCats; k++)
+             {
+             for (n=0; n<nStates; n++)
+                 {
+-                m1 = _mm_max_ps (m1, clP[k][n]);
++                m1 = vec_max4sp (m1, clP[k][n]);
+                 }
+             }
+-        _mm_store_ps (scP,  m1);
++        vec_store4sp (scP,  m1);
+         scP += FLOATS_PER_VEC;
+ 
+ #   if defined (FAST_LOG)
+@@ -4866,7 +4866,7 @@
+             {
+             for (n=0; n<nStates; n++)
+                 {
+-                *clP[k] = _mm_div_ps (*clP[k], m1);
++                *clP[k] = vec_divide4sp (*clP[k], m1);
+                 clP[k]++;
+                 }
+             }
+@@ -5328,7 +5328,7 @@
+     else
+         freq = (1.0 - pInvar) /  m->numGammaCats;
+ 
+-    mFreq = _mm_set1_ps ((CLFlt)(freq));
++    mFreq = vec_splat4sp ((CLFlt)(freq));
+ 
+     /* find site scaler */
+     lnScaler = m->scalers[m->siteScalerIndex[chain]];
+@@ -5341,20 +5341,20 @@
+ 
+     for (c=0; c<m->numSSEChars; c++)
+         {
+-        mLike = _mm_setzero_ps ();
++        mLike = vec_zero4sp ();
+         for (k=0; k<m->numGammaCats; k++)
+             {
+-            mCatLike = _mm_setzero_ps ();
++            mCatLike = vec_zero4sp ();
+             for (j=0; j<nStates; j++)
+                 {
+-                m1 = _mm_mul_ps (clP[k][j], _mm_set1_ps ((CLFlt)bs[j]));
+-                mCatLike = _mm_add_ps (mCatLike, m1);
++                m1 = vec_multiply4sp (clP[k][j], vec_splat4sp ((CLFlt)bs[j]));
++                mCatLike = vec_add4sp (mCatLike, m1);
+                 }
+-            m1 = _mm_mul_ps (mCatLike, mFreq);
+-            mLike = _mm_add_ps (mLike, m1);
++            m1 = vec_multiply4sp (mCatLike, mFreq);
++            mLike = vec_add4sp (mLike, m1);
+             clP[k] += nStates;
+             }
+-        _mm_store_ps (lnL_SSE, mLike);
++        vec_store4sp (lnL_SSE, mLike);
+         lnL_SSE += FLOATS_PER_VEC;
+         }
+ 
+@@ -5385,14 +5385,14 @@
+         /* has invariable category */
+         for (c=0; c<m->numSSEChars; c++)
+             {
+-            mCatLike = _mm_setzero_ps ();
++            mCatLike = vec_zero4sp ();
+             for (j=0; j<nStates; j++)
+                 {
+-                m1 = _mm_mul_ps (clInvar[j], _mm_set1_ps ((CLFlt)bs[j]));
+-                mCatLike = _mm_add_ps (mCatLike, m1);
++                m1 = vec_multiply4sp (clInvar[j], vec_splat4sp ((CLFlt)bs[j]));
++                mCatLike = vec_add4sp (mCatLike, m1);
+                 }
+             clInvar += nStates;
+-            _mm_store_ps (lnL_SSE, mCatLike);
++            vec_store4sp (lnL_SSE, mCatLike);
+             lnLI_SSE += FLOATS_PER_VEC;
+             }
+ 
+@@ -5888,16 +5888,16 @@
+ //    /* calculate variable likelihood */
+ //    for (c=0; c<m->numSSEChars; c++)
+ //    {
+-//        mLike = _mm_mul_ps (clP[A], mA);
+-//        m1    = _mm_mul_ps (clP[C], mC);
+-//        mLike = _mm_add_ps (mLike, m1);
+-//        m1    = _mm_mul_ps (clP[G], mG);
+-//        mLike = _mm_add_ps (mLike, m1);
+-//        m1    = _mm_mul_ps (clP[T], mT);
+-//        mLike = _mm_add_ps (mLike, m1);
++//        mLike = vec_multiply4sp (clP[A], mA);
++//        m1    = vec_multiply4sp (clP[C], mC);
++//        mLike = vec_add4sp (mLike, m1);
++//        m1    = vec_multiply4sp (clP[G], mG);
++//        mLike = vec_add4sp (mLike, m1);
++//        m1    = vec_multiply4sp (clP[T], mT);
++//        mLike = vec_add4sp (mLike, m1);
+ //        
+ //        clP += 4;
+-//        _mm_store_ps (lnL_SSE, mLike);
++//        vec_store4sp (lnL_SSE, mLike);
+ //        lnL_SSE += FLOATS_PER_VEC;
+ //    }
+ //    
+@@ -5906,16 +5906,16 @@
+ //    {
+ //        for (c=0; c<m->numSSEChars; c++)
+ //        {
+-//            mLike = _mm_mul_ps (clInvar[A], mA);
+-//            m1    = _mm_mul_ps (clInvar[C], mC);
+-//            mLike = _mm_add_ps (mLike, m1);
+-//            m1    = _mm_mul_ps (clInvar[G], mG);
+-//            mLike = _mm_add_ps (mLike, m1);
+-//            m1    = _mm_mul_ps (clInvar[T], mT);
+-//            mLike = _mm_add_ps (mLike, m1);
+-//            mLike = _mm_mul_ps (mLike, mPInvar);
++//            mLike = vec_multiply4sp (clInvar[A], mA);
++//            m1    = vec_multiply4sp (clInvar[C], mC);
++//            mLike = vec_add4sp (mLike, m1);
++//            m1    = vec_multiply4sp (clInvar[G], mG);
++//            mLike = vec_add4sp (mLike, m1);
++//            m1    = vec_multiply4sp (clInvar[T], mT);
++//            mLike = vec_add4sp (mLike, m1);
++//            mLike = vec_multiply4sp (mLike, mPInvar);
+ //            
+-//            _mm_store_ps (lnLI_SSE, mLike);
++//            vec_store4sp (lnLI_SSE, mLike);
+ //            clInvar += 4;
+ //            lnLI_SSE += FLOATS_PER_VEC;
+ //        }
+@@ -5996,7 +5996,7 @@
+     MrBFlt          freq, *bs, pInvar=0.0, like, likeI;
+     CLFlt           *lnScaler, *nSitesOfPat, *lnL_SSE, *lnLI_SSE;
+     __m128          *clPtr, **clP, *clInvar=NULL;
+-    __m128          m1, mA, mC, mG, mT, mFreq, mPInvar=_mm_set1_ps(0.0f), mLike;
++    __m128          m1, mA, mC, mG, mT, mFreq, mPInvar=vec_splat4sp(0.0f), mLike;
+     ModelInfo       *m;
+ 
+ #   if defined (FAST_LOG)
+@@ -6014,7 +6014,7 @@
+         {
+         hasPInvar = YES;
+         pInvar =  *(GetParamVals (m->pInvar, chain, state[chain]));
+-        mPInvar = _mm_set1_ps ((CLFlt)(pInvar));
++        mPInvar = vec_splat4sp ((CLFlt)(pInvar));
+         clInvar = (__m128 *) (m->invCondLikes);
+         }
+ 
+@@ -6031,17 +6031,17 @@
+     
+     /* find base frequencies */
+     bs = GetParamSubVals (m->stateFreq, chain, state[chain]);
+-    mA = _mm_set1_ps ((CLFlt)(bs[A]));
+-    mC = _mm_set1_ps ((CLFlt)(bs[C]));
+-    mG = _mm_set1_ps ((CLFlt)(bs[G]));
+-    mT = _mm_set1_ps ((CLFlt)(bs[T]));
++    mA = vec_splat4sp ((CLFlt)(bs[A]));
++    mC = vec_splat4sp ((CLFlt)(bs[C]));
++    mG = vec_splat4sp ((CLFlt)(bs[G]));
++    mT = vec_splat4sp ((CLFlt)(bs[T]));
+ 
+     /* find category frequencies */
+     if (hasPInvar == NO)
+         freq =  1.0 / m->numGammaCats;
+     else
+         freq =  (1.0 - pInvar) / m->numGammaCats;
+-    mFreq = _mm_set1_ps ((CLFlt)(freq));
++    mFreq = vec_splat4sp ((CLFlt)(freq));
+ 
+     /* find tree scaler */
+     lnScaler = m->scalers[m->siteScalerIndex[chain]];
+@@ -6055,21 +6055,21 @@
+     /* calculate variable likelihood */
+     for (c=0; c<m->numSSEChars; c++)
+         {
+-        mLike = _mm_setzero_ps ();
++        mLike = vec_zero4sp ();
+         for (k=0; k<m->numGammaCats; k++)
+             {
+-            m1    = _mm_mul_ps (clP[k][A], mA);
+-            mLike = _mm_add_ps (mLike, m1);
+-            m1    = _mm_mul_ps (clP[k][C], mC);
+-            mLike = _mm_add_ps (mLike, m1);
+-            m1    = _mm_mul_ps (clP[k][G], mG);
+-            mLike = _mm_add_ps (mLike, m1);
+-            m1    = _mm_mul_ps (clP[k][T], mT);
+-            mLike = _mm_add_ps (mLike, m1);
++            m1    = vec_multiply4sp (clP[k][A], mA);
++            mLike = vec_add4sp (mLike, m1);
++            m1    = vec_multiply4sp (clP[k][C], mC);
++            mLike = vec_add4sp (mLike, m1);
++            m1    = vec_multiply4sp (clP[k][G], mG);
++            mLike = vec_add4sp (mLike, m1);
++            m1    = vec_multiply4sp (clP[k][T], mT);
++            mLike = vec_add4sp (mLike, m1);
+             clP[k] += 4;
+             }
+-        mLike = _mm_mul_ps (mLike, mFreq);
+-        _mm_store_ps (lnL_SSE, mLike);
++        mLike = vec_multiply4sp (mLike, mFreq);
++        vec_store4sp (lnL_SSE, mLike);
+         lnL_SSE += FLOATS_PER_VEC;
+         }
+     
+@@ -6078,16 +6078,16 @@
+         {
+         for (c=0; c<m->numSSEChars; c++)
+             {
+-            mLike = _mm_mul_ps (clInvar[A], mA);
+-            m1    = _mm_mul_ps (clInvar[C], mC);
+-            mLike = _mm_add_ps (mLike, m1);
+-            m1    = _mm_mul_ps (clInvar[G], mG);
+-            mLike = _mm_add_ps (mLike, m1);
+-            m1    = _mm_mul_ps (clInvar[T], mT);
+-            mLike = _mm_add_ps (mLike, m1);
+-            mLike = _mm_mul_ps (mLike, mPInvar);
++            mLike = vec_multiply4sp (clInvar[A], mA);
++            m1    = vec_multiply4sp (clInvar[C], mC);
++            mLike = vec_add4sp (mLike, m1);
++            m1    = vec_multiply4sp (clInvar[G], mG);
++            mLike = vec_add4sp (mLike, m1);
++            m1    = vec_multiply4sp (clInvar[T], mT);
++            mLike = vec_add4sp (mLike, m1);
++            mLike = vec_multiply4sp (mLike, mPInvar);
+ 
+-            _mm_store_ps (lnLI_SSE, mLike);
++            vec_store4sp (lnLI_SSE, mLike);
+             clInvar += 4;
+             lnLI_SSE += FLOATS_PER_VEC;
+             }
+@@ -6299,20 +6299,20 @@
+     lnL_SSE  = m->lnL_SSE;
+     for (c=0; c<m->numSSEChars; c++)
+         {
+-        mLike = _mm_setzero_ps ();
++        mLike = vec_zero4sp ();
+         for (k=0; k<m->numOmegaCats; k++)
+             {
+-            mCatLike = _mm_setzero_ps ();
++            mCatLike = vec_zero4sp ();
+             for (j=0; j<nStates; j++)
+                 {
+-                m1 = _mm_mul_ps (clP[k][j], _mm_set1_ps ((CLFlt)bs[j]));
+-                mCatLike = _mm_add_ps (mCatLike, m1);
++                m1 = vec_multiply4sp (clP[k][j], vec_splat4sp ((CLFlt)bs[j]));
++                mCatLike = vec_add4sp (mCatLike, m1);
+                 }
+-            m1 = _mm_mul_ps (mCatLike, _mm_set1_ps ((CLFlt)omegaCatFreq[k]));
+-            mLike = _mm_add_ps (mLike, m1);
++            m1 = vec_multiply4sp (mCatLike, vec_splat4sp ((CLFlt)omegaCatFreq[k]));
++            mLike = vec_add4sp (mLike, m1);
+             clP[k] += nStates;
+             }
+-        _mm_store_ps (lnL_SSE, mLike);
++        vec_store4sp (lnL_SSE, mLike);
+         lnL_SSE += FLOATS_PER_VEC;
+         }
+     for (c=m->numDummyChars; c<m->numChars; c++)
+@@ -6463,11 +6463,11 @@
+     
+     /* find base frequencies */
+     bs = GetParamSubVals (m->stateFreq, chain, state[chain]);
+-    mA = _mm_set1_ps ((CLFlt)(bs[0]));
+-    mB = _mm_set1_ps ((CLFlt)(bs[1]));
++    mA = vec_splat4sp ((CLFlt)(bs[0]));
++    mB = vec_splat4sp ((CLFlt)(bs[1]));
+ 
+     freq =  1.0 / m->numGammaCats;
+-    mFreq = _mm_set1_ps ((CLFlt)(freq));
++    mFreq = vec_splat4sp ((CLFlt)(freq));
+ 
+     /* find tree scaler */
+     lnScaler = m->scalers[m->siteScalerIndex[chain]];
+@@ -6481,17 +6481,17 @@
+     /* calculate variable likelihood */
+     for (c=0; c<m->numSSEChars; c++)
+         {
+-        mLike = _mm_setzero_ps ();
++        mLike = vec_zero4sp ();
+         for (k=0; k<m->numGammaCats; k++)
+             {
+-            m1    = _mm_mul_ps (clP[k][0], mA);
+-            mLike = _mm_add_ps (mLike, m1);
+-            m1    = _mm_mul_ps (clP[k][1], mB);
+-            mLike = _mm_add_ps (mLike, m1);
++            m1    = vec_multiply4sp (clP[k][0], mA);
++            mLike = vec_add4sp (mLike, m1);
++            m1    = vec_multiply4sp (clP[k][1], mB);
++            mLike = vec_add4sp (mLike, m1);
+             clP[k] += 2;
+             }
+-        mLike = _mm_mul_ps (mLike, mFreq);
+-        _mm_store_ps (lnL_SSE, mLike);
++        mLike = vec_multiply4sp (mLike, mFreq);
++        vec_store4sp (lnL_SSE, mLike);
+         lnL_SSE += FLOATS_PER_VEC;
+         }
+ 
+@@ -7181,7 +7181,7 @@
+     /* remove scalers */
+     for (c=0; c<m->numSSEChars; c++)
+         {
+-        lnScaler_SSE[c] = _mm_sub_ps(lnScaler_SSE[c], scP_SSE[c]);
++        lnScaler_SSE[c] = vec_subtract4sp(lnScaler_SSE[c], scP_SSE[c]);
+         }
+ 
+     return NO_ERROR;
+--- src/mcmc.c
++++ src/mcmc.c
+@@ -10042,18 +10042,18 @@
+     ps = posSelProbs + m->compCharStart;
+     for (c1=c2=0; c1<m->numSSEChars; c1++)
+         {
+-        mSiteLike = _mm_setzero_ps ();
++        mSiteLike = vec_zero4sp ();
+         for (k=0; k<m->numOmegaCats; k++)
+             {
+-            mCatLike[k] = _mm_setzero_ps();
+-            m1 = _mm_setzero_ps ();
++            mCatLike[k] = vec_zero4sp();
++            m1 = vec_zero4sp ();
+             for (j=0; j<nStates; j++)
+                 {
+-                m2 = _mm_mul_ps (clP[k][j], _mm_set1_ps ((CLFlt)bs[j]));
+-                m1 = _mm_add_ps (m1, m2);
++                m2 = vec_multiply4sp (clP[k][j], vec_splat4sp ((CLFlt)bs[j]));
++                m1 = vec_add4sp (m1, m2);
+                 }
+-            mCatLike[k] = _mm_mul_ps (m1, _mm_set1_ps ((CLFlt)omegaCatFreq[k]));
+-            mSiteLike = _mm_add_ps (mSiteLike, mCatLike[k]);
++            mCatLike[k] = vec_multiply4sp (m1, vec_splat4sp ((CLFlt)omegaCatFreq[k]));
++            mSiteLike = vec_add4sp (mSiteLike, mCatLike[k]);
+             clP[k] += nStates;
+             }
+ 
+@@ -10197,18 +10197,18 @@
+     ps = posSelProbs + m->compCharStart;
+     for (c1=c2=0; c1<m->numSSEChars; c1++)
+         {
+-        mSiteLike = _mm_setzero_ps ();
++        mSiteLike = vec_zero4sp ();
+         for (k=0; k<m->numOmegaCats; k++)
+             {
+-            mCatLike[k] = _mm_setzero_ps();
+-            m1 = _mm_setzero_ps ();
++            mCatLike[k] = vec_zero4sp();
++            m1 = vec_zero4sp ();
+             for (j=0; j<nStates; j++)
+                 {
+-                m2 = _mm_mul_ps (clP[k][j], _mm_set1_ps ((CLFlt)bs[j]));
+-                m1 = _mm_add_ps (m1, m2);
++                m2 = vec_multiply4sp (clP[k][j], vec_splat4sp ((CLFlt)bs[j]));
++                m1 = vec_add4sp (m1, m2);
+                 }
+-            mCatLike[k] = _mm_mul_ps (m1, _mm_set1_ps ((CLFlt)omegaCatFreq[k]));
+-            mSiteLike = _mm_add_ps (mSiteLike, mCatLike[k]);
++            mCatLike[k] = vec_multiply4sp (m1, vec_splat4sp ((CLFlt)omegaCatFreq[k]));
++            mSiteLike = vec_add4sp (mSiteLike, mCatLike[k]);
+             clP[k] += nStates;
+             }
+         
+--- src/utils.c
++++ src/utils.c
+@@ -167,7 +167,7 @@
+     if (posix_memalign (&mem, alignment, size))
+         return 0;
+     #elif defined ICC_SSE   /* icc compiler */
+-    mem = _mm_malloc (size, alignment);
++    mem = vec_malloc (size, alignment);
+     #elif defined MS_VCPP_SSE  /* ms visual */
+     mem = _aligned_malloc (size, alignment);
+     #else
+@@ -182,7 +182,7 @@
+ {
+ 
+     #if defined ICC_SSE     /* icc compiler */
+-    _mm_free (*ptr);
++    vec_free (*ptr);
+     #elif defined MS_VCPP_SSE  /* ms visual */
+     _aligned_free (*ptr);
+     #else
