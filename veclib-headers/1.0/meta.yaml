@@ -8,9 +8,11 @@ source:
     - "https://www.ibm.com/developerworks/community/files/form/anonymous/api/library/b8b3a7b1-379f-4140-9d5f-73f658d8b2f5/document/79b19df7-a672-4908-920a-8505c2f09d68/media/veclib.1.0.2.tar"
     - "http://download.lab7.io/sources/veclib-headers-1.0.2.tar"
   md5: 6306a4ff7e78a193b53be12e1fdfb125
+  patches:
+    - fix-inlines.patch
 
 build:
-  number: 0
+  number: 1
   track_features:
     - veclib
 
