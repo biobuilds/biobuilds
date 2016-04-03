@@ -1,0 +1,190 @@
+# Tweak various Makefiles to:
+#   1) make use of user-provided CFLAGS, CXXFLAGS, and LDFLAGS;
+#   2) make use of user-provided libbamtools; and
+#   3) modify the dependencies to properly support parallel builds (make -j<N>)
+--- src/Makefile
++++ src/Makefile
+@@ -9,14 +9,19 @@
+ C=gcc
+ 
+ # Compiler flags
+-CFLAGS=-O3 -D_FILE_OFFSET_BITS=64 -g
++CFLAGS+=-D_FILE_OFFSET_BITS=64
+ #CFLAGS=-O3 -static -D VERBOSE_DEBUG  # enables verbose debugging via --debug2
+ 
+ BAMTOOLS_ROOT=../bamtools
+ VCFLIB_ROOT=../vcflib
+ 
+-LIBS = -L./ -L$(VCFLIB_ROOT)/tabixpp/ -L$(BAMTOOLS_ROOT)/lib -ltabix -lz -lm
+-INCLUDE = -I$(BAMTOOLS_ROOT)/src -I../ttmath -I$(VCFLIB_ROOT)/src -I$(VCFLIB_ROOT)/
++BAMTOOLS_LIB=$(BAMTOOLS_ROOT)/lib/libbamtools.a
++#BAMTOOLS_LIB=-lbamtools
++
++TABIX_LIB=$(VCFLIB_ROOT)/tabixpp/libtabix.a
++
++LIBS = -L./ -L$(VCFLIB_ROOT)/tabixpp/ -L$(BAMTOOLS_ROOT)/lib $(TABIX_LIB) -lz -lm
++INCLUDE = -I$(BAMTOOLS_ROOT)/include/bamtools -I../ttmath -I$(VCFLIB_ROOT)/src -I$(VCFLIB_ROOT)/
+ 
+ all: autoversion ../bin/freebayes ../bin/bamleftalign
+ 
+@@ -34,11 +39,6 @@
+ 
+ .PHONY: all static debug profiling gprof
+ 
+-# builds bamtools static lib, and copies into root
+-$(BAMTOOLS_ROOT)/lib/libbamtools.a:
+-	cd $(BAMTOOLS_ROOT) && mkdir -p build && cd build && cmake .. && $(MAKE)
+-
+-
+ OBJECTS=BedReader.o \
+ 		CNV.o \
+ 		fastlz.o \
+@@ -70,27 +70,26 @@
+ 		../vcflib/smithwaterman/LeftAlign.o \
+ 		../vcflib/smithwaterman/Repeats.o \
+ 		../vcflib/smithwaterman/IndelAllele.o \
+-		Variant.o \
+-		$(BAMTOOLS_ROOT)/lib/libbamtools.a
++		Variant.o
+ 
+ HEADERS=multichoose.h version_git.h
+ 
+ # executables
+ 
+-freebayes ../bin/freebayes: freebayes.o $(OBJECTS) $(HEADERS)
+-	$(CXX) $(CFLAGS) $(INCLUDE) freebayes.o $(OBJECTS) -o ../bin/freebayes $(LIBS)
++freebayes ../bin/freebayes: freebayes.o $(OBJECTS) $(HEADERS) $(TABIX_LIB)
++	$(CXX) $(CFLAGS) $(INCLUDE) freebayes.o $(OBJECTS) $(BAMTOOLS_LIB) -o ../bin/freebayes $(LIBS)
+ 
+-alleles ../bin/alleles: alleles.o $(OBJECTS) $(HEADERS)
+-	$(CXX) $(CFLAGS) $(INCLUDE) alleles.o $(OBJECTS) -o ../bin/alleles $(LIBS)
++alleles ../bin/alleles: alleles.o $(OBJECTS) $(HEADERS) $(TABIX_LIB)
++	$(CXX) $(CFLAGS) $(INCLUDE) alleles.o $(OBJECTS) $(BAMTOOLS_LIB) -o ../bin/alleles $(LIBS)
+ 
+-dummy ../bin/dummy: dummy.o $(OBJECTS) $(HEADERS)
+-	$(CXX) $(CFLAGS) $(INCLUDE) dummy.o $(OBJECTS) -o ../bin/dummy $(LIBS)
++dummy ../bin/dummy: dummy.o $(OBJECTS) $(HEADERS) $(TABIX_LIB)
++	$(CXX) $(CFLAGS) $(INCLUDE) dummy.o $(OBJECTS) $(BAMTOOLS_LIB) -o ../bin/dummy $(LIBS)
+ 
+-bamleftalign ../bin/bamleftalign: $(BAMTOOLS_ROOT)/lib/libbamtools.a bamleftalign.o Fasta.o LeftAlign.o IndelAllele.o split.o
+-	$(CXX) $(CFLAGS) $(INCLUDE) bamleftalign.o Fasta.o LeftAlign.o IndelAllele.o split.o $(BAMTOOLS_ROOT)/lib/libbamtools.a -o ../bin/bamleftalign $(LIBS)
++bamleftalign ../bin/bamleftalign: bamleftalign.o Fasta.o LeftAlign.o IndelAllele.o split.o $(TABIX_LIB)
++	$(CXX) $(CFLAGS) $(INCLUDE) bamleftalign.o Fasta.o LeftAlign.o IndelAllele.o split.o $(BAMTOOLS_LIB) -o ../bin/bamleftalign $(LIBS)
+ 
+-bamfiltertech ../bin/bamfiltertech: $(BAMTOOLS_ROOT)/lib/libbamtools.a bamfiltertech.o $(OBJECTS) $(HEADERS)
+-	$(CXX) $(CFLAGS) $(INCLUDE) bamfiltertech.o $(OBJECTS) -o ../bin/bamfiltertech $(LIBS)
++bamfiltertech ../bin/bamfiltertech: bamfiltertech.o $(OBJECTS) $(HEADERS) $(TABIX_LIB)
++	$(CXX) $(CFLAGS) $(INCLUDE) bamfiltertech.o $(OBJECTS) $(BAMTOOLS_LIB) -o ../bin/bamfiltertech $(LIBS)
+ 
+ 
+ # objects
+@@ -104,7 +103,7 @@
+ dummy.o: dummy.cpp AlleleParser.o Allele.o
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c dummy.cpp
+ 
+-freebayes.o: freebayes.cpp TryCatch.h $(BAMTOOLS_ROOT)/lib/libbamtools.a
++freebayes.o: freebayes.cpp TryCatch.h
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c freebayes.cpp
+ 
+ fastlz.o: fastlz.c fastlz.h
+@@ -125,7 +124,7 @@
+ Ewens.o: Ewens.cpp Ewens.h
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c Ewens.cpp
+ 
+-AlleleParser.o: AlleleParser.cpp AlleleParser.h multichoose.h Parameters.h $(BAMTOOLS_ROOT)/lib/libbamtools.a
++AlleleParser.o: AlleleParser.cpp AlleleParser.h multichoose.h Parameters.h
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c AlleleParser.cpp
+ 
+ Utility.o: Utility.cpp Utility.h Sum.h Product.h
+@@ -173,7 +172,7 @@
+ bamfiltertech.o: bamfiltertech.cpp
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c bamfiltertech.cpp
+ 
+-LeftAlign.o: LeftAlign.h LeftAlign.cpp $(BAMTOOLS_ROOT)/lib/libbamtools.a
++LeftAlign.o: LeftAlign.h LeftAlign.cpp
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c LeftAlign.cpp
+ 
+ IndelAllele.o: IndelAllele.cpp IndelAllele.h
+@@ -182,9 +181,10 @@
+ Variant.o: $(VCFLIB_ROOT)/src/Variant.h $(VCFLIB_ROOT)/src/Variant.cpp
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c $(VCFLIB_ROOT)/src/Variant.cpp
+ 
+-../vcflib/tabixpp/tabix.o: ../vcflib/tabixpp/tabix.hpp ../vcflib/tabixpp/tabix.cpp
+-../vcflib/tabixpp/bgzf.o: ../vcflib/tabixpp/bgzf.c ../vcflib/tabixpp/bgzf.h
+-	cd ../vcflib/tabixpp && $(MAKE)
++../vcflib/tabixpp/tabix.o:
++../vcflib/tabixpp/bgzf.o:
++$(TABIX_LIB):
++	cd ../vcflib/tabixpp && $(MAKE) $(notdir $@)
+ 
+ ../vcflib/smithwaterman/SmithWatermanGotoh.o: ../vcflib/smithwaterman/SmithWatermanGotoh.h ../vcflib/smithwaterman/SmithWatermanGotoh.cpp
+ 	cd ../vcflib/smithwaterman && $(MAKE)
+@@ -263,6 +263,5 @@
+ 
+ clean:
+ 	rm -rf *.o *.cgh *~ freebayes alleles ../bin/freebayes ../bin/alleles ../vcflib/*.o ../vcflib/tabixpp/*.{o,a}
+-	cd $(BAMTOOLS_ROOT)/build && make clean
+ 	cd ../vcflib/smithwaterman && make clean
+ 
+--- vcflib/Makefile
++++ vcflib/Makefile
+@@ -97,13 +97,13 @@
+ FILEVERCMP = filevercmp/filevercmp.o
+ 
+ INCLUDES = -I. -L. -Ltabixpp/
+-LDFLAGS = -lvcflib -ltabix -lz -lm
++LDFLAGS += -lvcflib -ltabix -lz -lm
+ 
+ 
+ all: $(OBJECTS) $(BINS)
+ 
+ CXX = g++
+-CXXFLAGS = -O3 -D_FILE_OFFSET_BITS=64
++CXXFLAGS += -D_FILE_OFFSET_BITS=64
+ #CXXFLAGS = -O2
+ #CXXFLAGS = -pedantic -Wall -Wshadow -Wpointer-arith -Wcast-qual
+ 
+--- vcflib/tabixpp/Makefile
++++ vcflib/tabixpp/Makefile
+@@ -1,6 +1,6 @@
+ CC=			gcc
+ CPP= 		g++
+-CFLAGS=		-g -Wall -O2 -fPIC #-m64 #-arch ppc
++CFLAGS+=		-Wall -fPIC #-m64 #-arch ppc
+ DFLAGS=		-D_FILE_OFFSET_BITS=64 -D_USE_KNETFILE
+ LOBJS=		bgzf.o kstring.o knetfile.o index.o bedidx.o
+ AOBJS=		main.o
+@@ -30,26 +30,26 @@
+ lib:libtabix.a
+ 
+ libtabix.so.1:$(LOBJS)
+-		$(CC) -shared -Wl,-soname,libtabix.so -o $@ $(LOBJS) -lc -lz
++		$(CC) -shared -Wl,-soname,libtabix.so -o $@ $(LOBJS) -lc $(LDFLAGS) -lz
+ 
+ libtabix.1.dylib:$(LOBJS)
+-		libtool -dynamic $(LOBJS) -o $@ -lc -lz
++		libtool -dynamic $(LOBJS) -o $@ -lc $(LDFLAGS) -lz
+ 
+ libtabix.a:$(LOBJS)
+ 		$(AR) -cru $@ $(LOBJS)
+ 		ranlib $@
+ 
+ tabix:lib $(AOBJS)
+-		$(CC) $(CFLAGS) -o $@ $(AOBJS) -lm $(LIBPATH) -L. -ltabix -lz
++		$(CC) $(CFLAGS) -o $@ $(AOBJS) -lm $(LIBPATH) -L. -ltabix $(LDFLAGS) -lz
+ 
+ tabix.o: tabix.hpp tabix.cpp
+ 		$(CPP) $(CFLAGS) -c tabix.cpp
+ 
+ tabix++:lib tabix.o main.cpp
+-		$(CPP) $(CFLAGS) -o $@ main.cpp tabix.o bgzf.o -lm $(LIBPATH) -L. -ltabix -lz
++		$(CPP) $(CFLAGS) -o $@ main.cpp tabix.o bgzf.o -lm $(LIBPATH) -L. -ltabix $(LDFLAGS) -lz
+ 
+ bgzip:bgzip.o bgzf.o knetfile.o
+-		$(CC) $(CFLAGS) -o $@ bgzip.o bgzf.o knetfile.o -lz
++		$(CC) $(CFLAGS) -o $@ bgzip.o bgzf.o knetfile.o $(LDFLAGS) -lz
+ 
+ TabixReader.class:TabixReader.java
+ 		javac -cp .:sam.jar TabixReader.java
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c bamfiltertech.cpp
+ 

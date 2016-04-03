@@ -1,0 +1,21 @@
+# Skip tests that require GNU parallel to be installed
+--- test/t/01_call_variants.t
++++ test/t/01_call_variants.t
+@@ -7,7 +7,7 @@
+ PATH=../scripts:$PATH # for freebayes-parallel
+ PATH=../vcflib/bin:$PATH # for vcf binaries used by freebayes-parallel
+ 
+-plan tests 19
++plan tests 18
+ 
+ is $(echo "$(comm -12 <(cat tiny/NA12878.chr22.tiny.giab.vcf | grep -v "^#" | cut -f 2 | sort) <(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | cut -f 2 | sort) | wc -l) >= 13" | bc) 1 "variant calling recovers most of the GiAB variants in a test region"
+ 
+@@ -98,7 +98,7 @@
+ is $? 1 "freebayes bails out when given a gzipped or corrupted reference"
+ rm tiny/q.fa.gz.*
+ 
+-is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) $(freebayes-parallel tiny/q.regions 2 -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) "running in parallel makes no difference"
++#is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) $(freebayes-parallel tiny/q.regions 2 -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) "running in parallel makes no difference"
+ 
+ #is $(freebayes -f 'tiny/q with spaces.fa' tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) $(freebayes-parallel 'tiny/q with spaces.regions' 2 -f 'tiny/q with spaces.fa' tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) "freebayes handles spaces in file names"
+ 

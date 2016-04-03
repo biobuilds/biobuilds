@@ -1,0 +1,45 @@
+# Ensures CFLAGS/LDFLAGS are properly passed through so FreeBayes components
+# link to libc++ instead of libstdc++; needed for compatibility with the
+# external (i.e., BioBuilds-provided) bamtools library used for this build.
+#
+# Also, removes the "-s" (strip symbols) option that is not supported by the
+# Xcode linker; see <https://github.com/ekg/freebayes/issues/83> for details.
+--- vcflib/fastahack/Makefile
++++ vcflib/fastahack/Makefile
+@@ -1,5 +1,5 @@
+ CXX=g++
+-CFLAGS=-O3 -D_FILE_OFFSET_BITS=64
++CFLAGS+=-D_FILE_OFFSET_BITS=64
+ 
+ fastahack: Fasta.o FastaHack.cpp split.o disorder.o
+ 	$(CXX) $(CFLAGS) Fasta.o FastaHack.cpp split.o disorder.o -o fastahack
+--- vcflib/smithwaterman/Makefile
++++ vcflib/smithwaterman/Makefile
+@@ -14,8 +14,8 @@
+ # compiler options
+ # ----------------
+ 
+-CFLAGS=-Wall -O3
+-LDFLAGS=-Wl,-s
++CFLAGS?=-Wall -O3
++LDFLAGS?=
+ #CFLAGS=-g
+ PROGRAM=smithwaterman
+ LIBS=
+@@ -25,14 +25,14 @@
+ .PHONY: all
+ 
+ disorder.o: disorder.c disorder.h
+-	g++ -c -o disorder.o disorder.c
++	g++ $(CFLAGS) -c -o disorder.o disorder.c
+ 
+ sw.o: $(OBJECTS_NO_MAIN)
+ 	ld -r $(OBJECTS_NO_MAIN) -o sw.o
+ 
+ $(PROGRAM): $(OBJECTS)
+ 	@echo "  * linking $(PROGRAM)"
+-	@$(CXX) $(LDFLAGS) $(CFLAGS) -o $@ $^ $(LIBS)
++	$(CXX) $(LDFLAGS) $(CFLAGS) -o $@ $^ $(LIBS)
+ 
+ .PHONY: clean
+ 
