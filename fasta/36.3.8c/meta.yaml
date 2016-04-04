@@ -1,0 +1,42 @@
+package:
+  name: fasta
+  version: "36.3.8c"
+
+requirements:
+  # NOTE: Use conda-provided gcc on x86_64 Linux to work around a fastx36
+  #       "double free or corruption" glibc error when building using "-O2"
+  #       or higher with our default compiler (gcc 4.4.7 on CentOS 6).
+  build:
+    - veclib-headers  # [ppc64le]
+    - gcc >=4.8       # [linux64]
+    - zlib
+  run:
+    - libgcc >=4.8    # [linux64]
+    - zlib
+
+source:
+  fn: fasta-36.3.8c.tar.gz
+  url:
+    - http://faculty.virginia.edu/wrpearson/fasta/fasta36/fasta-36.3.8c.tar.gz
+    - http://download.lab7.io/sources/fasta-36.3.8c.tar.gz
+  md5: 55e183596071a163cf2c48025a8a232a
+  patches:
+    - makefiles.patch
+    - ppc64le-support.patch   # [ppc64le]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  files:
+    - test_data.tar.gz
+
+about:
+  home: http://faculty.virginia.edu/wrpearson/fasta
+  license: Apache
+  license_file: LICENSE
+  summary: "Biological sequence alignment tool"
