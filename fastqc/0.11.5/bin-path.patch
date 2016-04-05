@@ -1,0 +1,14 @@
+--- fastqc
++++ fastqc
+@@ -1,8 +1,9 @@
+-#!/usr/bin/perl
++#!@@prefix@@/bin/perl
+ use warnings;
+ use strict;
+-use FindBin qw($RealBin);
+ use Getopt::Long;
++
++my $RealBin = '@@share_dir@@';
+ 
+ #####################################################################################
+ # Copyright Copyright 2010-15 Simon Andrews                                         #
