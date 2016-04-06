@@ -9,10 +9,11 @@ source:
     - "http://download.lab7.io/sources/veclib-headers-1.0.2.tar"
   md5: 6306a4ff7e78a193b53be12e1fdfb125
   patches:
+    - missing-includes.patch
     - fix-inlines.patch
 
 build:
-  number: 1
+  number: 2
   track_features:
     - veclib
 

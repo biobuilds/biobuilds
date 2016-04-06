@@ -1,0 +1,13 @@
+--- include/vecmisc.h
++++ include/vecmisc.h
+@@ -23,6 +23,10 @@
+ #include <altivec.h>
+ #include "veclib_types.h"
+ 
++#ifndef _MSC_VER
++#include <stdlib.h>
++#endif
++
+
+ /************************************************************** Floating-Point Control and Status Register *************************/
+ 
