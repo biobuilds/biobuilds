@@ -1,0 +1,40 @@
+package:
+  name: rsem
+  version: "1.2.29"
+
+requirements:
+  build:
+    - htslib 1.3*
+    # Use BioBuilds Boost package instead of one from 'default' channel
+    # to ensure consistency across all the platforms we support.
+    - boost ==1.54.0
+  run:
+    - samtools 1.3*
+    - perl
+    - python
+    - r
+    - r-ebseq >=1.2.0
+
+source:
+  fn: rsem-1.2.29.tar.gz
+  url:
+    - https://github.com/deweylab/RSEM/archive/v1.2.29.tar.gz
+    - http://download.lab7.io/sources/rsem-1.2.29.tar.gz
+  md5: "ebf9cdd36fa5a6bd50064c93828d10b6"
+  patches:
+    - use-system-libs.patch
+    - ebseq-install.patch
+    - perl-paths.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://deweylab.github.io/RSEM/"
+  license: GPLv3
+  license_file: COPYING
+  summary: "Accurate quantification of gene and isoform expression from RNA-Seq data"

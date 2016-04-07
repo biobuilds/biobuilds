@@ -1,0 +1,23 @@
+--- EBSeq/Makefile
++++ EBSeq/Makefile
+@@ -1,6 +1,7 @@
+ CXX = g++
+ PROGRAMS = EBSeq rsem-for-ebseq-calculate-clustering-info
+ DEPENDENCIES = blockmodeling gplots gtools gdata caTools bitops KernSmooth
++prefix ?= /usr/local
+ 
+ .PHONY : all EBSeq clean
+ 
+@@ -10,7 +11,11 @@
+ 	./install
+ 
+ rsem-for-ebseq-calculate-clustering-info : calcClusteringInfo.cpp
+-	$(CXX) -O3 -Wall calcClusteringInfo.cpp -o $@
++	$(CXX) $(CXXFLAGS) -O3 -Wall calcClusteringInfo.cpp $(LDFLAGS) -o $@
++
++install: rsem-for-ebseq-calculate-clustering-info
++	install -d $(prefix)/bin
++	install -m 0755 $^ $(prefix)/bin
+ 
+ clean : 
+ 	rm -rf $(PROGRAMS) $(DEPENDENCIES) BiocInstaller *~
