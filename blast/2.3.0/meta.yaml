@@ -1,0 +1,54 @@
+package:
+  name: blast
+  version: "2.3.0"
+
+# Need conda's gcc/libgcc on OS X to get OpenMP support
+requirements:
+  build:
+    - autoconf-update
+    - zlib
+    - bzip2
+    - lzo
+    - openssl
+    - gcc >=4.8.5     # [osx]
+  run:
+    - zlib
+    - openssl
+    - libgcc >=4.8.5  # [osx]
+    - perl
+    - perl-list-moreutils
+    - python 2.7*
+
+source:
+  fn: ncbi-blast-2.3.0+-src.tar.gz
+  url:
+    - ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.3.0+-src.tar.gz
+    - http://download.lab7.io/sources/ncbi-blast-2.3.0+-src.tar.gz
+  md5: 0f252f0edf6c92e18012622fc93083b0
+  patches:
+    - prefix-paths.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - makeblastdb -help
+    - blastn -help
+    - blastp -help
+    - blastx -help
+    - tblastn -help
+    - tblastx -help
+    - update_blastdb.pl --version
+    - legacy_blast.pl --version
+    - windowmasker_2.2.22_adapter.py
+
+about:
+  home: http://blast.ncbi.nlm.nih.gov/
+  license: Public domain
+  license_file: c++/scripts/projects/blast/LICENSE
+  summary: "NCBI implementation of the BLAST search/alignment algorithm"
