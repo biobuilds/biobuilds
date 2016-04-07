@@ -1,0 +1,11 @@
+--- trinity-plugins/scaffold_iworm_contigs/Makefile
++++ trinity-plugins/scaffold_iworm_contigs/Makefile
+@@ -2,7 +2,7 @@
+ prefix = ../htslib
+ 
+ ScaffoldIwormContigs:
+-	$(CXX) $(LDFLAGS) -I$(prefix) -L$(prefix) ScaffoldIwormContigs.cpp error_checker.cpp -lhts -o scaffold_iworm_contigs
++	$(CXX) $(CXXFLAGS) ScaffoldIwormContigs.cpp error_checker.cpp $(LIBHTS) $(LDFLAGS) -o scaffold_iworm_contigs
+ 
+ clean:
+ 	rm -f scaffold_iworm_contigs

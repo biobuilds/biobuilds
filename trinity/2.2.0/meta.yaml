@@ -1,0 +1,48 @@
+package:
+  name: trinity
+  version: "2.2.0"
+
+requirements:
+  build:
+    - autoconf-update
+    - gcc     # [not ppc64le]
+    - samtools 0.1.19
+    - htslib 1.2.*
+  run:
+    - perl
+    - python
+    - r
+    - bowtie
+    - libgcc  # [not ppc64le]
+
+source:
+  fn: trinityrnaseq-2.2.0.tar.gz
+  url:
+    - https://github.com/trinityrnaseq/trinityrnaseq/archive/v2.2.0.tar.gz
+    - http://download.lab7.io/sources/trinityrnaseq-2.2.0.tar.gz
+  md5: b91159641bfd2d1a40626ae526e56aa3
+  patches:
+    - trinity-path.patch
+    - inchworm-build.patch
+    - chrysalis-build.patch
+    - scaffold-iworm-contigs.patch
+    - collectl-install.patch
+    - test-fixes.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  detect_binary_files_with_prefix: true
+
+test:
+  files:
+    - test.sam
+
+about:
+  home: https://github.com/trinityrnaseq/trinityrnaseq/wiki
+  license: BSD
+  license_file: LICENSE.txt
+  summary: "De-novo transcriptome assembly from Illumina RNA-Seq data"

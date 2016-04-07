@@ -1,0 +1,131 @@
+--- util/support_scripts/plugin_install_tests.sh
++++ util/support_scripts/plugin_install_tests.sh
+@@ -1,17 +1,28 @@
+ #!/bin/bash
+ 
++trinity_root=$(dirname "${BASH_SOURCE[0]}")
++trinity_root=$(cd "${trinity_root}/../.." && pwd)
++cd "$trinity_root"
++
++echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+ echo "## Checking plugin installations:"
+-echo
++echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
++
++exit_code=0
+ 
+-if [ -e "trinity-plugins/slclust/bin/slclust" ]
++if [ -x "trinity-plugins/slclust/bin/slclust" ]
+ then
+ 	echo "slclust:                 has been Installed Properly"
+ else
+ 	echo "slclust Installation appears to have FAILED"
++    exit_code=1
+ fi
+-if [ -e "trinity-plugins/collectl/bin/collectl" ]
++if [ -x "trinity-plugins/collectl/bin/collectl" ]
+ then
+ 	echo "collectl:                has been Installed Properly"
+ else
+ 	echo "collectl Installation appears to have FAILED"
++    exit_code=1
+ fi
++
++exit $exit_code
+--- util/support_scripts/trinity_install_tests.sh
++++ util/support_scripts/trinity_install_tests.sh
+@@ -1,67 +1,83 @@
+ #!/bin/bash
+ 
++trinity_root=$(dirname "${BASH_SOURCE[0]}")
++trinity_root=$(cd "${trinity_root}/../.." && pwd)
++cd "$trinity_root"
++
+ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+-echo ""
+ echo 'Performing Unit Tests of Build'
+-echo ' '
+ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+ 
+-if [ -e "trinity-plugins/jellyfish/jellyfish" ]
++exit_code=0
++
++if [ -x "trinity-plugins/jellyfish/bin/jellyfish" ]
+ then
+ 	echo "JellyFish:               has been Installed Properly"
+ else
+ 	echo "JellyFish                Installation appears to have FAILED"
++    exit_code=1
+ fi
+ 
+-if [ -e "Inchworm/bin/inchworm" ]
++if [ -x "Inchworm/bin/inchworm" ]
+ then
+ 	echo "Inchworm:                has been Installed Properly"
+ else
+ 	echo "Inchworm Installation appears to have FAILED"
++    exit_code=1
+ fi
+-if [ -e "Chrysalis/Chrysalis" ]
++if [ -x "Chrysalis/Chrysalis" ]
+ then
+ 	echo "Chrysalis:               has been Installed Properly"
+ else
+ 	echo "Chrysalis Installation appears to have FAILED"
++    exit_code=1
+ fi
+-if [ -e "Chrysalis/QuantifyGraph" ]
++if [ -x "Chrysalis/QuantifyGraph" ]
+ then
+ 	echo "QuantifyGraph:           has been Installed Properly"
+ else
+ 	echo "QuantifyGraph Installation appears to have FAILED"
++    exit_code=1
+ fi
+ 
+-if [ -e "Chrysalis/GraphFromFasta" ]
++if [ -x "Chrysalis/GraphFromFasta" ]
+ then
+ 	echo "GraphFromFasta:          has been Installed Properly"
+ else
+ 	echo "GraphFromFasta Installation appears to have FAILED"
++    exit_code=1
+ fi
+ 
+-if [ -e "Chrysalis/ReadsToTranscripts" ]
++if [ -x "Chrysalis/ReadsToTranscripts" ]
+ then
+ 	echo "ReadsToTranscripts:      has been Installed Properly"
+ else
+ 	echo "ReadsToTranscripts Installation appears to have FAILED"
++    exit_code=1
+ fi
+ 
+-if [ -e "trinity-plugins/fastool/fastool" ]
++if [ -x "trinity-plugins/fastool/fastool" ]
+ then
+ 	echo "fastool:                 has been Installed Properly"
+ else
+ 	echo "fastool Installation appears to have FAILED"
++    exit_code=1
+ fi
+-if [ -e "trinity-plugins/parafly/bin/ParaFly" ]
++
++if [ -x "trinity-plugins/parafly/bin/ParaFly" ]
+ then
+ 	echo "parafly:                 has been Installed Properly"
+ else
+ 	echo "parafly Installation appears to have FAILED"
++    exit_code=1
+ fi
+ 
+-if [ -e "trinity-plugins/BIN/samtools" ]
++if [ -x "trinity-plugins/BIN/samtools" ]
+ then
+     echo "samtools-0.1.19          has been Installed Properly"
+ else
+     echo "samtools-0.1.19 Installation appears to have FAILED"
++    exit_code=1
+ fi
++
++exit $exit_code

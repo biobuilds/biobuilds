@@ -1,0 +1,39 @@
+--- Trinity
++++ Trinity
+@@ -5,8 +5,7 @@
+ use threads;
+ no strict qw(subs refs);
+ 
+-use FindBin;
+-use lib ("$FindBin::RealBin/PerlLib");
++use lib ("@@INSTALL_DIR@@/PerlLib");
+ use File::Basename;
+ use Time::localtime;
+ use Cwd;
+@@ -22,7 +21,7 @@
+ 
+ BEGIN {
+ 
+-    $ENV{TRINITY_HOME} = "$FindBin::RealBin";
++    $ENV{TRINITY_HOME} = '@@INSTALL_DIR@@';
+ 
+ }
+ 
+@@ -35,7 +34,7 @@
+ 
+ 
+ #directory defnintions
+-my $ROOTDIR = "$FindBin::RealBin";
++my $ROOTDIR = "@@INSTALL_DIR@@";
+ my $UTILDIR = "$ROOTDIR/util";
+ my $MISCDIR = "$UTILDIR/misc";
+ my $INCHWORM_DIR = "$ROOTDIR/Inchworm/bin/";
+@@ -445,7 +444,7 @@
+ #        Trinity --genome_guided_bam rnaseq_alignments.csorted.bam --max_memory 50G\
+ #                --genome_guided_max_intron 10000 --CPU 6
+ #
+-#     see: $FindBin::RealBin/sample_data/test_Trinity_Assembly/
++#     see: @@INSTALL_DIR@@/sample_data/test_Trinity_Assembly/
+ #          for sample data and 'runMe.sh' for example Trinity execution
+ #
+ #     For more details, visit: http://trinityrnaseq.github.io

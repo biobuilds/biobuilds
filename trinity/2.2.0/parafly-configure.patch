@@ -1,0 +1,17 @@
+--- trinity-plugins/parafly-code/configure
++++ trinity-plugins/parafly-code/configure
+@@ -3123,11 +3123,11 @@
+ AM_CXXFLAGS=-m64
+ 
+ case $CXX in
+-  g++*) AM_CXXFLAGS="-pedantic -fopenmp -Wall -Wextra -Wno-long-long -Wno-deprecated $AM_CXXFLAGS"
++  *g++*) AM_CXXFLAGS="-pedantic -fopenmp -Wall -Wextra -Wno-long-long -Wno-deprecated $AM_CXXFLAGS"
+ ;;
+-  sunCC*) AM_CXXFLAGS="-library=stlport4 -xopenmp -xvpara -fast $AM_CXXFLAGS"
++  *sunCC*) AM_CXXFLAGS="-library=stlport4 -xopenmp -xvpara -fast $AM_CXXFLAGS"
+  ;;
+-  icpc*) AM_CXXFLAGS="-Wall -openmp $AM_CXXFLAGS"
++  *icpc*) AM_CXXFLAGS="-Wall -openmp $AM_CXXFLAGS"
+  ;;
+ esac
+ 
