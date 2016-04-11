@@ -19,7 +19,7 @@ source:
     - ppc64le-support.patch  # [ppc64le]
 
 build:
-  number: 1
+  number: 2
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS

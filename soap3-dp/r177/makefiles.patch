@@ -84,7 +84,7 @@
 -LIBFLAG = -L/usr/local/cuda/lib64/ -lcuda -lcudart
 -CFLAGS = -O3 -funroll-loops -march=core2 -fomit-frame-pointer -maccumulate-outgoing-args -Wno-unused-result -lm -static-libgcc -lz -mpopcnt #-mavx
 +CUDAFLAG += -cuda -arch=sm_35 --ptxas-options=-v -lineinfo $(VPROFINC)
-+LIBFLAG += -L$(LIBCUDA_PATH) -lcuda -L$(LIBCUDART_PATH) -lcudart -lpthread $(LDFLAGS) -lz $(HUGETLBFLAGS)
++LIBFLAG += -L$(LIBCUDA_PATH) -lcuda -L$(LIBCUDART_PATH) -lcudart_static -ldl -lrt -lpthread $(LDFLAGS) -lz $(HUGETLBFLAGS)
 +CFLAGS  += -D__STDC_LIMIT_MACROS -fsigned-char -Wno-write-strings -Wno-unused-result
 +
 +ifeq ($(USEHUGETLB),yes)

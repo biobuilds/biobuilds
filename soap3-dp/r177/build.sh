@@ -12,13 +12,13 @@ NVCC=$(command -v nvcc 2>/dev/null)
 CUDA_DIR=$(cd `dirname "${NVCC}"`/.. && pwd)
 CUDA_RTLIB_DIR=""
 for dir in "${CUDA_DIR}/lib64" "${CUDA_DIR}/lib"; do
-    if [ -f "${dir}/libcudart.so" ]; then
+    if [ -f "${dir}/libcudart_static.a" ]; then
         CUDA_RTLIB_DIR="${dir}"
         break
     fi
 done
 [ "x${CUDA_RTLIB_DIR}" == "x" ] && \
-    { echo "ERROR: Could not find libcudart.so" >&2; exit 1; }
+    { echo "ERROR: Could not find libcudart_static.a" >&2; exit 1; }
 
 if [ -f "${CUDA_RTLIB_DIR}/libcuda.so" ]; then
     CUDA_LIB_DIR="${CUDA_RTLIB_DIR}"
