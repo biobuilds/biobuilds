@@ -1,0 +1,59 @@
+package:
+  name: matplotlib
+  version: 1.5.1
+
+source:
+  fn: matplotlib-1.5.1.tar.gz
+  url: https://pypi.python.org/packages/source/m/matplotlib/matplotlib-1.5.1.tar.gz
+  md5: f51847d8692cb63df64cd0bd0304fd20
+  patches:
+    - setupext.patch
+    - cfg_notests.patch
+    - cfg_tkagg.patch     [not ppc64le]
+    - cfg_qt4agg.patch    [not osx and not ppc64le]
+    - rctmp_pyside.patch  [not osx and not ppc64le]
+    - osx-tk.patch        [osx]
+    - osx-framework.patch [osx]
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - numpy x.x
+    - python-dateutil
+    - freetype
+    - pyparsing
+    - pytz
+    - py2cairo            [linux and py2k]
+    - tornado
+    - libpng
+    - pyqt                [not osx and not ppc64le]
+    - cycler
+
+  run:
+    - python
+    - numpy x.x
+    - python-dateutil
+    - freetype            [unix]
+    - pytz
+    - pyparsing
+    - py2cairo            [linux and py2k]
+    - libpng              [unix]
+    - pyqt                [not osx and not ppc64le]
+    - cycler
+
+build:
+  number: 0
+
+test:
+  requires:
+    - nose
+    - mock
+  imports:
+    - matplotlib
+
+about:
+  home: http://matplotlib.sourceforge.net/
+  license: PSF-based (http://matplotlib.sourceforge.net/users/license.html)
+  license_file: LICENSE/LICENSE
+  summary: "Python 2D plotting library"
