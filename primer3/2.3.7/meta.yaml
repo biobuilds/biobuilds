@@ -1,0 +1,31 @@
+package:
+  name: primer3
+  version: "2.3.7"
+
+requirements:
+  build:
+    - perl    # needed for tests
+
+source:
+  fn: primer3-2.3.7.tar.gz
+  url:
+    - http://downloads.sourceforge.net/project/primer3/primer3/2.3.7/primer3-2.3.7.tar.gz
+    - http://download.lab7.io/sources/primer3-2.3.7.tar.gz
+  md5: c6b89067bf465e62b6b1fd830b5b4418
+  patches:
+    - make-install.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+# No tests needed as those are done in the build script.
+
+about:
+  home: "http://primer3.sourceforge.net/"
+  license: GPLv2
+  license_file: COPYING.txt
+  summary: "Widely used program for designing PCR primers"
