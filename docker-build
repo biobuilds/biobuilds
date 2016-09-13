@@ -1,0 +1,71 @@
+#!/bin/bash
+
+basedir=$(cd "`dirname ${BASH_SOURCE[0]}`" && pwd)
+
+img="lab7io/build:biobuilds"
+
+shell=0
+docker_opts=
+build_pkgs=
+build_opts=
+
+abort() {
+    msg=${1:-"Unknown error"}
+    echo "ERROR: $msg" >&2
+    exit 1
+}
+
+# Process command line arguments
+while [ "$1" != "" ]; do
+    case "$1" in
+        "--img")
+            shift; img="$1"
+            ;;
+        "--img="*)
+            img="${1#*=}"
+            ;;
+        "--src" | "--source")
+            shift; basedir="$1"
+            ;;
+        "--src="* | "--source="*)
+            basedir="${1#*=}"
+            ;;
+        "--shell")
+            docker_opts="-i -t"
+            shell=1
+            ;;
+        "-c" | "--channel" | "--python" | "--numpy" | "--perl" | "--R")
+            # conda options that take an additional argument
+            build_opts="$build_opts $1"
+            shift
+            build_opts="$build_opts $1"
+            ;;
+        "-"*)
+            build_opts="$build_opts $1"
+            ;;
+        *)
+            build_pkgs="$build_pkgs $1"
+            ;;
+    esac
+    shift
+done
+
+# Sanity check arguments
+if [ $shell -eq 0 ]; then
+    [ "x$build_pkgs" == "x" ] && \
+        abort "must specify at least one package to build!"
+    for pkg in $build_pkgs; do
+        [ -f "${basedir}/${pkg}/meta.yaml" ] || \
+            abort "No conda recipe found in '${basedir}/${pkg}'!"
+    done
+else
+    build_opts="--shell"
+    build_pkgs=
+fi
+
+echo "Launching image '$img'..." >&2
+docker run --rm --user $UID \
+    -e BB_MAKE_JOBS=${BB_MAKE_JOBS:-1} \
+    -v "${basedir}:/src" \
+    $docker_opts \
+    "$img" $build_opts $build_pkgs
