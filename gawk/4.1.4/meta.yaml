@@ -1,0 +1,33 @@
+package:
+  name: gawk
+  version: "4.1.4"
+
+requirements:
+  build:
+    - mpfr    # [not ppc64le]
+  run:
+    - mpfr    # [not ppc64le]
+
+source:
+  fn: "gawk-4.1.4.tar.gz"
+  url:
+    - "http://ftp.gnu.org/gnu/gawk/gawk-4.1.4.tar.gz"
+    - "http://download.lab7.io/sources/gawk-4.1.4.tar.gz"
+  md5: "f20c94ca51b6ebfc9bffb90f95c8ffbb"
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - awk --version
+
+about:
+  home: "https://www.gnu.org/software/gawk/"
+  license: GPLv3
+  license_file: COPYING
+  summary: "GNU implementation of the awk text processing language"
