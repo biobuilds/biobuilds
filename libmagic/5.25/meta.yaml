@@ -11,6 +11,17 @@ requirements:
   build:
     - autoconf-update
 
+build:
+  number: 1
+  detect_binary_files_with_prefix: true
+
+test:
+  files:
+    - text1.txt
+  commands:
+    - "file text1.txt"
+    - "gzip -c text1.txt | file -"
+
 about:
   home: "http://www.darwinsys.com/file/"
   license: BSD
