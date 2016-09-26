@@ -1,0 +1,41 @@
+package:
+  name: openblas
+  version: "0.2.19"
+
+requirements:
+  build:
+    - gcc       # [not ppc64le]
+    - binutils  # [linux64]
+
+  run:
+    - libgcc    # [not ppc64le]
+
+source:
+  fn: "openblas-0.2.19.tar.gz"
+  url:
+    - "https://github.com/xianyi/OpenBLAS/archive/v0.2.19.tar.gz"
+    - "http://download.lab7.io/openblas-0.2.19.tar.gz"
+  md5: "28c998054fd377279741c6f0b9ea7941"
+  patches:
+    - x86_64-dynamic-arch.patch   # [not ppc64le]
+    - osx-build.patch             # [osx]
+
+build:
+  number: 0
+  script_env:
+    - BB_MAKE_JOBS
+    # Needed to get "DYNAMIC_ARCH=1" building correctly on some VMs;
+    # specifically, our OS X 10.9 build VMs seem to always identify their CPU
+    # microarchitecture as "Penryn", even when the VM host has a CPU with a
+    # more recent microarchitecture. However, since we can pass-through and use
+    # newer (e.g., SSE4.2 or AVX) instructions, expose this value in the conda
+    # build environment so the "dynamic arch" library can be properly tested.
+    # (Without it, "make tests" will likely fail with an "Architecture
+    # Initilization failed" error when building inside an OS X VM.)
+    - OPENBLAS_CORETYPE   # [not ppc64le]
+
+about:
+  home: "http://www.openblas.net/"
+  license: BSD
+  license_file: LICENSE
+  summary: "Optimized BLAS library based on GotoBLAS2"
