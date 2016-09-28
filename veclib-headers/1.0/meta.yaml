@@ -1,23 +1,23 @@
 package:
   name: veclib-headers
-  version: "1.0.2"
+  version: "1.0.4"
 
 source:
-  fn: veclib-headers-1.0.2.tar
+  fn: veclib-headers-1.0.4.tar
   url:
-    - "https://www.ibm.com/developerworks/community/files/form/anonymous/api/library/b8b3a7b1-379f-4140-9d5f-73f658d8b2f5/document/79b19df7-a672-4908-920a-8505c2f09d68/media/veclib.1.0.2.tar"
-    - "http://download.lab7.io/sources/veclib-headers-1.0.2.tar"
-  md5: 6306a4ff7e78a193b53be12e1fdfb125
+    - "https://www.ibm.com/developerworks/community/files/form/anonymous/api/library/b8b3a7b1-379f-4140-9d5f-73f658d8b2f5/document/8a241b79-6598-48c9-9be0-1bc119c4483c/media/veclib.1.0.4.tar"
+    - "http://download.lab7.io/sources/veclib-headers-1.0.4.tar"
+  md5: b51bd5d7215d2edb833848f611e6fd82
   patches:
     - missing-includes.patch
-    - fix-inlines.patch
 
 build:
-  number: 2
+  number: 0
   track_features:
     - veclib
 
 about:
   home: "https://www.ibm.com/developerworks/community/groups/community/powerveclib"
   license: "Proprietary - IBM"
+  license_file: "LICENSE.TXT"
   summary: "Vector intrinsics for IBM's POWER architecture"
