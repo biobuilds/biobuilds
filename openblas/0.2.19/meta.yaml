@@ -21,7 +21,7 @@ source:
     - osx-build.patch             # [osx]
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_MAKE_JOBS
     # Needed to get "DYNAMIC_ARCH=1" building correctly on some VMs;
