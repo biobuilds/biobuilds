@@ -1,0 +1,23 @@
+package:
+  name: jansson
+  version: 2.9
+
+source:
+  fn: "jansson-2.9.tar.bz2"
+  url:
+    - "http://www.digip.org/jansson/releases/jansson-2.9.tar.bz2"
+    - "http://download.lab7.io/sources/jansson-2.9.tar.bz2"
+  md5: "4b9d8fe6690ae3f10a227165bc02b696"
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://www.digip.org/jansson/"
+  license: MIT
+  license_file: LICENSE
+  summary: "C library for encoding, decoding and manipulating JSON data"
