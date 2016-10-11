@@ -1,0 +1,151 @@
+--- applications/bed/bedextract/src/Makefile
++++ applications/bed/bedextract/src/Makefile
+@@ -24,7 +24,7 @@
+ INCLUDES                = -iquote$(HEAD) $(EXT_INCLUDES)
+ LIBLOCATION             = $(EXT_LIBS)
+ LIBRARIES               = -ljansson -lbz2 -lz
+-BLDFLAGS                = -Wall -pedantic -O3 -std=c++11
++BLDFLAGS                = -Wall -pedantic -O3 -std=c++11 $(OTHER_CXXFLAGS)
+ SFLAGS                  = -static
+ 
+ dependency_names        = NaN starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding
+--- applications/bed/bedextract/src/Makefile.darwin
++++ applications/bed/bedextract/src/Makefile.darwin
+@@ -28,7 +28,7 @@
+ LIBLOCATION          = $(EXT_LIBS)
+ LIBRARIES            = -ljansson -lbz2 -lz
+ STDFLAGS             = -Wall -pedantic -std=c++11 -stdlib=libc++
+-BLDFLAGS             = -O3 ${STDFLAGS}
++BLDFLAGS             = -O3 ${STDFLAGS} ${OTHER_CXXFLAGS}
+ 
+ 
+ FLAGS                = $(BLDFLAGS) $(OBJDIR)/NaN.o $(OBJDIR)/starchConstants.o $(OBJDIR)/starchFileHelpers.o $(OBJDIR)/starchHelpers.o $(OBJDIR)/starchMetadataHelpers.o $(OBJDIR)/unstarchHelpers.o $(OBJDIR)/starchSha1Digest.o $(OBJDIR)/starchBase64Coding.o ${LIBLOCATION} ${INCLUDES}
+--- applications/bed/bedmap/src/Makefile
++++ applications/bed/bedmap/src/Makefile
+@@ -23,7 +23,7 @@
+ INCLUDES            = -iquote${HEAD} ${EXT_INCLUDES}
+ LIBLOCATION         = ${EXT_LIBS}
+ LIBRARIES           = -ljansson -lbz2 -lz
+-BLDFLAGS            = -Wall -pedantic -O3 -std=c++11 
++BLDFLAGS            = -Wall -pedantic -O3 -std=c++11 $(OTHER_CXXFLAGS)
+ SFLAGS              = -static
+ 
+ dependency_names    = NaN starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding
+--- applications/bed/bedmap/src/Makefile.darwin
++++ applications/bed/bedmap/src/Makefile.darwin
+@@ -28,7 +28,7 @@
+ LIBLOCATION          = $(EXT_LIBS)
+ LIBRARIES            = -ljansson -lbz2 -lz
+ STDFLAGS             = -Wall -pedantic -std=c++11 -stdlib=libc++
+-BLDFLAGS             = -O3 ${STDFLAGS}
++BLDFLAGS             = -O3 ${STDFLAGS} ${OTHER_CXXFLAGS}
+ 
+ FLAGS                = $(BLDFLAGS) $(OBJDIR)/NaN.o $(OBJDIR)/starchConstants.o $(OBJDIR)/starchFileHelpers.o $(OBJDIR)/starchHelpers.o $(OBJDIR)/starchMetadataHelpers.o $(OBJDIR)/unstarchHelpers.o $(OBJDIR)/starchSha1Digest.o $(OBJDIR)/starchBase64Coding.o ${LIBLOCATION} ${INCLUDES}
+ 
+--- applications/bed/bedops/src/Makefile
++++ applications/bed/bedops/src/Makefile
+@@ -25,7 +25,7 @@
+ INCLUDES            = -iquote$(HEAD) $(EXT_INCLUDES)
+ LIBLOCATION         = $(EXT_LIBS)
+ LIBRARIES           = -ljansson -lbz2 -lz
+-BLDFLAGS            = -Wall -pedantic -O3 -std=c++11
++BLDFLAGS            = -Wall -pedantic -O3 -std=c++11 $(OTHER_CXXFLAGS)
+ SFLAGS              = -static
+ 
+ dependency_names    = NaN starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding
+--- applications/bed/bedops/src/Makefile.darwin
++++ applications/bed/bedops/src/Makefile.darwin
+@@ -26,7 +26,7 @@
+ INCLUDES             = -iquote$(HEAD) $(EXT_INCLUDES)
+ LIBLOCATION          = $(EXT_LIBS)
+ LIBRARIES            = -ljansson -lbz2 -lz
+-STDFLAGS             = -Wall -pedantic -std=c++11 -stdlib=libc++
++STDFLAGS             = -Wall -pedantic -std=c++11 -stdlib=libc++ $(OTHER_CXXFLAGS)
+ BLDFLAGS             = -O3 ${STDFLAGS}
+ 
+ FLAGS                = $(BLDFLAGS) $(OBJDIR)/NaN.o $(OBJDIR)/starchConstants.o $(OBJDIR)/starchFileHelpers.o $(OBJDIR)/starchHelpers.o $(OBJDIR)/starchMetadataHelpers.o $(OBJDIR)/unstarchHelpers.o $(OBJDIR)/starchSha1Digest.o $(OBJDIR)/starchBase64Coding.o ${LIBLOCATION} ${INCLUDES}
+--- applications/bed/closestfeats/src/Makefile
++++ applications/bed/closestfeats/src/Makefile
+@@ -23,7 +23,7 @@
+ INCLUDES            = -iquote$(HEAD) $(EXT_INCLUDES)
+ LIBLOCATION         = $(EXT_LIBS)
+ LIBRARIES           = -ljansson -lbz2 -lz
+-BLDFLAGS            = -Wall -pedantic -O3 -std=c++11
++BLDFLAGS            = -Wall -pedantic -O3 -std=c++11 $(OTHER_CXXFLAGS)
+ SFLAGS              = -static
+ 
+ dependency_names    = NaN starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding
+--- applications/bed/closestfeats/src/Makefile.darwin
++++ applications/bed/closestfeats/src/Makefile.darwin
+@@ -28,7 +28,7 @@
+ LIBLOCATION          = $(EXT_LIBS)
+ LIBRARIES            = -ljansson -lbz2 -lz
+ STDFLAGS             = -Wall -pedantic -std=c++11 -stdlib=libc++
+-BLDFLAGS             = -O3 ${STDFLAGS}
++BLDFLAGS             = -O3 ${STDFLAGS} ${OTHER_CXXFLAGS}
+ 
+ FLAGS                = $(BLDFLAGS) $(OBJDIR)/NaN.o $(OBJDIR)/starchConstants.o $(OBJDIR)/starchFileHelpers.o $(OBJDIR)/starchHelpers.o $(OBJDIR)/starchMetadataHelpers.o $(OBJDIR)/unstarchHelpers.o $(OBJDIR)/starchSha1Digest.o $(OBJDIR)/starchBase64Coding.o ${LIBLOCATION} ${INCLUDES}
+ 
+--- applications/bed/conversion/src/Makefile
++++ applications/bed/conversion/src/Makefile
+@@ -1,4 +1,4 @@
+-BLDFLAGS                  = -Wall -Wextra -pedantic -std=c99
++BLDFLAGS                  = -Wall -Wextra -pedantic -std=c99 $(OTHER_CFLAGS)
+ COMMONFLAGS               = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1
+ CFLAGS                    = -O3
+ CDFLAGS                   = -DDEBUG=1 -g -O0 -fno-inline
+--- applications/bed/conversion/src/Makefile.darwin
++++ applications/bed/conversion/src/Makefile.darwin
+@@ -1,5 +1,5 @@
+ MIN_OSX_VERSION           = 10.7
+-BLDFLAGS                  = -Wall -Wextra -pedantic -std=c99
++BLDFLAGS                  = -Wall -Wextra -pedantic -std=c99 $(OTHER_CFLAGS)
+ COMMONFLAGS               = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1
+ CFLAGS                    = -O3
+ CDFLAGS                   = -DDEBUG=1 -g -O0 -fno-inline
+--- applications/bed/sort-bed/src/Makefile
++++ applications/bed/sort-bed/src/Makefile
+@@ -29,7 +29,7 @@
+ BINDIR              = ../bin
+ OBJDIR             = objects
+ WARNINGS            = -Wall -Wextra -pedantic
+-BLDFLAGS            = ${WARNINGS} -O3 -std=c++11
++BLDFLAGS            = ${WARNINGS} -O3 -std=c++11 ${OTHER_CXXFLAGS}
+ SFLAGS              = -static
+ 
+ dependency_names    = starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding SortDetails Sort CheckSort
+--- applications/bed/sort-bed/src/Makefile.darwin
++++ applications/bed/sort-bed/src/Makefile.darwin
+@@ -31,7 +31,7 @@
+ INCLUDES             = -iquote$(HEAD) $(EXT_INCLUDES)
+ LIBLOCATION          = $(EXT_LIBS)
+ LIBRARIES            = -ljansson -lbz2 -lz
+-BLDFLAGS             = ${WARNINGS} ${OPTIMIZE}
++BLDFLAGS             = ${WARNINGS} ${OPTIMIZE} ${OTHER_CXXFLAGS}
+ STARCHOBJS           = $(OBJ_DIR)/starchConstants.o $(OBJ_DIR)/starchFileHelpers.o $(OBJ_DIR)/starchHelpers.o $(OBJ_DIR)/starchMetadataHelpers.o $(OBJ_DIR)/unstarchHelpers.o $(OBJ_DIR)/starchSha1Digest.o $(OBJ_DIR)/starchBase64Coding.o
+ 
+ build: sort
+--- applications/bed/starch/src/Makefile
++++ applications/bed/starch/src/Makefile
+@@ -38,7 +38,7 @@
+ TEST_OSX_BINDIR           = ${TEST}/binaries/osx/${ARCH_VERSION}/bin
+ AR                        = ar
+ SFLAGS                    = -static
+-CXXFLAGS                  = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O2 -Wformat -Wall -Wextra -Wswitch-enum -std=c++11 ${SFLAGS}
++CXXFLAGS                  = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -Wformat -Wall -Wextra -Wswitch-enum -std=c++11 ${SFLAGS} ${OTHER_CXXFLAGS}
+ CXXDFLAGS                 = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O0 -g -Wformat -Wall -Wextra -Wswitch-enum -std=c++11 -DDEBUG_VERBOSE=1 ${SFLAGS}
+ CXXGFLAGS                 = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O -Wformat -Wall -Wextra -Wswitch-enum -std=c++11 -DDEBUG_VERBOSE=1 ${SFLAGS} -pg
+ 
+--- applications/bed/starch/src/Makefile.darwin
++++ applications/bed/starch/src/Makefile.darwin
+@@ -37,8 +37,8 @@
+ TEST                      = ../test
+ TEST_OSX_BINDIR           = ${TEST}/binaries/osx/${ARCH_VERSION}/bin
+ 
+-CFLAGS                    = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O2 ${WARNINGS} -std=c99 -mmacosx-version-min=$(MIN_OSX_VERSION) -arch ${ARCH} -x c++ -v -stdlib=libc++ -std=c++11
+-CXXFLAGS                  = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O2 ${WARNINGS} -std=c++11 -stdlib=libc++ -mmacosx-version-min=$(MIN_OSX_VERSION) -arch ${ARCH}
++CFLAGS                    = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB ${WARNINGS} -std=c99 -mmacosx-version-min=$(MIN_OSX_VERSION) -arch ${ARCH} -x c++ -v -stdlib=libc++ -std=c++11 $(OTHER_CXXFLAGS)
++CXXFLAGS                  = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB ${WARNINGS} -std=c++11 -stdlib=libc++ -mmacosx-version-min=$(MIN_OSX_VERSION) -arch ${ARCH} $(OTHER_CXXFLAGS)
+ CDFLAGS                   = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O0 -g ${WARNINGS} -std=c99 -DDEBUG_VERBOSE=1 -mmacosx-version-min=$(MIN_OSX_VERSION) -arch ${ARCH} -x c++ -v -stdlib=libc++ -std=c++11
+ CXXDFLAGS                 = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O0 -g ${WARNINGS} -std=c++11 -stdlib=libc++ -DDEBUG_VERBOSE=1 -mmacosx-version-min=$(MIN_OSX_VERSION) -arch ${ARCH}
+ 

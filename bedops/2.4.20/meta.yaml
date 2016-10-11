@@ -1,0 +1,54 @@
+package:
+  name: bedops
+  version: 2.4.20
+
+source:
+  fn: "bedops-2.4.20.tar.gz"
+  url:
+    - "https://github.com/bedops/bedops/archive/v2.4.20.tar.gz"
+    - "http://download.lab7.io/sources/bedops-2.4.20.tar.gz"
+  md5: "5c823aa2fa0d546238925f525663d3d2"
+  patches:
+    - use-system-libs.patch
+    - dont-strip.patch
+    - bedmap-version-exit.patch
+    - misc-flags.patch
+    - osx-64bit-only.patch        # [osx]
+
+requirements:
+  build:
+    - gcc       # [linux and not ppc64le]
+    - bzip2
+    - jansson
+    - zlib
+  run:
+    - libgcc    # [linux and not ppc64le]
+    # bzip2 statically linked, so not needed at runtime
+    - jansson
+    - zlib
+    - parallel
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - bedextract --version
+    - bedmap --version
+    - bedops --version
+    - closest-features --version
+    - convert2bed --version
+    - sort-bed --version
+    - starch --version
+    - starchcat --version
+    - unstarch --version
+
+about:
+  home: "https://github.com/bedops/bedops"
+  license: GPLv2
+  license_file: LICENSE
+  summary: "High-performance genomic feature operations"

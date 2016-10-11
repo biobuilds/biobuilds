@@ -1,0 +1,375 @@
+commit 8a99c4592fe9db1251743f85aaf58f3d8b28df0d
+Author: Cheng H. Lee <cheng.lee@lab7.io>
+Date:   Tue Oct 11 10:44:18 2016 -0500
+
+    makefile-system-libs.patch
+
+--- applications/bed/bedextract/src/Makefile
++++ applications/bed/bedextract/src/Makefile
+@@ -21,9 +21,9 @@
+ LOCALZLIBDIR            = ${PARTY3}/zlib
+ LOCALZLIBLIB            = ${LOCALZLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR         = ${LOCALZLIBDIR}
+-INCLUDES                = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBLOCATION             = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBDIR}
+-LIBRARIES               = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES                = -iquote$(HEAD) $(EXT_INCLUDES)
++LIBLOCATION             = $(EXT_LIBS)
++LIBRARIES               = -ljansson -lbz2 -lz
+ BLDFLAGS                = -Wall -pedantic -O3 -std=c++11
+ SFLAGS                  = -static
+ 
+--- applications/bed/bedextract/src/Makefile.darwin
++++ applications/bed/bedextract/src/Makefile.darwin
+@@ -24,9 +24,9 @@
+ LOCALZLIBLIBDIR      = ${LOCALZLIBDIR}
+ LOCALZLIBLIB         = ${LOCALZLIBLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR      = ${LOCALZLIBDIR}
+-INCLUDES             = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBLOCATION          = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBLIBDIR}
+-LIBRARIES            = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES             = -iquote$(HEAD) $(EXT_INCLUDES)
++LIBLOCATION          = $(EXT_LIBS)
++LIBRARIES            = -ljansson -lbz2 -lz
+ STDFLAGS             = -Wall -pedantic -std=c++11 -stdlib=libc++
+ BLDFLAGS             = -O3 ${STDFLAGS}
+ 
+--- applications/bed/bedmap/src/Makefile
++++ applications/bed/bedmap/src/Makefile
+@@ -20,9 +20,9 @@
+ LOCALZLIBLIB        = ${LOCALZLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR     = ${LOCALZLIBDIR}
+ OBJDIR              = objects
+-INCLUDES            = -iquote${HEAD} -I${PARTY3} -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBLOCATION         = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBDIR}
+-LIBRARIES           = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES            = -iquote${HEAD} ${EXT_INCLUDES}
++LIBLOCATION         = ${EXT_LIBS}
++LIBRARIES           = -ljansson -lbz2 -lz
+ BLDFLAGS            = -Wall -pedantic -O3 -std=c++11 
+ SFLAGS              = -static
+ 
+--- applications/bed/bedmap/src/Makefile.darwin
++++ applications/bed/bedmap/src/Makefile.darwin
+@@ -24,9 +24,9 @@
+ LOCALZLIBLIBDIR      = ${LOCALZLIBDIR}
+ LOCALZLIBLIB         = ${LOCALZLIBLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR      = ${LOCALZLIBDIR}
+-INCLUDES             = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBLOCATION          = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBLIBDIR}
+-LIBRARIES            = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES             = -iquote$(HEAD) $(EXT_INCLUDES)
++LIBLOCATION          = $(EXT_LIBS)
++LIBRARIES            = -ljansson -lbz2 -lz
+ STDFLAGS             = -Wall -pedantic -std=c++11 -stdlib=libc++
+ BLDFLAGS             = -O3 ${STDFLAGS}
+ 
+--- applications/bed/bedops/src/Makefile
++++ applications/bed/bedops/src/Makefile
+@@ -22,9 +22,9 @@
+ LOCALZLIBLIB        = ${LOCALZLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR     = ${LOCALZLIBDIR}
+ OBJDIR              = objects
+-INCLUDES            = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBLOCATION         = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBDIR}
+-LIBRARIES           = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES            = -iquote$(HEAD) $(EXT_INCLUDES)
++LIBLOCATION         = $(EXT_LIBS)
++LIBRARIES           = -ljansson -lbz2 -lz
+ BLDFLAGS            = -Wall -pedantic -O3 -std=c++11
+ SFLAGS              = -static
+ 
+--- applications/bed/bedops/src/Makefile.darwin
++++ applications/bed/bedops/src/Makefile.darwin
+@@ -23,9 +23,9 @@
+ LOCALZLIBLIB         = ${LOCALZLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR      = ${LOCALZLIBDIR}
+ OBJDIR               = objects_$(ARCH)
+-INCLUDES             = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBLOCATION          = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBDIR}
+-LIBRARIES            = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES             = -iquote$(HEAD) $(EXT_INCLUDES)
++LIBLOCATION          = $(EXT_LIBS)
++LIBRARIES            = -ljansson -lbz2 -lz
+ STDFLAGS             = -Wall -pedantic -std=c++11 -stdlib=libc++
+ BLDFLAGS             = -O3 ${STDFLAGS}
+ 
+--- applications/bed/closestfeats/src/Makefile
++++ applications/bed/closestfeats/src/Makefile
+@@ -20,9 +20,9 @@
+ LOCALZLIBLIB        = ${LOCALZLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR     = ${LOCALZLIBDIR}
+ OBJDIR              = objects
+-INCLUDES            = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBLOCATION         = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBDIR}
+-LIBRARIES           = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES            = -iquote$(HEAD) $(EXT_INCLUDES)
++LIBLOCATION         = $(EXT_LIBS)
++LIBRARIES           = -ljansson -lbz2 -lz
+ BLDFLAGS            = -Wall -pedantic -O3 -std=c++11
+ SFLAGS              = -static
+ 
+--- applications/bed/closestfeats/src/Makefile.darwin
++++ applications/bed/closestfeats/src/Makefile.darwin
+@@ -24,9 +24,9 @@
+ LOCALZLIBLIBDIR      = ${LOCALZLIBDIR}
+ LOCALZLIBLIB         = ${LOCALZLIBLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR      = ${LOCALZLIBDIR}
+-INCLUDES             = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBLOCATION          = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBDIR}
+-LIBRARIES            = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES             = -iquote$(HEAD) $(EXT_INCLUDES)
++LIBLOCATION          = $(EXT_LIBS)
++LIBRARIES            = -ljansson -lbz2 -lz
+ STDFLAGS             = -Wall -pedantic -std=c++11 -stdlib=libc++
+ BLDFLAGS             = -O3 ${STDFLAGS}
+ 
+--- applications/bed/sort-bed/src/Makefile
++++ applications/bed/sort-bed/src/Makefile
+@@ -4,7 +4,7 @@
+ LIB2                = $(MAIN)/interfaces/src/utility
+ LIB3                = $(MAIN)/interfaces/src/data/starch
+ THISDIR             = ${shell pwd}
+-INCLUDES            = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
++INCLUDES            = -iquote$(HEAD) $(EXT_INCLUDES)
+ 
+ PARTY3              = ${THISDIR}/$(MAIN)/third-party
+ LIBJANSSON          = libjansson.a
+@@ -22,8 +22,8 @@
+ LOCALZLIBLIB        = ${LOCALZLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR     = ${LOCALZLIBDIR}
+ 
+-LIBLOCATION         = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBDIR}
+-LIBRARIES           = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++LIBLOCATION         = $(EXT_LIBS)
++LIBRARIES           = -ljansson -lbz2 -lz
+ 
+ PROG                = sort-bed
+ BINDIR              = ../bin
+--- applications/bed/sort-bed/src/Makefile.darwin
++++ applications/bed/sort-bed/src/Makefile.darwin
+@@ -28,11 +28,10 @@
+ LOCALZLIBLIBDIR      = ${LOCALZLIBDIR}
+ LOCALZLIBLIB         = ${LOCALZLIBLIBDIR}/${LIBZLIB}
+ LOCALZLIBINCDIR      = ${LOCALZLIBDIR}
+-INCLUDES             = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBLOCATION          = -L${LOCALJANSSONLIBDIR} -L${LOCALBZIP2LIBDIR} -L${LOCALZLIBDIR}
+-LIBRARIES            = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES             = -iquote$(HEAD) $(EXT_INCLUDES)
++LIBLOCATION          = $(EXT_LIBS)
++LIBRARIES            = -ljansson -lbz2 -lz
+ BLDFLAGS             = ${WARNINGS} ${OPTIMIZE}
+-INCLUDES             = -iquote$(HEAD) -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+ STARCHOBJS           = $(OBJ_DIR)/starchConstants.o $(OBJ_DIR)/starchFileHelpers.o $(OBJ_DIR)/starchHelpers.o $(OBJ_DIR)/starchMetadataHelpers.o $(OBJ_DIR)/unstarchHelpers.o $(OBJ_DIR)/starchSha1Digest.o $(OBJ_DIR)/starchBase64Coding.o
+ 
+ build: sort
+ 
+--- applications/bed/starch/src/Makefile
++++ applications/bed/starch/src/Makefile
+@@ -29,8 +29,8 @@
+ LOCALZLIBINCDIR           = ${LOCALZLIBDIR}
+ OBJDIR                    = ${INTERFACES}/src/data/starch
+ LOCALOBJDIR               = objects
+-INCLUDES                  = -iquote${MAIN} -iquote${HEAD} -iquote${PARTY3} -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBRARIES                 = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES                  = -iquote${MAIN} -iquote${HEAD} ${EXT_INCLUDES}
++LIBRARIES                 = ${EXT_LIBS} -ljansson -lbz2 -lz
+ ARCH_VERSION              = v2.1
+ BIN_VERSION               = v2.4.16
+ TEST                      = ../test
+@@ -60,17 +60,17 @@
+ starchcat: $(BINDIR)/starchcat
+ starchcluster: $(BINDIR)/starchcluster_gnuParallel $(BINDIR)/starchcluster_sge
+ 
+-$(BINDIR)/% : %.c $(LOCALSTARCHLIB) $(LIBRARIES)
++$(BINDIR)/% : %.c $(LOCALSTARCHLIB)
+ 	mkdir -p $(BINDIR)
+ 	${CXX} ${CXXFLAGS} -c $*.c -o $(LOCALOBJDIR)/$*.o ${INCLUDES}
+ 	${CXX} ${CXXFLAGS} $(LOCALOBJDIR)/$*.o -o $@ ${LOCALSTARCHLIB} ${LIBRARIES}
+ 
+-$(BINDIR)/debug.% : %.c $(LOCALSTARCHLIB) $(LIBRARIES)
++$(BINDIR)/debug.% : %.c $(LOCALSTARCHLIB)
+ 	mkdir -p $(BINDIR)
+ 	${CXX} ${CXXDFLAGS} -c $*.c -o $(LOCALOBJDIR)/$*.o ${INCLUDES}
+ 	${CXX} ${CXXDFLAGS} $(LOCALOBJDIR)/$*.o -o $@ ${LOCALSTARCHLIB} ${LIBRARIES}
+ 
+-$(BINDIR)/gprof.% : %.c $(LOCALSTARCHLIB) $(LIBRARIES)
++$(BINDIR)/gprof.% : %.c $(LOCALSTARCHLIB)
+ 	mkdir -p $(BINDIR)
+ 	${CXX} ${CXXGFLAGS} -c $*.c -o $(LOCALOBJDIR)/$*.o ${INCLUDES}
+ 	${CXX} ${CXXGFLAGS} $(LOCALOBJDIR)/$*.o -o $@ ${LOCALSTARCHLIB} ${LIBRARIES}
+@@ -85,7 +85,7 @@
+ 	mkdir -p $(LOCALSTARCHLIBDIR)
+ 	${AR} rcs $@ $^
+ 
+-$(LOCALOBJDIR)/%.o : $(OBJDIR)/%.c $(LIBRARIES)
++$(LOCALOBJDIR)/%.o : $(OBJDIR)/%.c
+ 	mkdir -p $(LOCALOBJDIR)
+ 	${CXX} ${CXXFLAGS} -c $< -o $@ ${INCLUDES}
+ 
+--- applications/bed/starch/src/Makefile.darwin
++++ applications/bed/starch/src/Makefile.darwin
+@@ -28,8 +28,8 @@
+ LOCALZLIBINCDIR           = ${LOCALZLIBDIR}
+ OBJDIR                    = ${INTERFACES}/src/data/starch
+ LOCALOBJDIR               = objects_${ARCH}
+-INCLUDES                  = -iquote${MAIN} -iquote${HEAD} -iquote${PARTY3} -I${LOCALJANSSONINCDIR} -I${LOCALBZIP2INCDIR} -I${LOCALZLIBINCDIR}
+-LIBRARIES                 = ${LOCALJANSSONLIB} ${LOCALBZIP2LIB} ${LOCALZLIBLIB}
++INCLUDES                  = -iquote${MAIN} -iquote${HEAD} -iquote${PARTY3} ${EXT_INCLUDES}
++LIBRARIES                 = ${EXT_LIBS} -ljansson -lbz2 -lz
+ BINDIR                    = ../bin_${ARCH}
+ WARNINGS                  = -Weverything -Wno-c++98-compat-pedantic -Wno-padded
+ ARCH_VERSION              = v2.1
+--- applications/bed/starch/src/starchcat.c
++++ applications/bed/starch/src/starchcat.c
+@@ -4869,11 +4869,7 @@
+     zStreamPtr->opaque = Z_NULL;
+ 
+     /* cf. http://www.zlib.net/manual.html for level information */
+-#ifdef __cplusplus
+-    zError = deflateInit2cpp(zStreamPtr, STARCH_Z_COMPRESSION_LEVEL, Z_DEFLATED, STARCH_Z_WINDOW_BITS, STARCH_Z_MEMORY_LEVEL, Z_DEFAULT_STRATEGY);
+-#else
+     zError = deflateInit2(zStreamPtr, STARCH_Z_COMPRESSION_LEVEL, Z_DEFLATED, STARCH_Z_WINDOW_BITS, STARCH_Z_MEMORY_LEVEL, Z_DEFAULT_STRATEGY);
+-#endif
+     /* zError = deflateInit(zStreamPtr, STARCH_Z_COMPRESSION_LEVEL); */
+ 
+     if (zError != Z_OK) {
+--- applications/bed/starch/src/starchcat.h
++++ applications/bed/starch/src/starchcat.h
+@@ -32,9 +32,15 @@
+ #include <inttypes.h>
+ #endif
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
+ #include <getopt.h>
+ #include <bzlib.h>
+ #include <zlib.h>
++#ifdef __cplusplus
++}
++#endif
+ 
+ #include "data/starch/unstarchHelpers.h"
+ #include "data/starch/starchMetadataHelpers.h"
+--- interfaces/general-headers/data/starch/starchApi.hpp
++++ interfaces/general-headers/data/starch/starchApi.hpp
+@@ -40,9 +40,15 @@
+ #include <string.h>
+ #endif
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
+ #include <sys/stat.h>
+ #include <bzlib.h>
+ #include <zlib.h>
++#ifdef __cplusplus
++}
++#endif
+ 
+ #include "starchMetadataHelpers.h"
+ #include "starchFileHelpers.h"
+--- interfaces/general-headers/data/starch/starchMetadataHelpers.h
++++ interfaces/general-headers/data/starch/starchMetadataHelpers.h
+@@ -35,7 +35,13 @@
+ #include "data/starch/starchConstants.h"
+ #include "suite/BEDOPS.Constants.hpp"
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
+ #include "jansson.h"
++#ifdef __cplusplus
++}
++#endif
+ 
+ /* current "stable" binary version:  2.4.2 */
+ /* current "dev" binary version:     2.5.0 */
+--- interfaces/general-headers/data/starch/unstarchHelpers.h
++++ interfaces/general-headers/data/starch/unstarchHelpers.h
+@@ -26,7 +26,13 @@
+ #ifndef UNSTARCH_HELPERS_H
+ #define UNSTARCH_HELPERS_H
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
+ #include <bzlib.h>
++#ifdef __cplusplus
++}
++#endif
+ 
+ #include "data/starch/starchMetadataHelpers.h"
+ #include "suite/BEDOPS.Constants.hpp"
+--- interfaces/src/data/starch/starchFileHelpers.c
++++ interfaces/src/data/starch/starchFileHelpers.c
+@@ -177,11 +177,7 @@
+ 
+     /* deflateInit2 allows creation of archive with gzip header, i.e. a gzip file */
+     /* cf. http://www.zlib.net/manual.html */
+-#ifdef __cplusplus
+-    ret = deflateInit2cpp(&strm, level, Z_DEFLATED, (15+16), 8, Z_DEFAULT_STRATEGY);
+-#else
+     ret = deflateInit2(&strm, level, Z_DEFLATED, (15+16), 8, Z_DEFAULT_STRATEGY);
+-#endif
+     if (ret != Z_OK) 
+         return ret;
+ 
+--- system.mk/Makefile.darwin
++++ system.mk/Makefile.darwin
+@@ -19,7 +19,7 @@
+ X86_64           = darwin_intel_x86_64
+ 
+ 
+-default: support
++default: | mkdirs
+ 	$(MAKE) build -f $(SELF)
+ 
+ SUBDIRS = bedmap/src sort-bed/src bedops/src closestfeats/src bedextract/src starch/src conversion/src
+@@ -100,12 +100,6 @@
+ 	rm -f ${OSXPKGDIR}/*
+ 	rm -f ${OSXLIBDIR}/*
+ 	rm -Rf ${OSXBUILDDIR}/*
+-	rm -rf ${WHICHBZIP2}
+-	rm -f ${PARTY3}/bzip2
+-	rm -rf ${WHICHJANSSON}
+-	rm -f ${PARTY3}/jansson
+-	rm -rf ${WHICHZLIB}
+-	rm -f ${PARTY3}/zlib
+ 	rm -rf ${PARTY3}/$(I386)
+ 	rm -rf ${PARTY3}/$(X86_64)
+ 	rm -f ${APPDIR}/starch/bin/*starch*
+@@ -182,8 +176,6 @@
+ # mkdir's
+ #
+ mkdirs:
+-	mkdir -p ${PARTY3}/$(I386)
+-	mkdir -p ${PARTY3}/$(X86_64)
+ 	mkdir -p ${APPDIR}/sort-bed/bin
+ 	mkdir -p ${APPDIR}/bedops/bin
+ 	mkdir -p ${APPDIR}/closestfeats/bin
+--- system.mk/Makefile.linux
++++ system.mk/Makefile.linux
+@@ -16,7 +16,7 @@
+ export CXX       = g++
+ SELF             = ${WDIR}/system.mk/Makefile.linux
+ 
+-default: support
++default:
+ 	$(MAKE) build -f $(SELF)
+ 
+ SUBDIRS = ${APPDIR}/bedmap/src ${APPDIR}/sort-bed/src ${APPDIR}/bedops/src ${APPDIR}/closestfeats/src ${APPDIR}/bedextract/src ${APPDIR}/starch/src ${APPDIR}/conversion/src
+@@ -72,12 +72,6 @@
+ 	rm -f ${OSXPKGDIR}/*
+ 	rm -f ${OSXLIBDIR}/*
+ 	rm -Rf ${OSXBUILDDIR}/*
+-	rm -rf ${WHICHBZIP2}
+-	rm -f ${PARTY3}/bzip2
+-	rm -rf ${WHICHJANSSON}
+-	rm -f ${PARTY3}/jansson
+-	rm -rf ${WHICHZLIB}
+-	rm -f ${PARTY3}/zlib
+ 	rm -rf ${BINDIR}
+ 
+ clean_debug:
