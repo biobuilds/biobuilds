@@ -1,0 +1,33 @@
+package:
+  name: cutadapt
+  version: 1.11
+
+source:
+  fn: "cutadapt-1.11.tar.gz"
+  url:
+    - "https://pypi.python.org/packages/47/bf/9045e90dac084a90aa2bb72c7d5aadefaea96a5776f445f5b5d9a7a2c78b/cutadapt-1.11.tar.gz"
+    - "http://download.lab7.io/sources/cutadapt-1.11.tar.gz"
+  md5: "8f8a8ef85b555ac07027c8c6e702b4af"
+
+requirements:
+  build:
+    - python
+    - nose
+  run:
+    - python
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+
+test:
+  commands:
+    - cutadapt --version >/dev/null
+
+about:
+  home: "https://cutadapt.readthedocs.io/"
+  license: MIT
+  license_file: LICENSE
+  summary: "Remove adapters, primers, and other types of unwanted sequence from sequencing reads"
