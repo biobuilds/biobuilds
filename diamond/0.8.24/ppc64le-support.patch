@@ -1,0 +1,382 @@
+--- src/dp/greedy_align.cpp
++++ src/dp/greedy_align.cpp
+@@ -187,25 +187,25 @@
+ 		v[0] = v[0] + score_vector<uint8_t>(q);
+ 		v[0] -= vbias;
+ 		max[0].max(v[0]);
+-		_mm_storeu_si128((__m128i*)buf, v[0].data_);
++		vec_storeu1q((__m128i*)buf, v[0].data_);
+ 		q += 16;
+ 		buf += 16;
+ 		v[1] = v[1] + score_vector<uint8_t>(q);
+ 		v[1] -= vbias;
+ 		max[1].max(v[1]);
+-		_mm_storeu_si128((__m128i*)buf, v[1].data_);
++		vec_storeu1q((__m128i*)buf, v[1].data_);
+ 		q += 16;
+ 		buf += 16;
+ 		v[2] = v[2] + score_vector<uint8_t>(q);
+ 		v[2] -= vbias;
+ 		max[2].max(v[2]);
+-		_mm_storeu_si128((__m128i*)buf, v[2].data_);
++		vec_storeu1q((__m128i*)buf, v[2].data_);
+ 		q += 16;
+ 		buf += 16;
+ 		v[3] = v[3] + score_vector<uint8_t>(q);
+ 		v[3] -= vbias;
+ 		max[3].max(v[3]);
+-		_mm_storeu_si128((__m128i*)buf, v[3].data_);
++		vec_storeu1q((__m128i*)buf, v[3].data_);
+ 		buf += 16;
+ 		if ((n & 15) == 0) {
+ 			set_global_max(max, global_max, local_max);
+--- src/dp/score_vector.h
++++ src/dp/score_vector.h
+@@ -53,8 +53,8 @@
+ 
+ 	score_vector()
+ 	{
+-		//data_ = _mm_set1_epi8(score_traits<uint8_t>::zero);
+-		data_ = _mm_setzero_si128();
++		//data_ = vec_splat16sb(score_traits<uint8_t>::zero);
++		data_ = vec_zero1q();
+ 	}
+ 
+ 	explicit score_vector(char x):
+@@ -67,71 +67,55 @@
+ 
+ 	explicit score_vector(unsigned a, const __m128i &seq)
+ 	{
+-		if(config.have_ssse3) {
+-#ifdef __SSSE3__
+-			set_ssse3(a, seq);
+-#else
+-			set_generic(a, seq);
+-#endif
+-		} else
+-			set_generic(a, seq);
++		// Removed "#ifdef __SSSE3__", which will always fail on ppc64le
++		set_generic(a, seq);
+ 	}
+ 
+-	void set_ssse3(unsigned a, const __m128i &seq)
++	void set_generic(unsigned a, const __m128i &seq)
+ 	{
+-#ifdef __SSSE3__
++		// ppc64le code based on set_ssse3(), not "generic" x86_64 code
+ 		const __m128i *row = reinterpret_cast<const __m128i*>(&score_matrix.matrix8u()[a << 5]);
+ 
+-		__m128i high_mask = _mm_slli_epi16(_mm_and_si128(seq, _mm_set1_epi8('\x10')), 3);
+-		__m128i seq_low = _mm_or_si128(seq, high_mask);
+-		__m128i seq_high = _mm_or_si128(seq, _mm_xor_si128(high_mask, _mm_set1_epi8('\x80')));
++		__m128i high_mask = vec_shiftleftimmediate8sh(vec_bitand1q(seq, vec_splat16sb('\x10')), 3);
++		__m128i seq_low = vec_bitor1q(seq, high_mask);
++		__m128i seq_high = vec_bitor1q(seq, vec_bitxor1q(high_mask, vec_splat16sb('\x80')));
+ 
+-		__m128i r1 = _mm_load_si128(row);
+-		__m128i r2 = _mm_load_si128(row+1);
+-		__m128i s1 = _mm_shuffle_epi8(r1, seq_low);
+-		__m128i s2 = _mm_shuffle_epi8(r2, seq_high);
+-		data_ = _mm_or_si128(s1, s2);
+-#endif
+-	}
+-
+-	void set_generic(unsigned a, const __m128i &seq)
+-	{
+-		const uint8_t* row (&score_matrix.matrix8u()[a<<5]);
+-		const uint8_t* seq_ptr (reinterpret_cast<const uint8_t*>(&seq));
+-		uint8_t* dest (reinterpret_cast<uint8_t*>(&data_));
+-		for(unsigned i=0;i<16;i++)
+-			*(dest++) = row[*(seq_ptr++)];
++		__m128i r1 = vec_load1q(row);
++		__m128i r2 = vec_load1q(row+1);
++		__m128i s1 = vec_permute16sb(r1, seq_low);
++		__m128i s2 = vec_permute16sb(r2, seq_high);
++		data_ = vec_bitor1q(s1, s2);
+ 	}
+ 
+ 	score_vector(const uint8_t* s):
+-		data_ (_mm_loadu_si128(reinterpret_cast<const __m128i*>(s)))
++		data_ (vec_loadu1q(reinterpret_cast<const __m128i*>(s)))
+ 	{ }
+ 
+ 	score_vector operator+(const score_vector &rhs) const
+ 	{
+-		return score_vector (_mm_adds_epu8(data_, rhs.data_));
++		return score_vector (vec_addsaturating16ub(data_, rhs.data_));
+ 	}
+ 
+ 	score_vector operator-(const score_vector &rhs) const
+ 	{
+-		return score_vector (_mm_subs_epu8(data_, rhs.data_));
++		return score_vector (vec_subtractsaturating16ub(data_, rhs.data_));
+ 	}
+ 
+ 	score_vector& operator-=(const score_vector &rhs)
+ 	{
+-		data_ = _mm_subs_epu8(data_, rhs.data_);
++		data_ = vec_subtractsaturating16ub(data_, rhs.data_);
+ 		return *this;
+ 	}
+ 
+ 	score_vector& operator++()
+ 	{
+-		data_ = _mm_adds_epu8(data_, _mm_set(1));
++		data_ = vec_addsaturating16ub(data_, _mm_set(1));
+ 		return *this;
+ 	}
+ 
+ 	__m128i operator==(const score_vector &rhs) const
+ 	{
+-		return _mm_cmpeq_epi8(data_, rhs.data_);
++		return vec_compareeq16sb(data_, rhs.data_);
+ 	}
+ 
+ 	void unbias(const score_vector &bias)
+@@ -149,54 +133,50 @@
+ 
+ 	score_vector& max(const score_vector &rhs)
+ 	{
+-		data_ = _mm_max_epu8(data_, rhs.data_);
++		data_ = vec_max16ub(data_, rhs.data_);
+ 		return *this;
+ 	}
+ 
+ 	score_vector& min(const score_vector &rhs)
+ 	{
+-		data_ = _mm_min_epu8(data_, rhs.data_);
++		data_ = vec_min16ub(data_, rhs.data_);
+ 		return *this;
+ 	}
+ 
+ 	friend score_vector max(const score_vector& lhs, const score_vector &rhs)
+ 	{
+-		return score_vector (_mm_max_epu8(lhs.data_, rhs.data_));
++		return score_vector (vec_max16ub(lhs.data_, rhs.data_));
+ 	}
+ 
+ 	friend score_vector min(const score_vector& lhs, const score_vector &rhs)
+ 	{
+-		return score_vector (_mm_min_epu8(lhs.data_, rhs.data_));
++		return score_vector (vec_min16ub(lhs.data_, rhs.data_));
+ 	}
+ 
+ 	uint16_t cmpeq(const score_vector &rhs) const
+ 	{
+-		return _mm_movemask_epi8(_mm_cmpeq_epi8(data_, rhs.data_));
++		return vec_extractupperbit16sb(vec_compareeq16sb(data_, rhs.data_));
+ 	}
+ 
+ 	__m128i cmpeq2(const score_vector &rhs) const
+ 	{
+-		return _mm_cmpeq_epi8(data_, rhs.data_);
++		return vec_compareeq16sb(data_, rhs.data_);
+ 	}
+ 
+ 	uint16_t cmpgt(const score_vector &rhs) const
+ 	{
+-		return _mm_movemask_epi8(_mm_cmpgt_epi8(data_, rhs.data_));
++		return vec_extractupperbit16sb(vec_comparegt16sb(data_, rhs.data_));
+ 	}
+ 
+ 	void store(uint8_t *ptr) const
+ 	{
+-		_mm_storeu_si128((__m128i*)ptr, data_);
++		vec_storeu1q((__m128i*)ptr, data_);
+ 	}
+ 
+ 	bool operator>(score_vector<uint8_t> cmp) const
+ 	{
+ 		const score_vector<uint8_t> s = *this - cmp;
+-#ifdef __SSE4_1__
+-		return _mm_testz_si128(s.data_, s.data_) == 0;
+-#else
+-		return _mm_movemask_epi8(_mm_cmpeq_epi8(s.data_, _mm_setzero_si128())) == 0xFFFF;
+-#endif
++		return vec_extractupperbit16sb(vec_compareeq16sb(s.data_, vec_zero1q())) == 0xFFFF;
+ 	}
+ 
+ 	__m128i data_;
+--- src/run/benchmark.cpp
++++ src/run/benchmark.cpp
+@@ -29,15 +29,15 @@
+ void benchmark_cmp()
+ {
+ 	const size_t n = 1000000000llu;
+-	__m128i r1 = _mm_set_epi8(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16);
+-	const __m128i r2 = _mm_set_epi8(0, 2, 3, 0, 0, 0, 0, 8, 0, 0, 0, 0, 13, 14, 0, 16);
++	__m128i r1 = vec_set16sb(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16);
++	const __m128i r2 = vec_set16sb(0, 2, 3, 0, 0, 0, 0, 8, 0, 0, 0, 0, 13, 14, 0, 16);
+ 	Timer t;
+ 	t.start();
+ 	unsigned x = 0;
+ 	for (size_t i = 0; i < n; ++i) {
+-		r1 = _mm_set_epi32(x, x, x, x);
+-		//x += popcount32(_mm_movemask_epi8(_mm_cmpeq_epi8(r1, r2)));
+-		x += _mm_movemask_epi8(_mm_cmpeq_epi8(r1, r2));
++		r1 = vec_set4sw(x, x, x, x);
++		//x += popcount32(vec_extractupperbit16sb(vec_compareeq16sb(r1, r2)));
++		x += vec_extractupperbit16sb(vec_compareeq16sb(r1, r2));
+ 	}
+ 	cout << "x=" << x << " t=" << t.getElapsedTimeInMicroSec() * 1000 / n << endl;
+ }
+--- src/search/sse_dist.h
++++ src/search/sse_dist.h
+@@ -45,11 +45,11 @@
+ 
+ inline unsigned match_block(const Letter *x, const Letter *y)
+ {
+-	static const __m128i mask = _mm_set1_epi8(0x7F);
+-	__m128i r1 = _mm_loadu_si128 ((__m128i const*)(x));
+-	__m128i r2 = _mm_loadu_si128 ((__m128i const*)(y));
+-	r2 = _mm_and_si128(r2, mask);
+-	return _mm_movemask_epi8(_mm_cmpeq_epi8(r1, r2));
++	static const __m128i mask = vec_splat16sb(0x7F);
++	__m128i r1 = vec_loadu1q ((__m128i const*)(x));
++	__m128i r2 = vec_loadu1q ((__m128i const*)(y));
++	r2 = vec_bitand1q(r2, mask);
++	return vec_extractupperbit16sb(vec_compareeq16sb(r1, r2));
+ }
+ 
+ inline unsigned popcount32(unsigned x)
+@@ -102,16 +102,16 @@
+ struct Byte_finger_print
+ {
+ 	Byte_finger_print(const Letter *q) :
+-		r1(_mm_loadu_si128((__m128i const*)(q - 8))),
+-		r2(_mm_loadu_si128((__m128i const*)(q + 8)))
++		r1(vec_loadu1q((__m128i const*)(q - 8))),
++		r2(vec_loadu1q((__m128i const*)(q + 8)))
+ 	{ }
+ 	Byte_finger_print(const Letter *q, Masked):
+-		r1 (_mm_and_si128(_mm_loadu_si128((__m128i const*)(q - 8)), _mm_set1_epi8('\x7f'))),
+-		r2 (_mm_and_si128(_mm_loadu_si128((__m128i const*)(q + 8)), _mm_set1_epi8('\x7f')))
++		r1 (vec_bitand1q(vec_loadu1q((__m128i const*)(q - 8)), vec_splat16sb('\x7f'))),
++		r2 (vec_bitand1q(vec_loadu1q((__m128i const*)(q + 8)), vec_splat16sb('\x7f')))
+ 	{ }
+ 	static unsigned match_block(__m128i x, __m128i y)
+ 	{
+-		return _mm_movemask_epi8(_mm_cmpeq_epi8(x, y));
++		return vec_extractupperbit16sb(vec_compareeq16sb(x, y));
+ 	}
+ 	unsigned match(const Byte_finger_print &rhs) const
+ 	{
+@@ -154,7 +154,7 @@
+ struct Halfbyte_finger_print
+ {
+ 	Halfbyte_finger_print(const Letter *q) :
+-		r(_mm_set_epi32(reduce(q - 8), reduce(q), reduce(q + 8), reduce(q+16)))
++		r(vec_set4sw(reduce(q - 8), reduce(q), reduce(q + 8), reduce(q+16)))
+ 	{ }
+ 	static unsigned match_block(uint64_t x, uint64_t y)
+ 	{
+@@ -167,12 +167,12 @@
+ 	}
+ 	static unsigned get_mask(__m128i x, __m128i y)
+ 	{
+-		return _mm_movemask_epi8(_mm_cmpeq_epi8(x, y));
++		return vec_extractupperbit16sb(vec_compareeq16sb(x, y));
+ 	}
+ 	unsigned match(const Halfbyte_finger_print &rhs) const
+ 	{
+-		return popcount32(get_mask(_mm_and_si128(r,_mm_set1_epi8('\xf0')), _mm_and_si128(rhs.r, _mm_set1_epi8('\xf0')))<<16
+-			| get_mask(_mm_and_si128(r, _mm_set1_epi8('\x0f')), _mm_and_si128(rhs.r, _mm_set1_epi8('\x0f'))));
++		return popcount32(get_mask(vec_bitand1q(r,vec_splat16sb('\xf0')), vec_bitand1q(rhs.r, vec_splat16sb('\xf0')))<<16
++			| get_mask(vec_bitand1q(r, vec_splat16sb('\x0f')), vec_bitand1q(rhs.r, vec_splat16sb('\x0f'))));
+ 	}
+ 	static int reduce(const Letter *q)
+ 	{
+@@ -187,53 +187,36 @@
+ 
+ typedef Byte_finger_print Finger_print;
+ 
+-#ifdef __SSSE3__
+-inline __m128i reduce_seq_ssse3(const __m128i &seq)
+-{
+-	const __m128i *row = reinterpret_cast<const __m128i*>(Reduction::reduction.map8());
+-	__m128i high_mask = _mm_slli_epi16(_mm_and_si128(seq, _mm_set1_epi8('\x10')), 3);
+-	__m128i seq_low = _mm_or_si128(seq, high_mask);
+-	__m128i seq_high = _mm_or_si128(seq, _mm_xor_si128(high_mask, _mm_set1_epi8('\x80')));
+-
+-	__m128i r1 = _mm_load_si128(row);
+-	__m128i r2 = _mm_load_si128(row+1);
+-	__m128i s1 = _mm_shuffle_epi8(r1, seq_low);
+-	__m128i s2 = _mm_shuffle_epi8(r2, seq_high);
+-	return _mm_or_si128(s1, s2);
+-}
+-#endif
+-
+ inline __m128i reduce_seq_generic(const __m128i &seq)
+ {
+-	__m128i r;
+-	Letter* s = (Letter*)&seq;
+-	uint8_t* d = (uint8_t*)&r;
+-	for(unsigned i=0;i<16;++i)
+-		*(d++) = Reduction::reduction(*(s++));
+-	return r;
++	// ppc64le code based on set_ssse3(), not "generic" x86_64 code
++	const __m128i *row = reinterpret_cast<const __m128i*>(Reduction::reduction.map8());
++	__m128i high_mask = vec_shiftleftimmediate8sh(vec_bitand1q(seq, vec_splat16sb('\x10')), 3);
++	__m128i seq_low = vec_bitor1q(seq, high_mask);
++	__m128i seq_high = vec_bitor1q(seq, vec_bitxor1q(high_mask, vec_splat16sb('\x80')));
++
++	__m128i r1 = vec_load1q(row);
++	__m128i r2 = vec_load1q(row+1);
++	__m128i s1 = vec_permute16sb(r1, seq_low);
++	__m128i s2 = vec_permute16sb(r2, seq_high);
++	return vec_bitor1q(s1, s2);
+ }
+ 
+ inline __m128i reduce_seq(const __m128i &seq)
+ {
+-	if(config.have_ssse3) {
+-#ifdef __SSSE3__
+-		return reduce_seq_ssse3(seq);
+-#else
+-		return reduce_seq_generic(seq);
+-#endif
+-	} else
+-		return reduce_seq_generic(seq);
++	// Removed "#ifdef __SSSE3__", which will always fail on ppc64le
++	return reduce_seq_generic(seq);
+ }
+ 
+ inline unsigned match_block_reduced(const Letter *x, const Letter *y)
+ {
+-	static const __m128i mask = _mm_set1_epi8(0x7F);
+-	__m128i r1 = _mm_loadu_si128 ((__m128i const*)(x));
+-	__m128i r2 = _mm_loadu_si128 ((__m128i const*)(y));
+-	r2 = _mm_and_si128(r2, mask);
++	static const __m128i mask = vec_splat16sb(0x7F);
++	__m128i r1 = vec_loadu1q ((__m128i const*)(x));
++	__m128i r2 = vec_loadu1q ((__m128i const*)(y));
++	r2 = vec_bitand1q(r2, mask);
+ 	r1 = reduce_seq(r1);
+ 	r2 = reduce_seq(r2);
+-	return _mm_movemask_epi8(_mm_cmpeq_epi8(r1, r2));
++	return vec_extractupperbit16sb(vec_compareeq16sb(r1, r2));
+ }
+ 
+ inline uint64_t reduced_match32(const Letter* q, const Letter *s, unsigned len)
+--- src/util/util.h
++++ src/util/util.h
+@@ -31,6 +31,10 @@
+ #include <emmintrin.h>
+ #endif
+ 
++#ifdef __PPC64__
++#include <vec128int.h>
++#endif
++
+ #include <vector>
+ #include <algorithm>
+ #include <sstream>
+@@ -257,7 +261,7 @@
+ inline __m128i _mm_set(char a)
+ {
+ 	const int x = (int)a;
+-	return _mm_set1_epi32(x << 24 | x << 16 | x << 8 | x);
++	return vec_splat4sw(x << 24 | x << 16 | x << 8 | x);
+ }
+ 
+ template<typename _t, unsigned d1, unsigned d2>

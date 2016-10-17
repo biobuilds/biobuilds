@@ -1,0 +1,37 @@
+package:
+  name: diamond
+  version: "0.8.24"
+
+requirements:
+  build:
+    - cmake
+    - veclib-headers  # [ppc64le]
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: "diamond-0.8.24.tar.gz"
+  url:
+    - "https://github.com/bbuchfink/diamond/archive/v0.8.24.tar.gz"
+    - "http://download.lab7.io/sources/diamond-0.8.24.tar.gz"
+  md5: "7f294908edd97ed6f4adf9439f6825e5"
+  patches:
+    - ppc64le-support.patch   # [ppc64le]
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - diamond --help >/dev/null
+
+about:
+  home: "https://github.com/bbuchfink/diamond/"
+  license: BSD
+  license_file: src/COPYING
+  summary: "Sequence aligner for protein and translated DNA searches"
