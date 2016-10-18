@@ -1,0 +1,860 @@
+commit 0532ab0aa80612cf694a0b8bc0f5c27721b5a51f
+Author: Cheng H. Lee <cheng.lee@lab7.io>
+Date:   Tue Oct 18 11:53:47 2016 -0500
+
+    help-exit-codes.patch
+    
+    Modifies various scripts so explicitly running them with the "-?", "-h",
+    or "--help" option results in a zero (i.e., non-error) exit code; this
+    causes the script to follow conventions set by the compiled "vcftools"
+    binary (and most other applications).
+
+--- src/perl/fill-aa
++++ src/perl/fill-aa
+@@ -25,7 +25,13 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: This script fills ancestral alleles into INFO column of VCF files. It depends on samtools,\n",
+         "   therefore the fasta sequence must be gzipped (not bgzipped!) and indexed by samtools faidx.\n",
+         "   The AA files can be downloaded from\n",
+@@ -60,6 +66,7 @@
+         "   # affected.\n",
+         "   cat file.vcf | fill-aa -a human_ancestor_ 2>test.err | gzip -c >out.vcf.gz \n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -86,7 +93,7 @@
+             }
+             next;
+         }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+     if ( !exists($$opts{aa_file}) ) { error("Missing the -a option.\n") }
+--- src/perl/fill-an-ac
++++ src/perl/fill-an-ac
+@@ -16,11 +16,18 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: fill-an-ac [OPTIONS] < in.vcf >out.vcf\n",
+         "Options:\n",
+         "   -h, -?, --help                      This help message.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -30,7 +37,7 @@
+     while (my $arg=shift(@ARGV))
+     {
+         if ( -e $arg ) { $$opts{file} = $arg; next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+     return $opts;
+--- src/perl/fill-fs
++++ src/perl/fill-fs
+@@ -20,7 +20,13 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: Annotate VCF with flanking sequence (INFO/FS tag)\n",
+         "Usage: fill-fs [OPTIONS] file.vcf\n",
+         "Options:\n",
+@@ -37,6 +43,7 @@
+         "   # Mask variants from the VCF file with N's and use lowercase for the bed file regions\n",
+         "   fill-fs file.vcf -v mask.vcf -m lc -b mask.bed\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -53,7 +60,7 @@
+         if ( $arg eq '-m' || $arg eq '--mask' ) { $mask=shift(@ARGV); check_mask_char($mask); $mask_changed=1; next; }
+         if ( $arg eq '-b' || $arg eq '--bed-mask' ) { $arg=shift(@ARGV); push @{$$opts{bed_mask}},$arg; $$opts{mask_char}{$arg}=$mask; $mask_changed=0; next; }
+         if ( $arg eq '-v' || $arg eq '--vcf-mask' ) { $arg=shift(@ARGV); push @{$$opts{vcf_mask}},$arg; $$opts{mask_char}{$arg}=$mask; $mask_changed=0; next; }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( -e $arg && !exists($$opts{file}) ) { $$opts{file}=$arg; next; }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+--- src/perl/fill-ref-md5
++++ src/perl/fill-ref-md5
+@@ -17,7 +17,13 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: The script computes MD5 sum of the reference sequence and inserts\n",
+         "   'reference' and 'contig' tags into header as recommended by VCFv4.1.\n",
+         "   The VCF file must be compressed and tabix indexed, as it takes advantage\n",
+@@ -31,6 +37,7 @@
+         "Examples:\n",
+         "   fill-ref-md5 -i AS:NCBIM37,SP:\"Mus\\ Musculus\" -r NCBIM37_um.fa  -d NCBIM37_um.fa.dict in.vcf.gz out.vcf.gz\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -44,7 +51,7 @@
+         if ( $arg eq '-d' || $arg eq '--dictionary' ) { $$opts{dictionary}=shift(@ARGV); next; }
+         if ( -e $arg && !exists($$opts{file}) ) { $$opts{file} = $arg; next }
+         if ( exists($$opts{file}) && !exists($$opts{outfile}) ) { $$opts{outfile} = $arg; next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter \"$arg\" or non-existent file. Run -h for help.\n");
+     }
+     if ( !exists($$opts{refseq}) && !exists($$opts{dictionary}) ) { error("Expected one of -d or -r options\n"); }
+--- src/perl/tab-to-vcf
++++ src/perl/tab-to-vcf
+@@ -20,13 +20,20 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print STDERR
+         "Usage: tab-to-vcf [OPTIONS]\n",
+         "Options:\n",
+         "   -i, --id <string>               The column ID.\n",
+         "   -r, --ref <fasta-file>          The reference sequence (optional).\n",
+         "   -h, -?, --help                  This help message.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -37,7 +44,7 @@
+     {
+         if ( $arg eq '-i' || $arg eq '--id' ) { $$opts{id} = shift(@ARGV); next }
+         if ( $arg eq '-r' || $arg eq '--ref' ) { $$opts{refseq} = shift(@ARGV); next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+     if ( !exists($$opts{id}) ) { error("Missing the -i option.\n") }
+--- src/perl/vcf-annotate
++++ src/perl/vcf-annotate
+@@ -41,12 +41,17 @@
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+ 
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
+     my @filters;
+     for my $key (sort {lc($filters{$a}{nick}) cmp lc($filters{$b}{nick})} keys %filters)
+     {
+         push @filters, sprintf("\t%s, %-25s\t\t%s [%s]\n", $filters{$key}{nick},$key.'  '.$filters{$key}{usage},$filters{$key}{desc},defined($filters{$key}{dflt})? $filters{$key}{dflt} : '');
+     }
+-
+     print
+         "About: Annotates VCF file, adding filters or custom annotations. Requires tabix indexed file with annotations.\n",
+         "   Currently it can annotate ID, QUAL, FILTER and INFO columns, but will be extended on popular demand.\n",
+@@ -85,7 +90,7 @@
+         "The file dbSNPv132.tab.gz with dbSNP IDs can be downloaded from\n",
+         "   ftp://ftp.sanger.ac.uk/pub/1000genomes/pd3/dbSNP/\n",
+         "\n";
+-    exit -1;
++    exit $code;
+ }
+ 
+ sub parse_params
+@@ -154,7 +159,7 @@
+         if (                 $arg eq '--fill-ICF' ) { $$opts{fill_ac_an} = $$opts{fill_hwe} = $$opts{fill_icf} = 1; $$opts{fill}=1; next }
+         if ( $arg eq '-t' || $arg eq '--tag' ) { $$opts{tag} = shift(@ARGV); next }
+         if ( $arg eq '-H' || $arg eq '--hard-filter' ) { $$opts{hard_filter} = 1; next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( -e $arg ) { $$opts{file}=$arg; next; }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+--- src/perl/vcf-compare
++++ src/perl/vcf-compare
+@@ -30,7 +30,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: Compare bgzipped and tabix indexed VCF files. (E.g. bgzip file.vcf; tabix -p vcf file.vcf.gz)\n",
+         "Usage: vcf-compare [OPTIONS] file1.vcf file2.vcf ...\n",
+         "       vcf-compare -p plots chr1.cmp chr2.cmp ...\n",
+@@ -54,6 +60,7 @@
+         "                                           records this far apart as matching (be it a SNP or an indel).\n",
+         "   -h, -?, --help                      This help message.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -100,7 +107,7 @@
+         if ( $arg eq '-p' || $arg eq '--plot' ) { $$opts{plot}=shift(@ARGV); next; }
+         if ( $arg eq '-t' || $arg eq '--title' ) { $$opts{title}=shift(@ARGV); next; }
+         if ( -e $arg ) { push @{$$opts{files}}, $arg; next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter or non-existent file \"$arg\". Run -h for help.\n");
+     }
+     if ( !exists($$opts{files}) ) { error("What files should be compared?\n") }
+--- src/perl/vcf-concat
++++ src/perl/vcf-concat
+@@ -33,7 +33,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: Convenience tool for concatenating VCF files (e.g. VCFs split by chromosome).\n",
+         "   In the basic mode it does not do anything fancy except for a sanity check that all\n",
+         "   files have the same columns.  When run with the -s option, it will perform a partial\n",
+@@ -46,6 +52,7 @@
+         "   -s, --merge-sort <int>           Allow small overlaps in N consecutive files.\n",
+         "   -h, -?, --help                   This help message.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ sub parse_params
+@@ -68,7 +75,7 @@
+             close($fh);
+             next;
+         }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( -e $arg ) { push @{$$opts{files}},$arg; next }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+--- src/perl/vcf-consensus
++++ src/perl/vcf-consensus
+@@ -19,7 +19,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: cat ref.fa | vcf-consensus [OPTIONS] in.vcf.gz > out.fa\n",
+         "Options:\n",
+         "   -h, -?, --help                   This help message.\n",
+@@ -31,6 +37,7 @@
+         "   # in the form \">chr:from-to\".\n",
+         "   samtools faidx ref.fa 8:11870-11890 | vcf-consensus in.vcf.gz > out.fa\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -39,7 +46,7 @@
+     my $opts = { };
+     while (my $arg=shift(@ARGV))
+     {
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( $arg eq '-s' || $arg eq '--sample' ) { $$opts{sample}=shift(@ARGV); next; }
+         if ( $arg eq '-i' || $arg eq '--iupac-codes' ) { $$opts{iupac}=1; next; }
+         if ( $arg eq '-H' || $arg eq '--haplotype' ) { $$opts{haplotype}=shift(@ARGV); next; }
+--- src/perl/vcf-contrast
++++ src/perl/vcf-contrast
+@@ -19,7 +19,13 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+-    print 
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: Finds differences amongst samples adding NOVELGT, NOVELAL and NOVELTY annotations to INFO field.\n",
+         "       Note that haploid genotypes are internally treated as homozygous diploid genotypes, therefore\n",
+         "       \"0/1\" and \"1\" are considered different genotypes.\n",
+@@ -41,7 +47,7 @@
+         "   # Similar to above but require minimum mapping quality of 20\n",
+         "   vcf-annotate -f MinMQ=20 file.vcf.gz | vcf-contrast +A,B,C -D,E,F -f\n",
+         "\n";
+-    exit -1;
++    exit $code;
+ }
+ 
+ 
+@@ -52,7 +58,7 @@
+     while (defined(my $arg=shift(@ARGV)))
+     {
+         if ( -e $arg ) { $$opts{vcf}=$arg; next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( $arg eq '-d' || $arg eq '--min-DP' ) { $$opts{min_dp}=shift(@ARGV); next; }
+         if ( $arg eq '-n' || $arg eq '--novel-sites' ) { $$opts{novel_only}=1; next; }
+         if ( $arg eq '-f' || $arg eq '--apply-filters' ) { $$opts{apply_filters}=1; next; }
+--- src/perl/vcf-convert
++++ src/perl/vcf-convert
+@@ -22,7 +22,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: Convert between VCF versions.\n",
+         "Usage: cat in.vcf | vcf-convert [OPTIONS] > out.vcf\n",
+         "Options:\n",
+@@ -30,6 +36,7 @@
+         "   -v, --version <string>           4.0, 4.1, 4.2\n",
+         "   -h, -?, --help                   This help message.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -40,7 +47,7 @@
+     {
+         if ( $arg eq '-r' || $arg eq '--refseq' ) { $$opts{refseq}=shift(@ARGV); next; }
+         if ( $arg eq '-v' || $arg eq '--version' ) { $$opts{version}=shift(@ARGV); next; }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+     return $opts;
+--- src/perl/vcf-fix-newlines
++++ src/perl/vcf-fix-newlines
+@@ -18,7 +18,13 @@
+ {
+ 	my (@msg) = @_;
+ 	if ( scalar @msg ) { confess @msg; }
+-	die
++	print_help(-1);
++}
++
++sub print_help
++{
++	my $code = $_[0] || 0;
++	print
+ 		"About: Reads in a VCF file with any (commonly used) newline representation and outputs with the\n",
+ 		"	current system's newline representation.\n",
+ 		"Usage: vcf-fix-newlines [OPTIONS]\n",
+@@ -30,6 +36,7 @@
+ 		"	vcf-fix-newlines file.vcf.gz > out.vcf\n",
+ 		"	cat file.vcf | vcf-fix-newlines > out.vcf\n",
+ 		"\n";
++	exit $code;
+ }
+ 
+ sub parse_params
+@@ -38,7 +45,7 @@
+ 	while (defined(my $arg=shift(@ARGV)))
+ 	{
+ 		if ( $arg eq '-i' || $arg eq '--info' ) { $$opts{info}=1; next }
+-		if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++		if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+ 		if ( !exists($$opts{vcf}) && -e $arg ) { $$opts{vcf}=$arg; next; }
+ 		error("Unknown parameter \"$arg\". Run -h for help.\n");
+ 	}
+--- src/perl/vcf-fix-ploidy
++++ src/perl/vcf-fix-ploidy
+@@ -19,7 +19,13 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+-    print 
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: cat broken.vcf | vcf-fix-ploidy [OPTIONS] > fixed.vcf\n",
+         "Options:\n",
+         "   -a, --assumed-sex <sex>         M or F, required if the list is not complete in -s\n",
+@@ -48,7 +54,7 @@
+         "       ],\n",
+         "   }\n",
+         "\n";
+-    exit -1;
++    exit $code;
+ }
+ 
+ 
+@@ -79,7 +85,7 @@
+         if ( $arg eq '-s' || $arg eq '--samples' ) { $$opts{samples}=shift(@ARGV); next }
+         if ( $arg eq '-a' || $arg eq '--assumed-sex' ) { $$opts{assumed_sex}=shift(@ARGV); next }
+         if ( $arg eq '-l' || $arg eq '--fix-likelihoods' ) { $$opts{fix_likelihoods}=1; next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+     if ( !exists($$opts{samples}) ) { error("Missing the -s option.\n") }
+--- src/perl/vcf-indel-stats
++++ src/perl/vcf-indel-stats
+@@ -19,7 +19,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: Currently calculates in-frame ratio.\n",
+         "Usage: vcf-indel-stats [OPTIONS] < in.vcf > out.txt\n",
+         "Options:\n",
+@@ -27,6 +33,7 @@
+         "   -e, --exons <file>               Tab-separated file with exons (chr,from,to; 1-based, inclusive)\n",
+         "   -v, --verbose\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -35,7 +42,7 @@
+     my $opts = { };
+     while (my $arg=shift(@ARGV))
+     {
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( $arg eq '-e' || $arg eq '--exons' ) { $$opts{exons}=shift(@ARGV); next; }
+         if ( $arg eq '-v' || $arg eq '--verbose' ) { $$opts{verbose}=1; next; }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+--- src/perl/vcf-isec
++++ src/perl/vcf-isec
+@@ -22,7 +22,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: Create intersections, unions, complements on bgzipped and tabix indexed VCF or tab-delimited files.\n",
+         "   Note that lines from all files can be intermixed together on the output, which can yield\n",
+         "   unexpected results.\n",
+@@ -44,6 +50,7 @@
+         "   bgzip file.vcf; tabix -p vcf file.vcf.gz\n",
+         "   bgzip file.tab; tabix -s 1 -b 2 -e 2 file.tab.gz\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -83,7 +90,7 @@
+             next; 
+         }
+         if ( -e $arg ) { push @{$$opts{files}}, $arg; next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter or non-existent file \"$arg\". Run -h for help.\n");
+     }
+     if ( !exists($$opts{files}) ) { error("What files should be intersected?\n") }
+--- src/perl/vcf-merge
++++ src/perl/vcf-merge
+@@ -19,7 +19,13 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { croak join('',@msg); }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: Merges VCF files by position, creating multi-sample VCFs from fewer-sample VCFs.\n",
+         "   The tool requires bgzipped and tabix indexed VCF files on input. (E.g. bgzip file.vcf; tabix -p vcf file.vcf.gz)\n",
+         "   If you need to concatenate VCFs (e.g. files split by chromosome), look at vcf-concat instead.\n",
+@@ -35,6 +41,7 @@
+         "   -s, --silent                                    Try to be a bit more silent, no warnings about duplicate lines.\n",
+         "   -t, --trim-ALTs                                 If set, redundant ALTs will be removed\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -74,7 +81,7 @@
+             next; 
+         }
+         if ( $arg eq '-r' || $arg eq '--regions' ) { $$opts{regions_list}=shift(@ARGV); next; }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( -e $arg ) { push @{$$opts{files}},$arg; next; }
+         error("Unknown parameter or non-existent file \"$arg\". Run -? for help.\n");
+     }
+--- src/perl/vcf-phased-join
++++ src/perl/vcf-phased-join
+@@ -26,7 +26,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: The script takes multiple overlapping pre-phased chunks and concatenates them into one VCF\n",
+         "   using heterozygous calls from the overlaps to determine correct phase.\n",
+         "Usage: vcf-phased-join [OPTIONS] A.vcf B.vcf C.vcf\n",
+@@ -37,6 +43,7 @@
+         "   -q, --min-PQ <num>              Break pre-phased segments if PQ value is lower in input VCFs [0.6]\n",
+         "   -h, -?, --help                  This help message\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -61,7 +68,7 @@
+         if (                 $arg eq '--split-noise' ) { $$opts{split_noise}=shift(@ARGV); next; }
+         if (                 $arg eq '--split-overlap' ) { $$opts{split_overlap}=shift(@ARGV); next; }
+         if (                 $arg eq '--split-prefix' ) { $$opts{split_prefix}=shift(@ARGV); next; }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( -e $arg ) { push @{$$opts{vcfs}}, $arg; next; }
+         error("Unknown parameter or non-existent file \"$arg\". Run -h for help.\n");
+     }
+--- src/perl/vcf-query
++++ src/perl/vcf-query
+@@ -19,7 +19,13 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: vcf-query [OPTIONS] file.vcf.gz\n",
+         "Options:\n",
+         "   -c, --columns <file|list>           List of comma-separated column names or one column name per line in a file.\n",
+@@ -46,6 +52,7 @@
+         "Notes:\n",
+         "   Please use `bcftools query` instead, this script will not be supported in future.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -60,7 +67,7 @@
+         if ( $arg eq '-l' || $arg eq '--list-columns' ) { $$opts{list_columns}=1; next }
+         if ( $arg eq '-r' || $arg eq '--region' ) { $$opts{region}=shift(@ARGV); next }
+         if ( -e $arg or $arg=~m{^(?:ftp|http)://} ) { $$opts{file}=$arg; next; }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( !exists($$opts{region}) && exists($$opts{file}) && ($arg=~/^[^:]+:[0-9,]+-[0-9,]+$/ or $arg=~/^[^\:]+$/) ) { $$opts{region}=$arg; next; }
+         error("Unknown parameter or non-existent file \"$arg\". Run -h for help.\n");
+     }
+--- src/perl/vcf-shuffle-cols
++++ src/perl/vcf-shuffle-cols
+@@ -22,13 +22,20 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "About: Reorder columns to match the order in the template VCF.\n",
+         "Usage: vcf-shuffle-cols [OPTIONS] -t template.vcf.gz file.vcf.gz > out.vcf\n",
+         "Options:\n",
+         "   -t, --template <file>            The file with the correct order of the columns.\n",
+         "   -h, -?, --help                   This help message.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ sub parse_params
+@@ -37,7 +44,7 @@
+     while (my $arg=shift(@ARGV))
+     {
+         if ( $arg eq '-t' || $arg eq '--template' ) { $$opts{template}=shift(@ARGV); next; }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( -e $arg ) { $$opts{file}=$arg; next }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+--- src/perl/vcf-sort
++++ src/perl/vcf-sort
+@@ -21,7 +21,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: vcf-sort > out.vcf\n",
+         "       cat file.vcf | vcf-sort > out.vcf\n",
+         "Options:\n",
+@@ -31,6 +37,7 @@
+         "   -t, --temporary-directory     Use a directory other than /tmp as the temporary directory for sorting.\n",
+         "   -h, -?, --help                This help message.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ sub parse_params
+@@ -40,7 +47,7 @@
+     {
+         if ( $arg eq '-p' || $arg eq '--parallel-sort' ) { $$opts{parallel_sort}=shift(@ARGV); next; }
+         if ( $arg eq '-c' || $arg eq '--chromosomal-order' ) { $$opts{chromosomal_order}=1; next; }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( $arg eq '-t' || $arg eq '--temporary-directory' ) { $$opts{temp_dir}=shift(@ARGV); next; }
+         if ( -e $arg ) { $$opts{file}=$arg; next }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+--- src/perl/vcf-stats
++++ src/perl/vcf-stats
+@@ -22,7 +22,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: vcf-stats [OPTIONS] file.vcf.gz\n",
+         "Options:\n",
+         "   -d, --dump <file>                           Take an existing dump file and recreate the files (works with -p)\n",
+@@ -43,6 +49,7 @@
+         "\n",
+         "   vcf-stats file.vcf.gz > perl.dump\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -61,7 +68,7 @@
+             next;
+         }
+         if ( -e $arg ) { $$opts{file} = $arg; next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter or nonexistent file: \"$arg\". Run -h for help.\n");
+     }
+     if ( exists($$opts{dump}) && !exists($$opts{prefix}) ) { error("Expected -p option with -d.\n"); }
+--- src/perl/vcf-subset
++++ src/perl/vcf-subset
+@@ -22,7 +22,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: vcf-subset [OPTIONS] in.vcf.gz > out.vcf\n",
+         "Options:\n",
+         "   -a, --trim-alt-alleles           Remove alternate alleles if not found in the subset\n",
+@@ -37,6 +43,7 @@
+         "Examples:\n",
+         "   cat in.vcf | vcf-subset -r -t indels -e -c SAMPLE1 > out.vcf\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -64,7 +71,7 @@
+         if ( $arg eq '-r' || $arg eq '--replace-with-ref' ) { $$opts{'replace_with_ref'} = 1; next }
+         if ( $arg eq '-u' || $arg eq '--keep-uncalled' ) { $$opts{'keep_uncalled'} = 1; next }
+         if ( $arg eq '-c' || $arg eq '--columns' ) { $$opts{'columns_file'} = shift(@ARGV); next }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( -e $arg ) { $$opts{file} = $arg; next }
+         if ( -e $arg or $arg=~m{^(?:ftp|http)://} ) { $$opts{file}=$arg; next; }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+--- src/perl/vcf-to-tab
++++ src/perl/vcf-to-tab
+@@ -19,7 +19,13 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: vcf-to-tab [OPTIONS] < in.vcf > out.tab\n",
+         "Options:\n",
+         "   -h, -?, --help                   This help message.\n",
+@@ -27,6 +33,7 @@
+         "Notes:\n",
+         "   Please use `bcftools query` instead, this script will not be supported in future.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -35,7 +42,7 @@
+     my $opts = { iupac=>0 };
+     while (my $arg=shift(@ARGV))
+     {
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( $arg eq '-i' || $arg eq '--iupac' ) { $$opts{iupac}=1; next; }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+--- src/perl/vcf-tstv
++++ src/perl/vcf-tstv
+@@ -18,12 +18,18 @@
+ {
+     my (@msg) = @_;
+     if ( scalar @msg ) { confess @msg; }
+-    print 
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: cat file.vcf | vcf-tstv\n",
+         "Options:\n",
+         "   -h, -?, --help                  This help message.\n",
+         "\n";
+-    exit -1;
++    exit $code;
+ }
+ 
+ 
+@@ -32,7 +38,7 @@
+     my $opts = {};
+     while (defined(my $arg=shift(@ARGV)))
+     {
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         error("Unknown parameter \"$arg\". Run -h for help.\n");
+     }
+     return $opts;
+--- src/perl/vcf-validator
++++ src/perl/vcf-validator
+@@ -24,13 +24,20 @@
+     {
+         croak @msg;
+     }
+-    die
++    print_help(-1);
++}
++
++sub print_help
++{
++    my $code = $_[0] || 0;
++    print
+         "Usage: vcf-validator [OPTIONS] file.vcf.gz\n",
+         "Options:\n",
+         "   -d, --duplicates                 Warn about duplicate positions.\n",
+         "   -u, --unique-messages            Output all messages only once.\n",
+         "   -h, -?, --help                   This help message.\n",
+         "\n";
++    exit $code;
+ }
+ 
+ 
+@@ -41,7 +48,7 @@
+     {
+         if ( $arg eq '-d' || $arg eq '--duplicates' ) { $$opts{duplicates}=1; next; }
+         if ( $arg eq '-u' || $arg eq '--unique-messages' ) { $$opts{unique}=1; next; }
+-        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { error(); }
++        if ( $arg eq '-?' || $arg eq '-h' || $arg eq '--help' ) { print_help(); }
+         if ( (-e $arg or $arg=~m{^(?:ftp|http)://}) && !exists($$opts{file}) ) { $$opts{file}=$arg; next; }
+         error("Unknown parameter or non-existent file: \"$arg\". Run -h for help.\n");
+     }

@@ -1,0 +1,66 @@
+package:
+  name: vcftools
+  version: "0.1.14"
+
+requirements:
+  build:
+    - autoconf    # [not ppc64le]
+    - automake    # [not ppc64le]
+    - pkg-config  # [not ppc64le]
+    - zlib
+    - openblas
+    - perl
+  run:
+    - zlib
+    - openblas
+    - perl
+
+source:
+  fn: "vcftools-0.1.14.tar.gz"
+  url:
+    - "https://github.com/vcftools/vcftools/archive/v0.1.14.tar.gz"
+    - "http://download.lab7.io/sources/vcftools-0.1.14.tar.gz"
+  md5: "15da350b48910074cfaa00deadd68855"
+  patches:
+    - help-exit-codes.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - vcftools --help >/dev/null
+    - fill-aa --help >/dev/null
+    - fill-an-ac --help >/dev/null
+    - fill-fs --help >/dev/null
+    - fill-ref-md5 --help >/dev/null
+    - vcf-annotate --help >/dev/null
+    - vcf-compare --help >/dev/null
+    - vcf-concat --help >/dev/null
+    - vcf-consensus --help >/dev/null
+    - vcf-contrast --help >/dev/null
+    - vcf-convert --help >/dev/null
+    - vcf-fix-newlines --help >/dev/null
+    - vcf-fix-ploidy --help >/dev/null
+    - vcf-indel-stats --help >/dev/null
+    - vcf-isec --help >/dev/null
+    - vcf-merge --help >/dev/null
+    - vcf-phased-join --help >/dev/null
+    - vcf-query --help >/dev/null
+    - vcf-shuffle-cols --help >/dev/null
+    - vcf-sort --help >/dev/null
+    - vcf-stats --help >/dev/null
+    - vcf-subset --help >/dev/null
+    - vcf-to-tab --help >/dev/null
+    - vcf-tstv --help >/dev/null
+    - vcf-validator --help >/dev/null
+
+about:
+  home: "https://vcftools.github.io/index.html"
+  license: LGPLv3
+  license_file: 
+  summary: "Tools for working with VCF files"
