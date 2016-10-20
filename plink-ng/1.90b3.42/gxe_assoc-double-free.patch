@@ -1,0 +1,21 @@
+commit f4be818b89d4b9013ee7fc81d797d5d6bb39f34c
+Author: Cheng H. Lee <cheng.lee@lab7.io>
+Date:   Wed Oct 19 18:59:06 2016 -0500
+
+    Fixed gxe_assoc() double free bug
+    
+    Removed extraneous fclose_cond() call in gxe_assoc() that would cause
+    "plink --gxe" to crash on a successful (!) run with a "double free or
+    corruption" error, when in a Linux or glibc environment with built-in
+    malloc(3) protections.
+
+--- plink_assoc.c
++++ plink_assoc.c
+@@ -9532,7 +9532,6 @@
+   }
+   fputs("\b\b", stdout);
+   logprint("done.\n");
+-  fclose_cond(outfile);
+ 
+   while (0) {
+   gxe_assoc_ret_NOMEM:

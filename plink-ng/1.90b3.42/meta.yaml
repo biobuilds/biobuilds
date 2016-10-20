@@ -1,0 +1,40 @@
+package:
+  name: plink-ng
+  version: "1.90b3.42"
+
+requirements:
+  build:
+    - openblas
+    - zlib
+    - veclib-headers  # [ppc64le]
+  run:
+    - openblas
+    - zlib
+
+source:
+  fn: "plink-ng-1.90b3.42.tar.gz"
+  url:
+    - "https://github.com/lab7/plink-ng/archive/v1.90b3.42_20160920.tar.gz"
+    - "http://download.lab7.io/sources/plink-ng-1.90b3.42.tar.gz"
+  md5: "192d07304adc2504200308593508a1a3"
+  patches:
+    - gxe_assoc-double-free.patch
+    - makefile.patch
+    - ppc64le-support.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  requires:
+    - plink
+
+about:
+  home: "https://www.cog-genomics.org/plink2"
+  license: GPLv3
+  license_file: LICENSE
+  summary: "Comprehensive update to the PLINK genome analysis toolkit"

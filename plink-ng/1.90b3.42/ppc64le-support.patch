@@ -1,0 +1,4602 @@
+commit 885f384d43fb801ad02f4bf85e3070fd465c2601
+Author: Cheng H. Lee <cheng.lee@lab7.io>
+Date:   Thu Oct 20 09:10:46 2016 -0500
+
+    Support for the little-endian POWER8 (ppc64le) architecture
+
+--- SFMT.c
++++ SFMT.c
+@@ -165,6 +165,7 @@
+ {
+     __m128i v, x, y, z;
+ 
++#ifdef __x86_64__
+     y = _mm_srli_epi32(b, SFMT_SR1);
+     z = _mm_srli_si128(c, SFMT_SR2);
+     v = _mm_slli_epi32(d, SFMT_SL1);
+@@ -174,6 +175,19 @@
+     y = _mm_and_si128(y, sse2_param_mask.si);
+     z = _mm_xor_si128(z, x);
+     z = _mm_xor_si128(z, y);
++#elif __PPC64__
++    y = vec_shiftrightimmediate4sw(b, SFMT_SR1);
++    z = vec_shiftrightbytes1q(c, SFMT_SR2);
++    v = vec_shiftleftimmediate4sw(d, SFMT_SL1);
++    z = vec_bitxor1q(z, a);
++    z = vec_bitxor1q(z, v);
++    x = vec_shiftleftbytes1q(a, SFMT_SL2);
++    y = vec_bitand1q(y, sse2_param_mask.si);
++    z = vec_bitxor1q(z, x);
++    z = vec_bitxor1q(z, y);
++#else
++#error "Unsupported architecture."
++#endif
+     *r = z;
+ }
+ 
+--- SFMT.h
++++ SFMT.h
+@@ -129,7 +129,16 @@
+   128-bit SIMD like data type for standard C
+   ------------------------------------------*/
+ #ifdef __LP64__
++
++#ifdef __x86_64__
+   #include <emmintrin.h>
++#elif __PPC64__
++  #include <vec128int.h>
++  #include <vec128sp.h>
++  #include <vec128dp.h>
++#else
++  #error "Unsupported architecture"
++#endif
+ 
+ /** 128-bit data structure */
+ union W128_T {
+--- plink_assoc.c
++++ plink_assoc.c
+@@ -739,7 +739,13 @@
+       if (sample_type == 1) {
+ 	git_writev = (__m128d*)thread_bufs;
+ 	for (ukk = 0; ukk < loop_len; ukk++) {
++#ifdef __x86_64__
+ 	  *git_writev = _mm_add_pd(*git_writev, *perm_readv++);
++#elif __PPC64__
++	  *git_writev = vec_add2dp(*git_writev, *perm_readv++);
++#else
++#error "Unsupported architecture."
++#endif
+ 	  git_writev++;
+ 	}
+       } else if (sample_type == 3) {
+@@ -747,7 +753,13 @@
+ 	git_writev = (__m128d*)thread_bufs;
+ 	for (ukk = 0; ukk < loop_len; ukk++) {
+ 	  vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	  *git_writev = _mm_add_pd(*git_writev, _mm_add_pd(vxx, vxx));
++#elif __PPC64__
++	  *git_writev = vec_add2dp(*git_writev, vec_add2dp(vxx, vxx));
++#else
++#error "Unsupported architecture."
++#endif
+ 	  git_writev++;
+ 	}
+       } else {
+@@ -756,10 +768,19 @@
+ 	git_write2v = (__m128d*)(&(thread_bufs[2 * perm_vec_ctcl8m]));
+ 	for (ukk = 0; ukk < loop_len; ukk++) {
+ 	  vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	  *git_writev = _mm_add_pd(*git_writev, vxx);
+ 	  git_writev++;
+ 	  *git_write2v = _mm_add_pd(*git_write2v, _mm_mul_pd(vxx, vxx));
+ 	  git_write2v++;
++#elif __PPC64__
++	  *git_writev = vec_add2dp(*git_writev, vxx);
++	  git_writev++;
++	  *git_write2v = vec_add2dp(*git_write2v, vec_multiply2dp(vxx, vxx));
++	  git_write2v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	}
+       }
+ #else
+@@ -850,10 +871,19 @@
+       }
+       for (ukk = 0; ukk < loop_len; ukk++) {
+ 	vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	*git_writev = _mm_add_pd(*git_writev, vxx);
+ 	git_writev++;
+ 	*git_write2v = _mm_add_pd(*git_write2v, _mm_mul_pd(vxx, vxx));
+ 	git_write2v++;
++#elif __PPC64__
++	*git_writev = vec_add2dp(*git_writev, vxx);
++	git_writev++;
++	*git_write2v = vec_add2dp(*git_write2v, vec_multiply2dp(vxx, vxx));
++	git_write2v++;
++#else
++#error "Unsupported architecture."
++#endif
+       }
+ #else
+       perm_read = &(perm_vecstd[ujj * row_mult]);
+@@ -887,10 +917,19 @@
+ 
+ #ifdef __LP64__
+ uintptr_t rem_cost_60v(__m128i* vec1, __m128i* vend, __m128i* vec2) {
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   __m128i loader2;
+   __m128i xor_vec;
+@@ -899,25 +938,51 @@
+   __m128i acc_a;
+   __m128i acc_b;
+   __univec acc;
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
+     loader = *vec1++;
+     loader2 = *vec2++;
++#ifdef __x86_64__
+     xor_vec = _mm_xor_si128(loader, loader2);
+     detect_homcom = _mm_or_si128(_mm_and_si128(_mm_srli_epi64(loader, 1), loader), _mm_and_si128(_mm_srli_epi64(loader2, 1), loader2));
+     acc_a = _mm_and_si128(_mm_or_si128(xor_vec, _mm_srli_epi64(xor_vec, 1)), m1);
+     acc_b = _mm_andnot_si128(detect_homcom, acc_a);
++#elif __PPC64__
++    xor_vec = vec_bitxor1q(loader, loader2);
++    detect_homcom = vec_bitor1q(vec_bitand1q(vec_shiftrightlogical2dimmediate(loader, 1), loader), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader2, 1), loader2));
++    acc_a = vec_bitand1q(vec_bitor1q(xor_vec, vec_shiftrightlogical2dimmediate(xor_vec, 1)), m1);
++    acc_b = vec_bitandnotleft1q(detect_homcom, acc_a);
++#else
++#error "Unsupported architecture."
++#endif
+ 
+     loader = *vec1++;
+     loader2 = *vec2++;
++#ifdef __x86_64__
+     xor_vec = _mm_xor_si128(loader, loader2);
+     detect_homcom = _mm_or_si128(_mm_and_si128(_mm_srli_epi64(loader, 1), loader), _mm_and_si128(_mm_srli_epi64(loader2, 1), loader2));
+     result_a = _mm_and_si128(_mm_or_si128(xor_vec, _mm_srli_epi64(xor_vec, 1)), m1);
+     acc_a = _mm_add_epi64(acc_a, result_a);
+     acc_b = _mm_add_epi64(acc_b, _mm_andnot_si128(detect_homcom, result_a));
++#elif __PPC64__
++    xor_vec = vec_bitxor1q(loader, loader2);
++    detect_homcom = vec_bitor1q(vec_bitand1q(vec_shiftrightlogical2dimmediate(loader, 1), loader), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader2, 1), loader2));
++    result_a = vec_bitand1q(vec_bitor1q(xor_vec, vec_shiftrightlogical2dimmediate(xor_vec, 1)), m1);
++    acc_a = vec_add2sd(acc_a, result_a);
++    acc_b = vec_add2sd(acc_b, vec_bitandnotleft1q(detect_homcom, result_a));
++#else
++#error "Unsupported architecture."
++#endif
+ 
+     loader = *vec1++;
+     loader2 = *vec2++;
++#ifdef __x86_64__
+     xor_vec = _mm_xor_si128(loader, loader2);
+     detect_homcom = _mm_or_si128(_mm_and_si128(_mm_srli_epi64(loader, 1), loader), _mm_and_si128(_mm_srli_epi64(loader2, 1), loader2));
+     result_a = _mm_and_si128(_mm_or_si128(xor_vec, _mm_srli_epi64(xor_vec, 1)), m1);
+@@ -926,16 +991,43 @@
+     acc_a = _mm_add_epi64(_mm_and_si128(acc_a, m2), _mm_and_si128(_mm_srli_epi64(acc_a, 2), m2));
+     acc_a = _mm_add_epi64(acc_a, _mm_add_epi64(_mm_and_si128(acc_b, m2), _mm_and_si128(_mm_srli_epi64(acc_b, 2), m2)));
+     acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(acc_a, m4), _mm_and_si128(_mm_srli_epi64(acc_a, 4), m4)));
++#elif __PPC64__
++    xor_vec = vec_bitxor1q(loader, loader2);
++    detect_homcom = vec_bitor1q(vec_bitand1q(vec_shiftrightlogical2dimmediate(loader, 1), loader), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader2, 1), loader2));
++    result_a = vec_bitand1q(vec_bitor1q(xor_vec, vec_shiftrightlogical2dimmediate(xor_vec, 1)), m1);
++    acc_a = vec_add2sd(acc_a, result_a);
++    acc_b = vec_add2sd(acc_b, vec_bitandnotleft1q(detect_homcom, result_a));
++    acc_a = vec_add2sd(vec_bitand1q(acc_a, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_a, 2), m2));
++    acc_a = vec_add2sd(acc_a, vec_add2sd(vec_bitand1q(acc_b, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_b, 2), m2)));
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(acc_a, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_a, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (vec1 < vend);
++#ifdef __x86_64__
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++#elif __PPC64__
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+   return ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+ }
+ 
+ uintptr_t qrem_cost2_40v(__m128i* vec1, __m128i* vend, __m128i* vec2) {
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   __m128i loader2;
+   __m128i xor_vec;
+@@ -945,10 +1037,17 @@
+   __m128i result_c;
+   __m128i inner_acc;
+   __univec acc;
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
+     loader = *vec1++;
+     loader2 = *vec2++;
++#ifdef __x86_64__
+     xor_vec = _mm_xor_si128(loader, loader2);
+     detect_missing = _mm_or_si128(_mm_andnot_si128(_mm_srli_epi64(loader, 1), loader), _mm_andnot_si128(_mm_srli_epi64(loader2, 1), loader2));
+     result_a = _mm_and_si128(_mm_or_si128(xor_vec, _mm_srli_epi64(xor_vec, 1)), m1);
+@@ -956,8 +1055,20 @@
+     inner_acc = _mm_and_si128(result_b, xor_vec);
+     inner_acc = _mm_add_epi64(_mm_add_epi64(result_a, result_b), inner_acc);
+     inner_acc = _mm_add_epi64(_mm_and_si128(inner_acc, m2), _mm_and_si128(_mm_srli_epi64(inner_acc, 2), m2));
++#elif __PPC64__
++    xor_vec = vec_bitxor1q(loader, loader2);
++    detect_missing = vec_bitor1q(vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader, 1), loader), vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader2, 1), loader2));
++    result_a = vec_bitand1q(vec_bitor1q(xor_vec, vec_shiftrightlogical2dimmediate(xor_vec, 1)), m1);
++    result_b = vec_bitand1q(result_a, detect_missing);
++    inner_acc = vec_bitand1q(result_b, xor_vec);
++    inner_acc = vec_add2sd(vec_add2sd(result_a, result_b), inner_acc);
++    inner_acc = vec_add2sd(vec_bitand1q(inner_acc, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(inner_acc, 2), m2));
++#else
++#error "Unsupported architecture."
++#endif
+     loader = *vec1++;
+     loader2 = *vec2++;
++#ifdef __x86_64__
+     xor_vec = _mm_xor_si128(loader, loader2);
+     detect_missing = _mm_or_si128(_mm_andnot_si128(_mm_srli_epi64(loader, 1), loader), _mm_andnot_si128(_mm_srli_epi64(loader2, 1), loader2));
+     result_a = _mm_and_si128(_mm_or_si128(xor_vec, _mm_srli_epi64(xor_vec, 1)), m1);
+@@ -966,8 +1077,26 @@
+     result_c = _mm_add_epi64(_mm_add_epi64(result_a, result_b), result_c);
+     inner_acc = _mm_add_epi64(inner_acc, _mm_add_epi64(_mm_and_si128(result_c, m2), _mm_and_si128(_mm_srli_epi64(result_c, 2), m2)));
+     acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(inner_acc, m4), _mm_and_si128(_mm_srli_epi64(inner_acc, 4), m4)));
++#elif __PPC64__
++    xor_vec = vec_bitxor1q(loader, loader2);
++    detect_missing = vec_bitor1q(vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader, 1), loader), vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader2, 1), loader2));
++    result_a = vec_bitand1q(vec_bitor1q(xor_vec, vec_shiftrightlogical2dimmediate(xor_vec, 1)), m1);
++    result_b = vec_bitand1q(result_a, detect_missing);
++    result_c = vec_bitand1q(result_b, xor_vec);
++    result_c = vec_add2sd(vec_add2sd(result_a, result_b), result_c);
++    inner_acc = vec_add2sd(inner_acc, vec_add2sd(vec_bitand1q(result_c, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(result_c, 2), m2)));
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(inner_acc, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(inner_acc, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (vec1 < vend);
++#ifdef __x86_64__
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++#elif __PPC64__
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+   return ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+ }
+ #else
+@@ -1193,12 +1322,19 @@
+ 
+ #ifdef __LP64__
+ static inline void calc_rem_merge4_two(uint32_t perm_ct128, __m128i* __restrict__ perm_ptr, __m128i* __restrict__ rem_merge4a, __m128i* __restrict__ rem_merge4b) {
++#ifdef __x86_64__
+   const __m128i m1x4 = {0x1111111111111111LLU, 0x1111111111111111LLU};
++#elif __PPC64__
++  const __m128i m1x4 = vec_splat16sb(0x11);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   __m128i loader2;
+   uint32_t pbidx;
+   for (pbidx = 0; pbidx < perm_ct128; pbidx++) {
+     loader = *perm_ptr++;
++#ifdef __x86_64__
+     loader2 = _mm_and_si128(loader, m1x4);
+     rem_merge4a[0] = _mm_add_epi64(rem_merge4a[0], loader2);
+     rem_merge4b[0] = _mm_add_epi64(rem_merge4b[0], loader2);
+@@ -1214,6 +1350,25 @@
+     loader2 = _mm_and_si128(loader, m1x4);
+     rem_merge4a[3] = _mm_add_epi64(rem_merge4a[3], loader2);
+     rem_merge4b[3] = _mm_add_epi64(rem_merge4b[3], loader2);
++#elif __PPC64__
++    loader2 = vec_bitand1q(loader, m1x4);
++    rem_merge4a[0] = vec_add2sd(rem_merge4a[0], loader2);
++    rem_merge4b[0] = vec_add2sd(rem_merge4b[0], loader2);
++    loader = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader2 = vec_bitand1q(loader, m1x4);
++    rem_merge4a[1] = vec_add2sd(rem_merge4a[1], loader2);
++    rem_merge4b[1] = vec_add2sd(rem_merge4b[1], loader2);
++    loader = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader2 = vec_bitand1q(loader, m1x4);
++    rem_merge4a[2] = vec_add2sd(rem_merge4a[2], loader2);
++    rem_merge4b[2] = vec_add2sd(rem_merge4b[2], loader2);
++    loader = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader2 = vec_bitand1q(loader, m1x4);
++    rem_merge4a[3] = vec_add2sd(rem_merge4a[3], loader2);
++    rem_merge4b[3] = vec_add2sd(rem_merge4b[3], loader2);
++#else
++#error "Unsupported architecture."
++#endif
+     rem_merge4a = &(rem_merge4a[4]);
+     rem_merge4b = &(rem_merge4b[4]);
+   }
+@@ -1222,11 +1377,18 @@
+ static inline void calc_rem_merge32_minus(uint32_t perm_ct16, __m128i* __restrict__ rem_merge8, __m128i* rem_write) {
+   // temporary integer underflow is possible here, but by the end of the
+   // calculation it should be reversed
++#ifdef __x86_64__
+   const __m128i m8x32 = {0x000000ff000000ffLLU, 0x000000ff000000ffLLU};
++#elif __PPC64__
++  const __m128i m8x32 = vec_splat4sw(0x000000ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   uint32_t pbidx;
+   for (pbidx = 0; pbidx < perm_ct16; pbidx++) {
+     loader = *rem_merge8;
++#ifdef __x86_64__
+     rem_write[0] = _mm_sub_epi64(rem_write[0], _mm_and_si128(loader, m8x32));
+     loader = _mm_srli_epi64(loader, 8);
+     rem_write[1] = _mm_sub_epi64(rem_write[1], _mm_and_si128(loader, m8x32));
+@@ -1234,8 +1396,25 @@
+     rem_write[2] = _mm_sub_epi64(rem_write[2], _mm_and_si128(loader, m8x32));
+     loader = _mm_srli_epi64(loader, 8);
+     rem_write[3] = _mm_sub_epi64(rem_write[3], _mm_and_si128(loader, m8x32));
++#elif __PPC64__
++    rem_write[0] = vec_subtract2sd(rem_write[0], vec_bitand1q(loader, m8x32));
++    loader = vec_shiftrightlogical2dimmediate(loader, 8);
++    rem_write[1] = vec_subtract2sd(rem_write[1], vec_bitand1q(loader, m8x32));
++    loader = vec_shiftrightlogical2dimmediate(loader, 8);
++    rem_write[2] = vec_subtract2sd(rem_write[2], vec_bitand1q(loader, m8x32));
++    loader = vec_shiftrightlogical2dimmediate(loader, 8);
++    rem_write[3] = vec_subtract2sd(rem_write[3], vec_bitand1q(loader, m8x32));
++#else
++#error "Unsupported architecture."
++#endif
+     rem_write = &(rem_write[4]);
++#ifdef __x86_64__
+     *rem_merge8++ = _mm_setzero_si128();
++#elif __PPC64__
++    *rem_merge8++ = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ #else
+@@ -1502,21 +1681,45 @@
+ 	if (cur_xor == 1) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_sub_pd(*rem_writev, vxx);
++#elif __PPC64__
++	    *rem_writev = vec_subtract2dp(*rem_writev, vxx);
++#else
++#error "Unsupported architecture."
++#endif
+ 	    rem_writev++;
+ 	  }
+ 	} else if (cur_xor == 3) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_sub_pd(*rem_writev, _mm_add_pd(vxx, vxx));
++#elif __PPC64__
++	    *rem_writev = vec_subtract2dp(*rem_writev, vec_add2dp(vxx, vxx));
++#else
++#error "Unsupported architecture."
++#endif
+ 	    rem_writev++;
+ 	  }
+         } else {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_write2v = _mm_sub_pd(*rem_write2v, vxx);
++#elif __PPC64__
++	    *rem_write2v = vec_subtract2dp(*rem_write2v, vxx);
++#else
++#error "Unsupported architecture."
++#endif
+ 	    rem_write2v++;
++#ifdef __x86_64__
+ 	    *rem_write3v = _mm_sub_pd(*rem_write3v, _mm_mul_pd(vxx, vxx));
++#elif __PPC64__
++	    *rem_write3v = vec_subtract2dp(*rem_write3v, vec_multiply2dp(vxx, vxx));
++#else
++#error "Unsupported architecture."
++#endif
+ 	    rem_write3v++;
+ 	  }
+         }
+@@ -1524,78 +1727,155 @@
+ 	if (cur_xor == 1) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_add_pd(*rem_writev, vxx);
++#elif __PPC64__
++	    *rem_writev = vec_add2dp(*rem_writev, vxx);
++#else
++#error "Unsupported architecture."
++#endif
+ 	    rem_writev++;
+ 	  }
+ 	} else if (cur_xor == 2) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_sub_pd(*rem_writev, vxx);
++#elif __PPC64__
++	    *rem_writev = vec_subtract2dp(*rem_writev, vxx);
++#else
++#error "Unsupported architecture."
++#endif
+ 	    rem_writev++;
+ 	  }
+ 	} else {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_add_pd(*rem_writev, vxx);
+ 	    rem_writev++;
+ 	    *rem_write2v = _mm_sub_pd(*rem_write2v, vxx);
+ 	    rem_write2v++;
+ 	    *rem_write3v = _mm_sub_pd(*rem_write3v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write3v++;
++#elif __PPC64__
++	    *rem_writev = vec_add2dp(*rem_writev, vxx);
++	    rem_writev++;
++	    *rem_write2v = vec_subtract2dp(*rem_write2v, vxx);
++	    rem_write2v++;
++	    *rem_write3v = vec_subtract2dp(*rem_write3v, vec_multiply2dp(vxx, vxx));
++	    rem_write3v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	}
+       } else if (!cur_raw) {
+ 	if (cur_xor == 3) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_add_pd(*rem_writev, _mm_add_pd(vxx, vxx));
++#elif __PPC64__
++	    *rem_writev = vec_add2dp(*rem_writev, vec_add2dp(vxx, vxx));
++#else
++#error "Unsupported architecture."
++#endif
+ 	    rem_writev++;
+ 	  }
+ 	} else if (cur_xor == 2) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_add_pd(*rem_writev, vxx);
++#elif __PPC64__
++	    *rem_writev = vec_add2dp(*rem_writev, vxx);
++#else
++#error "Unsupported architecture."
++#endif
+ 	    rem_writev++;
+ 	  }
+ 	} else {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_add_pd(*rem_writev, _mm_add_pd(vxx, vxx));
+ 	    rem_writev++;
+ 	    *rem_write2v = _mm_sub_pd(*rem_write2v, vxx);
+ 	    rem_write2v++;
+ 	    *rem_write3v = _mm_sub_pd(*rem_write3v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write3v++;
++#elif __PPC64__
++	    *rem_writev = vec_add2dp(*rem_writev, vec_add2dp(vxx, vxx));
++	    rem_writev++;
++	    *rem_write2v = vec_subtract2dp(*rem_write2v, vxx);
++	    rem_write2v++;
++	    *rem_write3v = vec_subtract2dp(*rem_write3v, vec_multiply2dp(vxx, vxx));
++	    rem_write3v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	}
+       } else {
+ 	if (cur_xor == 2) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_write2v = _mm_add_pd(*rem_write2v, vxx);
+ 	    rem_write2v++;
+ 	    *rem_write3v = _mm_add_pd(*rem_write3v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write3v++;
++#elif __PPC64__
++	    *rem_write2v = vec_add2dp(*rem_write2v, vxx);
++	    rem_write2v++;
++	    *rem_write3v = vec_add2dp(*rem_write3v, vec_multiply2dp(vxx, vxx));
++	    rem_write3v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	} else if (cur_xor == 3) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_sub_pd(*rem_writev, vxx);
+ 	    rem_writev++;
+ 	    *rem_write2v = _mm_add_pd(*rem_write2v, vxx);
+ 	    rem_write2v++;
+ 	    *rem_write3v = _mm_add_pd(*rem_write3v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write3v++;
++#elif __PPC64__
++	    *rem_writev = vec_subtract2dp(*rem_writev, vxx);
++	    rem_writev++;
++	    *rem_write2v = vec_add2dp(*rem_write2v, vxx);
++	    rem_write2v++;
++	    *rem_write3v = vec_add2dp(*rem_write3v, vec_multiply2dp(vxx, vxx));
++	    rem_write3v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	} else {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_sub_pd(*rem_writev, _mm_add_pd(vxx, vxx));
+ 	    rem_writev++;
+ 	    *rem_write2v = _mm_add_pd(*rem_write2v, vxx);
+ 	    rem_write2v++;
+ 	    *rem_write3v = _mm_add_pd(*rem_write3v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write3v++;
++#elif __PPC64__
++	    *rem_writev = vec_subtract2dp(*rem_writev, vec_add2dp(vxx, vxx));
++	    rem_writev++;
++	    *rem_write2v = vec_add2dp(*rem_write2v, vxx);
++	    rem_write2v++;
++	    *rem_write3v = vec_add2dp(*rem_write3v, vec_multiply2dp(vxx, vxx));
++	    rem_write3v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	}
+       }
+@@ -1770,30 +2050,57 @@
+ 	if (cur_xor == 1) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_sub_pd(*rem_writev, vxx);
+ 	    rem_writev++;
+ 	    *rem_write2v = _mm_sub_pd(*rem_write2v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write2v++;
++#elif __PPC64__
++	    *rem_writev = vec_subtract2dp(*rem_writev, vxx);
++	    rem_writev++;
++	    *rem_write2v = vec_subtract2dp(*rem_write2v, vec_multiply2dp(vxx, vxx));
++	    rem_write2v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	  rem_writev = (__m128d*)outbufs;
+ 	  rem_write2v = (__m128d*)(&(outbufs[perm_vec_ctcl8m]));
+ 	} else if (cur_xor == 3) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_write3v = _mm_sub_pd(*rem_write3v, vxx);
+ 	    rem_write3v++;
+ 	    *rem_write4v = _mm_sub_pd(*rem_write4v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write4v++;
++#elif __PPC64__
++	    *rem_write3v = vec_subtract2dp(*rem_write3v, vxx);
++	    rem_write3v++;
++	    *rem_write4v = vec_subtract2dp(*rem_write4v, vec_multiply2dp(vxx, vxx));
++	    rem_write4v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	  rem_write3v = (__m128d*)(&(outbufs[2 * perm_vec_ctcl8m]));
+ 	  rem_write4v = (__m128d*)(&(outbufs[3 * perm_vec_ctcl8m]));
+         } else {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_write5v = _mm_sub_pd(*rem_write5v, vxx);
+ 	    rem_write5v++;
+ 	    *rem_write6v = _mm_sub_pd(*rem_write6v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write6v++;
++#elif __PPC64__
++	    *rem_write5v = vec_subtract2dp(*rem_write5v, vxx);
++	    rem_write5v++;
++	    *rem_write6v = vec_subtract2dp(*rem_write6v, vec_multiply2dp(vxx, vxx));
++	    rem_write6v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	  rem_write5v = (__m128d*)(&(outbufs[4 * perm_vec_ctcl8m]));
+ 	  rem_write6v = (__m128d*)(&(outbufs[5 * perm_vec_ctcl8m]));
+@@ -1802,14 +2109,24 @@
+ 	if (cur_xor == 1) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_add_pd(*rem_writev, vxx);
+ 	    rem_writev++;
+ 	    *rem_write2v = _mm_add_pd(*rem_write2v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write2v++;
++#elif __PPC64__
++	    *rem_writev = vec_add2dp(*rem_writev, vxx);
++	    rem_writev++;
++	    *rem_write2v = vec_add2dp(*rem_write2v, vec_multiply2dp(vxx, vxx));
++	    rem_write2v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	} else if (cur_xor == 2) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_add_pd(*rem_writev, vxx);
+ 	    rem_writev++;
+ 	    *rem_write3v = _mm_sub_pd(*rem_write3v, vxx);
+@@ -1819,12 +2136,26 @@
+ 	    rem_write2v++;
+ 	    *rem_write4v = _mm_sub_pd(*rem_write4v, vxx);
+ 	    rem_write4v++;
++#elif __PPC64__
++	    *rem_writev = vec_add2dp(*rem_writev, vxx);
++	    rem_writev++;
++	    *rem_write3v = vec_subtract2dp(*rem_write3v, vxx);
++	    rem_write3v++;
++	    vxx = vec_multiply2dp(vxx, vxx);
++	    *rem_write2v = vec_add2dp(*rem_write2v, vxx);
++	    rem_write2v++;
++	    *rem_write4v = vec_subtract2dp(*rem_write4v, vxx);
++	    rem_write4v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	  rem_write3v = (__m128d*)(&(outbufs[2 * perm_vec_ctcl8m]));
+ 	  rem_write4v = (__m128d*)(&(outbufs[3 * perm_vec_ctcl8m]));
+ 	} else {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_add_pd(*rem_writev, vxx);
+ 	    rem_writev++;
+ 	    *rem_write5v = _mm_sub_pd(*rem_write5v, vxx);
+@@ -1834,6 +2165,19 @@
+ 	    rem_write2v++;
+ 	    *rem_write6v = _mm_sub_pd(*rem_write6v, vxx);
+ 	    rem_write6v++;
++#elif __PPC64__
++	    *rem_writev = vec_add2dp(*rem_writev, vxx);
++	    rem_writev++;
++	    *rem_write5v = vec_subtract2dp(*rem_write5v, vxx);
++	    rem_write5v++;
++	    vxx = vec_multiply2dp(vxx, vxx);
++	    *rem_write2v = vec_add2dp(*rem_write2v, vxx);
++	    rem_write2v++;
++	    *rem_write6v = vec_subtract2dp(*rem_write6v, vxx);
++	    rem_write6v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	  rem_write5v = (__m128d*)(&(outbufs[4 * perm_vec_ctcl8m]));
+ 	  rem_write6v = (__m128d*)(&(outbufs[5 * perm_vec_ctcl8m]));
+@@ -1844,14 +2188,24 @@
+ 	if (cur_xor == 3) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_write3v = _mm_add_pd(*rem_write3v, vxx);
+ 	    rem_write3v++;
+ 	    *rem_write4v = _mm_add_pd(*rem_write4v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write4v++;
++#elif __PPC64__
++	    *rem_write3v = vec_add2dp(*rem_write3v, vxx);
++	    rem_write3v++;
++	    *rem_write4v = vec_add2dp(*rem_write4v, vec_multiply2dp(vxx, vxx));
++	    rem_write4v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	} else if (cur_xor == 2) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_sub_pd(*rem_writev, vxx);
+ 	    rem_writev++;
+ 	    *rem_write3v = _mm_add_pd(*rem_write3v, vxx);
+@@ -1861,12 +2215,26 @@
+ 	    rem_write2v++;
+ 	    *rem_write4v = _mm_add_pd(*rem_write4v, vxx);
+ 	    rem_write4v++;
++#elif __PPC64__
++	    *rem_writev = vec_subtract2dp(*rem_writev, vxx);
++	    rem_writev++;
++	    *rem_write3v = vec_add2dp(*rem_write3v, vxx);
++	    rem_write3v++;
++	    vxx = vec_multiply2dp(vxx, vxx);
++	    *rem_write2v = vec_subtract2dp(*rem_write2v, vxx);
++	    rem_write2v++;
++	    *rem_write4v = vec_add2dp(*rem_write4v, vxx);
++	    rem_write4v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	  rem_writev = (__m128d*)outbufs;
+ 	  rem_write2v = (__m128d*)(&(outbufs[perm_vec_ctcl8m]));
+ 	} else {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_write3v = _mm_add_pd(*rem_write3v, vxx);
+ 	    rem_write3v++;
+ 	    *rem_write5v = _mm_sub_pd(*rem_write5v, vxx);
+@@ -1876,6 +2244,19 @@
+ 	    rem_write4v++;
+ 	    *rem_write6v = _mm_sub_pd(*rem_write6v, vxx);
+ 	    rem_write6v++;
++#elif __PPC64__
++	    *rem_write3v = vec_add2dp(*rem_write3v, vxx);
++	    rem_write3v++;
++	    *rem_write5v = vec_subtract2dp(*rem_write5v, vxx);
++	    rem_write5v++;
++	    vxx = vec_multiply2dp(vxx, vxx);
++	    *rem_write4v = vec_add2dp(*rem_write4v, vxx);
++	    rem_write4v++;
++	    *rem_write6v = vec_subtract2dp(*rem_write6v, vxx);
++	    rem_write6v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	  rem_write5v = (__m128d*)(&(outbufs[4 * perm_vec_ctcl8m]));
+ 	  rem_write6v = (__m128d*)(&(outbufs[5 * perm_vec_ctcl8m]));
+@@ -1886,14 +2267,24 @@
+ 	if (cur_xor == 2) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_write5v = _mm_add_pd(*rem_write5v, vxx);
+ 	    rem_write5v++;
+ 	    *rem_write6v = _mm_add_pd(*rem_write6v, _mm_mul_pd(vxx, vxx));
+ 	    rem_write6v++;
++#elif __PPC64__
++	    *rem_write5v = vec_add2dp(*rem_write5v, vxx);
++	    rem_write5v++;
++	    *rem_write6v = vec_add2dp(*rem_write6v, vec_multiply2dp(vxx, vxx));
++	    rem_write6v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	} else if (cur_xor == 3) {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_writev = _mm_sub_pd(*rem_writev, vxx);
+ 	    rem_writev++;
+ 	    *rem_write5v = _mm_add_pd(*rem_write5v, vxx);
+@@ -1903,12 +2294,26 @@
+ 	    rem_write2v++;
+ 	    *rem_write6v = _mm_add_pd(*rem_write6v, vxx);
+ 	    rem_write6v++;
++#elif __PPC64__
++	    *rem_writev = vec_subtract2dp(*rem_writev, vxx);
++	    rem_writev++;
++	    *rem_write5v = vec_add2dp(*rem_write5v, vxx);
++	    rem_write5v++;
++	    vxx = vec_multiply2dp(vxx, vxx);
++	    *rem_write2v = vec_subtract2dp(*rem_write2v, vxx);
++	    rem_write2v++;
++	    *rem_write6v = vec_add2dp(*rem_write6v, vxx);
++	    rem_write6v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	  rem_writev = (__m128d*)outbufs;
+ 	  rem_write2v = (__m128d*)(&(outbufs[perm_vec_ctcl8m]));
+ 	} else {
+ 	  for (ukk = 0; ukk < loop_len; ukk++) {
+ 	    vxx = *perm_readv++;
++#ifdef __x86_64__
+ 	    *rem_write3v = _mm_sub_pd(*rem_write3v, vxx);
+ 	    rem_write3v++;
+ 	    *rem_write5v = _mm_add_pd(*rem_write5v, vxx);
+@@ -1918,6 +2323,19 @@
+ 	    rem_write4v++;
+ 	    *rem_write6v = _mm_add_pd(*rem_write6v, vxx);
+ 	    rem_write6v++;
++#elif __PPC64__
++	    *rem_write3v = vec_subtract2dp(*rem_write3v, vxx);
++	    rem_write3v++;
++	    *rem_write5v = vec_add2dp(*rem_write5v, vxx);
++	    rem_write5v++;
++	    vxx = vec_multiply2dp(vxx, vxx);
++	    *rem_write4v = vec_subtract2dp(*rem_write4v, vxx);
++	    rem_write4v++;
++	    *rem_write6v = vec_add2dp(*rem_write6v, vxx);
++	    rem_write6v++;
++#else
++#error "Unsupported architecture."
++#endif
+ 	  }
+ 	  rem_write3v = (__m128d*)(&(outbufs[2 * perm_vec_ctcl8m]));
+ 	  rem_write4v = (__m128d*)(&(outbufs[3 * perm_vec_ctcl8m]));
+--- plink_calc.c
++++ plink_calc.c
+@@ -279,8 +279,15 @@
+   for (uoo = 0; uoo < 2; uoo++) {
+     wt = &(wtarr[7 * uoo]);
+ #ifdef __LP64__
++#ifdef __x86_64__
+     vfinal1 = _mm_set_pd(wt[0], 0.0);
+     vfinal2 = _mm_set_pd(wt[0] * 2, wt[0]);
++#elif __PPC64__
++    vfinal1 = vec_set2dp(wt[0], 0.0);
++    vfinal2 = vec_set2dp(wt[0] * 2, wt[0]);
++#else
++#error "Unsupported architecture."
++#endif
+ #endif
+     twt[0] = 0;
+     for (uii = 0; uii < 4; uii += 1) {
+@@ -310,6 +317,7 @@
+ 		twt[4] += wt[2];
+ 	      }
+ #ifdef __LP64__
++#ifdef __x86_64__
+ 	      twtf = twt[4];
+ 	      vpen = _mm_set1_pd(twtf);
+ 	      *swpairs++ = _mm_add_pd(vpen, vfinal1);
+@@ -325,6 +333,25 @@
+ 	      vpen = _mm_set1_pd(twtf + wt[1]);
+ 	      *swpairs++ = _mm_add_pd(vpen, vfinal1);
+ 	      *swpairs++ = _mm_add_pd(vpen, vfinal2);
++#elif __PPC64__
++	      twtf = twt[4];
++	      vpen = vec_splat2dp(twtf);
++	      *swpairs++ = vec_add2dp(vpen, vfinal1);
++	      *swpairs++ = vec_add2dp(vpen, vfinal2);
++	      twtf += wt[1];
++	      vpen = vec_splat2dp(twtf);
++	      *swpairs++ = vec_add2dp(vpen, vfinal1);
++	      *swpairs++ = vec_add2dp(vpen, vfinal2);
++	      *swpairs = *(swpairs - 2);
++	      swpairs++;
++	      *swpairs = *(swpairs - 2);
++	      swpairs++;
++	      vpen = vec_splat2dp(twtf + wt[1]);
++	      *swpairs++ = vec_add2dp(vpen, vfinal1);
++	      *swpairs++ = vec_add2dp(vpen, vfinal2);
++#else
++#error "Unsupported architecture."
++#endif
+ #else
+               twt[5] = twt[4];
+               for (upp = 0; upp < 4; upp++) {
+@@ -349,8 +376,15 @@
+ #ifdef __LP64__
+   for (uoo = 0; uoo < 3; uoo++) {
+     wt = &(wtarr[14 + 6 * uoo]);
++#ifdef __x86_64__
+     vfinal1 = _mm_set_pd(wt[0], 0.0);
+     vfinal2 = _mm_set_pd(2 * wt[0], wt[0]);
++#elif __PPC64__
++    vfinal1 = vec_set2dp(wt[0], 0.0);
++    vfinal2 = vec_set2dp(2 * wt[0], wt[0]);
++#else
++#error "Unsupported architecture."
++#endif
+     twt[0] = 0;
+     for (uii = 0; uii < 4; uii += 1) {
+       if (uii & 1) {
+@@ -371,6 +405,7 @@
+ 	    if (umm & 1) {
+ 	      twt[3] += wt[2];
+ 	    }
++#ifdef __x86_64__
+ 	    twtf = twt[3];
+ 	    vpen = _mm_set1_pd(twtf);
+ 	    *swpairs++ = _mm_add_pd(vpen, vfinal1);
+@@ -386,6 +421,25 @@
+ 	    vpen = _mm_set1_pd(twtf + wt[1]);
+ 	    *swpairs++ = _mm_add_pd(vpen, vfinal1);
+ 	    *swpairs++ = _mm_add_pd(vpen, vfinal2);
++#elif __PPC64__
++	    twtf = twt[3];
++	    vpen = vec_splat2dp(twtf);
++	    *swpairs++ = vec_add2dp(vpen, vfinal1);
++	    *swpairs++ = vec_add2dp(vpen, vfinal2);
++	    twtf += wt[1];
++	    vpen = vec_splat2dp(twtf);
++	    *swpairs++ = vec_add2dp(vpen, vfinal1);
++	    *swpairs++ = vec_add2dp(vpen, vfinal2);
++	    *swpairs = *(swpairs - 2);
++	    swpairs++;
++	    *swpairs = *(swpairs - 2);
++	    swpairs++;
++	    vpen = vec_splat2dp(twtf + wt[1]);
++	    *swpairs++ = vec_add2dp(vpen, vfinal1);
++	    *swpairs++ = vec_add2dp(vpen, vfinal2);
++#else
++#error "Unsupported architecture."
++#endif
+           }
+ 	}
+       }
+@@ -493,10 +547,19 @@
+   for (unn = 0; unn < BITCT / 16; unn++) {
+     wtptr = &(wtarr[40 * unn]);
+ #ifdef __LP64__
++#ifdef __x86_64__
+     vfinal1 = _mm_load_pd(wtptr);
+     vfinal2 = _mm_load_pd(&(wtptr[2]));
+     vfinal3 = _mm_load_pd(&(wtptr[4]));
+     vfinal4 = _mm_load_pd(&(wtptr[6]));
++#elif __PPC64__
++    vfinal1 = vec_load2dpaligned(wtptr);
++    vfinal2 = vec_load2dpaligned(&(wtptr[2]));
++    vfinal3 = vec_load2dpaligned(&(wtptr[4]));
++    vfinal4 = vec_load2dpaligned(&(wtptr[6]));
++#else
++#error "Unsupported architecture."
++#endif
+ #endif
+     for (uii = 0; uii < 8; uii++) {
+       twt = wtptr[uii + 32];
+@@ -507,11 +570,21 @@
+           for (umm = 0; umm < 8; umm++) {
+             twt4 = twt3 + wtptr[umm + 8];
+ #ifdef __LP64__
++#ifdef __x86_64__
+             vpen = _mm_set1_pd(twt4);
+             *swpairs++ = _mm_add_pd(vpen, vfinal1);
+             *swpairs++ = _mm_add_pd(vpen, vfinal2);
+             *swpairs++ = _mm_add_pd(vpen, vfinal3);
+             *swpairs++ = _mm_add_pd(vpen, vfinal4);
++#elif __PPC64__
++            vpen = vec_splat2dp(twt4);
++            *swpairs++ = vec_add2dp(vpen, vfinal1);
++            *swpairs++ = vec_add2dp(vpen, vfinal2);
++            *swpairs++ = vec_add2dp(vpen, vfinal3);
++            *swpairs++ = vec_add2dp(vpen, vfinal4);
++#else
++#error "Unsupported architecture."
++#endif
+ #else
+             for (uoo = 0; uoo < 8; uoo++) {
+               *subset_weights++ = twt4 + wtptr[uoo];
+@@ -562,16 +635,32 @@
+ // (specifically, (MULTIPLEX_DIST / BITCT) * 16 bytes).  The current code
+ // assumes (MULTIPLEX_DIST / BITCT) is a multiple of 3, and no greater than 30.
+ static inline uint32_t popcount_xor_1mask_multiword(__m128i** xor1p, __m128i* xor2, __m128i** maskp) {
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i count1, count2, half1, half2;
+   __univec acc;
+   __m128i* xor2_end = &(xor2[MULTIPLEX_2DIST / 128]);
+ 
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
++#ifdef __x86_64__
+     count1 = _mm_and_si128(_mm_xor_si128(*((*xor1p)++), *xor2++), *((*maskp)++));
+     count2 = _mm_and_si128(_mm_xor_si128(*((*xor1p)++), *xor2++), *((*maskp)++));
+     half1 = _mm_and_si128(_mm_xor_si128(*((*xor1p)++), *xor2++), *((*maskp)++));
+@@ -584,29 +673,73 @@
+     count1 = _mm_add_epi64(_mm_and_si128(count1, m2), _mm_and_si128(_mm_srli_epi64(count1, 2), m2));
+     count1 = _mm_add_epi64(count1, _mm_add_epi64(_mm_and_si128(count2, m2), _mm_and_si128(_mm_srli_epi64(count2, 2), m2)));
+     acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(count1, m4), _mm_and_si128(_mm_srli_epi64(count1, 4), m4)));
++#elif __PPC64__
++    count1 = vec_bitand1q(vec_bitxor1q(*((*xor1p)++), *xor2++), *((*maskp)++));
++    count2 = vec_bitand1q(vec_bitxor1q(*((*xor1p)++), *xor2++), *((*maskp)++));
++    half1 = vec_bitand1q(vec_bitxor1q(*((*xor1p)++), *xor2++), *((*maskp)++));
++    half2 = vec_bitand1q(vec_shiftrightlogical2dimmediate(half1, 1), m1);
++    half1 = vec_bitand1q(half1, m1);
++    count1 = vec_subtract2sd(count1, vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 1), m1));
++    count2 = vec_subtract2sd(count2, vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 1), m1));
++    count1 = vec_add2sd(count1, half1);
++    count2 = vec_add2sd(count2, half2);
++    count1 = vec_add2sd(vec_bitand1q(count1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 2), m2));
++    count1 = vec_add2sd(count1, vec_add2sd(vec_bitand1q(count2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 2), m2)));
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(count1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (xor2 < xor2_end);
+ #if MULTIPLEX_DIST > 960
++  #ifdef __x86_64__
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++  #elif __PPC64__
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++  #else
++  #error "Unsupported architecture."
++#endif
+ #else
+   // can get away with this when MULTIPLEX_DIST <= 960, since the 8-bit counts
+   // are guaranteed to be <= 120, thus adding two together does not overflow
+   // 255.
++  #ifdef __x86_64__
+   acc.vi = _mm_and_si128(_mm_add_epi64(acc.vi, _mm_srli_epi64(acc.vi, 8)), m8);
++  #elif __PPC64__
++  acc.vi = vec_bitand1q(vec_add2sd(acc.vi, vec_shiftrightlogical2dimmediate(acc.vi, 8)), m8);
++  #else
++  #error "Unsupported architecture."
++  #endif
+ #endif
+   return ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+ }
+ 
+ static inline uint32_t popcount_xor_2mask_multiword(__m128i** xor1p, __m128i* xor2, __m128i** mask1p, __m128i* mask2) {
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i count1, count2, half1, half2;
+   __univec acc;
+   __m128i* xor2_end = &(xor2[MULTIPLEX_2DIST / 128]);
+ 
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
++#ifdef __x86_64__
+     count1 = _mm_and_si128(_mm_xor_si128(*((*xor1p)++), *xor2++), _mm_and_si128(*((*mask1p)++), *mask2++));
+     count2 = _mm_and_si128(_mm_xor_si128(*((*xor1p)++), *xor2++), _mm_and_si128(*((*mask1p)++), *mask2++));
+     half1 = _mm_and_si128(_mm_xor_si128(*((*xor1p)++), *xor2++), _mm_and_si128(*((*mask1p)++), *mask2++));
+@@ -619,11 +752,39 @@
+     count1 = _mm_add_epi64(_mm_and_si128(count1, m2), _mm_and_si128(_mm_srli_epi64(count1, 2), m2));
+     count1 = _mm_add_epi64(count1, _mm_add_epi64(_mm_and_si128(count2, m2), _mm_and_si128(_mm_srli_epi64(count2, 2), m2)));
+     acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(count1, m4), _mm_and_si128(_mm_srli_epi64(count1, 4), m4)));
++#elif __PPC64__
++    count1 = vec_bitand1q(vec_bitxor1q(*((*xor1p)++), *xor2++), vec_bitand1q(*((*mask1p)++), *mask2++));
++    count2 = vec_bitand1q(vec_bitxor1q(*((*xor1p)++), *xor2++), vec_bitand1q(*((*mask1p)++), *mask2++));
++    half1 = vec_bitand1q(vec_bitxor1q(*((*xor1p)++), *xor2++), vec_bitand1q(*((*mask1p)++), *mask2++));
++    half2 = vec_bitand1q(vec_shiftrightlogical2dimmediate(half1, 1), m1);
++    half1 = vec_bitand1q(half1, m1);
++    count1 = vec_subtract2sd(count1, vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 1), m1));
++    count2 = vec_subtract2sd(count2, vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 1), m1));
++    count1 = vec_add2sd(count1, half1);
++    count2 = vec_add2sd(count2, half2);
++    count1 = vec_add2sd(vec_bitand1q(count1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 2), m2));
++    count1 = vec_add2sd(count1, vec_add2sd(vec_bitand1q(count2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 2), m2)));
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(count1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (xor2 < xor2_end);
+ #if MULTIPLEX_DIST > 960
++  #ifdef __x86_64__
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++  #elif __PPC64__
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++  #else
++  #error "Unsupported architecture."
++  #endif
+ #else
++  #ifdef __x86_64__
+   acc.vi = _mm_and_si128(_mm_add_epi64(acc.vi, _mm_srli_epi64(acc.vi, 8)), m8);
++  #elif __PPC64__
++  acc.vi = vec_bitand1q(vec_add2sd(acc.vi, vec_shiftrightlogical2dimmediate(acc.vi, 8)), m8);
++  #else
++  #error "Unsupported architecture."
++  #endif
+ #endif
+   return ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+ }
+@@ -1089,10 +1250,19 @@
+ 
+ void incr_genome(uint32_t* genome_main, uintptr_t* geno, uintptr_t* masks, uintptr_t sample_ct, uint32_t start_idx, uint32_t end_idx) {
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i xor_buf[GENOME_MULTIPLEX / BITCT];
+   __m128i* xor_buf_end = &(xor_buf[GENOME_MULTIPLEX / BITCT]);
+   __m128i* maskptr;
+@@ -1179,9 +1349,17 @@
+ 	glptr_fixed_tmp = glptr_fixed;
+ 	maskptr_fixed_tmp = maskptr_fixed;
+ #ifdef __LP64__
++	#ifdef __x86_64__
+ 	acc_ibs1.vi = _mm_setzero_si128();
+ 	acc_ibs0.vi = _mm_setzero_si128();
++	#elif __PPC64__
++	acc_ibs1.vi = vec_zero1q();
++	acc_ibs0.vi = vec_zero1q();
++	#else
++	#error "Unsupported architecture."
++	#endif
+ 	do {
++#ifdef __x86_64__
+ 	  loader = _mm_and_si128(_mm_xor_si128(*glptr++, *glptr_fixed_tmp++), _mm_and_si128(*maskptr++, *maskptr_fixed_tmp++));
+           loader2 = _mm_srli_epi64(loader, 1);
+ 	  count_ibs1 = _mm_and_si128(_mm_xor_si128(loader, loader2), m1);
+@@ -1228,13 +1406,77 @@
+           count_ibs0 = _mm_add_epi64(count_ibs0, _mm_add_epi64(_mm_and_si128(count2_ibs0, m2), _mm_and_si128(_mm_srli_epi64(count2_ibs0, 2), m2)));
+           acc_ibs1.vi = _mm_add_epi64(acc_ibs1.vi, _mm_add_epi64(_mm_and_si128(count_ibs1, m4), _mm_and_si128(_mm_srli_epi64(count_ibs1, 4), m4)));
+           acc_ibs0.vi = _mm_add_epi64(acc_ibs0.vi, _mm_add_epi64(_mm_and_si128(count_ibs0, m4), _mm_and_si128(_mm_srli_epi64(count_ibs0, 4), m4)));
++#elif __PPC64__
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), vec_bitand1q(*maskptr++, *maskptr_fixed_tmp++));
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++	  count_ibs1 = vec_bitand1q(vec_bitxor1q(loader, loader2), m1);
++	  count_ibs0 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = count_ibs0;
++
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), vec_bitand1q(*maskptr++, *maskptr_fixed_tmp++));
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++          count_ibs1 = vec_add2sd(count_ibs1, vec_bitand1q(vec_bitxor1q(loader, loader2), m1));
++	  loader3 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = loader3;
++	  count_ibs0 = vec_add2sd(count_ibs0, loader3);
++
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), vec_bitand1q(*maskptr++, *maskptr_fixed_tmp++));
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++          count_ibs1 = vec_add2sd(count_ibs1, vec_bitand1q(vec_bitxor1q(loader, loader2), m1));
++	  loader3 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = loader3;
++	  count_ibs0 = vec_add2sd(count_ibs0, loader3);
++
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), vec_bitand1q(*maskptr++, *maskptr_fixed_tmp++));
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++	  count2_ibs1 = vec_bitand1q(vec_bitxor1q(loader, loader2), m1);
++	  count2_ibs0 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = count2_ibs0;
++
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), vec_bitand1q(*maskptr++, *maskptr_fixed_tmp++));
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++          count2_ibs1 = vec_add2sd(count2_ibs1, vec_bitand1q(vec_bitxor1q(loader, loader2), m1));
++	  loader3 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = loader3;
++	  count2_ibs0 = vec_add2sd(count2_ibs0, loader3);
++
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), vec_bitand1q(*maskptr++, *maskptr_fixed_tmp++));
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++          count2_ibs1 = vec_add2sd(count2_ibs1, vec_bitand1q(vec_bitxor1q(loader, loader2), m1));
++	  loader3 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = loader3;
++	  count2_ibs0 = vec_add2sd(count2_ibs0, loader3);
++
++          count_ibs1 = vec_add2sd(vec_bitand1q(count_ibs1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count_ibs1, 2), m2));
++          count_ibs0 = vec_add2sd(vec_bitand1q(count_ibs0, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count_ibs0, 2), m2));
++          count_ibs1 = vec_add2sd(count_ibs1, vec_add2sd(vec_bitand1q(count2_ibs1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2_ibs1, 2), m2)));
++          count_ibs0 = vec_add2sd(count_ibs0, vec_add2sd(vec_bitand1q(count2_ibs0, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2_ibs0, 2), m2)));
++          acc_ibs1.vi = vec_add2sd(acc_ibs1.vi, vec_add2sd(vec_bitand1q(count_ibs1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count_ibs1, 4), m4)));
++          acc_ibs0.vi = vec_add2sd(acc_ibs0.vi, vec_add2sd(vec_bitand1q(count_ibs0, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count_ibs0, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+ 	} while (xor_ptr < xor_buf_end);
+ #if GENOME_MULTIPLEX > 1920
++	#ifdef __x86_64__
+ 	acc_ibs1.vi = _mm_add_epi64(_mm_and_si128(acc_ibs1.vi, m8), _mm_and_si128(_mm_srli_epi64(acc_ibs1.vi, 8), m8));
+ 	acc_ibs0.vi = _mm_add_epi64(_mm_and_si128(acc_ibs0.vi, m8), _mm_and_si128(_mm_srli_epi64(acc_ibs0.vi, 8), m8));
++	#elif __PPC64__
++	acc_ibs1.vi = vec_add2sd(vec_bitand1q(acc_ibs1.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_ibs1.vi, 8), m8));
++	acc_ibs0.vi = vec_add2sd(vec_bitand1q(acc_ibs0.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_ibs0.vi, 8), m8));
++	#else
++	#error "Unsupported architecture."
++	#endif
+ #else
++	#ifdef __x86_64__
+ 	acc_ibs1.vi = _mm_and_si128(_mm_add_epi64(acc_ibs1.vi, _mm_srli_epi64(acc_ibs1.vi, 8)), m8);
+ 	acc_ibs0.vi = _mm_and_si128(_mm_add_epi64(acc_ibs0.vi, _mm_srli_epi64(acc_ibs0.vi, 8)), m8);
++	#elif __PPC64__
++	acc_ibs1.vi = vec_bitand1q(vec_add2sd(acc_ibs1.vi, vec_shiftrightlogical2dimmediate(acc_ibs1.vi, 8)), m8);
++	acc_ibs0.vi = vec_bitand1q(vec_add2sd(acc_ibs0.vi, vec_shiftrightlogical2dimmediate(acc_ibs0.vi, 8)), m8);
++	#else
++	#error "Unsupported architecture."
++	#endif
+ #endif
+ 	*genome_main += ((acc_ibs1.u8[0] + acc_ibs1.u8[1]) * 0x1000100010001LLU) >> 48;
+ 	genome_main++;
+@@ -1341,9 +1583,17 @@
+ 	glptr_back = (uintptr_t*)glptr;
+ 	glptr_fixed_tmp = glptr_fixed;
+ #ifdef __LP64__
++#ifdef __x86_64__
+ 	acc_ibs1.vi = _mm_setzero_si128();
+ 	acc_ibs0.vi = _mm_setzero_si128();
++#elif __PPC64__
++	acc_ibs1.vi = vec_zero1q();
++	acc_ibs0.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+ 	do {
++#ifdef __x86_64__
+ 	  loader = _mm_and_si128(_mm_xor_si128(*glptr++, *glptr_fixed_tmp++), *maskptr++);
+           loader2 = _mm_srli_epi64(loader, 1);
+ 	  count_ibs1 = _mm_and_si128(_mm_xor_si128(loader, loader2), m1);
+@@ -1386,13 +1636,73 @@
+           count_ibs0 = _mm_add_epi64(count_ibs0, _mm_add_epi64(_mm_and_si128(count2_ibs0, m2), _mm_and_si128(_mm_srli_epi64(count2_ibs0, 2), m2)));
+           acc_ibs1.vi = _mm_add_epi64(acc_ibs1.vi, _mm_add_epi64(_mm_and_si128(count_ibs1, m4), _mm_and_si128(_mm_srli_epi64(count_ibs1, 4), m4)));
+           acc_ibs0.vi = _mm_add_epi64(acc_ibs0.vi, _mm_add_epi64(_mm_and_si128(count_ibs0, m4), _mm_and_si128(_mm_srli_epi64(count_ibs0, 4), m4)));
++#elif __PPC64__
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), *maskptr++);
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++	  count_ibs1 = vec_bitand1q(vec_bitxor1q(loader, loader2), m1);
++	  count_ibs0 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = count_ibs0;
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), *maskptr++);
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++          count_ibs1 = vec_add2sd(count_ibs1, vec_bitand1q(vec_bitxor1q(loader, loader2), m1));
++	  loader3 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = loader3;
++	  count_ibs0 = vec_add2sd(count_ibs0, loader3);
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), *maskptr++);
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++          count_ibs1 = vec_add2sd(count_ibs1, vec_bitand1q(vec_bitxor1q(loader, loader2), m1));
++	  loader3 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = loader3;
++	  count_ibs0 = vec_add2sd(count_ibs0, loader3);
++
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), *maskptr++);
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++	  count2_ibs1 = vec_bitand1q(vec_bitxor1q(loader, loader2), m1);
++	  count2_ibs0 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = count2_ibs0;
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), *maskptr++);
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++          count2_ibs1 = vec_add2sd(count2_ibs1, vec_bitand1q(vec_bitxor1q(loader, loader2), m1));
++	  loader3 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = loader3;
++	  count2_ibs0 = vec_add2sd(count2_ibs0, loader3);
++	  loader = vec_bitand1q(vec_bitxor1q(*glptr++, *glptr_fixed_tmp++), *maskptr++);
++          loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++          count2_ibs1 = vec_add2sd(count2_ibs1, vec_bitand1q(vec_bitxor1q(loader, loader2), m1));
++	  loader3 = vec_bitand1q(vec_bitand1q(loader, loader2), m1);
++	  *xor_ptr++ = loader3;
++	  count2_ibs0 = vec_add2sd(count2_ibs0, loader3);
++
++          count_ibs1 = vec_add2sd(vec_bitand1q(count_ibs1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count_ibs1, 2), m2));
++          count_ibs0 = vec_add2sd(vec_bitand1q(count_ibs0, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count_ibs0, 2), m2));
++          count_ibs1 = vec_add2sd(count_ibs1, vec_add2sd(vec_bitand1q(count2_ibs1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2_ibs1, 2), m2)));
++          count_ibs0 = vec_add2sd(count_ibs0, vec_add2sd(vec_bitand1q(count2_ibs0, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2_ibs0, 2), m2)));
++          acc_ibs1.vi = vec_add2sd(acc_ibs1.vi, vec_add2sd(vec_bitand1q(count_ibs1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count_ibs1, 4), m4)));
++          acc_ibs0.vi = vec_add2sd(acc_ibs0.vi, vec_add2sd(vec_bitand1q(count_ibs0, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count_ibs0, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+ 	} while (xor_ptr < xor_buf_end);
+ #if GENOME_MULTIPLEX > 1920
++	#ifdef __x86_64__
+ 	acc_ibs1.vi = _mm_add_epi64(_mm_and_si128(acc_ibs1.vi, m8), _mm_and_si128(_mm_srli_epi64(acc_ibs1.vi, 8), m8));
+ 	acc_ibs0.vi = _mm_add_epi64(_mm_and_si128(acc_ibs0.vi, m8), _mm_and_si128(_mm_srli_epi64(acc_ibs0.vi, 8), m8));
++	#elif __PPC64__
++	acc_ibs1.vi = vec_add2sd(vec_bitand1q(acc_ibs1.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_ibs1.vi, 8), m8));
++	acc_ibs0.vi = vec_add2sd(vec_bitand1q(acc_ibs0.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_ibs0.vi, 8), m8));
++	#else
++	#error "Unsupported architecture."
++	#endif
+ #else
++	#ifdef __x86_64__
+ 	acc_ibs1.vi = _mm_and_si128(_mm_add_epi64(acc_ibs1.vi, _mm_srli_epi64(acc_ibs1.vi, 8)), m8);
+ 	acc_ibs0.vi = _mm_and_si128(_mm_add_epi64(acc_ibs0.vi, _mm_srli_epi64(acc_ibs0.vi, 8)), m8);
++	#elif __PPC64__
++	acc_ibs1.vi = vec_bitand1q(vec_add2sd(acc_ibs1.vi, vec_shiftrightlogical2dimmediate(acc_ibs1.vi, 8)), m8);
++	acc_ibs0.vi = vec_bitand1q(vec_add2sd(acc_ibs0.vi, vec_shiftrightlogical2dimmediate(acc_ibs0.vi, 8)), m8);
++	#else
++	#error "Unsupported architecture."
++	#endif
+ #endif
+         *genome_main += ((acc_ibs1.u8[0] + acc_ibs1.u8[1]) * 0x1000100010001LLU) >> 48;
+ 	genome_main++;
+@@ -2102,7 +2412,13 @@
+   double* dptr = matrix;
+ #ifdef __LP64__
+   __m128d* vptr;
++  #ifdef __x86_64__
+   __m128d v_mult_val = _mm_set1_pd(mult_val);
++  #elif __PPC64__
++  __m128d v_mult_val = vec_splat2dp(mult_val);
++  #else
++  #error "Unsupported architecture."
++  #endif
+ #endif
+   for (uii = 0; uii < loop_end; uii++) {
+     *dptr = (*dptr) * mult_val + add_val;
+@@ -2117,9 +2433,17 @@
+     }
+     vptr = (__m128d*)dptr;
+     while (ujj < loop_end) {
++#ifdef __x86_64__
+       *vptr = _mm_mul_pd(*vptr, v_mult_val);
+       vptr++;
+       ujj += 2;
++#elif __PPC64__
++      *vptr = vec_multiply2dp(*vptr, v_mult_val);
++      vptr++;
++      ujj += 2;
++#else
++#error "Unsupported architecture."
++#endif
+     }
+     dptr = (double*)vptr;
+     if (ujj < sample_ct) {
+@@ -2792,8 +3116,15 @@
+     rvptr1 = (__m128d*)perm_results;
+     rvptr2 = (__m128d*)(&(perm_results[2 * perm_ctcldm * tidx]));
+     for (perm_idx = 0; perm_idx < perm_ct; perm_idx++) {
++#ifdef __x86_64__
+       *rvptr1 = _mm_add_pd(*rvptr1, *rvptr2++);
+       rvptr1++;
++#elif __PPC64__
++      *rvptr1 = vec_add2dp(*rvptr1, *rvptr2++);
++      rvptr1++;
++#else
++#error "Unsupported architecture."
++#endif
+     }
+ #else
+     rptr1 = perm_results;
+--- plink_common.c
++++ plink_common.c
+@@ -4086,7 +4086,13 @@
+ void fill_quatervec_55(uint32_t ct, uintptr_t* quatervec) {
+   uint32_t rem = ct & (BITCT - 1);
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i* vecp = (__m128i*)quatervec;
+   __m128i* vec_end = (__m128i*)(&(quatervec[2 * (ct / BITCT)]));
+   uintptr_t* second_to_last;
+@@ -5695,7 +5701,13 @@
+   const __m128i* iv128 = (const __m128i*)arg_bitvec;
+   __m128i* vv128_end = &(vv128[word_ct / 2]);
+   while (vv128 < vv128_end) {
++#ifdef __x86_64__
+     *vv128 = _mm_and_si128(*iv128++, *vv128);
++#elif __PPC64__
++    *vv128 = vec_bitand1q(*iv128++, *vv128);
++#else
++#error "Unsupported architecture."
++#endif
+     vv128++;
+   }
+   if (word_ct & 1) {
+@@ -5718,7 +5730,13 @@
+   const __m128i* ev128 = (const __m128i*)exclude_bitvec;
+   __m128i* vv128_end = &(vv128[word_ct / 2]);
+   while (vv128 < vv128_end) {
++#ifdef __x86_64__
+     *vv128 = _mm_andnot_si128(*ev128++, *vv128);
++#elif __PPC64__
++    *vv128 = vec_bitandnotleft1q(*ev128++, *vv128);
++#else
++#error "Unsupported architecture."
++#endif
+     vv128++;
+   }
+   if (word_ct & 1) {
+@@ -5740,7 +5758,13 @@
+   const __m128i* iv128 = (const __m128i*)include_bitvec;
+   __m128i* vv128_end = &(vv128[word_ct / 2]);
+   while (vv128 < vv128_end) {
++#ifdef __x86_64__
+     *vv128 = _mm_andnot_si128(*vv128, *iv128++);
++#elif __PPC64__
++    *vv128 = vec_bitandnotleft1q(*vv128, *iv128++);
++#else
++#error "Unsupported architecture."
++#endif
+     vv128++;
+   }
+   if (word_ct & 1) {
+@@ -5763,7 +5787,13 @@
+   const __m128i* ov128 = (const __m128i*)arg_bitvec;
+   __m128i* vv128_end = &(vv128[word_ct / 2]);
+   while (vv128 < vv128_end) {
++#ifdef __x86_64__
+     *vv128 = _mm_or_si128(*ov128++, *vv128);
++#elif __PPC64__
++    *vv128 = vec_bitor1q(*ov128++, *vv128);
++#else
++#error "Unsupported architecture."
++#endif
+     vv128++;
+   }
+   if (word_ct & 1) {
+@@ -5782,15 +5812,33 @@
+   // main_bitvec := main_bitvec OR (~inverted_or_bitvec)
+ #ifdef __LP64__
+ #ifdef __APPLE__
++#ifdef __x86_64__
+   const __m128i all1 = {0xffffffffffffffffLLU, 0xffffffffffffffffLLU};
++#elif __PPC64__
++  const __m128i all1 = vec_splat16sb(0xff);
++#else
++#error "Unsupported architecture."
++#endif
+ #else
++#ifdef __x86_64__
+   const __m128i all1 = {-1LL, -1LL};
++#elif __PPC64__
++  const __m128i all1 = vec_splat16sb(0xff);
++#else
++#error "Unsupported architecture."
++#endif
+ #endif
+   __m128i* vv128 = (__m128i*)main_bitvec;
+   const __m128i* ev128 = (const __m128i*)inverted_or_bitvec;
+   __m128i* vv128_end = &(vv128[word_ct / 2]);
+   while (vv128 < vv128_end) {
++#ifdef __x86_64__
+     *vv128 = _mm_or_si128(_mm_xor_si128(*ev128++, all1), *vv128);
++#elif __PPC64__
++    *vv128 = vec_bitor1q(vec_bitxor1q(*ev128++, all1), *vv128);
++#else
++#error "Unsupported architecture."
++#endif
+     vv128++;
+   }
+   if (word_ct & 1) {
+@@ -5812,7 +5860,13 @@
+   __m128i* xorv128 = (__m128i*)arg_bitvec;
+   __m128i* bitv128_end = &(bitv128[word_ct / 2]);
+   while (bitv128 < bitv128_end) {
++#ifdef __x86_64__
+     *bitv128 = _mm_xor_si128(*xorv128++, *bitv128);
++#elif __PPC64__
++    *bitv128 = vec_bitxor1q(*xorv128++, *bitv128);
++#else
++#error "Unsupported architecture."
++#endif
+     bitv128++;
+   }
+   if (word_ct & 1) {
+@@ -6005,10 +6059,19 @@
+ // Basic SSE2 implementation of Lauradoux/Walisch popcount.
+ static inline uintptr_t popcount_vecs(const __m128i* vptr, uintptr_t ct) {
+   // popcounts vptr[0..(ct-1)].  Assumes ct is a multiple of 3 (0 ok).
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   uintptr_t tot = 0;
+   const __m128i* vend;
+   __m128i count1;
+@@ -6021,11 +6084,18 @@
+     ct -= 30;
+     vend = &(vptr[30]);
+   popcount_vecs_main_loop:
++#ifdef __x86_64__
+     acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++    acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+     do {
+       count1 = *vptr++;
+       count2 = *vptr++;
+       half1 = *vptr++;
++#ifdef __x86_64__
+       half2 = _mm_and_si128(_mm_srli_epi64(half1, 1), m1);
+       half1 = _mm_and_si128(half1, m1);
+       // Two bits can represent values from 0-3, so make each pair in count1
+@@ -6041,8 +6111,33 @@
+       count1 = _mm_add_epi64(count1, _mm_add_epi64(_mm_and_si128(count2, m2), _mm_and_si128(_mm_srli_epi64(count2, 2), m2)));
+       // Accumulator stores sixteen 0-255 counts in parallel.
+       acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(count1, m4), _mm_and_si128(_mm_srli_epi64(count1, 4), m4)));
++#elif __PPC64__
++      half2 = vec_bitand1q(vec_shiftrightlogical2dimmediate(half1, 1), m1);
++      half1 = vec_bitand1q(half1, m1);
++      // Two bits can represent values from 0-3, so make each pair in count1
++      // count2 store a partial bitcount covering themselves AND another bit
++      // from elsewhere.
++      count1 = vec_subtract2sd(count1, vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 1), m1));
++      count2 = vec_subtract2sd(count2, vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 1), m1));
++      count1 = vec_add2sd(count1, half1);
++      count2 = vec_add2sd(count2, half2);
++      // Four bits represent 0-15, so we can safely add four 0-3 partial
++      // bitcounts together.
++      count1 = vec_add2sd(vec_bitand1q(count1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 2), m2));
++      count1 = vec_add2sd(count1, vec_add2sd(vec_bitand1q(count2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 2), m2)));
++      // Accumulator stores sixteen 0-255 counts in parallel.
++      acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(count1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+     } while (vptr < vend);
++#ifdef __x86_64__
+     acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++#elif __PPC64__
++    acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+     tot += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   }
+   if (ct) {
+@@ -6055,9 +6150,17 @@
+ 
+ static inline uintptr_t popcount2_vecs(const __m128i* vptr, uintptr_t ct) {
+   // assumes ct is a multiple of 6.
++#ifdef __x86_64__
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   uintptr_t tot = 0;
+   const __m128i* vend;
+   __m128i loader1;
+@@ -6070,10 +6173,17 @@
+     ct -= 30;
+     vend = &(vptr[30]);
+   popcount2_vecs_main_loop:
++#ifdef __x86_64__
+     acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++    acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+     do {
+       loader1 = *vptr++;
+       loader2 = *vptr++;
++#ifdef __x86_64__
+       count1 = _mm_add_epi64(_mm_and_si128(loader1, m2), _mm_and_si128(_mm_srli_epi64(loader1, 2), m2));
+       count2 = _mm_add_epi64(_mm_and_si128(loader2, m2), _mm_and_si128(_mm_srli_epi64(loader2, 2), m2));
+ 
+@@ -6089,8 +6199,33 @@
+ 
+       acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(count1, m4), _mm_and_si128(_mm_srli_epi64(count1, 4), m4)));
+       acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(count2, m4), _mm_and_si128(_mm_srli_epi64(count2, 4), m4)));
++#elif __PPC64__
++      count1 = vec_add2sd(vec_bitand1q(loader1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader1, 2), m2));
++      count2 = vec_add2sd(vec_bitand1q(loader2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader2, 2), m2));
++
++      loader1 = *vptr++;
++      loader2 = *vptr++;
++      count1 = vec_add2sd(count1, vec_add2sd(vec_bitand1q(loader1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader1, 2), m2)));
++      count2 = vec_add2sd(count2, vec_add2sd(vec_bitand1q(loader2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader2, 2), m2)));
++
++      loader1 = *vptr++;
++      loader2 = *vptr++;
++      count1 = vec_add2sd(count1, vec_add2sd(vec_bitand1q(loader1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader1, 2), m2)));
++      count2 = vec_add2sd(count2, vec_add2sd(vec_bitand1q(loader2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader2, 2), m2)));
++
++      acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(count1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 4), m4)));
++      acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(count2, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+     } while (vptr < vend);
++#ifdef __x86_64__
+     acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++#elif __PPC64__
++    acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+     tot += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   }
+   if (ct) {
+@@ -6103,10 +6238,19 @@
+ 
+ static inline uintptr_t popcount_vecs_exclude(const __m128i* __restrict vptr, const __m128i* __restrict exclude_ptr, uintptr_t ct) {
+   // popcounts vptr ANDNOT exclude_ptr[0..(ct-1)].  ct is a multiple of 3.
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   uintptr_t tot = 0;
+   const __m128i* vend;
+   __m128i count1, count2, half1, half2;
+@@ -6116,9 +6260,16 @@
+     ct -= 30;
+     vend = &(vptr[30]);
+   popcount_vecs_exclude_main_loop:
++#ifdef __x86_64__
+     acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++    acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+     do {
+       // nots the FIRST value
++#ifdef __x86_64__
+       count1 = _mm_andnot_si128(*exclude_ptr++, *vptr++);
+       count2 = _mm_andnot_si128(*exclude_ptr++, *vptr++);
+       half1 = _mm_andnot_si128(*exclude_ptr++, *vptr++);
+@@ -6131,8 +6282,30 @@
+       count1 = _mm_add_epi64(_mm_and_si128(count1, m2), _mm_and_si128(_mm_srli_epi64(count1, 2), m2));
+       count1 = _mm_add_epi64(count1, _mm_add_epi64(_mm_and_si128(count2, m2), _mm_and_si128(_mm_srli_epi64(count2, 2), m2)));
+       acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(count1, m4), _mm_and_si128(_mm_srli_epi64(count1, 4), m4)));
++#elif __PPC64__
++      count1 = vec_bitandnotleft1q(*exclude_ptr++, *vptr++);
++      count2 = vec_bitandnotleft1q(*exclude_ptr++, *vptr++);
++      half1 = vec_bitandnotleft1q(*exclude_ptr++, *vptr++);
++      half2 = vec_bitand1q(vec_shiftrightlogical2dimmediate(half1, 1), m1);
++      half1 = vec_bitand1q(half1, m1);
++      count1 = vec_subtract2sd(count1, vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 1), m1));
++      count2 = vec_subtract2sd(count2, vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 1), m1));
++      count1 = vec_add2sd(count1, half1);
++      count2 = vec_add2sd(count2, half2);
++      count1 = vec_add2sd(vec_bitand1q(count1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 2), m2));
++      count1 = vec_add2sd(count1, vec_add2sd(vec_bitand1q(count2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 2), m2)));
++      acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(count1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+     } while (vptr < vend);
++#ifdef __x86_64__
+     acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++#elif __PPC64__
++    acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+     tot += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   }
+   if (ct) {
+@@ -6145,10 +6318,19 @@
+ 
+ static inline uintptr_t popcount_vecs_intersect(const __m128i* __restrict vptr1, const __m128i* __restrict vptr2, uintptr_t ct) {
+   // popcounts vptr1 AND vptr2[0..(ct-1)].  ct is a multiple of 3.
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   uintptr_t tot = 0;
+   const __m128i* vend1;
+   __m128i count1, count2, half1, half2;
+@@ -6158,8 +6340,15 @@
+     ct -= 30;
+     vend1 = &(vptr1[30]);
+   popcount_vecs_intersect_main_loop:
++#ifdef __x86_64__
+     acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++    acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+     do {
++#ifdef __x86_64__
+       count1 = _mm_and_si128(*vptr2++, *vptr1++);
+       count2 = _mm_and_si128(*vptr2++, *vptr1++);
+       half1 = _mm_and_si128(*vptr2++, *vptr1++);
+@@ -6172,8 +6361,30 @@
+       count1 = _mm_add_epi64(_mm_and_si128(count1, m2), _mm_and_si128(_mm_srli_epi64(count1, 2), m2));
+       count1 = _mm_add_epi64(count1, _mm_add_epi64(_mm_and_si128(count2, m2), _mm_and_si128(_mm_srli_epi64(count2, 2), m2)));
+       acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(count1, m4), _mm_and_si128(_mm_srli_epi64(count1, 4), m4)));
++#elif __PPC64__
++      count1 = vec_bitand1q(*vptr2++, *vptr1++);
++      count2 = vec_bitand1q(*vptr2++, *vptr1++);
++      half1 = vec_bitand1q(*vptr2++, *vptr1++);
++      half2 = vec_bitand1q(vec_shiftrightlogical2dimmediate(half1, 1), m1);
++      half1 = vec_bitand1q(half1, m1);
++      count1 = vec_subtract2sd(count1, vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 1), m1));
++      count2 = vec_subtract2sd(count2, vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 1), m1));
++      count1 = vec_add2sd(count1, half1);
++      count2 = vec_add2sd(count2, half2);
++      count1 = vec_add2sd(vec_bitand1q(count1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 2), m2));
++      count1 = vec_add2sd(count1, vec_add2sd(vec_bitand1q(count2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 2), m2)));
++      acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(count1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+     } while (vptr1 < vend1);
++#ifdef __x86_64__
+     acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++#elif __PPC64__
++    acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+     tot += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   }
+   if (ct) {
+@@ -6698,8 +6909,15 @@
+ 
+ #ifdef __LP64__
+ void count_2freq_dbl_960b(const VECITYPE* geno_vvec, const VECITYPE* geno_vvec_end, const VECITYPE* __restrict mask1vp, const VECITYPE* __restrict mask2vp, uint32_t* __restrict ct1abp, uint32_t* __restrict ct1cp, uint32_t* __restrict ct2abp, uint32_t* __restrict ct2cp) {
++#ifdef __x86_64__
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
++#elif __PPC64__
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   __m128i loader2;
+   __m128i loader3;
+@@ -6713,13 +6931,23 @@
+   __univec acc2_ab;
+   __univec acc2_c;
+ 
++#ifdef __x86_64__
+   acc1_ab.vi = _mm_setzero_si128();
+   acc1_c.vi = _mm_setzero_si128();
+   acc2_ab.vi = _mm_setzero_si128();
+   acc2_c.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc1_ab.vi = vec_zero1q();
++  acc1_c.vi = vec_zero1q();
++  acc2_ab.vi = vec_zero1q();
++  acc2_c.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
+     loader = *geno_vvec++;
+     loader2 = *mask1vp++;
++#ifdef __x86_64__
+     loader3 = _mm_and_si128(loader2, _mm_srli_epi64(loader, 1));
+     loader2 = _mm_and_si128(loader2, loader);
+     to_ct1_ab = _mm_add_epi64(loader3, loader2);
+@@ -6767,12 +6995,73 @@
+     acc1_c.vi = _mm_add_epi64(acc1_c.vi, _mm_add_epi64(_mm_and_si128(to_ct1_c, m4), _mm_and_si128(_mm_srli_epi64(to_ct1_c, 4), m4)));
+     acc2_ab.vi = _mm_add_epi64(acc2_ab.vi, _mm_add_epi64(_mm_and_si128(to_ct2_ab, m4), _mm_and_si128(_mm_srli_epi64(to_ct2_ab, 4), m4)));
+     acc2_c.vi = _mm_add_epi64(acc2_c.vi, _mm_add_epi64(_mm_and_si128(to_ct2_c, m4), _mm_and_si128(_mm_srli_epi64(to_ct2_c, 4), m4)));
++#elif __PPC64__
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    loader2 = vec_bitand1q(loader2, loader);
++    to_ct1_ab = vec_add2sd(loader3, loader2);
++    to_ct1_c = vec_bitandnotleft1q(loader3, loader2);
++    loader2 = *mask2vp++;
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    loader2 = vec_bitand1q(loader2, loader);
++    to_ct2_ab = vec_add2sd(loader3, loader2);
++    to_ct2_c = vec_bitandnotleft1q(loader3, loader2);
++    to_ct1_ab = vec_add2sd(vec_bitand1q(to_ct1_ab, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct1_ab, 2), m2));
++    to_ct2_ab = vec_add2sd(vec_bitand1q(to_ct2_ab, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct2_ab, 2), m2));
++
++    loader = *geno_vvec++;
++    loader2 = *mask1vp++;
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    loader2 = vec_bitand1q(loader2, loader);
++    to_ct_abtmp = vec_add2sd(loader3, loader2);
++    to_ct1_c = vec_add2sd(to_ct1_c, vec_bitandnotleft1q(loader3, loader2));
++    to_ct1_ab = vec_add2sd(to_ct1_ab, vec_add2sd(vec_bitand1q(to_ct_abtmp, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_abtmp, 2), m2)));
++    loader2 = *mask2vp++;
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    loader2 = vec_bitand1q(loader2, loader);
++    to_ct_abtmp = vec_add2sd(loader3, loader2);
++    to_ct2_c = vec_add2sd(to_ct2_c, vec_bitandnotleft1q(loader3, loader2));
++    to_ct2_ab = vec_add2sd(to_ct2_ab, vec_add2sd(vec_bitand1q(to_ct_abtmp, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_abtmp, 2), m2)));
++
++    loader = *geno_vvec++;
++    loader2 = *mask1vp++;
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    loader2 = vec_bitand1q(loader2, loader);
++    to_ct_abtmp = vec_add2sd(loader3, loader2);
++    to_ct1_c = vec_add2sd(to_ct1_c, vec_bitandnotleft1q(loader3, loader2));
++    to_ct1_ab = vec_add2sd(to_ct1_ab, vec_add2sd(vec_bitand1q(to_ct_abtmp, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_abtmp, 2), m2)));
++    loader2 = *mask2vp++;
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    loader2 = vec_bitand1q(loader2, loader);
++    to_ct_abtmp = vec_add2sd(loader3, loader2);
++    to_ct2_c = vec_add2sd(to_ct2_c, vec_bitandnotleft1q(loader3, loader2));
++    to_ct2_ab = vec_add2sd(to_ct2_ab, vec_add2sd(vec_bitand1q(to_ct_abtmp, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_abtmp, 2), m2)));
++
++    to_ct1_c = vec_add2sd(vec_bitand1q(to_ct1_c, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct1_c, 2), m2));
++    to_ct2_c = vec_add2sd(vec_bitand1q(to_ct2_c, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct2_c, 2), m2));
++
++    acc1_ab.vi = vec_add2sd(acc1_ab.vi, vec_add2sd(vec_bitand1q(to_ct1_ab, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct1_ab, 4), m4)));
++    acc1_c.vi = vec_add2sd(acc1_c.vi, vec_add2sd(vec_bitand1q(to_ct1_c, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct1_c, 4), m4)));
++    acc2_ab.vi = vec_add2sd(acc2_ab.vi, vec_add2sd(vec_bitand1q(to_ct2_ab, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct2_ab, 4), m4)));
++    acc2_c.vi = vec_add2sd(acc2_c.vi, vec_add2sd(vec_bitand1q(to_ct2_c, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct2_c, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (geno_vvec < geno_vvec_end);
++#ifdef __x86_64__
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
+   acc1_ab.vi = _mm_add_epi64(_mm_and_si128(acc1_ab.vi, m8), _mm_and_si128(_mm_srli_epi64(acc1_ab.vi, 8), m8));
+   acc1_c.vi = _mm_and_si128(_mm_add_epi64(acc1_c.vi, _mm_srli_epi64(acc1_c.vi, 8)), m8);
+   acc2_ab.vi = _mm_add_epi64(_mm_and_si128(acc2_ab.vi, m8), _mm_and_si128(_mm_srli_epi64(acc2_ab.vi, 8), m8));
+   acc2_c.vi = _mm_and_si128(_mm_add_epi64(acc2_c.vi, _mm_srli_epi64(acc2_c.vi, 8)), m8);
++#elif __PPC64__
++  const __m128i m8 = vec_splat8sh(0x00ff);
++  acc1_ab.vi = vec_add2sd(vec_bitand1q(acc1_ab.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc1_ab.vi, 8), m8));
++  acc1_c.vi = vec_bitand1q(vec_add2sd(acc1_c.vi, vec_shiftrightlogical2dimmediate(acc1_c.vi, 8)), m8);
++  acc2_ab.vi = vec_add2sd(vec_bitand1q(acc2_ab.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc2_ab.vi, 8), m8));
++  acc2_c.vi = vec_bitand1q(vec_add2sd(acc2_c.vi, vec_shiftrightlogical2dimmediate(acc2_c.vi, 8)), m8);
++#else
++#error "Unsupported architecture."
++#endif
+   *ct1abp += ((acc1_ab.u8[0] + acc1_ab.u8[1]) * 0x1000100010001LLU) >> 48;
+   *ct1cp += ((acc1_c.u8[0] + acc1_c.u8[1]) * 0x1000100010001LLU) >> 48;
+   *ct2abp += ((acc2_ab.u8[0] + acc2_ab.u8[1]) * 0x1000100010001LLU) >> 48;
+@@ -6780,8 +7069,15 @@
+ }
+ 
+ void count_3freq_1920b(const VECITYPE* geno_vvec, const VECITYPE* geno_vvec_end, const VECITYPE* __restrict maskvp, uint32_t* __restrict even_ctp, uint32_t* __restrict odd_ctp, uint32_t* __restrict homset_ctp) {
++#ifdef __x86_64__
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
++#elif __PPC64__
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   __m128i loader2;
+   __m128i loader3;
+@@ -6795,12 +7091,21 @@
+   __univec acc_odd;
+   __univec acc_homset;
+ 
++#ifdef __x86_64__
+   acc_even.vi = _mm_setzero_si128();
+   acc_odd.vi = _mm_setzero_si128();
+   acc_homset.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc_even.vi = vec_zero1q();
++  acc_odd.vi = vec_zero1q();
++  acc_homset.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
+     loader = *geno_vvec++;
+     loader2 = *maskvp++;
++#ifdef __x86_64__
+     odd1 = _mm_and_si128(loader2, _mm_srli_epi64(loader, 1));
+     even1 = _mm_and_si128(loader2, loader);
+     homset1 = _mm_and_si128(odd1, loader);
+@@ -6846,11 +7151,69 @@
+     acc_even.vi = _mm_add_epi64(acc_even.vi, _mm_add_epi64(_mm_and_si128(even1, m4), _mm_and_si128(_mm_srli_epi64(even1, 4), m4)));
+     acc_odd.vi = _mm_add_epi64(acc_odd.vi, _mm_add_epi64(_mm_and_si128(odd1, m4), _mm_and_si128(_mm_srli_epi64(odd1, 4), m4)));
+     acc_homset.vi = _mm_add_epi64(acc_homset.vi, _mm_add_epi64(_mm_and_si128(homset1, m4), _mm_and_si128(_mm_srli_epi64(homset1, 4), m4)));
++#elif __PPC64__
++    odd1 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    even1 = vec_bitand1q(loader2, loader);
++    homset1 = vec_bitand1q(odd1, loader);
++    loader = *geno_vvec++;
++    loader2 = *maskvp++;
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    even1 = vec_add2sd(even1, vec_bitand1q(loader2, loader));
++    odd1 = vec_add2sd(odd1, loader3);
++    homset1 = vec_add2sd(homset1, vec_bitand1q(loader3, loader));
++    loader = *geno_vvec++;
++    loader2 = *maskvp++;
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    even1 = vec_add2sd(even1, vec_bitand1q(loader2, loader));
++    odd1 = vec_add2sd(odd1, loader3);
++    homset1 = vec_add2sd(homset1, vec_bitand1q(loader3, loader));
++
++    even1 = vec_add2sd(vec_bitand1q(even1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(even1, 2), m2));
++    odd1 = vec_add2sd(vec_bitand1q(odd1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(odd1, 2), m2));
++    homset1 = vec_add2sd(vec_bitand1q(homset1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(homset1, 2), m2));
++
++    loader = *geno_vvec++;
++    loader2 = *maskvp++;
++    odd2 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    even2 = vec_bitand1q(loader2, loader);
++    homset2 = vec_bitand1q(odd2, loader);
++    loader = *geno_vvec++;
++    loader2 = *maskvp++;
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    even2 = vec_add2sd(even2, vec_bitand1q(loader2, loader));
++    odd2 = vec_add2sd(odd2, loader3);
++    homset2 = vec_add2sd(homset2, vec_bitand1q(loader3, loader));
++    loader = *geno_vvec++;
++    loader2 = *maskvp++;
++    loader3 = vec_bitand1q(loader2, vec_shiftrightlogical2dimmediate(loader, 1));
++    even2 = vec_add2sd(even2, vec_bitand1q(loader2, loader));
++    odd2 = vec_add2sd(odd2, loader3);
++    homset2 = vec_add2sd(homset2, vec_bitand1q(loader3, loader));
++
++    even1 = vec_add2sd(even1, vec_add2sd(vec_bitand1q(even2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(even2, 2), m2)));
++    odd1 = vec_add2sd(odd1, vec_add2sd(vec_bitand1q(odd2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(odd2, 2), m2)));
++    homset1 = vec_add2sd(homset1, vec_add2sd(vec_bitand1q(homset2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(homset2, 2), m2)));
++
++    acc_even.vi = vec_add2sd(acc_even.vi, vec_add2sd(vec_bitand1q(even1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(even1, 4), m4)));
++    acc_odd.vi = vec_add2sd(acc_odd.vi, vec_add2sd(vec_bitand1q(odd1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(odd1, 4), m4)));
++    acc_homset.vi = vec_add2sd(acc_homset.vi, vec_add2sd(vec_bitand1q(homset1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(homset1, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (geno_vvec < geno_vvec_end);
++#ifdef __x86_64__
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
+   acc_even.vi = _mm_add_epi64(_mm_and_si128(acc_even.vi, m8), _mm_and_si128(_mm_srli_epi64(acc_even.vi, 8), m8));
+   acc_odd.vi = _mm_add_epi64(_mm_and_si128(acc_odd.vi, m8), _mm_and_si128(_mm_srli_epi64(acc_odd.vi, 8), m8));
+   acc_homset.vi = _mm_add_epi64(_mm_and_si128(acc_homset.vi, m8), _mm_and_si128(_mm_srli_epi64(acc_homset.vi, 8), m8));
++#elif __PPC64__
++  const __m128i m8 = vec_splat8sh(0x00ff);
++  acc_even.vi = vec_add2sd(vec_bitand1q(acc_even.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_even.vi, 8), m8));
++  acc_odd.vi = vec_add2sd(vec_bitand1q(acc_odd.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_odd.vi, 8), m8));
++  acc_homset.vi = vec_add2sd(vec_bitand1q(acc_homset.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_homset.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+   *even_ctp += ((acc_even.u8[0] + acc_even.u8[1]) * 0x1000100010001LLU) >> 48;
+   *odd_ctp += ((acc_odd.u8[0] + acc_odd.u8[1]) * 0x1000100010001LLU) >> 48;
+   *homset_ctp += ((acc_homset.u8[0] + acc_homset.u8[1]) * 0x1000100010001LLU) >> 48;
+@@ -7079,9 +7442,17 @@
+ 
+ #ifdef __LP64__
+ void count_set_freq_60v(const __m128i* vptr, const __m128i* vend, const __m128i* __restrict include_vec, uint32_t* __restrict set_ctp, uint32_t* __restrict missing_ctp) {
++#ifdef __x86_64__
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   __m128i loader2;
+   __m128i loader3;
+@@ -7090,10 +7461,18 @@
+   __m128i missings;
+   __univec acc;
+   __univec accm;
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
+   accm.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++  accm.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
+     loader = *vptr++;
++#ifdef __x86_64__
+     loader2 = _mm_srli_epi64(loader, 1);
+     loader3 = *include_vec++;
+     odds = _mm_and_si128(loader2, loader3);
+@@ -7124,19 +7503,69 @@
+     accm.vi = _mm_add_epi64(accm.vi, _mm_and_si128(_mm_add_epi64(missings, _mm_srli_epi64(missings, 4)), m4));
+ 
+     acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(odds, m4), _mm_and_si128(_mm_srli_epi64(odds, 4), m4)));
++#elif __PPC64__
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    odds = vec_bitand1q(loader2, loader3);
++    evens = vec_bitand1q(odds, loader);
++    missings = vec_bitand1q(loader, vec_bitandnotleft1q(loader2, loader3));
++
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    odds = vec_add2sd(odds, vec_bitand1q(loader2, loader3));
++    loader3 = vec_bitand1q(loader, loader3);
++    evens = vec_add2sd(evens, vec_bitand1q(loader2, loader3));
++    missings = vec_add2sd(missings, vec_bitandnotleft1q(loader2, loader3));
++
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    odds = vec_add2sd(odds, vec_bitand1q(loader2, loader3));
++    loader3 = vec_bitand1q(loader, loader3);
++    evens = vec_add2sd(evens, vec_bitand1q(loader2, loader3));
++    missings = vec_add2sd(missings, vec_bitandnotleft1q(loader2, loader3));
++
++    odds = vec_add2sd(vec_bitand1q(odds, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(odds, 2), m2));
++    missings = vec_add2sd(vec_bitand1q(missings, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(missings, 2), m2));
++    odds = vec_add2sd(odds, vec_add2sd(vec_bitand1q(evens, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(evens, 2), m2)));
++
++    // each 4-bit value here <= 6, so safe to add before m4 mask
++    accm.vi = vec_add2sd(accm.vi, vec_bitand1q(vec_add2sd(missings, vec_shiftrightlogical2dimmediate(missings, 4)), m4));
++
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(odds, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(odds, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (vptr < vend);
+   // and each 8-bit value here <= 120
++#ifdef __x86_64__
+   accm.vi = _mm_and_si128(_mm_add_epi64(accm.vi, _mm_srli_epi64(accm.vi, 8)), m8);
+ 
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++#elif __PPC64__
++  accm.vi = vec_bitand1q(vec_add2sd(accm.vi, vec_shiftrightlogical2dimmediate(accm.vi, 8)), m8);
++
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+   *set_ctp += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   *missing_ctp += ((accm.u8[0] + accm.u8[1]) * 0x1000100010001LLU) >> 48;
+ }
+ 
+ void count_set_freq_hap_120v(const __m128i* vptr, const __m128i* vend, const __m128i* __restrict include_vec, uint32_t* __restrict set_ctp, uint32_t* __restrict missing_ctp) {
++#ifdef __x86_64__
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __univec acc;
+   __univec accm;
+   __m128i loader;
+@@ -7146,9 +7575,17 @@
+   __m128i partialm;
+   __m128i partial2;
+   __m128i partial2m;
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
+   accm.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++  accm.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
++#ifdef __x86_64__
+     loader = *vptr++;
+     loader2 = _mm_srli_epi64(loader, 1);
+     loader3 = *include_vec++;
+@@ -7186,17 +7623,73 @@
+     partial2m = _mm_add_epi64(partial2m, _mm_add_epi64(_mm_and_si128(partialm, m2), _mm_and_si128(_mm_srli_epi64(partialm, 2), m2)));
+     acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(partial2, m4), _mm_and_si128(_mm_srli_epi64(partial2, 4), m4)));
+     accm.vi = _mm_add_epi64(accm.vi, _mm_add_epi64(_mm_and_si128(partial2m, m4), _mm_and_si128(_mm_srli_epi64(partial2m, 4), m4)));
++#elif __PPC64__
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    partial = vec_bitand1q(loader3, vec_bitand1q(loader, loader2));
++    partialm = vec_bitand1q(loader3, vec_bitxor1q(loader, loader2));
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    partial = vec_add2sd(partial, vec_bitand1q(loader3, vec_bitand1q(loader, loader2)));
++    partialm = vec_add2sd(partialm, vec_bitand1q(loader3, vec_bitand1q(loader, loader2)));
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    partial = vec_add2sd(partial, vec_bitand1q(loader3, vec_bitand1q(loader, loader2)));
++    partialm = vec_add2sd(partialm, vec_bitand1q(loader3, vec_bitand1q(loader, loader2)));
++    partial2 = vec_add2sd(vec_bitand1q(partial, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(partial, 2), m2));
++    partial2m = vec_add2sd(vec_bitand1q(partialm, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(partialm, 2), m2));
++
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    partial = vec_bitand1q(loader3, vec_bitand1q(loader, loader2));
++    partialm = vec_bitand1q(loader3, vec_bitxor1q(loader, loader2));
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    partial = vec_add2sd(partial, vec_bitand1q(loader3, vec_bitand1q(loader, loader2)));
++    partialm = vec_add2sd(partialm, vec_bitand1q(loader3, vec_bitand1q(loader, loader2)));
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    partial = vec_add2sd(partial, vec_bitand1q(loader3, vec_bitand1q(loader, loader2)));
++    partialm = vec_add2sd(partialm, vec_bitand1q(loader3, vec_bitand1q(loader, loader2)));
++    partial2 = vec_add2sd(partial2, vec_add2sd(vec_bitand1q(partial, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(partial, 2), m2)));
++    partial2m = vec_add2sd(partial2m, vec_add2sd(vec_bitand1q(partialm, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(partialm, 2), m2)));
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(partial2, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(partial2, 4), m4)));
++    accm.vi = vec_add2sd(accm.vi, vec_add2sd(vec_bitand1q(partial2m, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(partial2m, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (vptr < vend);
++#ifdef __x86_64__
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
+   accm.vi = _mm_add_epi64(_mm_and_si128(accm.vi, m8), _mm_and_si128(_mm_srli_epi64(accm.vi, 8), m8));
++#elif __PPC64__
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++  accm.vi = vec_add2sd(vec_bitand1q(accm.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(accm.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+   *set_ctp += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   *missing_ctp += ((accm.u8[0] + accm.u8[1]) * 0x1000100010001LLU) >> 48;
+ }
+ 
+ void count_set_freq_x_60v(const __m128i* vptr, const __m128i* vend, const __m128i* __restrict include_vec, const __m128i* __restrict male_vec, uint32_t* __restrict set_ctp, uint32_t* __restrict missing_ctp) {
++#ifdef __x86_64__
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   __m128i loader2;
+   __m128i loader3;
+@@ -7208,9 +7701,17 @@
+   __m128i males;
+   __univec acc;
+   __univec accm;
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
+   accm.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++  accm.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
++#ifdef __x86_64__
+     loader = *vptr++;
+     loader2 = _mm_srli_epi64(loader, 1);
+     loader3 = *include_vec++;
+@@ -7256,17 +7757,81 @@
+     missings_nm = _mm_add_epi64(missings_nm, _mm_add_epi64(_mm_and_si128(males, m2), _mm_and_si128(_mm_srli_epi64(males, 2), m2)));
+     acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(set_odds, m4), _mm_and_si128(_mm_srli_epi64(set_odds, 4), m4)));
+     accm.vi = _mm_add_epi64(accm.vi, _mm_add_epi64(_mm_and_si128(missings_nm, m4), _mm_and_si128(_mm_srli_epi64(missings_nm, 4), m4)));
++#elif __PPC64__
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    loader4 = vec_bitandnotleft1q(*male_vec, loader3);
++    set_evens = vec_bitand1q(loader, loader4); // subtract missings_nm later
++    set_odds = vec_bitand1q(loader2, loader4);
++    missings_nm = vec_bitandnotleft1q(loader2, set_evens);
++    males = vec_bitand1q(loader3, *male_vec++);
++    set_evens = vec_bitor1q(set_evens, vec_bitand1q(vec_bitand1q(loader, loader2), males));
++    missings_m = vec_bitand1q(vec_bitxor1q(loader, loader2), males);
++
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    loader4 = vec_bitandnotleft1q(*male_vec, loader3);
++    set_odds = vec_add2sd(set_odds, vec_bitand1q(loader2, loader4));
++    loader4 = vec_bitand1q(loader, loader4);
++    set_evens = vec_add2sd(set_evens, loader4);
++    missings_nm = vec_add2sd(missings_nm, vec_bitandnotleft1q(loader2, loader4));
++    loader4 = vec_bitand1q(loader3, *male_vec++);
++    set_evens = vec_add2sd(set_evens, vec_bitand1q(vec_bitand1q(loader, loader2), loader4));
++    missings_m = vec_add2sd(missings_m, vec_bitand1q(vec_bitxor1q(loader, loader2), loader4));
++    males = vec_add2sd(males, loader4);
++
++    loader = *vptr++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader3 = *include_vec++;
++    loader4 = vec_bitandnotleft1q(*male_vec, loader3);
++    set_odds = vec_add2sd(set_odds, vec_bitand1q(loader2, loader4));
++    loader4 = vec_bitand1q(loader, loader4);
++    set_evens = vec_add2sd(set_evens, loader4);
++    missings_nm = vec_add2sd(missings_nm, vec_bitandnotleft1q(loader2, loader4));
++    loader4 = vec_bitand1q(loader3, *male_vec++);
++    set_evens = vec_add2sd(set_evens, vec_bitand1q(vec_bitand1q(loader, loader2), loader4));
++    missings_m = vec_add2sd(missings_m, vec_bitand1q(vec_bitxor1q(loader, loader2), loader4));
++    males = vec_add2sd(males, loader4);
++
++    set_evens = vec_subtract2sd(set_evens, missings_nm);
++    missings_nm = vec_shiftleftimmediate2sd(vec_add2sd(vec_bitand1q(missings_nm, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(missings_nm, 2), m2)), 1);
++    set_odds = vec_add2sd(vec_bitand1q(set_odds, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(set_odds, 2), m2));
++    missings_nm = vec_add2sd(missings_nm, vec_add2sd(vec_bitand1q(missings_m, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(missings_m, 2), m2)));
++    set_odds = vec_add2sd(set_odds, vec_add2sd(vec_bitand1q(set_evens, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(set_evens, 2), m2)));
++    missings_nm = vec_add2sd(missings_nm, vec_add2sd(vec_bitand1q(males, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(males, 2), m2)));
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(set_odds, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(set_odds, 4), m4)));
++    accm.vi = vec_add2sd(accm.vi, vec_add2sd(vec_bitand1q(missings_nm, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(missings_nm, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (vptr < vend);
++#ifdef __x86_64__
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
+   accm.vi = _mm_add_epi64(_mm_and_si128(accm.vi, m8), _mm_and_si128(_mm_srli_epi64(accm.vi, 8), m8));
++#elif __PPC64__
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++  accm.vi = vec_add2sd(vec_bitand1q(accm.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(accm.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+   *set_ctp += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   *missing_ctp += ((accm.u8[0] + accm.u8[1]) * 0x1000100010001LLU) >> 48;
+ }
+ 
+ void count_set_freq_y_120v(const __m128i* vptr, const __m128i* vend, const __m128i* __restrict include_vec, const __m128i* __restrict nonmale_vec, uint32_t* __restrict set_ctp, uint32_t* __restrict missing_ctp) {
++#ifdef __x86_64__
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   __m128i loader2;
+   __m128i loader3;
+@@ -7277,6 +7842,8 @@
+   __m128i missings2;
+   __univec acc;
+   __univec accm;
++
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
+   accm.vi = _mm_setzero_si128();
+   do {
+@@ -7330,6 +7897,64 @@
+   } while (vptr < vend);
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
+   accm.vi = _mm_add_epi64(_mm_and_si128(accm.vi, m8), _mm_and_si128(_mm_srli_epi64(accm.vi, 8), m8));
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++  accm.vi = vec_zero1q();
++  do {
++    loader = *vptr++;
++    loader3 = *include_vec++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader4 = *nonmale_vec++;
++    sets1 = vec_bitand1q(vec_bitandnotleft1q(loader4, loader3), vec_bitand1q(loader, loader2));
++    missings1 = vec_bitand1q(loader3, vec_bitor1q(loader4, vec_bitxor1q(loader, loader2)));
++
++    loader = *vptr++;
++    loader3 = *include_vec++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader4 = *nonmale_vec++;
++    sets1 = vec_add2sd(sets1, vec_bitand1q(vec_bitandnotleft1q(loader4, loader3), vec_bitand1q(loader, loader2)));
++    missings1 = vec_add2sd(missings1, vec_bitand1q(loader3, vec_bitor1q(loader4, vec_bitxor1q(loader, loader2))));
++
++    loader = *vptr++;
++    loader3 = *include_vec++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader4 = *nonmale_vec++;
++    sets1 = vec_add2sd(sets1, vec_bitand1q(vec_bitandnotleft1q(loader4, loader3), vec_bitand1q(loader, loader2)));
++    missings1 = vec_add2sd(missings1, vec_bitand1q(loader3, vec_bitor1q(loader4, vec_bitxor1q(loader, loader2))));
++    sets1 = vec_add2sd(vec_bitand1q(sets1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(sets1, 2), m2));
++    missings1 = vec_add2sd(vec_bitand1q(missings1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(missings1, 2), m2));
++
++    loader = *vptr++;
++    loader3 = *include_vec++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader4 = *nonmale_vec++;
++    sets2 = vec_bitand1q(vec_bitandnotleft1q(loader4, loader3), vec_bitand1q(loader, loader2));
++    missings2 = vec_bitand1q(loader3, vec_bitor1q(loader4, vec_bitxor1q(loader, loader2)));
++
++    loader = *vptr++;
++    loader3 = *include_vec++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader4 = *nonmale_vec++;
++    sets2 = vec_add2sd(sets2, vec_bitand1q(vec_bitandnotleft1q(loader4, loader3), vec_bitand1q(loader, loader2)));
++    missings2 = vec_add2sd(missings2, vec_bitand1q(loader3, vec_bitor1q(loader4, vec_bitxor1q(loader, loader2))));
++
++    loader = *vptr++;
++    loader3 = *include_vec++;
++    loader2 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader4 = *nonmale_vec++;
++    sets2 = vec_add2sd(sets2, vec_bitand1q(vec_bitandnotleft1q(loader4, loader3), vec_bitand1q(loader, loader2)));
++    missings2 = vec_add2sd(missings2, vec_bitand1q(loader3, vec_bitor1q(loader4, vec_bitxor1q(loader, loader2))));
++    sets1 = vec_add2sd(sets1, vec_add2sd(vec_bitand1q(sets2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(sets2, 2), m2)));
++    missings1 = vec_add2sd(missings1, vec_add2sd(vec_bitand1q(missings2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(missings2, 2), m2)));
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(sets1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(sets1, 4), m4)));
++    accm.vi = vec_add2sd(accm.vi, vec_add2sd(vec_bitand1q(missings1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(missings1, 4), m4)));
++  } while (vptr < vend);
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++  accm.vi = vec_add2sd(vec_bitand1q(accm.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(accm.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
++
+   *set_ctp += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   *missing_ctp += ((accm.u8[0] + accm.u8[1]) * 0x1000100010001LLU) >> 48;
+ }
+@@ -7337,10 +7962,19 @@
+ uintptr_t count_01_vecs(const __m128i* vptr, uintptr_t vct) {
+   // counts number of aligned 01s (i.e. PLINK missing genotypes) in
+   // [vptr, vend).  Assumes number of words in interval is a multiple of 12.
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   uintptr_t tot = 0;
+   const __m128i* vend;
+   __m128i loader1;
+@@ -7353,6 +7987,7 @@
+     vct -= 60;
+     vend = &(vptr[60]);
+   count_01_vecs_main_loop:
++#ifdef __x86_64__
+     acc.vi = _mm_setzero_si128();
+     do {
+       loader1 = *vptr++;
+@@ -7373,6 +8008,30 @@
+     } while (vptr < vend);
+     acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
+     tot += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
++#elif __PPC64__
++    acc.vi = vec_zero1q();
++    do {
++      loader1 = *vptr++;
++      loader2 = *vptr++;
++      count1 = vec_bitand1q(vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader1, 1), loader1), m1);
++      count2 = vec_bitand1q(vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader2, 1), loader2), m1);
++      loader1 = *vptr++;
++      loader2 = *vptr++;
++      count1 = vec_add2sd(count1, vec_bitand1q(vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader1, 1), loader1), m1));
++      count2 = vec_add2sd(count2, vec_bitand1q(vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader2, 1), loader2), m1));
++      loader1 = *vptr++;
++      loader2 = *vptr++;
++      count1 = vec_add2sd(count1, vec_bitand1q(vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader1, 1), loader1), m1));
++      count2 = vec_add2sd(count2, vec_bitand1q(vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader2, 1), loader2), m1));
++      count1 = vec_add2sd(vec_bitand1q(count1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 2), m2));
++      count1 = vec_add2sd(count1, vec_add2sd(vec_bitand1q(count2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count2, 2), m2)));
++      acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(count1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count1, 4), m4)));
++    } while (vptr < vend);
++    acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++    tot += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
++#else
++#error "Unsupported architecture."
++#endif
+   }
+   if (vct) {
+     vend = &(vptr[vct]);
+@@ -8301,7 +8960,13 @@
+   uint32_t uii;
+   uint32_t ujj;
+ #ifdef __LP64__
++  #ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
++  #elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  #else
++  #error "Unsupported architecture."
++  #endif
+   __m128i* loadbuf_alias;
+   __m128i vii;
+   __m128i vjj;
+@@ -8314,9 +8979,17 @@
+       vii = *loadbuf_alias;
+       // we want to exchange 00 and 11, and leave 01/10 untouched.  So make
+       // vjj := 11 iff vii is 00/11, and vjj := 00 otherwise; then xor.
++#ifdef __x86_64__
+       vjj = _mm_andnot_si128(_mm_xor_si128(vii, _mm_srli_epi64(vii, 1)), m1);
+       vjj = _mm_or_si128(vjj, _mm_slli_epi64(vjj, 1));
+       *loadbuf_alias++ = _mm_xor_si128(vii, vjj);
++#elif __PPC64__
++      vjj = vec_bitandnotleft1q(vec_bitxor1q(vii, vec_shiftrightlogical2dimmediate(vii, 1)), m1);
++      vjj = vec_bitor1q(vjj, vec_shiftleftimmediate2sd(vjj, 1));
++      *loadbuf_alias++ = vec_bitxor1q(vii, vjj);
++#else
++#error "Unsupported architecture."
++#endif
+     }
+     loadbuf = (unsigned char*)loadbuf_alias;
+   } else if (!(((uintptr_t)loadbuf) & 3)) {
+@@ -8934,13 +9607,25 @@
+   uint32_t vec_wsize = QUATERCT_TO_ALIGNED_WORDCT(entry_ct);
+   uint32_t rem = entry_ct & (BITCT - 1);
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i* tptr = (__m128i*)target_quatervec;
+   __m128i* sptr = (__m128i*)source_quatervec;
+   __m128i* tptr_end = (__m128i*)(&(target_quatervec[vec_wsize]));
+   uintptr_t* second_to_last;
+   while (tptr < tptr_end) {
++#ifdef __x86_64__
+     *tptr++ = _mm_andnot_si128(*sptr++, m1);
++#elif __PPC64__
++    *tptr++ = vec_bitandnotleft1q(*sptr++, m1);
++#else
++#error "Unsupported architecture."
++#endif
+   }
+   if (rem) {
+     second_to_last = &(((uintptr_t*)tptr_end)[-2]);
+@@ -8978,7 +9663,13 @@
+   __m128i* xptr = (__m128i*)exclude_vec;
+   __m128i* tptr_end = (__m128i*)(&(target_vec[round_up_pow2(word_ct, VEC_WORDS)]));
+   do {
++#ifdef __x86_64__
+     *tptr++ = _mm_andnot_si128(*xptr++, *sptr++);
++#elif __PPC64__
++    *tptr++ = vec_bitandnotleft1q(*xptr++, *sptr++);
++#else
++#error "Unsupported architecture."
++#endif
+   } while (tptr < tptr_end);
+ #else
+   uintptr_t* tptr_end = &(target_vec[word_ct]);
+@@ -9110,14 +9801,26 @@
+   // initializes result_ptr bits 01 iff input_quatervec bits are 01
+   assert(unfiltered_sample_ct);
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i* vec2_read = (__m128i*)input_quatervec;
+   __m128i* read_end = &(vec2_read[QUATERCT_TO_VECCT(unfiltered_sample_ct)]);
+   __m128i* vec2_write = (__m128i*)output_quatervec;
+   __m128i loader;
+   do {
+     loader = *vec2_read++;
++#ifdef __x86_64__
+     *vec2_write++ = _mm_and_si128(_mm_andnot_si128(_mm_srli_epi64(loader, 1), loader), m1);
++#elif __PPC64__
++    *vec2_write++ = vec_bitand1q(vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(loader, 1), loader), m1);
++#else
++#error "Unsupported architecture."
++#endif
+   } while (vec2_read < read_end);
+ #else
+   const uintptr_t* read_end = &(input_quatervec[QUATERCT_TO_ALIGNED_WORDCT(unfiltered_sample_ct)]);
+@@ -9133,11 +9836,23 @@
+   uintptr_t* vec2_last = &(main_quatervec[unfiltered_sample_ct / BITCT2]);
+   uint32_t remainder = unfiltered_sample_ct & (BITCT2 - 1);
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i* vec2_128 = (__m128i*)main_quatervec;
+   __m128i* vec2_last128 = &(vec2_128[unfiltered_sample_ct / BITCT]);
+   while (vec2_128 < vec2_last128) {
++#ifdef __x86_64__
+     *vec2_128 = _mm_xor_si128(*vec2_128, m1);
++#elif __PPC64__
++    *vec2_128 = vec_bitxor1q(*vec2_128, m1);
++#else
++#error "Unsupported architecture."
++#endif
+     vec2_128++;
+   }
+   main_quatervec = (uintptr_t*)vec2_128;
+@@ -9177,7 +9892,13 @@
+ #ifdef __LP64__
+       do {
+         loader = *data_read++;
++#ifdef __x86_64__
+         *writer++ = _mm_and_si128(_mm_andnot_si128(loader, _mm_srli_epi64(loader, 1)), *mask_read++);
++#elif __PPC64__
++        *writer++ = vec_bitand1q(vec_bitandnotleft1q(loader, vec_shiftrightlogical2dimmediate(loader, 1)), *mask_read++);
++#else
++#error "Unsupported architecture."
++#endif
+       } while (data_read < data_read_end);
+ #else
+       do {
+@@ -9189,7 +9910,13 @@
+ #ifdef __LP64__
+       do {
+         loader = *data_read++;
++#ifdef __x86_64__
+         *writer++ = _mm_and_si128(_mm_and_si128(loader, _mm_srli_epi64(loader, 1)), *mask_read++);
++#elif __PPC64__
++        *writer++ = vec_bitand1q(vec_bitand1q(loader, vec_shiftrightlogical2dimmediate(loader, 1)), *mask_read++);
++#else
++#error "Unsupported architecture."
++#endif
+       } while (data_read < data_read_end);
+ #else
+       do {
+@@ -9202,7 +9929,13 @@
+ #ifdef __LP64__
+     do {
+       loader = *data_read++;
++#ifdef __x86_64__
+       *writer++ = _mm_andnot_si128(_mm_or_si128(loader, _mm_srli_epi64(loader, 1)), *mask_read++);
++#elif __PPC64__
++      *writer++ = vec_bitandnotleft1q(vec_bitor1q(loader, vec_shiftrightlogical2dimmediate(loader, 1)), *mask_read++);
++#else
++#error "Unsupported architecture."
++#endif
+     } while (data_read < data_read_end);
+ #else
+     do {
+@@ -9216,7 +9949,13 @@
+ /*
+ void vec_rotate_plink1_to_plink2(uintptr_t* lptr, uint32_t word_ct) {
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i* vptr = (__m128i*)lptr;
+   __m128i* vend = (__m128i*)(&(lptr[word_ct]));
+   __m128i vii;
+@@ -9225,9 +9964,17 @@
+     // new high bit set iff old low bit was set
+     // new low bit set iff old bits differed 
+     vii = *vptr;
++#ifdef __x86_64__
+     vjj = _mm_and_si128(vii, m1); // old low bit
+     vii = _mm_and_si128(_mm_srli_epi64(vii, 1), m1); // old high bit, shifted
+     *vptr = _mm_or_si128(_mm_slli_epi64(vjj, 1), _mm_xor_si128(vii, vjj));
++#elif __PPC64__
++    vjj = vec_bitand1q(vii, m1); // old low bit
++    vii = vec_bitand1q(vec_shiftrightlogical2dimmediate(vii, 1), m1); // old high bit, shifted
++    *vptr = vec_bitor1q(vec_shiftleftimmediate2sd(vjj, 1), vec_bitxor1q(vii, vjj));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (++vptr != vend);
+ #else
+   uintptr_t* lend = &(lptr[word_ct]);
+@@ -9347,8 +10094,15 @@
+     unfiltered_sample_ctd = unfiltered_sample_ct / 64;
+     for (; sample_bidx < unfiltered_sample_ctd; sample_bidx++) {
+       vii = *loadbuf_alias;
++#ifdef __x86_64__
+       vjj = _mm_and_si128(_mm_andnot_si128(vii, _mm_srli_epi64(vii, 1)), *iivp++);
+       *loadbuf_alias++ = _mm_sub_epi64(vii, vjj);
++#elif __PPC64__
++      vjj = vec_bitand1q(vec_bitandnotleft1q(vii, vec_shiftrightlogical2dimmediate(vii, 1)), *iivp++);
++      *loadbuf_alias++ = vec_subtract2sd(vii, vjj);
++#else
++#error "Unsupported architecture."
++#endif
+     }
+     loadbuf = (unsigned char*)loadbuf_alias;
+     iicp = (unsigned char*)iivp;
+@@ -9400,7 +10154,13 @@
+   uint32_t ujj;
+   uint32_t ukk;
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++#else
++#error "Unsupported architecture."
++#endif
+   uint32_t* sample_include_quaterarr_alias32;
+   uint32_t* sample_male_include_quaterarr_alias32;
+   __m128i* loadbuf_alias;
+@@ -9419,8 +10179,15 @@
+       // sample_male_include_quaterarr: convert 10 to 01, keep everything else
+       vii = *imivp++;
+       vjj = *iivp++;
++#ifdef __x86_64__
+       vkk = _mm_and_si128(*loadbuf_alias, _mm_or_si128(vii, _mm_slli_epi64(vii, 1)));
+       *loadbuf_alias++ = _mm_or_si128(_mm_andnot_si128(vii, vjj), _mm_sub_epi64(vkk, _mm_and_si128(_mm_andnot_si128(vkk, _mm_srli_epi64(vkk, 1)), m1)));
++#elif __PPC64__
++      vkk = vec_bitand1q(*loadbuf_alias, vec_bitor1q(vii, vec_shiftleftimmediate2sd(vii, 1)));
++      *loadbuf_alias++ = vec_bitor1q(vec_bitandnotleft1q(vii, vjj), vec_subtract2sd(vkk, vec_bitand1q(vec_bitandnotleft1q(vkk, vec_shiftrightlogical2dimmediate(vkk, 1)), m1)));
++#else
++#error "Unsupported architecture."
++#endif
+     }
+     loadbuf = (unsigned char*)loadbuf_alias;
+     iicp = (unsigned char*)iivp;
+@@ -9566,9 +10333,17 @@
+     for (; sample_bidx < unfiltered_sample_ctd; sample_bidx++) {
+       vii = *loadbuf_alias;
+       vjj = *fmivp++;
++#ifdef __x86_64__
+       vii = _mm_or_si128(vii, vjj);
+       vjj = _mm_slli_epi64(vjj, 1);
+       *loadbuf_alias++ = _mm_andnot_si128(vjj, vii);
++#elif __PPC64__
++      vii = vec_bitor1q(vii, vjj);
++      vjj = vec_shiftleftimmediate2sd(vjj, 1);
++      *loadbuf_alias++ = vec_bitandnotleft1q(vjj, vii);
++#else
++#error "Unsupported architecture."
++#endif
+     }
+     loadbuf = (unsigned char*)loadbuf_alias;
+     fmicp = (unsigned char*)fmivp;
+--- plink_common.h
++++ plink_common.h
+@@ -134,6 +134,8 @@
+ // http://esr.ibiblio.org/?p=5095 ).
+ 
+ #ifdef __LP64__
++
++#ifdef __x86_64__
+   #ifndef __SSE2__
+     // It's obviously possible to support this by writing 64-bit non-SSE2 code
+     // shadowing each SSE2 intrinsic, but this almost certainly isn't worth the
+@@ -142,6 +144,13 @@
+     #error "64-bit builds currently require SSE2.  Try producing a 32-bit build instead."
+   #endif
+   #include <emmintrin.h>
++#elif __PPC64__
++  #include <vec128int.h>
++  #include <vec128sp.h>
++  #include <vec128dp.h>
++#else
++  #error "Unsupported architecture"
++#endif
+ 
+   #define VECFTYPE __m128
+   #define VECITYPE __m128i
+@@ -1841,7 +1850,13 @@
+ HEADER_INLINE void fill_vvec_zero(size_t size, VECITYPE* vvec) {
+   size_t ulii;
+   for (ulii = 0; ulii < size; ulii++) {
++#ifdef __x86_64__
+     *vvec++ = _mm_setzero_si128();
++#elif __PPC64__
++    *vvec++ = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ #else
+--- plink_data.c
++++ plink_data.c
+@@ -3355,8 +3355,15 @@
+   do {
+     vec1 = *writevec;
+     vec2 = *patchvec++;
++#ifdef __x86_64__
+     vec1 = _mm_andnot_si128(_mm_slli_epi64(vec2, 1), vec1);
+     *writevec = _mm_or_si128(vec1, vec2);
++#elif __PPC64__
++    vec1 = vec_bitandnotleft1q(vec_shiftleftimmediate2sd(vec2, 1), vec1);
++    *writevec = vec_bitor1q(vec1, vec2);
++#else
++#error "Unsupported architecture."
++#endif
+     writevec++;
+   } while (patchvec < patchvec_end);
+ #else
+@@ -3378,9 +3385,17 @@
+   __m128i vjj;
+   while (wvec < wvec_end) {
+     vii = *wvec;
++#ifdef __x86_64__
+     vjj = _mm_andnot_si128(_mm_xor_si128(vii, _mm_srli_epi64(vii, 1)), *svec++);
+     vjj = _mm_or_si128(vjj, _mm_slli_epi64(vjj, 1));
+     *wvec++ = _mm_xor_si128(vii, vjj);
++#elif __PPC64__
++    vjj = vec_bitandnotleft1q(vec_bitxor1q(vii, vec_shiftrightlogical2dimmediate(vii, 1)), *svec++);
++    vjj = vec_bitor1q(vjj, vec_shiftleftimmediate2sd(vjj, 1));
++    *wvec++ = vec_bitxor1q(vii, vjj);
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ #else
+   uintptr_t* writebuf_end = &(writebuf[word_ct]);
+@@ -3405,8 +3420,15 @@
+   __m128i vjj;
+   do {
+     vii = *wvec;
++#ifdef __x86_64__
+     vjj = _mm_andnot_si128(vii, _mm_slli_epi64(_mm_and_si128(vii, *svec++), 1));
+     *wvec++ = _mm_or_si128(vii, vjj);
++#elif __PPC64__
++    vjj = vec_bitandnotleft1q(vii, vec_shiftleftimmediate2sd(vec_bitand1q(vii, *svec++), 1));
++    *wvec++ = vec_bitor1q(vii, vjj);
++#else
++#error "Unsupported architecture."
++#endif
+   } while (wvec < wvec_end);
+ #else
+   uintptr_t* writebuf_end = &(writebuf[word_ct]);
+--- plink_family.c
++++ plink_family.c
+@@ -974,7 +974,13 @@
+ 	    vptr = (__m128i*)error_cts_tmp;
+ 	    vptr2 = (__m128i*)error_cts_tmp2;
+ 	    for (trio_idx = 0; trio_idx < trio_ct4; trio_idx++) {
++#ifdef __x86_64__
+ 	      *vptr = _mm_add_epi64(*vptr, *vptr2++);
++#elif __PPC64__
++	      *vptr = vec_add2sd(*vptr, *vptr2++);
++#else
++#error "Unsupported architecture."
++#endif
+ 	      vptr++;
+ 	    }
+ #else
+@@ -2901,8 +2907,15 @@
+   const uintptr_t perm_vec_wcta = perm_vec_ct128 * (128 / BITCT);
+   uint32_t cur_genotype_cts[4];
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1x4 = {0x1111111111111111LLU, 0x1111111111111111LLU};
+   const __m128i m1x4ls1 = {0x2222222222222222LLU, 0x2222222222222222LLU};
++#elif __PPC64__
++  const __m128i m1x4 = vec_splat16sb(0x11);
++  const __m128i m1x4ls1 = vec_splat16sb(0x22);
++#else
++#error "Unsupported architecture."
++#endif
+   uintptr_t acc4_word_ct = perm_vec_ct128 * 8;
+   // uintptr_t acc8_word_ct = perm_vec_ct128 * 16;
+   uintptr_t acc4_vec_ct = perm_vec_ct128 * 4;
+@@ -3017,12 +3030,23 @@
+       acc4_ptr = acc4;
+       for (uii = 0; uii < acc4_vec_ct; uii++) {
+ 	loader = *pheno_perm_ptr++;
++#ifdef __x86_64__
+ 	acc4_ptr[0] = _mm_add_epi64(acc4_ptr[0], _mm_slli_epi64(_mm_and_si128(loader, m1x4), 1));
+ 	acc4_ptr[1] = _mm_add_epi64(acc4_ptr[1], _mm_and_si128(loader, m1x4ls1));
+ 	loader = _mm_srli_epi64(loader, 1);
+ 	acc4_ptr[2] = _mm_add_epi64(acc4_ptr[2], _mm_and_si128(loader, m1x4ls1));
+ 	loader = _mm_srli_epi64(loader, 1);
+ 	acc4_ptr[3] = _mm_add_epi64(acc4_ptr[3], _mm_and_si128(loader, m1x4ls1));
++#elif __PPC64__
++	acc4_ptr[0] = vec_add2sd(acc4_ptr[0], vec_shiftleftimmediate2sd(vec_bitand1q(loader, m1x4), 1));
++	acc4_ptr[1] = vec_add2sd(acc4_ptr[1], vec_bitand1q(loader, m1x4ls1));
++	loader = vec_shiftrightlogical2dimmediate(loader, 1);
++	acc4_ptr[2] = vec_add2sd(acc4_ptr[2], vec_bitand1q(loader, m1x4ls1));
++	loader = vec_shiftrightlogical2dimmediate(loader, 1);
++	acc4_ptr[3] = vec_add2sd(acc4_ptr[3], vec_bitand1q(loader, m1x4ls1));
++#else
++#error "Unsupported architecture."
++#endif
+ 	acc4_ptr = &(acc4_ptr[4]);
+       }
+     }
+@@ -3247,9 +3271,17 @@
+   uint32_t next_adapt_check = 0;
+   uint32_t cur_case_a1_ct_flip[2];
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1x8 = {0x0101010101010101LLU, 0x0101010101010101LLU};
+   const __m128i m1x4 = {0x1111111111111111LLU, 0x1111111111111111LLU};
+   const __m128i m1x4ls1 = {0x2222222222222222LLU, 0x2222222222222222LLU};
++#elif __PPC64__
++  const __m128i m1x8 = vec_splat16sb(0x01);
++  const __m128i m1x4 = vec_splat16sb(0x11);
++  const __m128i m1x4ls1 = vec_splat16sb(0x22);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i diff_vec;
+   __m128i incr8;
+   __m128i loader;
+@@ -3419,10 +3451,22 @@
+ 	// typical datasets
+ 	if (max_incr8 >= 256) {
+ 	  if (max_incr4) {
++#ifdef __x86_64__
+ 	    loader = _mm_set1_epi8(max_incr4);
++#elif __PPC64__
++	    loader = vec_splat16sb(max_incr4);
++#else
++#error "Unsupported architecture."
++#endif
+ 	    acc8_ptr = case_a1_ct_acc8;
+ 	    for (vidx = 0; vidx < acc8_vec_ct; vidx++) {
++#ifdef __x86_64__
+ 	      *acc8_ptr = _mm_add_epi8(*acc8_ptr, loader);
++#elif __PPC64__
++	      *acc8_ptr = vec_add16sb(*acc8_ptr, loader);
++#else
++#error "Unsupported architecture."
++#endif
+ 	      acc8_ptr++;
+ 	    }
+ 	  }
+@@ -3432,7 +3476,13 @@
+ 	}
+ 	if (cur_max_incr < 256) {
+           max_incr4 += cur_case_a1_ct_flip[0];
++#ifdef __x86_64__
+ 	  diff_vec = _mm_set1_epi8((uint8_t)(cur_case_a1_ct_flip[1] - cur_case_a1_ct_flip[0]));
++#elif __PPC64__
++	  diff_vec = vec_splat16sb((uint8_t)(cur_case_a1_ct_flip[1] - cur_case_a1_ct_flip[0]));
++#else
++#error "Unsupported architecture."
++#endif
+ 	  acc8_ptr = case_a1_ct_acc8;
+ 	  flipa_perm_ptr = (__m128i*)(&(flipa_shuffled[fs_idx * perm_vec_wcta]));
+ 	  for (vidx = 0; vidx < perm_vec_ct128; vidx++) {
+@@ -3440,10 +3490,19 @@
+ 	    for (uii = 0; uii < 8; uii++) {
+ 	      // set incr8 to (cur_case_a1_ct_flip[1] - cur_case_a1_ct_flip[0])
+ 	      // where (specially permuted) flipA is set, zero when it is not
++#ifdef __x86_64__
+ 	      incr8 = _mm_and_si128(_mm_sub_epi8(_mm_setzero_si128(), _mm_and_si128(loader, m1x8)), diff_vec);
+ 	      *acc8_ptr = _mm_add_epi8(*acc8_ptr, incr8);
+ 	      acc8_ptr++;
+ 	      loader = _mm_srli_epi64(loader, 1);
++#elif __PPC64__
++	      incr8 = vec_bitand1q(vec_subtract16sb(vec_zero1q(), vec_bitand1q(loader, m1x8)), diff_vec);
++	      *acc8_ptr = vec_add16sb(*acc8_ptr, incr8);
++	      acc8_ptr++;
++	      loader = vec_shiftrightlogical2dimmediate(loader, 1);
++#else
++#error "Unsupported architecture."
++#endif
+ 	    }
+ 	  }
+ 	} else {
+@@ -3528,12 +3587,23 @@
+ 	      acc4_ptr = acc4;
+ 	      for (vidx = 0; vidx < acc4_vec_ct; vidx++) {
+ 		loader = *pheno_perm_ptr++;
++#ifdef __x86_64__
+ 		acc4_ptr[0] = _mm_add_epi64(acc4_ptr[0], _mm_slli_epi64(_mm_and_si128(loader, m1x4), 1));
+ 		acc4_ptr[1] = _mm_add_epi64(acc4_ptr[1], _mm_and_si128(loader, m1x4ls1));
+ 		loader = _mm_srli_epi64(loader, 1);
+ 		acc4_ptr[2] = _mm_add_epi64(acc4_ptr[2], _mm_and_si128(loader, m1x4ls1));
+ 		loader = _mm_srli_epi64(loader, 1);
+ 		acc4_ptr[3] = _mm_add_epi64(acc4_ptr[3], _mm_and_si128(loader, m1x4ls1));
++#elif __PPC64__
++		acc4_ptr[0] = vec_add2sd(acc4_ptr[0], vec_shiftleftimmediate2sd(vec_bitand1q(loader, m1x4), 1));
++		acc4_ptr[1] = vec_add2sd(acc4_ptr[1], vec_bitand1q(loader, m1x4ls1));
++		loader = vec_shiftrightlogical2dimmediate(loader, 1);
++		acc4_ptr[2] = vec_add2sd(acc4_ptr[2], vec_bitand1q(loader, m1x4ls1));
++		loader = vec_shiftrightlogical2dimmediate(loader, 1);
++		acc4_ptr[3] = vec_add2sd(acc4_ptr[3], vec_bitand1q(loader, m1x4ls1));
++#else
++#error "Unsupported architecture."
++#endif
+ 		acc4_ptr = &(acc4_ptr[4]);
+ 	      }
+ 	    }
+--- plink_filter.c
++++ plink_filter.c
+@@ -1692,9 +1692,17 @@
+ 
+ #ifdef __LP64__
+ void freq_hwe_haploid_count_120v(__m128i* vptr, __m128i* vend, __m128i* maskvp, uint32_t* ct_nmp, uint32_t* ct_hmajp) {
++#ifdef __x86_64__
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   __m128i loader2;
+   __m128i loader3;
+@@ -1705,6 +1713,7 @@
+   __univec acc_nm;
+   __univec acc_hmaj;
+ 
++#ifdef __x86_64__
+   acc_nm.vi = _mm_setzero_si128();
+   acc_hmaj.vi = _mm_setzero_si128();
+   do {
+@@ -1769,6 +1778,74 @@
+   acc_hmaj.vi = _mm_add_epi64(_mm_and_si128(acc_hmaj.vi, m8), _mm_and_si128(_mm_srli_epi64(acc_hmaj.vi, 8), m8));
+   *ct_nmp += ((acc_nm.u8[0] + acc_nm.u8[1]) * 0x1000100010001LLU) >> 48;
+   *ct_hmajp += ((acc_hmaj.u8[0] + acc_hmaj.u8[1]) * 0x1000100010001LLU) >> 48;
++#elif __PPC64__
++  acc_nm.vi = vec_zero1q();
++  acc_hmaj.vi = vec_zero1q();
++  do {
++    loader = *vptr++;
++    loader3 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader2 = vec_bitxor1q(loader, loader3); // inverted
++    loader = vec_bitand1q(loader, loader3);
++    loader3 = *maskvp++;
++    to_ct_nm1 = vec_bitandnotleft1q(loader2, loader3);
++    to_ct_hmaj1 = vec_bitand1q(loader, loader3);
++
++    loader = *vptr++;
++    loader3 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader2 = vec_bitxor1q(loader, loader3); // inverted
++    loader = vec_bitand1q(loader, loader3);
++    loader3 = *maskvp++;
++    to_ct_nm1 = vec_add2sd(to_ct_nm1, vec_bitandnotleft1q(loader2, loader3));
++    to_ct_hmaj1 = vec_add2sd(to_ct_hmaj1, vec_bitand1q(loader, loader3));
++
++    loader = *vptr++;
++    loader3 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader2 = vec_bitxor1q(loader, loader3); // inverted
++    loader = vec_bitand1q(loader, loader3);
++    loader3 = *maskvp++;
++    to_ct_nm1 = vec_add2sd(to_ct_nm1, vec_bitandnotleft1q(loader2, loader3));
++    to_ct_hmaj1 = vec_add2sd(to_ct_hmaj1, vec_bitand1q(loader, loader3));
++
++    to_ct_nm1 = vec_add2sd(vec_bitand1q(to_ct_nm1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_nm1, 2), m2));
++    to_ct_hmaj1 = vec_add2sd(vec_bitand1q(to_ct_hmaj1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_hmaj1, 2), m2));
++
++    loader = *vptr++;
++    loader3 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader2 = vec_bitxor1q(loader, loader3); // inverted
++    loader = vec_bitand1q(loader, loader3);
++    loader3 = *maskvp++;
++    to_ct_nm2 = vec_bitandnotleft1q(loader2, loader3);
++    to_ct_hmaj2 = vec_bitand1q(loader, loader3);
++
++    loader = *vptr++;
++    loader3 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader2 = vec_bitxor1q(loader, loader3); // inverted
++    loader = vec_bitand1q(loader, loader3);
++    loader3 = *maskvp++;
++    to_ct_nm2 = vec_add2sd(to_ct_nm2, vec_bitandnotleft1q(loader2, loader3));
++    to_ct_hmaj2 = vec_add2sd(to_ct_hmaj2, vec_bitand1q(loader, loader3));
++
++    loader = *vptr++;
++    loader3 = vec_shiftrightlogical2dimmediate(loader, 1);
++    loader2 = vec_bitxor1q(loader, loader3); // inverted
++    loader = vec_bitand1q(loader, loader3);
++    loader3 = *maskvp++;
++    to_ct_nm2 = vec_add2sd(to_ct_nm2, vec_bitandnotleft1q(loader2, loader3));
++    to_ct_hmaj2 = vec_add2sd(to_ct_hmaj2, vec_bitand1q(loader, loader3));
++
++    to_ct_nm1 = vec_add2sd(to_ct_nm1, vec_add2sd(vec_bitand1q(to_ct_nm2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_nm2, 2), m2)));
++    to_ct_hmaj1 = vec_add2sd(to_ct_hmaj1, vec_add2sd(vec_bitand1q(to_ct_hmaj2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_hmaj2, 2), m2)));
++
++    acc_nm.vi = vec_add2sd(acc_nm.vi, vec_add2sd(vec_bitand1q(to_ct_nm1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_nm1, 4), m4)));
++    acc_hmaj.vi = vec_add2sd(acc_hmaj.vi, vec_add2sd(vec_bitand1q(to_ct_hmaj1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(to_ct_hmaj1, 4), m4)));
++  } while (vptr < vend);
++  acc_nm.vi = vec_add2sd(vec_bitand1q(acc_nm.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_nm.vi, 8), m8));
++  acc_hmaj.vi = vec_add2sd(vec_bitand1q(acc_hmaj.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc_hmaj.vi, 8), m8));
++  *ct_nmp += ((acc_nm.u8[0] + acc_nm.u8[1]) * 0x1000100010001LLU) >> 48;
++  *ct_hmajp += ((acc_hmaj.u8[0] + acc_hmaj.u8[1]) * 0x1000100010001LLU) >> 48;
++#else
++#error "Unsupported architecture."
++#endif
+ }
+ #else
+ void freq_hwe_haploid_count_12(uintptr_t* lptr, uintptr_t* maskp, uint32_t* ct_nmp, uint32_t* ct_hmajp) {
+--- plink_glm.c
++++ plink_glm.c
+@@ -222,8 +222,15 @@
+       loadbuf_mask_vptr = (__m128i*)loadbuf_mask;
+       do {
+         vii = *loadbuf_vptr++;
++#ifdef __x86_64__
+         vii = _mm_andnot_si128(_mm_srli_epi64(vii, 1), vii);
+         *loadbuf_mask_vptr = _mm_andnot_si128(vii, *loadbuf_mask_vptr);
++#elif __PPC64__
++        vii = vec_bitandnotleft1q(vec_shiftrightlogical2dimmediate(vii, 1), vii);
++        *loadbuf_mask_vptr = vec_bitandnotleft1q(vii, *loadbuf_mask_vptr);
++#else
++#error "Unsupported architecture."
++#endif
+         loadbuf_mask_vptr++;
+       } while (loadbuf_vptr < loadbuf_vend);
+ #else
+@@ -940,6 +947,7 @@
+ const float* const float_exp_lookup = (const float*)float_exp_lookup_int;
+ 
+ static inline __m128 fmath_exp_ps(__m128 xx) {
++#ifdef __x86_64__
+   const __m128i mask7ff = {0x7fffffff7fffffffLLU, 0x7fffffff7fffffffLLU};
+ 
+   // 88
+@@ -988,34 +996,114 @@
+   t0 = _mm_or_ps(t0, t1);
+   t0 = _mm_or_ps(t0, _mm_castsi128_ps(u4));
+   tt = _mm_mul_ps(tt, t0);
++#elif __PPC64__
++  const __m128i mask7ff = vec_splat4sw(0x7fffffff);
++
++  // 88
++  const __m128i max_x = vec_splat4sw(0x42b00000);
++  // -88
++  const __m128i min_x = vec_splat4sw(0xc2b00000);
++  // 2^10 / log(2)
++  const __m128i const_aa = vec_splat4sw(0x44b8aa3b);
++  // log(2) / 2^10
++  const __m128i const_bb = vec_splat4sw(0x3a317218);
++
++  const __m128i f1 = vec_splat4sw(0x3f800000);
++  const __m128i mask_s = vec_splat4sw(0x000003ff);
++  const __m128i i127s = vec_splat4sw(0x0001fc00);
++  __m128i limit = vec_cast4spto1q(vec_bitand4sp(xx, (__m128)mask7ff));
++  int32_t over = vec_extractupperbit16sb(vec_comparegt4sw(limit, max_x));
++  if (over) {
++    xx = vec_min4sp(xx, (__m128)max_x);
++    xx = vec_max4sp(xx, (__m128)min_x);
++  }
++  __m128i rr = vec_convert4spto4sw(vec_multiply4sp(xx, (__m128)const_aa));
++  __m128 tt = vec_subtract4sp(xx, vec_multiply4sp(vec_convert4swto4sp(rr), (__m128)const_bb));
++  tt = vec_add4sp(tt, (__m128)f1);
++  __m128i v4 = vec_bitand1q(rr, mask_s);
++  __m128i u4 = vec_add4sw(rr, i127s);
++  u4 = vec_shiftrightimmediate4sw(u4, 10);
++  u4 = vec_shiftleftimmediate4sw(u4, 23);
++  uint32_t v0 = vec_extractlowersw(v4);
++  uint32_t v1 = vec_extract8sh(((__m128i)(v4)), ((int32_t)(2)));
++  uint32_t v2 = vec_extract8sh(((__m128i)(v4)), ((int32_t)(4)));
++  uint32_t v3 = vec_extract8sh(((__m128i)(v4)), ((int32_t)(6)));
++
++  __m128 t0 = vec_setbot1spscalar4sp(float_exp_lookup[v0]);
++  __m128 t1 = vec_setbot1spscalar4sp(float_exp_lookup[v1]);
++  __m128 t2 = vec_setbot1spscalar4sp(float_exp_lookup[v2]);
++  __m128 t3 = vec_setbot1spscalar4sp(float_exp_lookup[v3]);
++  t1 = vec_extractlower2spinsertupper2spof4sp(t1, t3);
++  t1 = vec_cast1qto4sp(vec_shiftleftimmediate2sd(vec_cast4spto1q(t1), 32));
++  t0 = vec_extractlower2spinsertupper2spof4sp(t0, t2);
++  t0 = vec_bitwiseor4sp(t0, t1);
++  t0 = vec_bitwiseor4sp(t0, vec_cast1qto4sp(u4));
++  tt = vec_multiply4sp(tt, t0);
++#else
++#error "Unsupported architecture."
++#endif
+   return tt;
+ }
+ 
+ // For equivalent "normal" C/C++ code, see the non-__LP64__ versions of these
+ // functions.
+ static inline void logistic_sse(float* vect, uint32_t nn) {
++#ifdef __x86_64__
+   __m128 zero = _mm_setzero_ps();
+   __m128 one = _mm_set1_ps(1.0);
++#elif __PPC64__
++  __m128 zero = vec_zero4sp();
++  __m128 one = vec_splat4sp(1.0);
++#else
++#error "Unsupported architecture."
++#endif
+   uint32_t uii;
+   for (uii = 0; uii < nn; uii += 4) {
++#ifdef __x86_64__
+     __m128 aa = _mm_load_ps(&(vect[uii]));
+     aa = _mm_sub_ps(zero, aa);
+     aa = fmath_exp_ps(aa);
+     aa = _mm_add_ps(aa, one);
+     aa = _mm_div_ps(one, aa);
+     _mm_store_ps(&(vect[uii]), aa);
++#elif __PPC64__
++    __m128 aa = vec_load4sp(&(vect[uii]));
++    aa = vec_subtract4sp(zero, aa);
++    aa = fmath_exp_ps(aa);
++    aa = vec_add4sp(aa, one);
++    aa = vec_divide4sp(one, aa);
++    vec_store4sp(&(vect[uii]), aa);
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ 
+ static inline void compute_v_and_p_minus_y(float* pp, float* vv, const float* yy, uint32_t nn) {
++#ifdef __x86_64__
+   __m128 one = _mm_set1_ps(1.0);
++#elif __PPC64__
++  __m128 one = vec_splat4sp(1.0);
++#else
++#error "Unsupported architecture."
++#endif
+   uint32_t uii;
+   for (uii = 0; uii < nn; uii += 4) {
++#ifdef __x86_64__
+     __m128 ptmp = _mm_load_ps(&(pp[uii]));
+     __m128 one_minus_ptmp = _mm_sub_ps(one, ptmp);
+     _mm_store_ps(&(vv[uii]), _mm_mul_ps(ptmp, one_minus_ptmp));
+     __m128 ytmp = _mm_load_ps(&(yy[uii]));
+     _mm_store_ps(&(pp[uii]), _mm_sub_ps(ptmp, ytmp));
++#elif __PPC64__
++    __m128 ptmp = vec_load4sp(&(pp[uii]));
++    __m128 one_minus_ptmp = vec_subtract4sp(one, ptmp);
++    vec_store4sp(&(vv[uii]), vec_multiply4sp(ptmp, one_minus_ptmp));
++    __m128 ytmp = vec_load4sp(&(yy[uii]));
++    vec_store4sp(&(pp[uii]), vec_subtract4sp(ptmp, ytmp));
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ 
+@@ -1040,6 +1128,7 @@
+   if (row_ct < 4) {
+     memset(dest, 0, col_ct * sizeof(float));
+   } else {
++#ifdef __x86_64__
+     w1 = _mm_load1_ps(vect);
+     w2 = _mm_load1_ps(&(vect[1]));
+     w3 = _mm_load1_ps(&(vect[2]));
+@@ -1057,9 +1146,31 @@
+       r3 = _mm_add_ps(r3, r4);
+       r1 = _mm_add_ps(r1, r3);
+       _mm_store_ps(&(dest[col_idx]), r1);
++#elif __PPC64__
++    w1 = vec_loadsplat4sp(vect);
++    w2 = vec_loadsplat4sp(&(vect[1]));
++    w3 = vec_loadsplat4sp(&(vect[2]));
++    w4 = vec_loadsplat4sp(&(vect[3]));
++    for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
++      r1 = vec_load4sp(&(tm[col_idx]));
++      r2 = vec_load4sp(&(tm[col_idx + col_cta4]));
++      r3 = vec_load4sp(&(tm[col_idx + 2 * col_cta4]));
++      r4 = vec_load4sp(&(tm[col_idx + 3 * col_cta4]));
++      r1 = vec_multiply4sp(r1, w1);
++      r2 = vec_multiply4sp(r2, w2);
++      r3 = vec_multiply4sp(r3, w3);
++      r4 = vec_multiply4sp(r4, w4);
++      r1 = vec_add4sp(r1, r2);
++      r3 = vec_add4sp(r3, r4);
++      r1 = vec_add4sp(r1, r3);
++      vec_store4sp(&(dest[col_idx]), r1);
++#else
++#error "Unsupported architecture."
++#endif
+     }
+     row_ctm3 = row_ct - 3;
+     for (row_idx = 4; row_idx < row_ctm3; row_idx += 4) {
++#ifdef __x86_64__
+       w1 = _mm_load1_ps(&(vect[row_idx]));
+       w2 = _mm_load1_ps(&(vect[row_idx + 1]));
+       w3 = _mm_load1_ps(&(vect[row_idx + 2]));
+@@ -1079,10 +1190,34 @@
+ 	r1 = _mm_add_ps(r1, _mm_load_ps(&(dest[col_idx])));
+ 	_mm_store_ps(&(dest[col_idx]), r1);
+       }
++#elif __PPC64__
++      w1 = vec_loadsplat4sp(&(vect[row_idx]));
++      w2 = vec_loadsplat4sp(&(vect[row_idx + 1]));
++      w3 = vec_loadsplat4sp(&(vect[row_idx + 2]));
++      w4 = vec_loadsplat4sp(&(vect[row_idx + 3]));
++      for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
++        r1 = vec_load4sp(&(tm[col_idx + row_idx * col_cta4]));
++        r2 = vec_load4sp(&(tm[col_idx + (row_idx + 1) * col_cta4]));
++        r3 = vec_load4sp(&(tm[col_idx + (row_idx + 2) * col_cta4]));
++        r4 = vec_load4sp(&(tm[col_idx + (row_idx + 3) * col_cta4]));
++        r1 = vec_multiply4sp(r1, w1);
++        r2 = vec_multiply4sp(r2, w2);
++        r3 = vec_multiply4sp(r3, w3);
++        r4 = vec_multiply4sp(r4, w4);
++        r1 = vec_add4sp(r1, r2);
++        r3 = vec_add4sp(r3, r4);
++        r1 = vec_add4sp(r1, r3);
++	r1 = vec_add4sp(r1, vec_load4sp(&(dest[col_idx])));
++	vec_store4sp(&(dest[col_idx]), r1);
++      }
++#else
++#error "Unsupported architecture."
++#endif
+     }
+   }
+   switch(row_ct % 4) {
+   case 3:
++#ifdef __x86_64__
+     w1 = _mm_load1_ps(&(vect[row_idx]));
+     w2 = _mm_load1_ps(&(vect[row_idx + 1]));
+     w3 = _mm_load1_ps(&(vect[row_idx + 2]));
+@@ -1098,8 +1233,28 @@
+       r1 = _mm_add_ps(r1, r3);
+       _mm_store_ps(&(dest[col_idx]), r1);
+     }
++#elif __PPC64__
++    w1 = vec_loadsplat4sp(&(vect[row_idx]));
++    w2 = vec_loadsplat4sp(&(vect[row_idx + 1]));
++    w3 = vec_loadsplat4sp(&(vect[row_idx + 2]));
++    for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
++      r1 = vec_load4sp(&(tm[col_idx + row_idx * col_cta4]));
++      r2 = vec_load4sp(&(tm[col_idx + (row_idx + 1) * col_cta4]));
++      r3 = vec_load4sp(&(tm[col_idx + (row_idx + 2) * col_cta4]));
++      r1 = vec_multiply4sp(r1, w1);
++      r2 = vec_multiply4sp(r2, w2);
++      r3 = vec_multiply4sp(r3, w3);
++      r1 = vec_add4sp(r1, r2);
++      r3 = vec_add4sp(r3, vec_load4sp(&(dest[col_idx])));
++      r1 = vec_add4sp(r1, r3);
++      vec_store4sp(&(dest[col_idx]), r1);
++    }
++#else
++#error "Unsupported architecture."
++#endif
+     break;
+   case 2:
++#ifdef __x86_64__
+     w1 = _mm_load1_ps(&(vect[row_idx]));
+     w2 = _mm_load1_ps(&(vect[row_idx + 1]));
+     for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
+@@ -1111,8 +1266,24 @@
+       r1 = _mm_add_ps(r1, _mm_load_ps(&(dest[col_idx])));
+       _mm_store_ps(&(dest[col_idx]), r1);
+     }
++#elif __PPC64__
++    w1 = vec_loadsplat4sp(&(vect[row_idx]));
++    w2 = vec_loadsplat4sp(&(vect[row_idx + 1]));
++    for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
++      r1 = vec_load4sp(&(tm[col_idx + row_idx * col_cta4]));
++      r2 = vec_load4sp(&(tm[col_idx + (row_idx + 1) * col_cta4]));
++      r1 = vec_multiply4sp(r1, w1);
++      r2 = vec_multiply4sp(r2, w2);
++      r1 = vec_add4sp(r1, r2);
++      r1 = vec_add4sp(r1, vec_load4sp(&(dest[col_idx])));
++      vec_store4sp(&(dest[col_idx]), r1);
++    }
++#else
++#error "Unsupported architecture."
++#endif
+     break;
+   case 1:
++#ifdef __x86_64__
+     w1 = _mm_load1_ps(&(vect[row_idx]));
+     for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
+       r1 = _mm_load_ps(&(tm[col_idx + row_idx * col_cta4]));
+@@ -1120,6 +1291,17 @@
+       r1 = _mm_add_ps(r1, _mm_load_ps(&(dest[col_idx])));
+       _mm_store_ps(&(dest[col_idx]), r1);
+     }
++#elif __PPC64__
++    w1 = vec_loadsplat4sp(&(vect[row_idx]));
++    for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
++      r1 = vec_load4sp(&(tm[col_idx + row_idx * col_cta4]));
++      r1 = vec_multiply4sp(r1, w1);
++      r1 = vec_add4sp(r1, vec_load4sp(&(dest[col_idx])));
++      vec_store4sp(&(dest[col_idx]), r1);
++    }
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ 
+@@ -1142,6 +1324,7 @@
+   if (row_ct > 3) {
+     row_ctm3 = row_ct - 3;
+     for (; row_idx < row_ctm3; row_idx += 4) {
++#ifdef __x86_64__
+       s1 = _mm_setzero_ps();
+       s2 = _mm_setzero_ps();
+       s3 = _mm_setzero_ps();
+@@ -1164,6 +1347,32 @@
+         s4 = _mm_add_ps(s4, a4);
+       }
+       // refrain from using SSE3 _mm_hadd_ps() for now
++#elif __PPC64__
++      s1 = vec_zero4sp();
++      s2 = vec_zero4sp();
++      s3 = vec_zero4sp();
++      s4 = vec_zero4sp();
++      for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
++        mm_ptr = &(mm[row_idx * col_cta4 + col_idx]);
++        vv = vec_load4sp(&(vect[col_idx]));
++        a1 = vec_load4sp(mm_ptr);
++        a2 = vec_load4sp(&(mm_ptr[col_cta4]));
++        a3 = vec_load4sp(&(mm_ptr[2 * col_cta4]));
++        a4 = vec_load4sp(&(mm_ptr[3 * col_cta4]));
++        // want to switch this to fused multiply-add...
++        a1 = vec_multiply4sp(a1, vv);
++        a2 = vec_multiply4sp(a2, vv);
++        a3 = vec_multiply4sp(a3, vv);
++        a4 = vec_multiply4sp(a4, vv);
++        s1 = vec_add4sp(s1, a1);
++        s2 = vec_add4sp(s2, a2);
++        s3 = vec_add4sp(s3, a3);
++        s4 = vec_add4sp(s4, a4);
++      }
++      // refrain from using Altivec vec_partialhorizontal22sp() for now
++#else
++#error "Unsupported architecture."
++#endif
+       uvec.vf = s1;
+       *dest++ = uvec.f4[0] + uvec.f4[1] + uvec.f4[2] + uvec.f4[3];
+       uvec.vf = s2;
+@@ -1174,12 +1383,21 @@
+       *dest++ = uvec.f4[0] + uvec.f4[1] + uvec.f4[2] + uvec.f4[3];
+     }
+   }
++#ifdef __x86_64__
+   s1 = _mm_setzero_ps();
+   s2 = _mm_setzero_ps();
+   s3 = _mm_setzero_ps();
++#elif __PPC64__
++  s1 = vec_zero4sp();
++  s2 = vec_zero4sp();
++  s3 = vec_zero4sp();
++#else
++#error "Unsupported architecture."
++#endif
+   switch (row_ct % 4) {
+   case 3:
+     for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
++#ifdef __x86_64__
+       mm_ptr = &(mm[row_idx * col_cta4 + col_idx]);
+       vv = _mm_load_ps(&(vect[col_idx]));
+       a1 = _mm_load_ps(mm_ptr);
+@@ -1191,6 +1409,21 @@
+       s1 = _mm_add_ps(s1, a1);
+       s2 = _mm_add_ps(s2, a2);
+       s3 = _mm_add_ps(s3, a3);
++#elif __PPC64__
++      mm_ptr = &(mm[row_idx * col_cta4 + col_idx]);
++      vv = vec_load4sp(&(vect[col_idx]));
++      a1 = vec_load4sp(mm_ptr);
++      a2 = vec_load4sp(&(mm_ptr[col_cta4]));
++      a3 = vec_load4sp(&(mm_ptr[2 * col_cta4]));
++      a1 = vec_multiply4sp(a1, vv);
++      a2 = vec_multiply4sp(a2, vv);
++      a3 = vec_multiply4sp(a3, vv);
++      s1 = vec_add4sp(s1, a1);
++      s2 = vec_add4sp(s2, a2);
++      s3 = vec_add4sp(s3, a3);
++#else
++#error "Unsupported architecture."
++#endif
+     }
+     uvec.vf = s1;
+     *dest++ = uvec.f4[0] + uvec.f4[1] + uvec.f4[2] + uvec.f4[3];
+@@ -1201,6 +1434,7 @@
+     break;
+   case 2:
+     for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
++#ifdef __x86_64__
+       mm_ptr = &(mm[row_idx * col_cta4 + col_idx]);
+       vv = _mm_load_ps(&(vect[col_idx]));
+       a1 = _mm_load_ps(mm_ptr);
+@@ -1209,6 +1443,18 @@
+       a2 = _mm_mul_ps(a2, vv);
+       s1 = _mm_add_ps(s1, a1);
+       s2 = _mm_add_ps(s2, a2);
++#elif __PPC64__
++      mm_ptr = &(mm[row_idx * col_cta4 + col_idx]);
++      vv = vec_load4sp(&(vect[col_idx]));
++      a1 = vec_load4sp(mm_ptr);
++      a2 = vec_load4sp(&(mm_ptr[col_cta4]));
++      a1 = vec_multiply4sp(a1, vv);
++      a2 = vec_multiply4sp(a2, vv);
++      s1 = vec_add4sp(s1, a1);
++      s2 = vec_add4sp(s2, a2);
++#else
++#error "Unsupported architecture."
++#endif
+     }
+     uvec.vf = s1;
+     *dest++ = uvec.f4[0] + uvec.f4[1] + uvec.f4[2] + uvec.f4[3];
+@@ -1217,10 +1463,19 @@
+     break;
+   case 1:
+     for (col_idx = 0; col_idx < col_ct; col_idx += 4) {
++#ifdef __x86_64__
+       vv = _mm_load_ps(&(vect[col_idx]));
+       a1 = _mm_load_ps(&(mm[row_idx * col_cta4 + col_idx]));
+       a1 = _mm_mul_ps(a1, vv);
+       s1 = _mm_add_ps(s1, a1);
++#elif __PPC64__
++      vv = vec_load4sp(&(vect[col_idx]));
++      a1 = vec_load4sp(&(mm[row_idx * col_cta4 + col_idx]));
++      a1 = vec_multiply4sp(a1, vv);
++      s1 = vec_add4sp(s1, a1);
++#else
++#error "Unsupported architecture."
++#endif
+     }
+     uvec.vf = s1;
+     *dest = uvec.f4[0] + uvec.f4[1] + uvec.f4[2] + uvec.f4[3];
+@@ -1229,26 +1484,49 @@
+ }
+ 
+ static inline float triple_product(const float* v1, const float* v2, const float* v3, uint32_t nn) {
++#ifdef __x86_64__
+   __m128 sum = _mm_setzero_ps();
++#elif __PPC64__
++  __m128 sum = vec_zero4sp();
++#else
++#error "Unsupported architecture."
++#endif
+   __m128 aa;
+   __m128 bb;
+   __m128 cc;
+   __univec uvec;
+   uint32_t uii;
+   for (uii = 0; uii < nn; uii += 4) {
++#ifdef __x86_64__
+     aa = _mm_load_ps(&(v1[uii]));
+     bb = _mm_load_ps(&(v2[uii]));
+     cc = _mm_load_ps(&(v3[uii]));
+     sum = _mm_add_ps(sum, _mm_mul_ps(_mm_mul_ps(aa, bb), cc));
++#elif __PPC64__
++    aa = vec_load4sp(&(v1[uii]));
++    bb = vec_load4sp(&(v2[uii]));
++    cc = vec_load4sp(&(v3[uii]));
++    sum = vec_add4sp(sum, vec_multiply4sp(vec_multiply4sp(aa, bb), cc));
++#else
++#error "Unsupported architecture."
++#endif
+   }
+   uvec.vf = sum;
+   return uvec.f4[0] + uvec.f4[1] + uvec.f4[2] + uvec.f4[3];
+ }
+ 
+ static inline void compute_two_diag_triple_product(const float* aa, const float* bb, const float* vv, float* raa_ptr, float* rab_ptr, float* rbb_ptr, uint32_t nn) {
++#ifdef __x86_64__
+   __m128 saa = _mm_setzero_ps();
+   __m128 sab = _mm_setzero_ps();
+   __m128 sbb = _mm_setzero_ps();
++#elif __PPC64__
++  __m128 saa = vec_zero4sp();
++  __m128 sab = vec_zero4sp();
++  __m128 sbb = vec_zero4sp();
++#else
++#error "Unsupported architecture."
++#endif
+   __m128 vtmp;
+   __m128 atmp;
+   __m128 btmp;
+@@ -1257,6 +1535,7 @@
+   __univec uvec;
+   uint32_t uii;
+   for (uii = 0; uii < nn; uii += 4) {
++#ifdef __x86_64__
+     vtmp = _mm_load_ps(&(vv[uii]));
+     atmp = _mm_load_ps(&(aa[uii]));
+     btmp = _mm_load_ps(&(bb[uii]));
+@@ -1265,6 +1544,18 @@
+     saa = _mm_add_ps(saa, _mm_mul_ps(atmp, av));
+     sab = _mm_add_ps(sab, _mm_mul_ps(atmp, bv));
+     sbb = _mm_add_ps(sbb, _mm_mul_ps(btmp, bv));
++#elif __PPC64__
++    vtmp = vec_load4sp(&(vv[uii]));
++    atmp = vec_load4sp(&(aa[uii]));
++    btmp = vec_load4sp(&(bb[uii]));
++    av = vec_multiply4sp(atmp, vtmp);
++    bv = vec_multiply4sp(btmp, vtmp);
++    saa = vec_add4sp(saa, vec_multiply4sp(atmp, av));
++    sab = vec_add4sp(sab, vec_multiply4sp(atmp, bv));
++    sbb = vec_add4sp(sbb, vec_multiply4sp(btmp, bv));
++#else
++#error "Unsupported architecture."
++#endif
+   }
+   uvec.vf = saa;
+   *raa_ptr = uvec.f4[0] + uvec.f4[1] + uvec.f4[2] + uvec.f4[3];
+@@ -1275,9 +1566,17 @@
+ }
+ 
+ static inline void compute_three_triple_product(const float* bb, const float* a1, const float* a2, const float* a3, const float* vv, float* r1_ptr, float* r2_ptr, float* r3_ptr, uint32_t nn) {
++#ifdef __x86_64__
+   __m128 s1 = _mm_setzero_ps();
+   __m128 s2 = _mm_setzero_ps();
+   __m128 s3 = _mm_setzero_ps();
++#elif __PPC64__
++  __m128 s1 = vec_zero4sp();
++  __m128 s2 = vec_zero4sp();
++  __m128 s3 = vec_zero4sp();
++#else
++#error "Unsupported architecture."
++#endif
+   __m128 a1tmp;
+   __m128 a2tmp;
+   __m128 a3tmp;
+@@ -1286,6 +1585,7 @@
+   __univec uvec;
+   uint32_t uii;
+   for (uii = 0; uii < nn; uii += 4) {
++#ifdef __x86_64__
+     a1tmp = _mm_load_ps(&(a1[uii]));
+     a2tmp = _mm_load_ps(&(a2[uii]));
+     a3tmp = _mm_load_ps(&(a3[uii]));
+@@ -1295,6 +1595,19 @@
+     s1 = _mm_add_ps(s1, _mm_mul_ps(a1tmp, btmp));
+     s2 = _mm_add_ps(s2, _mm_mul_ps(a2tmp, btmp));
+     s3 = _mm_add_ps(s3, _mm_mul_ps(a3tmp, btmp));
++#elif __PPC64__
++    a1tmp = vec_load4sp(&(a1[uii]));
++    a2tmp = vec_load4sp(&(a2[uii]));
++    a3tmp = vec_load4sp(&(a3[uii]));
++    vtmp = vec_load4sp(&(vv[uii]));
++    btmp = vec_load4sp(&(bb[uii]));
++    btmp = vec_multiply4sp(btmp, vtmp);
++    s1 = vec_add4sp(s1, vec_multiply4sp(a1tmp, btmp));
++    s2 = vec_add4sp(s2, vec_multiply4sp(a2tmp, btmp));
++    s3 = vec_add4sp(s3, vec_multiply4sp(a3tmp, btmp));
++#else
++#error "Unsupported architecture."
++#endif
+   }
+   uvec.vf = s1;
+   *r1_ptr = uvec.f4[0] + uvec.f4[1] + uvec.f4[2] + uvec.f4[3];
+@@ -1305,9 +1618,17 @@
+ }
+ 
+ static inline void compute_two_plus_one_triple_product(const float* bb, const float* a1, const float* a2, const float* vv, float* r1_ptr, float* r2_ptr, float* r3_ptr, uint32_t nn) {
++#ifdef __x86_64__
+   __m128 s1 = _mm_setzero_ps();
+   __m128 s2 = _mm_setzero_ps();
+   __m128 s3 = _mm_setzero_ps();
++#elif __PPC64__
++  __m128 s1 = vec_zero4sp();
++  __m128 s2 = vec_zero4sp();
++  __m128 s3 = vec_zero4sp();
++#else
++#error "Unsupported architecture."
++#endif
+   __m128 a1tmp;
+   __m128 a2tmp;
+   __m128 btmp;
+@@ -1316,6 +1637,7 @@
+   __univec uvec;
+   uint32_t uii;
+   for (uii = 0; uii < nn; uii += 4) {
++#ifdef __x86_64__
+     a1tmp = _mm_load_ps(&(a1[uii]));
+     a2tmp = _mm_load_ps(&(a2[uii]));
+     btmp = _mm_load_ps(&(bb[uii]));
+@@ -1324,6 +1646,18 @@
+     s1 = _mm_add_ps(s1, _mm_mul_ps(btmp, bv));
+     s2 = _mm_add_ps(s2, _mm_mul_ps(a1tmp, bv));
+     s3 = _mm_add_ps(s3, _mm_mul_ps(a2tmp, bv));
++#elif __PPC64__
++    a1tmp = vec_load4sp(&(a1[uii]));
++    a2tmp = vec_load4sp(&(a2[uii]));
++    btmp = vec_load4sp(&(bb[uii]));
++    vtmp = vec_load4sp(&(vv[uii]));
++    bv = vec_multiply4sp(btmp, vtmp);
++    s1 = vec_add4sp(s1, vec_multiply4sp(btmp, bv));
++    s2 = vec_add4sp(s2, vec_multiply4sp(a1tmp, bv));
++    s3 = vec_add4sp(s3, vec_multiply4sp(a2tmp, bv));
++#else
++#error "Unsupported architecture."
++#endif
+   }
+   uvec.vf = s1;
+   *r1_ptr = uvec.f4[0] + uvec.f4[1] + uvec.f4[2] + uvec.f4[3];
+--- plink_homozyg.c
++++ plink_homozyg.c
+@@ -894,10 +894,19 @@
+ 
+ static inline uint32_t is_allelic_match(double mismatch_max, uintptr_t* roh_slot_idxl, uintptr_t* roh_slot_idxs, uint32_t block_start_idxl, uint32_t block_start_idxs, uint32_t overlap_cidx_start, uint32_t overlap_cidx_end) {
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   uint32_t words_left = ((overlap_cidx_end + 31) / 32) - 2 * (overlap_cidx_start / 64);
+   uint32_t joint_homozyg_ct = 0;
+   uint32_t joint_homozyg_mismatch_ct = 0;
+@@ -935,9 +944,17 @@
+       words_left -= 120;
+       vptrl_end = &(vptrl[60]);
+     is_allelic_match_main_loop:
++#ifdef __x86_64__
+       accj.vi = _mm_setzero_si128();
+       accm.vi = _mm_setzero_si128();
++#elif __PPC64__
++      accj.vi = vec_zero1q();
++      accm.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+       do {
++#ifdef __x86_64__
+ 	loader_l = *vptrl++;
+ 	loader_s = *vptrs++;
+ 	joint_sum1 = _mm_andnot_si128(_mm_or_si128(_mm_xor_si128(loader_l, _mm_srli_epi64(loader_l, 1)), _mm_xor_si128(loader_s, _mm_srli_epi64(loader_s, 1))), m1);
+@@ -984,9 +1001,66 @@
+ 
+ 	accj.vi = _mm_add_epi64(accj.vi, _mm_add_epi64(_mm_and_si128(joint_sum1, m4), _mm_and_si128(_mm_srli_epi64(joint_sum1, 4), m4)));
+ 	accm.vi = _mm_add_epi64(accm.vi, _mm_add_epi64(_mm_and_si128(mismatch_sum1, m4), _mm_and_si128(_mm_srli_epi64(mismatch_sum1, 4), m4)));
++#elif __PPC64__
++	loader_l = *vptrl++;
++	loader_s = *vptrs++;
++	joint_sum1 = vec_bitandnotleft1q(vec_bitor1q(vec_bitxor1q(loader_l, vec_shiftrightlogical2dimmediate(loader_l, 1)), vec_bitxor1q(loader_s, vec_shiftrightlogical2dimmediate(loader_s, 1))), m1);
++	mismatch_sum1 = vec_bitand1q(joint_sum1, vec_bitxor1q(loader_l, loader_s));
++
++	loader_l = *vptrl++;
++	loader_s = *vptrs++;
++	joint_vec = vec_bitandnotleft1q(vec_bitor1q(vec_bitxor1q(loader_l, vec_shiftrightlogical2dimmediate(loader_l, 1)), vec_bitxor1q(loader_s, vec_shiftrightlogical2dimmediate(loader_s, 1))), m1);
++	joint_sum1 = vec_add2sd(joint_sum1, joint_vec);
++	joint_vec = vec_bitand1q(joint_vec, vec_bitxor1q(loader_l, loader_s));
++	mismatch_sum1 = vec_add2sd(mismatch_sum1, joint_vec);
++
++	loader_l = *vptrl++;
++	loader_s = *vptrs++;
++	joint_vec = vec_bitandnotleft1q(vec_bitor1q(vec_bitxor1q(loader_l, vec_shiftrightlogical2dimmediate(loader_l, 1)), vec_bitxor1q(loader_s, vec_shiftrightlogical2dimmediate(loader_s, 1))), m1);
++	joint_sum1 = vec_add2sd(joint_sum1, joint_vec);
++	joint_vec = vec_bitand1q(joint_vec, vec_bitxor1q(loader_l, loader_s));
++	mismatch_sum1 = vec_add2sd(mismatch_sum1, joint_vec);
++
++	joint_sum1 = vec_add2sd(vec_bitand1q(joint_sum1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(joint_sum1, 2), m2));
++	mismatch_sum1 = vec_add2sd(vec_bitand1q(mismatch_sum1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(mismatch_sum1, 2), m2));
++
++	loader_l = *vptrl++;
++	loader_s = *vptrs++;
++	joint_sum2 = vec_bitandnotleft1q(vec_bitor1q(vec_bitxor1q(loader_l, vec_shiftrightlogical2dimmediate(loader_l, 1)), vec_bitxor1q(loader_s, vec_shiftrightlogical2dimmediate(loader_s, 1))), m1);
++	mismatch_sum2 = vec_bitand1q(joint_sum2, vec_bitxor1q(loader_l, loader_s));
++
++	loader_l = *vptrl++;
++	loader_s = *vptrs++;
++	joint_vec = vec_bitandnotleft1q(vec_bitor1q(vec_bitxor1q(loader_l, vec_shiftrightlogical2dimmediate(loader_l, 1)), vec_bitxor1q(loader_s, vec_shiftrightlogical2dimmediate(loader_s, 1))), m1);
++	joint_sum2 = vec_add2sd(joint_sum2, joint_vec);
++	joint_vec = vec_bitand1q(joint_vec, vec_bitxor1q(loader_l, loader_s));
++	mismatch_sum2 = vec_add2sd(mismatch_sum2, joint_vec);
++
++	loader_l = *vptrl++;
++	loader_s = *vptrs++;
++	joint_vec = vec_bitandnotleft1q(vec_bitor1q(vec_bitxor1q(loader_l, vec_shiftrightlogical2dimmediate(loader_l, 1)), vec_bitxor1q(loader_s, vec_shiftrightlogical2dimmediate(loader_s, 1))), m1);
++	joint_sum2 = vec_add2sd(joint_sum2, joint_vec);
++	joint_vec = vec_bitand1q(joint_vec, vec_bitxor1q(loader_l, loader_s));
++	mismatch_sum2 = vec_add2sd(mismatch_sum2, joint_vec);
++
++	joint_sum1 = vec_add2sd(joint_sum1, vec_add2sd(vec_bitand1q(joint_sum2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(joint_sum2, 2), m2)));
++	mismatch_sum1 = vec_add2sd(mismatch_sum1, vec_add2sd(vec_bitand1q(mismatch_sum2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(mismatch_sum2, 2), m2)));
++
++	accj.vi = vec_add2sd(accj.vi, vec_add2sd(vec_bitand1q(joint_sum1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(joint_sum1, 4), m4)));
++	accm.vi = vec_add2sd(accm.vi, vec_add2sd(vec_bitand1q(mismatch_sum1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(mismatch_sum1, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+       } while (vptrl < vptrl_end);
++#ifdef __x86_64__
+       accj.vi = _mm_add_epi64(_mm_and_si128(accj.vi, m8), _mm_and_si128(_mm_srli_epi64(accj.vi, 8), m8));
+       accm.vi = _mm_add_epi64(_mm_and_si128(accm.vi, m8), _mm_and_si128(_mm_srli_epi64(accm.vi, 8), m8));
++#elif __PPC64__
++      accj.vi = vec_add2sd(vec_bitand1q(accj.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(accj.vi, 8), m8));
++      accm.vi = vec_add2sd(vec_bitand1q(accm.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(accm.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+       joint_homozyg_ct += ((accj.u8[0] + accj.u8[1]) * 0x1000100010001LLU) >> 48;
+       joint_homozyg_mismatch_ct += ((accm.u8[0] + accm.u8[1]) * 0x1000100010001LLU) >> 48;
+     }
+--- plink_ld.c
++++ plink_ld.c
+@@ -137,9 +137,17 @@
+   // fewer values are present, the ends of all input vectors should be zeroed
+   // out.
+ 
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader1;
+   __m128i loader2;
+   __m128i sum1;
+@@ -155,12 +163,23 @@
+   __univec acc2;
+   __univec acc11;
+   __univec acc22;
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
+   acc1.vi = _mm_setzero_si128();
+   acc2.vi = _mm_setzero_si128();
+   acc11.vi = _mm_setzero_si128();
+   acc22.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++  acc1.vi = vec_zero1q();
++  acc2.vi = vec_zero1q();
++  acc11.vi = vec_zero1q();
++  acc22.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
++#ifdef __x86_64__
+     loader1 = *vec1++;
+     loader2 = *vec2++;
+     sum1 = *mask2++;
+@@ -223,20 +242,115 @@
+     acc11.vi = _mm_add_epi64(acc11.vi, _mm_add_epi64(_mm_and_si128(sum11, m4), _mm_and_si128(_mm_srli_epi64(sum11, 4), m4)));
+     acc22.vi = _mm_add_epi64(acc22.vi, _mm_add_epi64(_mm_and_si128(sum22, m4), _mm_and_si128(_mm_srli_epi64(sum22, 4), m4)));
+     acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(sum12, m4), _mm_and_si128(_mm_srli_epi64(sum12, 4), m4)));
++#elif __PPC64__
++    loader1 = *vec1++;
++    loader2 = *vec2++;
++    sum1 = *mask2++;
++    sum2 = *mask1++;
++    sum12 = vec_bitand1q(vec_bitor1q(loader1, loader2), m1);
++    // sum11 = vec_bitand1q(vec_bitand1q(vec_bitxor1q(sum1, m1), m1), loader1);
++    // sum22 = vec_bitand1q(vec_bitand1q(vec_bitxor1q(sum2, m1), m1), loader2);
++    sum1 = vec_bitand1q(sum1, loader1);
++    sum2 = vec_bitand1q(sum2, loader2);
++    sum11 = vec_bitand1q(sum1, m1);
++    sum22 = vec_bitand1q(sum2, m1);
++    // use andnot to eliminate need for 0xaaaa... to occupy an xmm register
++    loader1 = vec_bitandnotleft1q(vec_add2sd(m1, sum12), vec_bitxor1q(loader1, loader2));
++    sum12 = vec_bitor1q(sum12, loader1);
++
++    // sum1, sum2, and sum12 now store the (biased) two-bit sums of
++    // interest; merge to 4 bits to prevent overflow.  this merge can be
++    // postponed for sum11 and sum22 because the individual terms are 0/1
++    // instead of 0/1/2.
++    sum1 = vec_add2sd(vec_bitand1q(sum1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum1, 2), m2));
++    sum2 = vec_add2sd(vec_bitand1q(sum2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum2, 2), m2));
++    sum12 = vec_add2sd(vec_bitand1q(sum12, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum12, 2), m2));
++
++    loader1 = *vec1++;
++    loader2 = *vec2++;
++    tmp_sum1 = *mask2++;
++    tmp_sum2 = *mask1++;
++    tmp_sum12 = vec_bitand1q(vec_bitor1q(loader1, loader2), m1);
++    tmp_sum1 = vec_bitand1q(tmp_sum1, loader1);
++    tmp_sum2 = vec_bitand1q(tmp_sum2, loader2);
++    sum11 = vec_add2sd(sum11, vec_bitand1q(tmp_sum1, m1));
++    sum22 = vec_add2sd(sum22, vec_bitand1q(tmp_sum2, m1));
++    loader1 = vec_bitandnotleft1q(vec_add2sd(m1, tmp_sum12), vec_bitxor1q(loader1, loader2));
++    tmp_sum12 = vec_bitor1q(loader1, tmp_sum12);
++
++    sum1 = vec_add2sd(sum1, vec_add2sd(vec_bitand1q(tmp_sum1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(tmp_sum1, 2), m2)));
++    sum2 = vec_add2sd(sum2, vec_add2sd(vec_bitand1q(tmp_sum2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(tmp_sum2, 2), m2)));
++    sum12 = vec_add2sd(sum12, vec_add2sd(vec_bitand1q(tmp_sum12, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(tmp_sum12, 2), m2)));
++
++    loader1 = *vec1++;
++    loader2 = *vec2++;
++    tmp_sum1 = *mask2++;
++    tmp_sum2 = *mask1++;
++    tmp_sum12 = vec_bitand1q(vec_bitor1q(loader1, loader2), m1);
++    tmp_sum1 = vec_bitand1q(tmp_sum1, loader1);
++    tmp_sum2 = vec_bitand1q(tmp_sum2, loader2);
++    sum11 = vec_add2sd(sum11, vec_bitand1q(tmp_sum1, m1));
++    sum22 = vec_add2sd(sum22, vec_bitand1q(tmp_sum2, m1));
++    loader1 = vec_bitandnotleft1q(vec_add2sd(m1, tmp_sum12), vec_bitxor1q(loader1, loader2));
++    tmp_sum12 = vec_bitor1q(loader1, tmp_sum12);
++
++    sum1 = vec_add2sd(sum1, vec_add2sd(vec_bitand1q(tmp_sum1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(tmp_sum1, 2), m2)));
++    sum2 = vec_add2sd(sum2, vec_add2sd(vec_bitand1q(tmp_sum2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(tmp_sum2, 2), m2)));
++    sum11 = vec_add2sd(vec_bitand1q(sum11, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum11, 2), m2));
++    sum22 = vec_add2sd(vec_bitand1q(sum22, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum22, 2), m2));
++    sum12 = vec_add2sd(sum12, vec_add2sd(vec_bitand1q(tmp_sum12, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(tmp_sum12, 2), m2)));
++
++    acc1.vi = vec_add2sd(acc1.vi, vec_add2sd(vec_bitand1q(sum1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum1, 4), m4)));
++    acc2.vi = vec_add2sd(acc2.vi, vec_add2sd(vec_bitand1q(sum2, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum2, 4), m4)));
++    acc11.vi = vec_add2sd(acc11.vi, vec_add2sd(vec_bitand1q(sum11, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum11, 4), m4)));
++    acc22.vi = vec_add2sd(acc22.vi, vec_add2sd(vec_bitand1q(sum22, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum22, 4), m4)));
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(sum12, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum12, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (--iters);
+   // moved down because we've almost certainly run out of xmm registers
++#ifdef __x86_64__
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+ #if MULTIPLEX_LD > 960
++  #ifdef __x86_64__
+   acc1.vi = _mm_add_epi64(_mm_and_si128(acc1.vi, m8), _mm_and_si128(_mm_srli_epi64(acc1.vi, 8), m8));
+   acc2.vi = _mm_add_epi64(_mm_and_si128(acc2.vi, m8), _mm_and_si128(_mm_srli_epi64(acc2.vi, 8), m8));
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++  #elif __PPC64__
++  acc1.vi = vec_add2sd(vec_bitand1q(acc1.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc1.vi, 8), m8));
++  acc2.vi = vec_add2sd(vec_bitand1q(acc2.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc2.vi, 8), m8));
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++  #else
++  #error "Unsupported architecture."
++  #endif
+ #else
++  #ifdef __x86_64__
+   acc1.vi = _mm_and_si128(_mm_add_epi64(acc1.vi, _mm_srli_epi64(acc1.vi, 8)), m8);
+   acc2.vi = _mm_and_si128(_mm_add_epi64(acc2.vi, _mm_srli_epi64(acc2.vi, 8)), m8);
+   acc.vi = _mm_and_si128(_mm_add_epi64(acc.vi, _mm_srli_epi64(acc.vi, 8)), m8);
++  #elif __PPC64__
++  acc1.vi = vec_bitand1q(vec_add2sd(acc1.vi, vec_shiftrightlogical2dimmediate(acc1.vi, 8)), m8);
++  acc2.vi = vec_bitand1q(vec_add2sd(acc2.vi, vec_shiftrightlogical2dimmediate(acc2.vi, 8)), m8);
++  acc.vi = vec_bitand1q(vec_add2sd(acc.vi, vec_shiftrightlogical2dimmediate(acc.vi, 8)), m8);
++  #else
++  #error "Unsupported architecture."
++  #endif
+ #endif
++#ifdef __x86_64__
+   acc11.vi = _mm_and_si128(_mm_add_epi64(acc11.vi, _mm_srli_epi64(acc11.vi, 8)), m8);
+   acc22.vi = _mm_and_si128(_mm_add_epi64(acc22.vi, _mm_srli_epi64(acc22.vi, 8)), m8);
++#elif __PPC64__
++  acc11.vi = vec_bitand1q(vec_add2sd(acc11.vi, vec_shiftrightlogical2dimmediate(acc11.vi, 8)), m8);
++  acc22.vi = vec_bitand1q(vec_add2sd(acc22.vi, vec_shiftrightlogical2dimmediate(acc22.vi, 8)), m8);
++#else
++#error "Unsupported architecture."
++#endif
+ 
+   return_vals[0] -= ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   return_vals[1] += ((acc1.u8[0] + acc1.u8[1]) * 0x1000100010001LLU) >> 48;
+@@ -258,17 +372,33 @@
+ 
+ static inline int32_t ld_dot_prod_nm_batch(__m128i* vec1, __m128i* vec2, uint32_t iters) {
+   // faster ld_dot_prod_batch() for no-missing-calls case.
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader1;
+   __m128i loader2;
+   __m128i sum12;
+   __m128i tmp_sum12;
+   __univec acc;
++#ifdef __x86_64__
+   acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++  acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+   do {
++#ifdef __x86_64__
+     loader1 = *vec1++;
+     loader2 = *vec2++;
+     sum12 = _mm_and_si128(_mm_or_si128(loader1, loader2), m1);
+@@ -291,11 +421,49 @@
+     sum12 = _mm_add_epi64(sum12, _mm_add_epi64(_mm_and_si128(tmp_sum12, m2), _mm_and_si128(_mm_srli_epi64(tmp_sum12, 2), m2)));
+ 
+     acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(sum12, m4), _mm_and_si128(_mm_srli_epi64(sum12, 4), m4)));
++#elif __PPC64__
++    loader1 = *vec1++;
++    loader2 = *vec2++;
++    sum12 = vec_bitand1q(vec_bitor1q(loader1, loader2), m1);
++    loader1 = vec_bitandnotleft1q(vec_add2sd(m1, sum12), vec_bitxor1q(loader1, loader2));
++    sum12 = vec_bitor1q(sum12, loader1);
++    sum12 = vec_add2sd(vec_bitand1q(sum12, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum12, 2), m2));
++
++    loader1 = *vec1++;
++    loader2 = *vec2++;
++    tmp_sum12 = vec_bitand1q(vec_bitor1q(loader1, loader2), m1);
++    loader1 = vec_bitandnotleft1q(vec_add2sd(m1, tmp_sum12), vec_bitxor1q(loader1, loader2));
++    tmp_sum12 = vec_bitor1q(loader1, tmp_sum12);
++    sum12 = vec_add2sd(sum12, vec_add2sd(vec_bitand1q(tmp_sum12, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(tmp_sum12, 2), m2)));
++
++    loader1 = *vec1++;
++    loader2 = *vec2++;
++    tmp_sum12 = vec_bitand1q(vec_bitor1q(loader1, loader2), m1);
++    loader1 = vec_bitandnotleft1q(vec_add2sd(m1, tmp_sum12), vec_bitxor1q(loader1, loader2));
++    tmp_sum12 = vec_bitor1q(loader1, tmp_sum12);
++    sum12 = vec_add2sd(sum12, vec_add2sd(vec_bitand1q(tmp_sum12, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(tmp_sum12, 2), m2)));
++
++    acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(sum12, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(sum12, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+   } while (--iters);
+ #if MULTIPLEX_LD > 960
++  #ifdef __x86_64__
+   acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++  #elif __PPC64__
++  acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++  #else
++  #error "Unsupported architecture."
++  #endif
+ #else
++  #ifdef __x86_64__
+   acc.vi = _mm_and_si128(_mm_add_epi64(acc.vi, _mm_srli_epi64(acc.vi, 8)), m8);
++  #elif __PPC64__
++  acc.vi = vec_bitand1q(vec_add2sd(acc.vi, vec_shiftrightlogical2dimmediate(acc.vi, 8)), m8);
++  #else
++  #error "Unsupported architecture."
++  #endif
+ #endif
+   return (uint32_t)(((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48);
+ }
+@@ -1369,10 +1537,19 @@
+   uintptr_t tot = 0;
+   uintptr_t* lptr1_end2;
+ #ifdef __LP64__
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
+   const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++  const __m128i m8 = vec_splat8sh(0x00ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i* vptr1 = (__m128i*)lptr1;
+   __m128i* vptr2 = (__m128i*)lptr2;
+   __m128i* vend1;
+@@ -1384,8 +1561,15 @@
+     word12_ct -= 10;
+     vend1 = &(vptr1[60]);
+   ld_missing_ct_intersect_main_loop:
++#ifdef __x86_64__
+     acc.vi = _mm_setzero_si128();
++#elif __PPC64__
++    acc.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+     do {
++#ifdef __x86_64__
+       loader1 = _mm_andnot_si128(_mm_or_si128(*vptr2++, *vptr1++), m1);
+       loader2 = _mm_andnot_si128(_mm_or_si128(*vptr2++, *vptr1++), m1);
+       loader1 = _mm_add_epi64(loader1, _mm_andnot_si128(_mm_or_si128(*vptr2++, *vptr1++), m1));
+@@ -1395,8 +1579,27 @@
+       loader1 = _mm_add_epi64(_mm_and_si128(loader1, m2), _mm_and_si128(_mm_srli_epi64(loader1, 2), m2));
+       loader1 = _mm_add_epi64(loader1, _mm_add_epi64(_mm_and_si128(loader2, m2), _mm_and_si128(_mm_srli_epi64(loader2, 2), m2)));
+       acc.vi = _mm_add_epi64(acc.vi, _mm_add_epi64(_mm_and_si128(loader1, m4), _mm_and_si128(_mm_srli_epi64(loader1, 4), m4)));
++#elif __PPC64__
++      loader1 = vec_bitandnotleft1q(vec_bitor1q(*vptr2++, *vptr1++), m1);
++      loader2 = vec_bitandnotleft1q(vec_bitor1q(*vptr2++, *vptr1++), m1);
++      loader1 = vec_add2sd(loader1, vec_bitandnotleft1q(vec_bitor1q(*vptr2++, *vptr1++), m1));
++      loader2 = vec_add2sd(loader2, vec_bitandnotleft1q(vec_bitor1q(*vptr2++, *vptr1++), m1));
++      loader1 = vec_add2sd(loader1, vec_bitandnotleft1q(vec_bitor1q(*vptr2++, *vptr1++), m1));
++      loader2 = vec_add2sd(loader2, vec_bitandnotleft1q(vec_bitor1q(*vptr2++, *vptr1++), m1));
++      loader1 = vec_add2sd(vec_bitand1q(loader1, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader1, 2), m2));
++      loader1 = vec_add2sd(loader1, vec_add2sd(vec_bitand1q(loader2, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader2, 2), m2)));
++      acc.vi = vec_add2sd(acc.vi, vec_add2sd(vec_bitand1q(loader1, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(loader1, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+     } while (vptr1 < vend1);
++#ifdef __x86_64__
+     acc.vi = _mm_add_epi64(_mm_and_si128(acc.vi, m8), _mm_and_si128(_mm_srli_epi64(acc.vi, 8), m8));
++#elif __PPC64__
++    acc.vi = vec_add2sd(vec_bitand1q(acc.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+     tot += ((acc.u8[0] + acc.u8[1]) * 0x1000100010001LLU) >> 48;
+   }
+   if (word12_ct) {
+@@ -2862,9 +3065,17 @@
+ 
+ #ifdef __LP64__
+ static void two_locus_3x3_tablev(__m128i* vec1, __m128i* vec2, uint32_t* counts_3x3, uint32_t sample_ctv6, uint32_t iter_ct) {
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i* vec20;
+   __m128i* vec21;
+   __m128i* vec22;
+@@ -2892,21 +3103,40 @@
+     while (ct >= 30) {
+       ct -= 30;
+       vend1 = &(vec1[30]);
++#ifdef __x86_64__
+       acc0.vi = _mm_setzero_si128();
+       acc1.vi = _mm_setzero_si128();
+       acc2.vi = _mm_setzero_si128();
++#elif __PPC64__
++      acc0.vi = vec_zero1q();
++      acc1.vi = vec_zero1q();
++      acc2.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+       do {
+       two_locus_3x3_tablev_outer:
+ 	loader1 = *vec1++;
+ 	loader20 = *vec20++;
+ 	loader21 = *vec21++;
+ 	loader22 = *vec22++;
++#ifdef __x86_64__
+ 	count10 = _mm_and_si128(loader1, loader20);
+ 	count11 = _mm_and_si128(loader1, loader21);
+ 	count12 = _mm_and_si128(loader1, loader22);
+ 	count10 = _mm_sub_epi64(count10, _mm_and_si128(_mm_srli_epi64(count10, 1), m1));
+ 	count11 = _mm_sub_epi64(count11, _mm_and_si128(_mm_srli_epi64(count11, 1), m1));
+ 	count12 = _mm_sub_epi64(count12, _mm_and_si128(_mm_srli_epi64(count12, 1), m1));
++#elif __PPC64__
++	count10 = vec_bitand1q(loader1, loader20);
++	count11 = vec_bitand1q(loader1, loader21);
++	count12 = vec_bitand1q(loader1, loader22);
++	count10 = vec_subtract2sd(count10, vec_bitand1q(vec_shiftrightlogical2dimmediate(count10, 1), m1));
++	count11 = vec_subtract2sd(count11, vec_bitand1q(vec_shiftrightlogical2dimmediate(count11, 1), m1));
++	count12 = vec_subtract2sd(count12, vec_bitand1q(vec_shiftrightlogical2dimmediate(count12, 1), m1));
++#else
++#error "Unsupported architecture."
++#endif
+       two_locus_3x3_tablev_two_left:
+         // unlike the zmiss variant, this apparently does not suffer from
+ 	// enough register spill to justify shrinking the inner loop
+@@ -2914,14 +3144,26 @@
+ 	loader20 = *vec20++;
+ 	loader21 = *vec21++;
+ 	loader22 = *vec22++;
++#ifdef __x86_64__
+ 	count20 = _mm_and_si128(loader1, loader20);
+ 	count21 = _mm_and_si128(loader1, loader21);
+ 	count22 = _mm_and_si128(loader1, loader22);
+ 	count20 = _mm_sub_epi64(count20, _mm_and_si128(_mm_srli_epi64(count20, 1), m1));
+ 	count21 = _mm_sub_epi64(count21, _mm_and_si128(_mm_srli_epi64(count21, 1), m1));
+ 	count22 = _mm_sub_epi64(count22, _mm_and_si128(_mm_srli_epi64(count22, 1), m1));
++#elif __PPC64__
++	count20 = vec_bitand1q(loader1, loader20);
++	count21 = vec_bitand1q(loader1, loader21);
++	count22 = vec_bitand1q(loader1, loader22);
++	count20 = vec_subtract2sd(count20, vec_bitand1q(vec_shiftrightlogical2dimmediate(count20, 1), m1));
++	count21 = vec_subtract2sd(count21, vec_bitand1q(vec_shiftrightlogical2dimmediate(count21, 1), m1));
++	count22 = vec_subtract2sd(count22, vec_bitand1q(vec_shiftrightlogical2dimmediate(count22, 1), m1));
++#else
++#error "Unsupported architecture."
++#endif
+       two_locus_3x3_tablev_one_left:
+ 	loader1 = *vec1++;
++#ifdef __x86_64__
+ 	loader20 = *vec20++;
+ 	loader21 = _mm_and_si128(loader1, loader20); // half1
+ 	loader22 = _mm_and_si128(_mm_srli_epi64(loader21, 1), m1); // half2
+@@ -2947,11 +3189,49 @@
+ 	acc0.vi = _mm_add_epi64(acc0.vi, _mm_add_epi64(_mm_and_si128(count10, m4), _mm_and_si128(_mm_srli_epi64(count10, 4), m4)));
+ 	acc1.vi = _mm_add_epi64(acc1.vi, _mm_add_epi64(_mm_and_si128(count11, m4), _mm_and_si128(_mm_srli_epi64(count11, 4), m4)));
+ 	acc2.vi = _mm_add_epi64(acc2.vi, _mm_add_epi64(_mm_and_si128(count12, m4), _mm_and_si128(_mm_srli_epi64(count12, 4), m4)));
++#elif __PPC64__
++	loader20 = *vec20++;
++	loader21 = vec_bitand1q(loader1, loader20); // half1
++	loader22 = vec_bitand1q(vec_shiftrightlogical2dimmediate(loader21, 1), m1); // half2
++	count10 = vec_add2sd(count10, vec_bitand1q(loader21, m1));
++	count20 = vec_add2sd(count20, loader22);
++	loader20 = *vec21++;
++	loader21 = vec_bitand1q(loader1, loader20);
++	loader22 = vec_bitand1q(vec_shiftrightlogical2dimmediate(loader21, 1), m1);
++	count11 = vec_add2sd(count11, vec_bitand1q(loader21, m1));
++	count21 = vec_add2sd(count21, loader22);
++	loader20 = *vec22++;
++	loader21 = vec_bitand1q(loader1, loader20);
++	loader22 = vec_bitand1q(vec_shiftrightlogical2dimmediate(loader21, 1), m1);
++	count12 = vec_add2sd(count12, vec_bitand1q(loader21, m1));
++	count22 = vec_add2sd(count22, loader22);
++
++	count10 = vec_add2sd(vec_bitand1q(count10, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count10, 2), m2));
++	count11 = vec_add2sd(vec_bitand1q(count11, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count11, 2), m2));
++	count12 = vec_add2sd(vec_bitand1q(count12, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count12, 2), m2));
++	count10 = vec_add2sd(count10, vec_add2sd(vec_bitand1q(count20, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count20, 2), m2)));
++	count11 = vec_add2sd(count11, vec_add2sd(vec_bitand1q(count21, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count21, 2), m2)));
++	count12 = vec_add2sd(count12, vec_add2sd(vec_bitand1q(count22, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(count22, 2), m2)));
++	acc0.vi = vec_add2sd(acc0.vi, vec_add2sd(vec_bitand1q(count10, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count10, 4), m4)));
++	acc1.vi = vec_add2sd(acc1.vi, vec_add2sd(vec_bitand1q(count11, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count11, 4), m4)));
++	acc2.vi = vec_add2sd(acc2.vi, vec_add2sd(vec_bitand1q(count12, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(count12, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+       } while (vec1 < vend1);
++#ifdef __x86_64__
+       const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
+       acc0.vi = _mm_add_epi64(_mm_and_si128(acc0.vi, m8), _mm_and_si128(_mm_srli_epi64(acc0.vi, 8), m8));
+       acc1.vi = _mm_add_epi64(_mm_and_si128(acc1.vi, m8), _mm_and_si128(_mm_srli_epi64(acc1.vi, 8), m8));
+       acc2.vi = _mm_add_epi64(_mm_and_si128(acc2.vi, m8), _mm_and_si128(_mm_srli_epi64(acc2.vi, 8), m8));
++#elif __PPC64__
++      const __m128i m8 = vec_splat8sh(0x00ff);
++      acc0.vi = vec_add2sd(vec_bitand1q(acc0.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc0.vi, 8), m8));
++      acc1.vi = vec_add2sd(vec_bitand1q(acc1.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc1.vi, 8), m8));
++      acc2.vi = vec_add2sd(vec_bitand1q(acc2.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc2.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+       counts_3x3[0] += ((acc0.u8[0] + acc0.u8[1]) * 0x1000100010001LLU) >> 48;
+       counts_3x3[1] += ((acc1.u8[0] + acc1.u8[1]) * 0x1000100010001LLU) >> 48;
+       counts_3x3[2] += ((acc2.u8[0] + acc2.u8[1]) * 0x1000100010001LLU) >> 48;
+@@ -2959,20 +3239,44 @@
+     if (ct) {
+       vend1 = &(vec1[ct]);
+       ct2 = ct % 3;
++#ifdef __x86_64__
+       acc0.vi = _mm_setzero_si128();
+       acc1.vi = _mm_setzero_si128();
+       acc2.vi = _mm_setzero_si128();
++#elif __PPC64__
++      acc0.vi = vec_zero1q();
++      acc1.vi = vec_zero1q();
++      acc2.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+       ct = 0;
+       if (ct2) {
++#ifdef __x86_64__
+ 	count10 = _mm_setzero_si128();
+ 	count11 = _mm_setzero_si128();
+ 	count12 = _mm_setzero_si128();
++#elif __PPC64__
++	count10 = vec_zero1q();
++	count11 = vec_zero1q();
++	count12 = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+ 	if (ct2 == 2) {
+ 	  goto two_locus_3x3_tablev_two_left;
+ 	}
++#ifdef __x86_64__
+ 	count20 = _mm_setzero_si128();
+ 	count21 = _mm_setzero_si128();
+ 	count22 = _mm_setzero_si128();
++#elif __PPC64__
++	count20 = vec_zero1q();
++	count21 = vec_zero1q();
++	count22 = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+ 	goto two_locus_3x3_tablev_one_left;
+       }
+       goto two_locus_3x3_tablev_outer;
+@@ -2982,9 +3286,17 @@
+ }
+ 
+ static inline void two_locus_3x3_zmiss_tablev(__m128i* veca0, __m128i* vecb0, uint32_t* counts_3x3, uint32_t sample_ctv6) {
++#ifdef __x86_64__
+   const __m128i m1 = {FIVEMASK, FIVEMASK};
+   const __m128i m2 = {0x3333333333333333LLU, 0x3333333333333333LLU};
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
++#elif __PPC64__
++  const __m128i m1 = vec_splat16sb(0x55);
++  const __m128i m2 = vec_splat16sb(0x33);
++  const __m128i m4 = vec_splat16sb(0x0f);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i* vecb1 = &(vecb0[sample_ctv6]);
+   __m128i* veca1 = &(veca0[sample_ctv6]);
+   __m128i* vend;
+@@ -3008,12 +3320,22 @@
+   while (sample_ctv6 >= 30) {
+     sample_ctv6 -= 30;
+     vend = &(veca0[30]);
++#ifdef __x86_64__
+     acc00.vi = _mm_setzero_si128();
+     acc01.vi = _mm_setzero_si128();
+     acc11.vi = _mm_setzero_si128();
+     acc10.vi = _mm_setzero_si128();
++#elif __PPC64__
++    acc00.vi = vec_zero1q();
++    acc01.vi = vec_zero1q();
++    acc11.vi = vec_zero1q();
++    acc10.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+     do {
+     two_locus_3x3_zmiss_tablev_outer:
++#ifdef __x86_64__
+       loadera0 = *veca0++;
+       loaderb0 = *vecb0++;
+       loaderb1 = *vecb1++;
+@@ -3030,7 +3352,28 @@
+       countx01 = _mm_add_epi64(_mm_and_si128(countx01, m2), _mm_and_si128(_mm_srli_epi64(countx01, 2), m2));
+       countx11 = _mm_add_epi64(_mm_and_si128(countx11, m2), _mm_and_si128(_mm_srli_epi64(countx11, 2), m2));
+       countx10 = _mm_add_epi64(_mm_and_si128(countx10, m2), _mm_and_si128(_mm_srli_epi64(countx10, 2), m2));
++#elif __PPC64__
++      loadera0 = *veca0++;
++      loaderb0 = *vecb0++;
++      loaderb1 = *vecb1++;
++      loadera1 = *veca1++;
++      countx00 = vec_bitand1q(loadera0, loaderb0);
++      countx01 = vec_bitand1q(loadera0, loaderb1);
++      countx11 = vec_bitand1q(loadera1, loaderb1);
++      countx10 = vec_bitand1q(loadera1, loaderb0);
++      countx00 = vec_subtract2sd(countx00, vec_bitand1q(vec_shiftrightlogical2dimmediate(countx00, 1), m1));
++      countx01 = vec_subtract2sd(countx01, vec_bitand1q(vec_shiftrightlogical2dimmediate(countx01, 1), m1));
++      countx11 = vec_subtract2sd(countx11, vec_bitand1q(vec_shiftrightlogical2dimmediate(countx11, 1), m1));
++      countx10 = vec_subtract2sd(countx10, vec_bitand1q(vec_shiftrightlogical2dimmediate(countx10, 1), m1));
++      countx00 = vec_add2sd(vec_bitand1q(countx00, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(countx00, 2), m2));
++      countx01 = vec_add2sd(vec_bitand1q(countx01, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(countx01, 2), m2));
++      countx11 = vec_add2sd(vec_bitand1q(countx11, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(countx11, 2), m2));
++      countx10 = vec_add2sd(vec_bitand1q(countx10, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(countx10, 2), m2));
++#else
++#error "Unsupported architecture."
++#endif
+     two_locus_3x3_zmiss_tablev_one_left:
++#ifdef __x86_64__
+       loadera0 = *veca0++;
+       loaderb0 = *vecb0++;
+       loaderb1 = *vecb1++;
+@@ -3051,12 +3394,46 @@
+       acc01.vi = _mm_add_epi64(acc01.vi, _mm_add_epi64(_mm_and_si128(countx01, m4), _mm_and_si128(_mm_srli_epi64(countx01, 4), m4)));
+       acc11.vi = _mm_add_epi64(acc11.vi, _mm_add_epi64(_mm_and_si128(countx11, m4), _mm_and_si128(_mm_srli_epi64(countx11, 4), m4)));
+       acc10.vi = _mm_add_epi64(acc10.vi, _mm_add_epi64(_mm_and_si128(countx10, m4), _mm_and_si128(_mm_srli_epi64(countx10, 4), m4)));
++#elif __PPC64__
++      loadera0 = *veca0++;
++      loaderb0 = *vecb0++;
++      loaderb1 = *vecb1++;
++      loadera1 = *veca1++;
++      county00 = vec_bitand1q(loadera0, loaderb0);
++      county01 = vec_bitand1q(loadera0, loaderb1);
++      county11 = vec_bitand1q(loadera1, loaderb1);
++      county10 = vec_bitand1q(loadera1, loaderb0);
++      county00 = vec_subtract2sd(county00, vec_bitand1q(vec_shiftrightlogical2dimmediate(county00, 1), m1));
++      county01 = vec_subtract2sd(county01, vec_bitand1q(vec_shiftrightlogical2dimmediate(county01, 1), m1));
++      county11 = vec_subtract2sd(county11, vec_bitand1q(vec_shiftrightlogical2dimmediate(county11, 1), m1));
++      county10 = vec_subtract2sd(county10, vec_bitand1q(vec_shiftrightlogical2dimmediate(county10, 1), m1));
++      countx00 = vec_add2sd(countx00, vec_add2sd(vec_bitand1q(county00, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(county00, 2), m2)));
++      countx01 = vec_add2sd(countx01, vec_add2sd(vec_bitand1q(county01, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(county01, 2), m2)));
++      countx11 = vec_add2sd(countx11, vec_add2sd(vec_bitand1q(county11, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(county11, 2), m2)));
++      countx10 = vec_add2sd(countx10, vec_add2sd(vec_bitand1q(county10, m2), vec_bitand1q(vec_shiftrightlogical2dimmediate(county10, 2), m2)));
++      acc00.vi = vec_add2sd(acc00.vi, vec_add2sd(vec_bitand1q(countx00, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(countx00, 4), m4)));
++      acc01.vi = vec_add2sd(acc01.vi, vec_add2sd(vec_bitand1q(countx01, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(countx01, 4), m4)));
++      acc11.vi = vec_add2sd(acc11.vi, vec_add2sd(vec_bitand1q(countx11, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(countx11, 4), m4)));
++      acc10.vi = vec_add2sd(acc10.vi, vec_add2sd(vec_bitand1q(countx10, m4), vec_bitand1q(vec_shiftrightlogical2dimmediate(countx10, 4), m4)));
++#else
++#error "Unsupported architecture."
++#endif
+     } while (veca0 < vend);
++#ifdef __x86_64__
+     const __m128i m8 = {0x00ff00ff00ff00ffLLU, 0x00ff00ff00ff00ffLLU};
+     acc00.vi = _mm_add_epi64(_mm_and_si128(acc00.vi, m8), _mm_and_si128(_mm_srli_epi64(acc00.vi, 8), m8));
+     acc01.vi = _mm_add_epi64(_mm_and_si128(acc01.vi, m8), _mm_and_si128(_mm_srli_epi64(acc01.vi, 8), m8));
+     acc11.vi = _mm_add_epi64(_mm_and_si128(acc11.vi, m8), _mm_and_si128(_mm_srli_epi64(acc11.vi, 8), m8));
+     acc10.vi = _mm_add_epi64(_mm_and_si128(acc10.vi, m8), _mm_and_si128(_mm_srli_epi64(acc10.vi, 8), m8));
++#elif __PPC64__
++    const __m128i m8 = vec_splat8sh(0x00ff);
++    acc00.vi = vec_add2sd(vec_bitand1q(acc00.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc00.vi, 8), m8));
++    acc01.vi = vec_add2sd(vec_bitand1q(acc01.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc01.vi, 8), m8));
++    acc11.vi = vec_add2sd(vec_bitand1q(acc11.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc11.vi, 8), m8));
++    acc10.vi = vec_add2sd(vec_bitand1q(acc10.vi, m8), vec_bitand1q(vec_shiftrightlogical2dimmediate(acc10.vi, 8), m8));
++#else
++#error "Unsupported architecture."
++#endif
+     counts_3x3[0] += ((acc00.u8[0] + acc00.u8[1]) * 0x1000100010001LLU) >> 48;
+     counts_3x3[1] += ((acc01.u8[0] + acc01.u8[1]) * 0x1000100010001LLU) >> 48;
+     counts_3x3[4] += ((acc11.u8[0] + acc11.u8[1]) * 0x1000100010001LLU) >> 48;
+@@ -3066,15 +3443,33 @@
+     vend = &(veca0[sample_ctv6]);
+     ct2 = sample_ctv6 % 2;
+     sample_ctv6 = 0;
++#ifdef __x86_64__
+     acc00.vi = _mm_setzero_si128();
+     acc01.vi = _mm_setzero_si128();
+     acc11.vi = _mm_setzero_si128();
+     acc10.vi = _mm_setzero_si128();
++#elif __PPC64__
++    acc00.vi = vec_zero1q();
++    acc01.vi = vec_zero1q();
++    acc11.vi = vec_zero1q();
++    acc10.vi = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+     if (ct2) {
++#ifdef __x86_64__
+       countx00 = _mm_setzero_si128();
+       countx01 = _mm_setzero_si128();
+       countx11 = _mm_setzero_si128();
+       countx10 = _mm_setzero_si128();
++#elif __PPC64__
++      countx00 = vec_zero1q();
++      countx01 = vec_zero1q();
++      countx11 = vec_zero1q();
++      countx10 = vec_zero1q();
++#else
++#error "Unsupported architecture."
++#endif
+       goto two_locus_3x3_zmiss_tablev_one_left;
+     }
+     goto two_locus_3x3_zmiss_tablev_outer;
+--- plink_perm.h
++++ plink_perm.h
+@@ -63,10 +63,17 @@
+ 
+ #ifdef __LP64__
+ HEADER_INLINE void unroll_incr_1_4(const __m128i* acc1, __m128i* acc4, uint32_t acc1_vec_ct) {
++#ifdef __x86_64__
+   const __m128i m1x4 = {0x1111111111111111LLU, 0x1111111111111111LLU};
++#elif __PPC64__
++  const __m128i m1x4 = vec_splat16sb(0x11);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   uint32_t vidx;
+   for (vidx = 0; vidx < acc1_vec_ct; vidx++) {
++#ifdef __x86_64__
+     loader = *acc1++;
+     *acc4 = _mm_add_epi64(*acc4, _mm_and_si128(loader, m1x4));
+     acc4++;
+@@ -79,28 +86,68 @@
+     loader = _mm_srli_epi64(loader, 1);
+     *acc4 = _mm_add_epi64(*acc4, _mm_and_si128(loader, m1x4));
+     acc4++;
++#elif __PPC64__
++    loader = *acc1++;
++    *acc4 = vec_add2sd(*acc4, vec_bitand1q(loader, m1x4));
++    acc4++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 1);
++    *acc4 = vec_add2sd(*acc4, vec_bitand1q(loader, m1x4));
++    acc4++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 1);
++    *acc4 = vec_add2sd(*acc4, vec_bitand1q(loader, m1x4));
++    acc4++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 1);
++    *acc4 = vec_add2sd(*acc4, vec_bitand1q(loader, m1x4));
++    acc4++;
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ 
+ HEADER_INLINE void unroll_incr_4_8(const __m128i* acc4, __m128i* acc8, uint32_t acc4_vec_ct) {
++#ifdef __x86_64__
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
++#elif __PPC64__
++  const __m128i m4 = vec_splat16sb(0x0f);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   uint32_t vidx;
+   for (vidx = 0; vidx < acc4_vec_ct; vidx++) {
++#ifdef __x86_64__
+     loader = *acc4++;
+     *acc8 = _mm_add_epi64(*acc8, _mm_and_si128(loader, m4));
+     acc8++;
+     loader = _mm_srli_epi64(loader, 4);
+     *acc8 = _mm_add_epi64(*acc8, _mm_and_si128(loader, m4));
+     acc8++;
++#elif __PPC64__
++    loader = *acc4++;
++    *acc8 = vec_add2sd(*acc8, vec_bitand1q(loader, m4));
++    acc8++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 4);
++    *acc8 = vec_add2sd(*acc8, vec_bitand1q(loader, m4));
++    acc8++;
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ 
+ HEADER_INLINE void unroll_zero_incr_4_8(__m128i* acc4, __m128i* acc8, uint32_t acc4_vec_ct) {
++#ifdef __x86_64__
+   const __m128i m4 = {0x0f0f0f0f0f0f0f0fLLU, 0x0f0f0f0f0f0f0f0fLLU};
++#elif __PPC64__
++  const __m128i m4 = vec_splat16sb(0x0f);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   uint32_t vidx;
+   for (vidx = 0; vidx < acc4_vec_ct; vidx++) {
++#ifdef __x86_64__
+     loader = *acc4;
+     *acc4++ = _mm_setzero_si128();
+     *acc8 = _mm_add_epi64(*acc8, _mm_and_si128(loader, m4));
+@@ -108,14 +155,32 @@
+     loader = _mm_srli_epi64(loader, 4);
+     *acc8 = _mm_add_epi64(*acc8, _mm_and_si128(loader, m4));
+     acc8++;
++#elif __PPC64__
++    loader = *acc4;
++    *acc4++ = vec_zero1q();
++    *acc8 = vec_add2sd(*acc8, vec_bitand1q(loader, m4));
++    acc8++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 4);
++    *acc8 = vec_add2sd(*acc8, vec_bitand1q(loader, m4));
++    acc8++;
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ 
+ HEADER_INLINE void unroll_incr_8_32(const __m128i* acc8, __m128i* acc32, uint32_t acc8_vec_ct) {
++#ifdef __x86_64__
+   const __m128i m8x32 = {0x000000ff000000ffLLU, 0x000000ff000000ffLLU};
++#elif __PPC64__
++  const __m128i m8x32 = vec_splat4sw(0x000000ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   uint32_t vidx;
+   for (vidx = 0; vidx < acc8_vec_ct; vidx++) {
++#ifdef __x86_64__
+     loader = *acc8++;
+     *acc32 = _mm_add_epi64(*acc32, _mm_and_si128(loader, m8x32));
+     acc32++;
+@@ -128,14 +193,37 @@
+     loader = _mm_srli_epi64(loader, 8);
+     *acc32 = _mm_add_epi64(*acc32, _mm_and_si128(loader, m8x32));
+     acc32++;
++#elif __PPC64__
++    loader = *acc8++;
++    *acc32 = vec_add2sd(*acc32, vec_bitand1q(loader, m8x32));
++    acc32++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 8);
++    *acc32 = vec_add2sd(*acc32, vec_bitand1q(loader, m8x32));
++    acc32++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 8);
++    *acc32 = vec_add2sd(*acc32, vec_bitand1q(loader, m8x32));
++    acc32++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 8);
++    *acc32 = vec_add2sd(*acc32, vec_bitand1q(loader, m8x32));
++    acc32++;
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ 
+ HEADER_INLINE void unroll_zero_incr_8_32(__m128i* acc8, __m128i* acc32, uint32_t acc8_vec_ct) {
++#ifdef __x86_64__
+   const __m128i m8x32 = {0x000000ff000000ffLLU, 0x000000ff000000ffLLU};
++#elif __PPC64__
++  const __m128i m8x32 = vec_splat4sw(0x000000ff);
++#else
++#error "Unsupported architecture."
++#endif
+   __m128i loader;
+   uint32_t vidx;
+   for (vidx = 0; vidx < acc8_vec_ct; vidx++) {
++#ifdef __x86_64__
+     loader = *acc8;
+     *acc8++ = _mm_setzero_si128();
+     *acc32 = _mm_add_epi64(*acc32, _mm_and_si128(loader, m8x32));
+@@ -149,6 +237,23 @@
+     loader = _mm_srli_epi64(loader, 8);
+     *acc32 = _mm_add_epi64(*acc32, _mm_and_si128(loader, m8x32));
+     acc32++;
++#elif __PPC64__
++    loader = *acc8;
++    *acc8++ = vec_zero1q();
++    *acc32 = vec_add2sd(*acc32, vec_bitand1q(loader, m8x32));
++    acc32++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 8);
++    *acc32 = vec_add2sd(*acc32, vec_bitand1q(loader, m8x32));
++    acc32++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 8);
++    *acc32 = vec_add2sd(*acc32, vec_bitand1q(loader, m8x32));
++    acc32++;
++    loader = vec_shiftrightlogical2dimmediate(loader, 8);
++    *acc32 = vec_add2sd(*acc32, vec_bitand1q(loader, m8x32));
++    acc32++;
++#else
++#error "Unsupported architecture."
++#endif
+   }
+ }
+ #else
