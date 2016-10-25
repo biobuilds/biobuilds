@@ -1,0 +1,21 @@
+package:
+  name: icu
+  version: "58.1"
+
+source:
+  fn: icu4c-58.1-src.tgz                                                    # [unix]
+  url:
+    - "http://download.icu-project.org/files/icu4c/58.1/icu4c-58_1-src.tgz" # [unix]
+    - "http://download.lab7.io/sources/icu4c-58.1-src.tgz"                  # [unix]
+  md5: "1901302aaff1c1633ef81862663d2917"                                   # [unix]
+
+build:
+  number: 0
+  script_env:
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://site.icu-project.org/"
+  license: Unicode Consotrium License
+  license_file: LICENSE
+  summary: "Library for software internationalization"
