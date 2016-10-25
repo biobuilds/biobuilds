@@ -1,0 +1,39 @@
+package:
+  name: boost
+  version: "1.62.0"
+
+requirements:
+  build:
+    - python
+    # Boost's dynamic libraries record the specific version of the ICU
+    # libraries they were linked against, so specify the version here so
+    # things don't get confused and break at runtime.
+    - icu 58.1
+    - zlib
+    - bzip2
+  run:
+    - python
+    # See comment in the "build" section above.
+    - icu 58.1
+    - zlib
+
+source:
+  fn: "boost-1.62.0.tar.bz2"
+  url:
+    - "http://downloads.sourceforge.net/project/boost/boost/1.62.0/boost_1_62_0.tar.bz2"
+    - "http://download.lab7.io/sources/boost-1.62.0.tar.bz2"
+  md5: "5fb94629535c19e48703bdb2b2e9490f"
+  sha256: "36c96b0f6155c98404091d8ceb48319a28279ca0333fba1ad8611eb90afb2ca0"
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://www.boost.org/"
+  license: Boost
+  license_file: "LICENSE_1_0.txt"
+  summary: "Peer-reviewed portable C++ source libraries"
