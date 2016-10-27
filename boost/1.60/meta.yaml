@@ -1,0 +1,42 @@
+package:
+  name: boost
+  version: "1.60.0"
+
+requirements:
+  build:
+    - python
+    - icu
+    - zlib
+    - bzip2
+  run:
+    - python
+    - icu
+    - zlib
+
+source:
+  fn: "boost-1.60.0.tar.bz2"
+  url:
+    - "http://downloads.sourceforge.net/project/boost/boost/1.60.0/boost_1_60_0.tar.bz2"
+    - "http://download.lab7.io/sources/boost-1.60.0.tar.bz2"
+  md5: "65a840e1a0b13a558ff19eeb2c4f0cbe"
+  sha256: "686affff989ac2488f79a97b9479efb9f2abae035b5ed4d8226de6857933fd3b"
+  patches:
+    # "Backport" to fix CentOS 6 (gcc 4.4.7) build issue; see
+    # <https://svn.boost.org/trac/boost/ticket/11856>
+    - gcc-4.4.7-decl.patch
+    # "Backport" to fix POWER8 (ppc64le) build issue; see
+    # <https://bugzilla.redhat.com/show_bug.cgi?id=1262444>
+    - fenv-macros.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "http://www.boost.org/"
+  license: Boost
+  license_file: "LICENSE_1_0.txt"
+  summary: "Peer-reviewed portable C++ source libraries"
