@@ -15,23 +15,26 @@ source:
     - use-local-libs.patch
     # Modify expected test results to overlook differences in NaN signs
     - tweak-test-data.patch   # [ppc64le or osx]
+    # Make load() function compatible with Boost 1.60+
+    - ConfigMap-load.patch
 
 requirements:
   build:
+    - cmake
     - gcc     # [osx]
     - perl
-    - boost 1.54.0
+    - boost 1.60.0
     - samtools 0.1.19
   run:
     - libgcc  # [osx]
     - perl
-    - boost 1.54.0
+    - boost 1.60.0
     - perl-statistics-descriptive
     - perl-math-cdf
     - perl-gdgraph-histogram
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS

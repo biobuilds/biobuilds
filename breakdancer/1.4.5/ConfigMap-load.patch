@@ -1,0 +1,34 @@
+--- src/lib/common/ConfigMap.hpp
++++ src/lib/common/ConfigMap.hpp
+@@ -2,11 +2,14 @@
+ 
+ #include "common/namespace.hpp"
+ 
++#include <boost/version.hpp>
+ #include <boost/container/flat_map.hpp>
+ #include <boost/serialization/split_free.hpp>
+ #include <boost/serialization/map.hpp>
+ #include <boost/serialization/collections_save_imp.hpp>
++#if BOOST_VERSION < 105800
+ #include <boost/serialization/collections_load_imp.hpp>
++#endif
+ 
+ template<typename K, typename V>
+ struct ConfigMap {
+@@ -32,15 +35,7 @@
+         const unsigned int /* version */)
+ {
+     typedef boost::container::flat_map<Key, Value, Compare, Allocator> MapType;
+-
+-    boost::serialization::stl::load_collection<
+-        Archive,
+-        MapType,
+-        boost::serialization::stl::archive_input_map<Archive, MapType>,
+-        boost::serialization::stl::no_reserve_imp<MapType>
+-        >
+-    (ar, m);
+-
++    load_map_collection(ar, m);
+ }
+ 
+ 
