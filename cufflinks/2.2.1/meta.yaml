@@ -4,10 +4,10 @@ package:
 
 requirements:
   # Limits on Boost version due to issues in serialization library; see
-  # https://github.com/cole-trapnell-lab/cufflinks for more details.
+  # https://github.com/cole-trapnell-lab/cufflinks/issues/3 for details.
   build:
     - zlib
-    - boost <=1.55.0
+    - boost 1.60.0
     # Require older version of samtools to _build_, due to incompatibilities
     # between the older samtools 0.1.x and newer htslib 1.x APIs and headers.
     - samtools 0.1.19
@@ -15,7 +15,7 @@ requirements:
     - eigen
   run:
     - zlib
-    - boost <=1.55.0
+    - boost 1.60.0
     # Allow newer samtools versions at _runtime_, because nothing in the code
     # suggests we will have version-compatibility problems (i.e., cufflinks
     # doesn't write BCF files). Without this "hack", we wouldn't be able to
@@ -30,9 +30,10 @@ source:
   md5: 9a5ba7a7710cd864932cf205c17851f0
   patches:
     - samtools-includes.patch
+    - configure-boost-dylibs.patch
 
 build:
-  number: 2
+  number: 3
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
@@ -41,5 +42,5 @@ build:
 about:
   home: http://cole-trapnell-lab.github.io/cufflinks/
   license: Boost
-  license_file: True
+  license_file: LICENSE
   summary: "Transcriptome assembly and differential expression analysis for RNA-Seq"
