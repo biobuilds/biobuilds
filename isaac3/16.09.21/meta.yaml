@@ -1,0 +1,54 @@
+package:
+  name: isaac3
+  version: "16.09.21"
+
+source:
+  fn: "iSAAC-03.16.09.21.tar.gz"
+  url:
+    - "https://github.com/Illumina/Isaac3/archive/iSAAC-03.16.09.21.tar.gz"
+    - "http://download.lab7.io/sources/iSAAC-03.16.09.21.tar.gz"
+  md5: "2c2ed8e3fafb31a84aef0ca51c35c8b4"
+  patches:
+    - cmake-files.patch
+
+requirements:
+  build:
+    - gcc 4.8.*       # [not ppc64le]
+    - cmake
+    - zlib
+    - boost 1.60.*
+    - libxml2 >=2.7.8
+    - libxslt >=1.1.26
+  run:
+    # Make sure gcc and libgcc versions match; such differences *probably*
+    # won't break things but better to have one less thing to worry about.
+    - libgcc 4.8.*    # [not ppc64le]
+    - zlib
+    - boost 1.60.*
+    - libxml2 >=2.7.8
+    - libxslt >=1.1.26
+    - gnuplot
+
+build:
+  skip: True  # [osx]
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  detect_binary_files_with_prefix: True
+
+test:
+  # Give conda enough hints so it grabs the BioBuilds version of boost that we
+  # actually built against; without this, conda-build < 4.2 ends up grabbing
+  # the "-py35_*" build from the "defaults" channels, which causes the binary
+  # to fail due to some ICU dynamic library issues.
+  requires:
+    - python 2.7.*
+    - boost 1.60.*
+
+about:
+  home: "https://github.com/Illumina/isaac3"
+  license: GPLv3
+  license_file: COPYRIGHT
+  summary: "Illumina short-read alignment program"

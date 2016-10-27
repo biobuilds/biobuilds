@@ -1,0 +1,21 @@
+--- src/cmake/isaac_redist_macros.cmake
++++ src/cmake/isaac_redist_macros.cmake
+@@ -43,6 +43,7 @@
+ ## Redist if not found (untar, configure, make install)
+ macro(redist_package name version args)
+ 
++     message(FATAL_ERROR "Calling redist_package for ${name}-${version}")
+      if (NOT CMAKE_VERBOSE_MAKEFILE)
+        list(APPEND REDIST_QUIET "OUTPUT_QUIET")
+        list(APPEND REDIST_QUIET "ERROR_QUIET")
+--- src/cmake/modules/FindLibExslt.cmake
++++ src/cmake/modules/FindLibExslt.cmake
+@@ -51,7 +51,7 @@
+ if(PC_LIBEXSLT_VERSION)
+   set(LIBEXSLT_VERSION_STRING ${PC_LIBEXSLT_VERSION})
+ elseif(LIBEXSLT_INCLUDE_DIR AND EXISTS "${LIBEXSLT_INCLUDE_DIR}/libexslt/exsltconfig.h")
+-  file(STRINGS "${LIBEXSLT_INCLUDE_DIR}/libexslt/xsltconfig.h" libexslt_version_str
++  file(STRINGS "${LIBEXSLT_INCLUDE_DIR}/libexslt/exsltconfig.h" libexslt_version_str
+     REGEX "^#define[\t ]+LIBEXSLT_DOTTED_VERSION[\t ]+\".*\"")
+ 
+   string(REGEX REPLACE "^#define[\t ]+LIBEXSLT_DOTTED_VERSION[\t ]+\"([^\"]*)\".*" "\\1"
