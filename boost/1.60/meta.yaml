@@ -5,12 +5,16 @@ package:
 requirements:
   build:
     - python
-    - icu
+    # Boost's dynamic libraries record the specific version of the ICU
+    # libraries they were linked against, so specify the version here so
+    # things don't get confused and break at runtime.
+    - icu 58.1
     - zlib
     - bzip2
   run:
     - python
-    - icu
+    # See comment in the "build" section above.
+    - icu 58.1
     - zlib
 
 source:
@@ -29,7 +33,7 @@ source:
     - fenv-macros.patch
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
