@@ -15,6 +15,14 @@ abort() {
     exit 1
 }
 
+# Make sure we use the image appropriate for this architecture.
+# WARNING: this munging only applies to the default image used by this script;
+# when invoking with the "--img" option, the user is responsible for providing
+# an architecture-appropriate image name.
+if [ `uname -m` == 'ppc64le' ]; then
+    img="${img}-ppc64le"
+fi
+
 # Process command line arguments
 while [ "$1" != "" ]; do
     case "$1" in
