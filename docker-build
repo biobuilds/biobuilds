@@ -58,6 +58,21 @@ while [ "$1" != "" ]; do
     shift
 done
 
+# Check for cache directory containing packages from "defaults" and other
+# channels that may be needed for the build process. This saves us the trouble
+# of having to repeatedly download packages when using the build container.
+HOST_ARCH=`uname -m`
+PKG_CACHE_BASE="conda-bld/pkg_cache"
+if [ "$HOST_ARCH" == 'x86_64' ]; then
+    PKG_CACHE_DIR="${basedir}/${PKG_CACHE_BASE}/linux-64"
+elif [ "$HOST_ARCH" == 'ppc64le' ]; then
+    PKG_CACHE_DIR="${basedir}/${PKG_CACHE_BASE}/linux-ppc64le"
+fi
+if [[ -f "${PKG_CACHE_DIR}/.index.json" && \
+        -f "${PKG_CACHE_DIR}/repodata.json" ]]; then
+    build_opts="$build_opts -c file:///src/${PKG_CACHE_BASE}"
+fi
+
 # Sanity check arguments
 if [ $shell -eq 0 ]; then
     [ "x$build_pkgs" == "x" ] && \
