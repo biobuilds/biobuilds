@@ -43,6 +43,7 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
         nasm \
         patch \
         perl \
+        pkg-config \
         subversion \
         vim-common \
     && apt-get clean \
