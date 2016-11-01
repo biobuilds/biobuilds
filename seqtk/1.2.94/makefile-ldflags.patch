@@ -1,0 +1,11 @@
+--- Makefile
++++ Makefile
+@@ -4,7 +4,7 @@
+ all:seqtk
+ 
+ seqtk:seqtk.c khash.h kseq.h
+-		$(CC) $(CFLAGS) seqtk.c -o $@ -lz -lm
++		$(CC) $(CFLAGS) seqtk.c -o $@ $(LDFLAGS) -lz -lm
+ 
+ clean:
+ 		rm -fr gmon.out *.o ext/*.o a.out seqtk trimadap *~ *.a *.dSYM session*

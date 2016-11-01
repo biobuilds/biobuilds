@@ -1,0 +1,37 @@
+package:
+  name: seqtk
+  version: "1.2.94"
+
+requirements:
+  build:
+    - zlib
+  run:
+    - zlib
+
+source:
+  fn: seqtk-1.2.94.tar.gz
+  url:
+    - "https://github.com/lh3/seqtk/archive/v1.2.tar.gz"
+    - "http://download.lab7.io/sources/seqtk-1.2.94.tar.gz"
+  md5: "255ffe05bf2f073dc57abcff97f11a37"
+  patches:
+    - makefile-ldflags.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  files:
+    - test.fq.gz
+  commands:
+    - seqtk seq -a test.fq.gz >/dev/null
+
+about:
+  home: "https://github.com/lh3/seqtk"
+  license: MIT
+  license_file: LICENSE
+  summary: "Toolkit for processing sequences in FASTA/Q formats"
