@@ -1,0 +1,44 @@
+package:
+  name: kraken
+  version: "0.10.5_beta"
+
+requirements:
+  build:
+    # Needed for OpenMP support
+    - gcc 4.8.*     # [osx]
+    - perl
+  run:
+    # Needed for OpenMP support
+    - libgcc 4.8.*  # [osx]
+    - perl
+
+source:
+  fn: kraken-0.10.5_beta.tar.gz
+  url:
+    - "https://github.com/DerrickWood/kraken/archive/v0.10.5-beta.tar.gz"
+    - "http://download.lab7.io/sources/kraken-0.10.5_beta.tar.gz"
+  md5: "0231a7bfc067f564ad28fa91e9f71606"
+  patches:
+    - install-exit-code.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - kraken --version >/dev/null
+    - kraken-build --version >/dev/null
+    - kraken-filter --version >/dev/null
+    - kraken-mpa-report --version >/dev/null
+    - kraken-report --version >/dev/null
+    - kraken-translate --version >/dev/null
+
+about:
+  home: "https://github.com/DerrickWood/kraken"
+  license: GPLv3
+  license_file: LICENSE
+  summary: "Taxonomic sequence classification system"

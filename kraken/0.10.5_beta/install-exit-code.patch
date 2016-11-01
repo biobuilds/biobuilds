@@ -1,0 +1,18 @@
+commit adfaa267ebdc9f16946fa4a19ddb1bb6e7cb5a97
+Author: Derrick Wood <dwood@cs.jhu.edu>
+Date:   Tue May 12 20:17:37 2015 -0400
+
+    installation exit code fix
+
+--- install_kraken.sh
++++ install_kraken.sh
+@@ -59,5 +59,8 @@
+ echo "files into a directory in your PATH:"
+ for file in $KRAKEN_DIR/kraken*
+ do
+-  [ -x "$file" ] && echo "  $file"
++  if [ -x "$file" ]
++  then
++    echo "  $file"
++  fi
+ done
