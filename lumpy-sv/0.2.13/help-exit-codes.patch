@@ -1,0 +1,59 @@
+--- src/lumpy/lumpy.cpp
++++ src/lumpy/lumpy.cpp
+@@ -68,11 +68,11 @@
+ //}}}
+ 
+ //{{{ forward declarations
+-void ShowHelp(void);
++void ShowHelp(int exit_code);
+ //}}}
+ 
+ //{{{ void ShowHelp(void)
+-void ShowHelp(void)
++void ShowHelp(int exit_code=1)
+ {
+     cerr << endl << "Program: " << PROGRAM_NAME << " (v 0.2.13)" <<
+          endl <<
+@@ -81,6 +81,7 @@
+          endl <<
+          "Usage:   " << PROGRAM_NAME << " [OPTIONS] " << endl << endl <<
+          "Options: " << endl <<
++         "\t-h"	"\tShow this help message" << endl <<
+          "\t-g"	"\tGenome file (defines chromosome order)" << endl <<
+          "\t-e"	"\tShow evidence for each call" << endl <<
+          "\t-w"	"\tFile read windows size (default 1000000)" << endl <<
+@@ -118,7 +119,7 @@
+          "\t\tweight:<sample weight>" << endl <<
+          endl;
+     // end the program here
+-    exit(1);
++    exit(exit_code);
+ }
+ //}}}
+ 
+@@ -159,7 +160,7 @@
+ 
+         if( (PARAMETER_CHECK("-h", 2, parameterLength)) ||
+                 (PARAMETER_CHECK("--help", 6, parameterLength))) {
+-            ShowHelp();
++            ShowHelp(0);
+         }
+     }
+     //}}}
+commit 89c3a51413a33fb0fb806d92d57b86eb9e490507
+Author: Brent Pedersen <bpederse@gmail.com>
+Date:   Wed Aug 17 16:20:27 2016 -0600
+
+    exit 0 if they used -h
+
+--- scripts/lumpyexpress
++++ scripts/lumpyexpress
+@@ -99,7 +99,7 @@
+     case "${OPTION}" in
+ 	h)
+ 	    usage
+-	    exit 1
++	    exit 0
+ 	    ;;
+ 	B)
+ 	    FULL_BAM_STRING="$OPTARG"

@@ -1,0 +1,46 @@
+package:
+  name: lumpy-sv
+  version: "0.2.13"
+
+requirements:
+  build:
+    - bamtools
+    - zlib
+  run:
+    - bamtools
+    - python
+    - numpy x.x
+    - bamkit
+    - samblaster
+    - samtools
+    - zlib
+
+source:
+  fn: lumpy-sv-0.2.13.tar.gz
+  url:
+    - "https://github.com/arq5x/lumpy-sv/archive/0.2.13.tar.gz"
+    - "http://download.lab7.io/sources/lumpy-sv-0.2.13.tar.gz"
+  md5: "36929d29fc3a171d3abbe1d93f9f3b50"
+  patches:
+    - verbose-makefiles.patch
+    - use-ext-libs.patch
+    - no-debug-opt.patch
+    - help-exit-codes.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - lumpy -h 2>/dev/null
+    - lumpyexpress -h >/dev/null
+
+about:
+  home: "https://github.com/arq5x/lumpy-sv"
+  license: MIT
+  license_file: LICENSE
+  summary: "General probabilistic framework for structural variant discovery"

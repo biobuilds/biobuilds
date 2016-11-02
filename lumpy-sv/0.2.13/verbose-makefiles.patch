@@ -1,0 +1,374 @@
+--- Makefile
++++ Makefile
+@@ -46,17 +46,17 @@
+ 	@echo "Building lumpy:"
+ 	@echo "========================================================="
+ 
+-	@$(MAKE) --no-print-directory --directory=$(BT_ROOT) api
++	$(MAKE) --directory=$(BT_ROOT) api
+ 
+ 	@for dir in $(UTIL_SUBDIRS); do \
+ 		echo "- Building in $$dir"; \
+-		$(MAKE) --no-print-directory -C $$dir; \
++		$(MAKE) -C $$dir; \
+ 		echo ""; \
+ 	done
+ 
+ 	@for dir in $(SUBDIRS); do \
+ 		echo "- Building in $$dir"; \
+-		$(MAKE) --no-print-directory -C $$dir; \
++		$(MAKE) -C $$dir; \
+ 		echo ""; \
+ 	done
+ 
+@@ -82,10 +82,10 @@
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+-	@rm -Rf $(BT_ROOT)/lib
+-	@rm -f $(BT_ROOT)/src/api/*.o
+-	@rm -f $(BT_ROOT)/src/api/internal/*.o
+-	@rm -Rf $(BT_ROOT)/include
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -Rf $(BT_ROOT)/lib
++	rm -f $(BT_ROOT)/src/api/*.o
++	rm -f $(BT_ROOT)/src/api/internal/*.o
++	rm -Rf $(BT_ROOT)/include
+ 
+ .PHONY: clean
+--- src/lumpy/Makefile
++++ src/lumpy/Makefile
+@@ -54,24 +54,24 @@
+ 
+ $(PROGRAM): $(BUILT_OBJECTS) $(EXT_OBJECTS)
+ 	@echo "  * linking $(PROGRAM)"
+-	@$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^ \
++	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^ \
+ 		-L$(UTILITIES_DIR)/BamTools/lib/ -lbamtools \
+ 		$(LIBS) \
+ 		-lz -lm -ldl -lpthread
+ 
+ $(OBJ_DIR)/%.o: %.cpp
+ 	@echo "  * compiling" $<
+-	@$(CXX) -g  -c $(CXXFLAGS) $(LDFLAGS) $(INCLUDES) $< -o $@
++	$(CXX) -g  -c $(CXXFLAGS) $(LDFLAGS) $(INCLUDES) $< -o $@
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/BamTools-Ancillary/
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/BamTools/
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/bedFilePE/
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/sequenceUtilities/
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/lineFileUtilities/
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/gzstream/
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/fileType/ 
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/sqlite3/ 
++	$(MAKE) -C $(UTILITIES_DIR)/BamTools-Ancillary/
++	$(MAKE) -C $(UTILITIES_DIR)/BamTools/
++	$(MAKE) -C $(UTILITIES_DIR)/bedFilePE/
++	$(MAKE) -C $(UTILITIES_DIR)/sequenceUtilities/
++	$(MAKE) -C $(UTILITIES_DIR)/lineFileUtilities/
++	$(MAKE) -C $(UTILITIES_DIR)/gzstream/
++	$(MAKE) -C $(UTILITIES_DIR)/fileType/ 
++	$(MAKE) -C $(UTILITIES_DIR)/sqlite3/
+ 
+ clean:
+ 	@echo "Cleaning up."
+--- src/utils/BamTools-Ancillary/Makefile
++++ src/utils/BamTools-Ancillary/Makefile
+@@ -21,10 +21,10 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -L$(BT_ROOT)/lib
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -L$(BT_ROOT)/lib
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+\ No newline at end of file
+--- src/utils/BamTools/Makefile
++++ src/utils/BamTools/Makefile
+@@ -61,19 +61,19 @@
+ 
+ $(OBJECTS): $(SOURCES)
+ 	@echo " * compiling" $(*F).cpp
+-	@$(CXX) -g -c $(*D)/$(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -o $(*D)/$(*F).o
++	$(CXX) -g -c $(*D)/$(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -o $(*D)/$(*F).o
+ 
+ .PHONY: api
+ api:
+ 	@echo " * Creating BamTools API"
+-	@mkdir -p lib
+-	@mkdir -p include
+-	@mkdir -p include/api
+-	@mkdir -p include/shared
+-	@cp src/api/*.h include/api
+-	@cp src/shared/*.h include/shared
++	mkdir -p lib
++	mkdir -p include
++	mkdir -p include/api
++	mkdir -p include/shared
++	cp src/api/*.h include/api
++	cp src/shared/*.h include/shared
+ 
+ .PHONY: clean_api
+ clean_api:
+ 	@echo " * Cleaning-up BamTools API"
+-	@rm -rf ./lib ./src/api/*.o ./src/api/internal/*/*.o ./include
++	rm -rf ./lib ./src/api/*.o ./src/api/internal/*/*.o ./include
+--- src/utils/BlockedIntervals/Makefile
++++ src/utils/BlockedIntervals/Makefile
+@@ -23,13 +23,13 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -L$(BT_ROOT)/lib
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -L$(BT_ROOT)/lib
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C $(INCLUDES)
++	$(MAKE) -C $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+\ No newline at end of file
+--- src/utils/Fasta/Makefile
++++ src/utils/Fasta/Makefile
+@@ -19,8 +19,8 @@
+ 	
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+--- src/utils/VectorOps/Makefile
++++ src/utils/VectorOps/Makefile
+@@ -11,10 +11,10 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+\ No newline at end of file
+--- src/utils/bedFile/Makefile
++++ src/utils/bedFile/Makefile
+@@ -20,13 +20,13 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C -W $(INCLUDES)
++	$(MAKE) -C -W $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+\ No newline at end of file
+--- src/utils/bedFilePE/Makefile
++++ src/utils/bedFilePE/Makefile
+@@ -17,13 +17,13 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C $(INCLUDES)
++	$(MAKE) -C $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+\ No newline at end of file
+--- src/utils/bedGraphFile/Makefile
++++ src/utils/bedGraphFile/Makefile
+@@ -19,13 +19,13 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C -W $(INCLUDES)
++	$(MAKE) -C -W $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+--- src/utils/chromsweep/Makefile
++++ src/utils/chromsweep/Makefile
+@@ -20,13 +20,13 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C $(INCLUDES)
++	$(MAKE) -C $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+\ No newline at end of file
+--- src/utils/fileType/Makefile
++++ src/utils/fileType/Makefile
+@@ -17,13 +17,13 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C $(INCLUDES)
++	$(MAKE) -C $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+\ No newline at end of file
+--- src/utils/genomeFile/Makefile
++++ src/utils/genomeFile/Makefile
+@@ -19,14 +19,14 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -L$(BT_ROOT)/lib
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -L$(BT_ROOT)/lib
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/lineFileUtilities/
+-	@$(MAKE) --no-print-directory -C $(UTILITIES_DIR)/fileType/
++	$(MAKE) -C $(UTILITIES_DIR)/lineFileUtilities/
++	$(MAKE) -C $(UTILITIES_DIR)/fileType/
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+--- src/utils/gzstream/Makefile
++++ src/utils/gzstream/Makefile
+@@ -42,7 +42,7 @@
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+ 
+--- src/utils/sequenceUtilities/Makefile
++++ src/utils/sequenceUtilities/Makefile
+@@ -17,13 +17,13 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C $(INCLUDES)
++	$(MAKE) -C $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+\ No newline at end of file
+--- src/utils/sqlite3/Makefile
++++ src/utils/sqlite3/Makefile
+@@ -20,13 +20,13 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).c
+-	@gcc -c -o $@ $(*F).c 
++	gcc -c -o $@ $(*F).c 
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C -W $(INCLUDES)
++	$(MAKE) -C -W $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+--- src/utils/tabFile/Makefile
++++ src/utils/tabFile/Makefile
+@@ -19,13 +19,13 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ $(EXT_OBJECTS):
+-	@$(MAKE) --no-print-directory -C -W $(INCLUDES)
++	$(MAKE) -C -W $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
+ 
+ .PHONY: clean
+\ No newline at end of file
+--- src/utils/version/Makefile
++++ src/utils/version/Makefile
+@@ -20,8 +20,8 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES) $(HEADERS)
+ 	@echo "  * compiling" $(*F).cpp
+-	@$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS)
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS)
+ 
+ clean:
+ 	@echo "Cleaning up."
+-	@rm -f $(OBJ_DIR)/* $(BIN_DIR)/*
++	rm -f $(OBJ_DIR)/* $(BIN_DIR)/*

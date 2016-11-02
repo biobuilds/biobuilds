@@ -1,0 +1,11 @@
+--- src/lumpy/Makefile
++++ src/lumpy/Makefile
+@@ -59,7 +59,7 @@
+ 
+ $(OBJ_DIR)/%.o: %.cpp
+ 	@echo "  * compiling" $<
+-	$(CXX) -g  -c $(CXXFLAGS) $(LDFLAGS) $(INCLUDES) $< -o $@
++	$(CXX) -c $(CXXFLAGS) $(LDFLAGS) $(INCLUDES) $< -o $@
+ 
+ $(EXT_OBJECTS):
+ 	$(MAKE) -C $(UTILITIES_DIR)/BamTools-Ancillary/

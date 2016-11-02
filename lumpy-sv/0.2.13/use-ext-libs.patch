@@ -1,0 +1,149 @@
+--- Makefile
++++ Makefile
+@@ -17,12 +17,10 @@
+ export UTIL_DIR	= src/utils
+ export SCRIPTS_DIR = scripts
+ export CXX		= g++
+-export ZLIB_PATH=$(HOME)/src/zlib-1.2.8
+ #export CXXFLAGS = -Wall -O0 -g -fno-inline -fkeep-inline-functions -D_FILE_OFFSET_BITS=64 -fPIC -DDEBUG -D_DEBUG -DTRACE
+ #export CXXFLAGS = -Wall -O0 -g -fno-inline -fkeep-inline-functions -D_FILE_OFFSET_BITS=64 -fPIC 
+ export CXXFLAGS = -Wall -O2 -D_FILE_OFFSET_BITS=64 -fPIC 
+-export LIBS		= -lz -L $(ZLIB_PATH)
+-export BT_ROOT  = src/utils/BamTools/
++export LIBS		= -lz
+ export MKFILE_DIR = $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+ 
+ SUBDIRS = $(SRC_DIR)/lumpy
+@@ -33,10 +31,8 @@
+ 				$(SRC_DIR)/utils/fileType \
+ 				$(SRC_DIR)/utils/bedFilePE \
+ 				$(SRC_DIR)/utils/genomeFile \
+-				$(SRC_DIR)/utils/BamTools \
+ 				$(SRC_DIR)/utils/BamTools-Ancillary \
+-				$(SRC_DIR)/utils/sequenceUtilities \
+-				$(SRC_DIR)/utils/sqlite3
++				$(SRC_DIR)/utils/sequenceUtilities
+ 
+ 
+ all:	lumpyexpress
+@@ -46,8 +42,6 @@
+ 	@echo "Building lumpy:"
+ 	@echo "========================================================="
+ 
+-	$(MAKE) --directory=$(BT_ROOT) api
+-
+ 	@for dir in $(UTIL_SUBDIRS); do \
+ 		echo "- Building in $$dir"; \
+ 		$(MAKE) -C $$dir; \
+--- src/lumpy/Makefile
++++ src/lumpy/Makefile
+@@ -12,11 +12,9 @@
+            -I$(UTILITIES_DIR)/gzstream/ \
+            -I$(UTILITIES_DIR)/lineFileUtilities/ \
+            -I$(UTILITIES_DIR)/fileType/ \
+-           -I$(UTILITIES_DIR)/BamTools/include \
+ 		   -I$(UTILITIES_DIR)/BamTools-Ancillary \
+            -I$(UTILITIES_DIR)/sequenceUtilities \
+-           -I$(UTILITIES_DIR)/UCSCBins \
+-           -I$(UTILITIES_DIR)/sqlite3 
++           -I$(UTILITIES_DIR)/UCSCBins
+ 
+ # ----------------------------------
+ # define our source and object files
+@@ -43,8 +41,8 @@
+ 			 bedFilePE.o \
+ 			 bedFile.o \
+ 			 genomeFile.o \
+-			 fileType.o \
+-			 sqlite3.o 
++			 fileType.o
++
+ EXT_OBJECTS=$(patsubst %,$(OBJ_DIR)/%,$(_EXT_OBJECTS))
+ BUILT_OBJECTS= $(patsubst %,$(OBJ_DIR)/%,$(OBJECTS))
+ PROGRAM=lumpy
+@@ -55,7 +53,7 @@
+ $(PROGRAM): $(BUILT_OBJECTS) $(EXT_OBJECTS)
+ 	@echo "  * linking $(PROGRAM)"
+ 	$(CXX) $(LDFLAGS) $(CXXFLAGS) -o $(BIN_DIR)/$@ $^ \
+-		-L$(UTILITIES_DIR)/BamTools/lib/ -lbamtools \
++		-lbamtools \
+ 		$(LIBS) \
+ 		-lz -lm -ldl -lpthread
+ 
+@@ -65,13 +63,11 @@
+ 
+ $(EXT_OBJECTS):
+ 	$(MAKE) -C $(UTILITIES_DIR)/BamTools-Ancillary/
+-	$(MAKE) -C $(UTILITIES_DIR)/BamTools/
+ 	$(MAKE) -C $(UTILITIES_DIR)/bedFilePE/
+ 	$(MAKE) -C $(UTILITIES_DIR)/sequenceUtilities/
+ 	$(MAKE) -C $(UTILITIES_DIR)/lineFileUtilities/
+ 	$(MAKE) -C $(UTILITIES_DIR)/gzstream/
+ 	$(MAKE) -C $(UTILITIES_DIR)/fileType/ 
+-	$(MAKE) -C $(UTILITIES_DIR)/sqlite3/
+ 
+ clean:
+ 	@echo "Cleaning up."
+--- src/utils/BamTools-Ancillary/Makefile
++++ src/utils/BamTools-Ancillary/Makefile
+@@ -2,8 +2,7 @@
+ BIN_DIR = ../../../bin/
+ UTILITIES_DIR = ../
+ 
+-INCLUDES = -I$(UTILITIES_DIR)/BamTools/include \
+-           -I$(UTILITIES_DIR)/bedFile/ \
++INCLUDES = -I$(UTILITIES_DIR)/bedFile/ \
+            -I$(UTILITIES_DIR)/lineFileUtilities/ \
+            -I$(UTILITIES_DIR)/gzstream/ \
+            -I$(UTILITIES_DIR)/fileType/
+@@ -21,7 +20,7 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -L$(BT_ROOT)/lib
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ clean:
+ 	@echo "Cleaning up."
+--- src/utils/BlockedIntervals/Makefile
++++ src/utils/BlockedIntervals/Makefile
+@@ -2,8 +2,7 @@
+ BIN_DIR = ../../../bin/
+ UTILITIES_DIR = ../
+ 
+-INCLUDES = -I$(UTILITIES_DIR)/BamTools/include \
+-           -I$(UTILITIES_DIR)/bedFile/ \
++INCLUDES = -I$(UTILITIES_DIR)/bedFile/ \
+            -I$(UTILITIES_DIR)/gzstream/ \
+            -I$(UTILITIES_DIR)/fileType/ \
+            -I$(UTILITIES_DIR)/lineFileUtilities/
+@@ -23,7 +22,7 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -L$(BT_ROOT)/lib
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ $(EXT_OBJECTS):
+ 	$(MAKE) -C $(INCLUDES)
+--- src/utils/genomeFile/Makefile
++++ src/utils/genomeFile/Makefile
+@@ -5,8 +5,7 @@
+ # define our includes
+ # -------------------
+ INCLUDES = -I$(UTILITIES_DIR)/lineFileUtilities/ \
+-           -I$(UTILITIES_DIR)/fileType/ \
+-           -I$(UTILITIES_DIR)/BamTools/include/	
++           -I$(UTILITIES_DIR)/fileType/
+ 
+ # ----------------------------------
+ # define our source and object files
+@@ -19,7 +18,7 @@
+ 
+ $(BUILT_OBJECTS): $(SOURCES)
+ 	@echo "  * compiling" $(*F).cpp
+-	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES) -L$(BT_ROOT)/lib
++	$(CXX) -c -o $@ $(*F).cpp $(LDFLAGS) $(CXXFLAGS) $(INCLUDES)
+ 
+ $(EXT_OBJECTS):
+ 	$(MAKE) -C $(UTILITIES_DIR)/lineFileUtilities/
