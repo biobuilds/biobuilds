@@ -1,0 +1,120 @@
+--- CMakeLists.txt
++++ CMakeLists.txt
+@@ -18,14 +18,27 @@
+ 
+ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+ 
++# Test for the CPU architecture; use `uname` instead of relying on what cmake
++# reports as the CMAKE_SYSTEM_PROCESSOR variable due to OS X weirdness, which
++# always reports that variable as "i386", even on 64-bit Intel (x86_64) CPUs.
++execute_process(COMMAND uname -m
++                OUTPUT_VARIABLE HOST_ARCH
++                OUTPUT_STRIP_TRAILING_WHITESPACE)
++
+ set (WARNING_IGNORE_FLAGS "-Wno-deprecated-register")
+ set (BOOST_CXX_FLAGS "-Wno-deprecated-register -std=c++11")
+ ## Prefer static to dynamic libraries
+ SET(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
+ 
++# Make sure the compilers make the same assumption about plain "char"
++# declaractions (i.e., those without "signed" or "unsigned") on all platforms;
++# GCC on x86_64 assumes signed chars, so we'll just go ahead and use that.
++set (COMMON_C_FLAGS   "${COMMON_C_FLAGS} -fsigned-char")
++set (COMMON_CXX_FLAGS "${COMMON_CXX_FLAGS} -fsigned-char")
++
+ ## Set the standard required compile flags
+ # Nov 18th --- removed -DHAVE_CONFIG_H
+-set (CMAKE_CXX_FLAGS "-pthread -funroll-loops -fPIC -fomit-frame-pointer -Ofast -DHAVE_ANSI_TERM -DHAVE_SSTREAM -DRAPMAP_SALMON_SUPPORT -Wall -std=c++11 -Wreturn-type -Werror=return-type")
++set (CMAKE_CXX_FLAGS "${COMMON_CXX_FLAGS} -pthread -funroll-loops -fPIC -fomit-frame-pointer -DHAVE_ANSI_TERM -DHAVE_SSTREAM -DRAPMAP_SALMON_SUPPORT -Wall -std=c++11 -Wreturn-type -Werror=return-type")
+ 
+ ##
+ # OSX is strange (some might say, stupid in this regard).  Deal with it's quirkines here.
+@@ -47,7 +60,11 @@
+ set( BOOST_EXTRA_FLAGS "--layout=tagged" )
+ ## this get's set differently below if we
+ ## are on clang & apple
+-set (NON_APPLECLANG_LIBS gomp rt)
++set (NON_APPLECLANG_LIBS gomp)
++if (NOT APPLE)
++    # librt not available on OS X, even when compiling with gcc
++    set (NON_APPLECLANG_LIBS ${NON_APPLECLANG_LIBS} rt)
++endif ()
+ set (PTHREAD_LIB)
+ 
+ ##
+@@ -277,6 +294,9 @@
+     UPDATE_COMMAND sh -c "mkdir -p <SOURCE_DIR>/build"
+     BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/libdivsufsort-master/build
+     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DBUILD_DIVSUFSORT64=TRUE -DUSE_OPENMP=TRUE -DBUILD_SHARED_LIBS=FALSE
++               -DCMAKE_VERBOSE_MAKEFILE=TRUE
++               -DCMAKE_C_FLAGS=${COMMON_C_FLAGS}
++               -DCMAKE_CXX_FLAGS=${COMMON_CXX_FLAGS}
+     )
+ set(SUFFARRAY_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/external/install/include)
+ 
+@@ -285,6 +305,12 @@
+ if (NOT JELLYFISH_FOUND)
+ message("Build system will fetch and build Jellyfish")
+ message("==================================================================")
++if( ${HOST_ARCH} STREQUAL "x86_64" )
++    set(JELLYFISH_SSE_FLAG      --with-sse)
++else ()
++    set(JELLYFISH_SSE_FLAG      --without-sse)
++endif ()
++set(JELLYFISH_CXX_FLAGS     "${COMMON_CXX_FLAGS} ${JELLYFISH_CXX_FLAGS}")
+ ExternalProject_Add(libjellyfish
+     DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+     DOWNLOAD_COMMAND test -f jellyfish-2.2.5.tgz || curl -k -L https://github.com/gmarcais/Jellyfish/releases/download/v2.2.5/jellyfish-2.2.5.tar.gz -o jellyfish-2.2.5.tgz &&
+@@ -292,8 +318,8 @@
+      	tar -xzvf jellyfish-2.2.5.tgz
+     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/jellyfish-2.2.5
+     INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+-    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/external/jellyfish-2.2.5/configure --prefix=<INSTALL_DIR> CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=${JELLYFISH_CXX_FLAGS}
+-    BUILD_COMMAND ${MAKE} CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=${JELLYFISH_CXX_FLAGS}
++    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/external/jellyfish-2.2.5/configure --prefix=<INSTALL_DIR> CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=${JELLYFISH_CXX_FLAGS} ${JELLYFISH_SSE_FLAG}
++    BUILD_COMMAND make CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=${JELLYFISH_CXX_FLAGS} V=1
+     BUILD_IN_SOURCE 1
+     INSTALL_COMMAND make install
+ )
+@@ -339,6 +365,9 @@
+     INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+     BINARY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/libgff/build
+     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_SOURCE_DIR}/external/install
++               -DCMAKE_VERBOSE_MAKEFILE=TRUE
++               -DCMAKE_C_FLAGS=${COMMON_C_FLAGS}
++               -DCMAKE_CXX_FLAGS=${COMMON_CXX_FLAGS}
+ )
+ 
+ set (FAST_MALLOC_LIB "")
+@@ -373,7 +402,8 @@
+         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/jemalloc-3.6.0
+         BUILD_IN_SOURCE TRUE
+         INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+-        CONFIGURE_COMMAND sh -c "CC=${CMAKE_C_COMPILER} ./autogen.sh --prefix=<INSTALL_DIR>"
++        CONFIGURE_COMMAND env "CC=${CMAKE_C_COMPILER}" "CFLAGS=${COMMON_C_FLAGS}"
++                          ./autogen.sh --prefix=<INSTALL_DIR>
+         INSTALL_COMMAND cp -r lib <INSTALL_DIR>/ && cp -r include <INSTALL_DIR>/
+         )
+ 
+@@ -393,7 +423,9 @@
+     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sparsehash-sparsehash-2.0.2
+     BUILD_IN_SOURCE TRUE
+     INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+-    CONFIGURE_COMMAND sh -c "CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ./configure --prefix=<INSTALL_DIR>"
++    CONFIGURE_COMMAND env "CC=${CMAKE_C_COMPILER}" "CFLAGS=${COMMON_C_FLAGS}"
++                      "CXX=${CMAKE_CXX_COMPILER}" "CXXFLAGS=${COMMON_CXX_FLAGS}"
++                      ./configure --prefix=<INSTALL_DIR>
+     INSTALL_COMMAND make install
+ )
+ 
+--- scripts/fetchRapMap.sh
++++ scripts/fetchRapMap.sh
+@@ -36,3 +36,8 @@
+ cp -r ${EXTERNAL_DIR}/RapMap/include/*.h ${INSTALL_DIR}/include/rapmap
+ cp -r ${EXTERNAL_DIR}/RapMap/include/*.hpp ${INSTALL_DIR}/include/rapmap
+ cp -r ${EXTERNAL_DIR}/RapMap/include/emphf ${INSTALL_DIR}/include/rapmap
++
++# Remove an unncessary include this header file to prevent the build from
++# breaking on non-x86 platforms.
++sed -i.bak 's/.*#include <xmmintrin.h>.*$//;' \
++    ${INSTALL_DIR}/include/rapmap/emphf/bitpair_vector.hpp

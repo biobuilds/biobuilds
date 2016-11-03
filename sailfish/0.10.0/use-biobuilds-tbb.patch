@@ -1,0 +1,107 @@
+--- CMakeLists.txt
++++ CMakeLists.txt
+@@ -121,13 +121,6 @@
+     message(FATAL_ERROR "Your C++ compiler does not support C++11.")
+ endif ()
+ 
+-## TODO: Figure out how to detect this automatically
+-# If the "assembler" is too old, tell TBB not to compile
+-# with -mrtm
+-if (NO_RTM)
+-    set (TBB_CXXFLAGS "-mno-rtm")
+-endif()
+-
+ include(ExternalProject)
+ 
+ ##
+@@ -308,52 +301,9 @@
+ 
+ 
+ find_package(TBB)
+-##
+-#
+-# Fetch and build Intel's Threading Building Blocks library.
+-#
+-##
+ if(NOT TBB_FOUND)
+-
+-set(TBB_WILL_RECONFIGURE TRUE)
+-# Set the appropriate compiler
+-if (CLANG)
+-    set(TBB_COMPILER "clang")
+-else()
+-    set(TBB_COMPILER "gcc")
+-endif()
+-
+-message("Build system will fetch and build Intel Threading Building Blocks")
+-message("==================================================================")
+-# These are useful for the custom install step we'll do later
+-set(TBB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/tbb43_20140724oss)
+-set(TBB_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install)
+-
+-if ("${TBB_COMPILER}" STREQUAL "gcc")
+-    ## Don't know why it's a problem yet, but if we're using
+-    ## GCC, get rid of the DO_ITT_NOTIFY flag
+-    set(TBB_CXXFLAGS "${TBB_CXXFLAGS} -UDO_ITT_NOTIFY")
+-endif()
+-
+-ExternalProject_Add(libtbb
+-	DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    URL http://www.threadingbuildingblocks.org/sites/default/files/software_releases/source/tbb43_20140724oss_src.tgz
+-    DOWNLOAD_COMMAND test -f tbb_20140724oss_src.tgz || curl -k -L  http://www.threadingbuildingblocks.org/sites/default/files/software_releases/source/tbb43_20140724oss_src.tgz -o tbb_20140724oss_src.tgz &&
+-                     tar -xzvf tbb_20140724oss_src.tgz
+-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/tbb43_20140724oss
+-    INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+-    PATCH_COMMAND "${TBB_PATCH_STEP}"
+-    CONFIGURE_COMMAND ""
+-    BUILD_COMMAND make CXXFLAGS=${TBB_CXXFLAGS} lambdas=1 compiler=${TBB_COMPILER} cfg=release tbb_build_prefix=LIBS
+-    INSTALL_COMMAND sh -c "cp ${TBB_SOURCE_DIR}/build/LIBS_release/*.${SHARED_LIB_EXTENSION}* ${TBB_INSTALL_DIR}/lib && cp -r ${TBB_SOURCE_DIR}/include/* ${TBB_INSTALL_DIR}/include"
+-    BUILD_IN_SOURCE 1
+-)
+-
+-SET( RECONFIG_FLAGS ${RECONFIG_FLAGS} -DTBB_WILL_RECONFIGURE=FALSE -DTBB_RECONFIGURE=TRUE)
+-ExternalProject_Add_Step(libtbb reconfigure
+-        COMMAND ${CMAKE_COMMAND} ${CMAKE_CURRENT_SOURCE_DIR} ${RECONFIG_FLAGS}
+-        DEPENDEES install
+-)
++    # Should be part of the conda build environment, so force an error if not found.
++    message(FATAL_ERROR "Intel TBB not found; is the 'tbb' package installed?")
+ endif()
+ 
+ ## 
+@@ -374,35 +324,6 @@
+ # Done with HDF5
+ ##
+ 
+-##
+-# If we're fetching tbb, we need to have dummy paths for these variables
+-# so that CMake won't complain
+-##
+-if(TBB_WILL_RECONFIGURE)
+-    set(TBB_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/external/install/include)
+-    set(TBB_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/external/install/lib)
+-    #set(TBB_LIBRARIES tbb tbbmalloc)
+-    set(TBB_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/external/install/lib/libtbb.${SHARED_LIB_EXTENSION}
+-                      ${CMAKE_CURRENT_SOURCE_DIR}/external/install/lib/libtbbmalloc.${SHARED_LIB_EXTENSION}
+-    )
+-endif()
+-
+-##
+-#  Similar to the Boost trick above, the libtbb reconfigure should force this code
+-#  to be run on the second configuration pass, where it should appropriately set the
+-#  TBB_INSTALL_DIR variable.
+-##
+-if (TBB_RECONFIGURE)
+-    unset(TBB_FOUND CACHE)
+-    unset(TBB_INSTALL_DIR CACHE)
+-    unset(CMAKE_PREFIX_PATH CACHE)
+-    set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external/install)
+-    set(TBB_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install)
+-    message("TBB_INSTALL_DIR = ${TBB_INSTALL_DIR}")
+-    find_package(TBB)
+-endif()
+-
+-
+ message("TBB_LIBRARIES = ${TBB_LIBRARIES}")
+ 
+ message("Build system will compile libgff")

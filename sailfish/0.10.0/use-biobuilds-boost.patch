@@ -1,0 +1,22 @@
+--- CMakeLists.txt
++++ CMakeLists.txt
+@@ -163,8 +163,9 @@
+ 
+ ##
+ # We want static, multithreaded boost libraries
++# CHL: Changed "Boost_USE_STATIC_LIBS" to "OFF" to match BioBuilds Boost package
+ ##
+-set (Boost_USE_STATIC_LIBS ON)
++set (Boost_USE_STATIC_LIBS OFF)
+ set (Boost_USE_MULTITHREADED ON)
+ #set (Boost_USE_STATIC_RUNTIME OFF)
+ 
+@@ -176,7 +177,7 @@
+ ##
+ # Set the latest version and look for what we need
+ ##
+-set(Boost_ADDITIONAL_VERSIONS "1.53" "1.53.0" "1.54" "1.55" "1.56" "1.57.0" "1.58" "1.59")
++set(Boost_ADDITIONAL_VERSIONS "1.53" "1.53.0" "1.54" "1.55" "1.56" "1.57.0" "1.58" "1.59" "1.60")
+ find_package(Boost 1.53.0 COMPONENTS iostreams filesystem system thread timer chrono program_options serialization)
+ message("BOOST_INCLUDEDIR = ${BOOST_INCLUDEDIR}")
+ message("BOOST_LIBRARYDIR = ${BOOST_LIBRARYDIR}")
