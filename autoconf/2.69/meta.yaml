@@ -12,12 +12,13 @@ source:
 requirements:
   # For Linux, assume "m4" provided via distro package
   build:
+    - autoconf-update
     - m4  # [not linux]
   run:
     - m4  # [not linux]
 
 build:
-  number: 0
+  number: 1
 
 test:
   commands:
