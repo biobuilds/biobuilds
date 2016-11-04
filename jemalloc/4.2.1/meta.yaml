@@ -1,0 +1,21 @@
+package:
+  name: "jemalloc"
+  version: "4.2.1"
+
+source:
+  fn: "jemalloc-4.2.1.tar.bz2"
+  url:
+    - "https://github.com/jemalloc/jemalloc/releases/download/4.2.1/jemalloc-4.2.1.tar.bz2"
+    - "http://download.lab7.io/sources/jemalloc-4.2.1.tar.bz2"
+  md5: "094b0a7b8c77c464d0dc8f0643fd3901"
+
+build:
+  number: 0
+  script_env:
+    - BB_MAKE_JOBS
+
+about:
+  home: "https://github.com/jemalloc/jemalloc"
+  license: BSD
+  license_file: COPYING
+  summary: "General purpose malloc(3) implementation that emphasizes fragmentation avoidance and scalable concurrency support"
