@@ -1,0 +1,25 @@
+package:
+  name: "tbb"
+  version: "4.4_20160803"
+
+source:
+  fn: "tbb44_20160803oss_src.tgz"
+  url:
+    - "https://www.threadingbuildingblocks.org/sites/default/files/software_releases/source/tbb44_20160803oss_src.tgz"
+    - "http://download.lab7.io/sources/tbb44_20160803oss_src.tgz"
+  md5: "0e76d045d3d6035c489c9e0bf1c45ec2"
+  patches:
+    - no-debug-builds.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+about:
+  home: "https://www.threadingbuildingblocks.org/"
+  license: GPLv2
+  license_file: COPYING
+  summary: "Intel Threading Building Blocks library"
