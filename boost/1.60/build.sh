@@ -24,11 +24,23 @@ if [ "$build_os" == 'Darwin' ]; then
     CXXFLAGS="${CXXFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
     LDFLAGS="${LDFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
 
-    # Linking to libstdc++ instead of libc++ to maintain compatibility with the
-    # Boost libraries available from conda's "defaults" channel.
-    CXXFLAGS="${CXXFLAGS} -stdlib=libstdc++"
-    LDFLAGS="${LDFLAGS} -stdlib=libstdc++"
-    #LDFLAGS="${LDFLAGS} -v -Wl,-warn_commons -Wl,-warn_weak_exports"
+    #--------------------------------------------------------------------------
+    # WARNING: linking to "libc++" instead of "libstdc++" breaks compatibility
+    # with the "defaults" channel's Boost package. However, we have various
+    # package that need both C++11 support and Boost (e.g., sailfish & salmon).
+    #
+    # We *can't* use the "gcc" conda package to get C++11 support while still
+    # using Boost libraries linked OS X's libstdc++, since gcc's and OS X's
+    # libstdc++ are *NOT* ABI-comptible. Mixing the two can lead to various
+    # runtime errors, like "pointer being freed was not allocated" or segfaults
+    # when using "boost::program_options::positional_options_description".
+    #
+    # Given that, we must use clang++ to build Boost-using C++11 applications
+    # on OS X, and to do *that*, we need to link Boost to libc++ (as OS X's
+    # libstdc++ does not support all C++11 features).
+    #--------------------------------------------------------------------------
+    CXXFLAGS="${CXXFLAGS} -stdlib=libc++"
+    LDFLAGS="${LDFLAGS} -stdlib=libc++"
 elif [ "$build_os" == 'Linux' ]; then
     toolset=gcc
 else

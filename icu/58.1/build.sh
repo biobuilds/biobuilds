@@ -4,10 +4,16 @@ CFLAGS="${CFLAGS} -O3"
 CXXFLAGS="${CXXFLAGS} -O3"
 
 if [ `uname -s` == 'Darwin' ]; then
-    # Linking to libstdc++ instead of libc++ to maintain compatibility with the
-    # ICU libraries available from conda's "defaults" channel.
-    CXXFLAGS="${CXXFLAGS} -stdlib=libstdc++"
-    LDFLAGS="${LDFLAGS} -stdlib=libstdc++"
+    MACOSX_VERSION_MIN=10.8
+    CXXFLAGS="${CXXFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
+    LDFLAGS="${LDFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
+
+    # WARNING: using "libc++" instead of "libstdc++" as our C++ stdlib breaks
+    # compatibility with the "defaults" channel's ICU package. However, to make
+    # our OS X boost packages usable with C++11 applications, we need to link
+    # to use "libc++" (see comments in boost/1.60/build.sh for details).
+    CXXFLAGS="${CXXFLAGS} -stdlib=libc++"
+    LDFLAGS="${LDFLAGS} -stdlib=libc++"
 fi
 
 cd source
