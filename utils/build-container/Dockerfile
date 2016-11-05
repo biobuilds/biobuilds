@@ -66,22 +66,15 @@ RUN yum install -y \
     rm -f /tmp/miniconda.sh
 ENV PATH /opt/miniconda/bin:$PATH
 
-# Install "conda-build" from the Anaconda "defaults" channel as well as a
-# minimal set of X11 development libraries from the official CentOS repository;
-# the X11 libraries are needed for building conda packages that depend on the
+# Install a minimal set of X11 development packages from the official CentOS
+# repository; these are needed for building conda packages that depend on the
 # cairo vector graphics library (among other things).
-#
-# NOTE: Pin conda & conda-build versions to match what's available on ppc64le.
 RUN yum install -y \
-        libX11-devel libXt-devel libXrender-devel libXext-devel && \
-    yum clean all && \
-    /opt/miniconda/bin/conda install --yes --quiet \
-        'conda==4.0.4' 'conda-build==1.19.2' 'anaconda-client' && \
-    echo 'conda ==4.0.4' >> /opt/miniconda/conda-meta/pinned && \
-    # See parent (build/centos6) Dockerfile for why this `chmod` is needed
-    chmod -R go-w /opt/miniconda && \
-    echo 'conda-build ==1.19.2' >> /opt/miniconda/conda-meta/pinned && \
-    /opt/miniconda/bin/conda clean --packages --tarballs --source-cache --yes
+        libX11-devel \
+        libXext-devel \
+        libXrender-devel \
+        libXt-devel \
+    && yum clean all
 
 # Install the CUDA compiler (nvcc). Note that a "functional" libcuda.so (i.e.,
 # driver runtime library) is *not* actually needed to build GPU applications as
@@ -104,6 +97,16 @@ RUN echo 'channels: ["biobuilds", "defaults"]' > /tmp/.condarc && \
 # "docker run -v /path/to/repo:/src lab7io/build:biobuilds <pkg>"
 COPY conda-build.sh /
 ENTRYPOINT ["/conda-build.sh"]
+
+# Install "conda-build" from the Anaconda "defaults" channel.
+# NOTE: Pin conda & conda-build versions to match what's available on ppc64le.
+RUN /opt/miniconda/bin/conda install --yes --quiet \
+        'conda==4.0.4' 'conda-build==1.19.2' 'anaconda-client' \
+    && echo 'conda ==4.0.4' > /opt/miniconda/conda-meta/pinned \
+    && echo 'conda-build ==1.19.2' >> /opt/miniconda/conda-meta/pinned \
+    # See comments above for why this `chmod` is needed
+    && chmod -R go-w /opt/miniconda \
+    && /opt/miniconda/bin/conda clean --packages --tarballs --source-cache --yes
 
 # Additional build tools present in the build image used for the 2015.11 and
 # 2016.04 releases; as of the 2016.11 release, we will replace these with their

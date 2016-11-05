@@ -65,30 +65,20 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
 
 ENV PATH /opt/miniconda/bin:$PATH
 
-# Install "conda-build" from the Anaconda "defaults" channel as well as a
-# minimal set of X11 development libraries from the official CentOS repository;
-# the X11 libraries are needed for building conda packages that depend on the
+# Install a minimal set of X11 development packages from the official Ubuntu
+# repository; these are needed for building conda packages that depend on the
 # cairo vector graphics library (among other things).
-#
-# NOTE: Pin conda & conda-build versions to match what's available on ppc64le.
 RUN apt-get update && apt-get install --no-install-recommends -q -y \
         libx11-dev \
         libxext-dev \
         libxrender-dev \
         libxt-dev \
-    && apt-get clean \
-    && /opt/miniconda/bin/conda install --yes --quiet \
-        'conda==4.0.4' 'conda-build==1.19.2' 'anaconda-client' \
-    && echo 'conda ==4.0.4' >> /opt/miniconda/conda-meta/pinned \
-    # See parent Dockerfile for why this `chmod` is needed
-    && chmod -R go-w /opt/miniconda \
-    && echo 'conda-build ==1.19.2' >> /opt/miniconda/conda-meta/pinned \
-    && /opt/miniconda/bin/conda clean --packages --tarballs --source-cache --yes
+    && apt-get clean
 
 # Install the CUDA compiler (nvcc). Note that a "functional" libcuda.so (i.e.,
 # driver runtime library) is *not* actually needed to build GPU applications as
 # the CUDA toolkit contains a stub version which can be used by the linker.
-RUN cd /tmp && wget -q 'http://download.lab7.io/devops/cuda-repo-ubuntu1404_7.0-28_ppc64el.deb' \
+RUN cd /tmp && wget -q 'http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/ppc64el/cuda-repo-ubuntu1404_7.0-28_ppc64el.deb' \
     && dpkg -i cuda-repo-ubuntu1404_7.0-28_ppc64el.deb \
     && rm -f /tmp/cuda-repo-ubuntu1404_7.0-28_ppc64el.deb \
     && apt-get update \
@@ -111,6 +101,16 @@ RUN echo 'channels: ["biobuilds", "defaults"]' > /tmp/.condarc && \
 # "docker run -v /path/to/repo:/src lab7io/build:biobuilds <pkg>"
 COPY conda-build.sh /
 ENTRYPOINT ["/conda-build.sh"]
+
+# Install "conda-build" from the Anaconda "defaults" channel.
+# NOTE: Pin conda & conda-build versions to match what's available on ppc64le.
+RUN /opt/miniconda/bin/conda install --yes --quiet \
+        'conda==4.0.4' 'conda-build==1.19.2' 'anaconda-client' \
+    && echo 'conda ==4.0.4' > /opt/miniconda/conda-meta/pinned \
+    && echo 'conda-build ==1.19.2' >> /opt/miniconda/conda-meta/pinned \
+    # See above comments for why this `chmod` is needed
+    && chmod -R go-w /opt/miniconda \
+    && /opt/miniconda/bin/conda clean --packages --tarballs --source-cache --yes
 
 # "Additional" build tools present in the build image used for the 2015.11 and
 # 2016.04 releases; for more "portable" builds, we eventually want to replace
