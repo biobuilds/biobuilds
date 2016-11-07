@@ -7,7 +7,7 @@ requirements:
   # https://github.com/cole-trapnell-lab/cufflinks/issues/3 for details.
   build:
     - zlib
-    - boost 1.60.0
+    - boost 1.62.0
     # Require older version of samtools to _build_, due to incompatibilities
     # between the older samtools 0.1.x and newer htslib 1.x APIs and headers.
     - samtools 0.1.19
@@ -15,7 +15,7 @@ requirements:
     - eigen
   run:
     - zlib
-    - boost 1.60.0
+    - boost 1.62.0
     # Allow newer samtools versions at _runtime_, because nothing in the code
     # suggests we will have version-compatibility problems (i.e., cufflinks
     # doesn't write BCF files). Without this "hack", we wouldn't be able to
@@ -31,13 +31,20 @@ source:
   patches:
     - samtools-includes.patch
     - configure-boost-dylibs.patch
+    - LocusCount-constructor.patch  # [osx]
 
 build:
-  number: 3
+  number: 4
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
     - BB_MAKE_JOBS
+
+test:
+  files:
+    - test_data.sam
+  commands:
+    - cufflinks test_data.sam
 
 about:
   home: http://cole-trapnell-lab.github.io/cufflinks/
