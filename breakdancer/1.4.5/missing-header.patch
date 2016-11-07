@@ -15,3 +15,17 @@ need to include std::string or we get a compile error
  enum strand_e {
      FWD = 0,
 
+#--------------------------------------------------------------------------
+# Additional headers needed to build using clang on OS X
+# Author: Cheng H. Lee <cheng.lee@lab7.io>
+#--------------------------------------------------------------------------
+--- src/lib/breakdancer/BreakDancer.cpp
++++ src/lib/breakdancer/BreakDancer.cpp
+@@ -9,6 +9,7 @@
+ #include "io/IAlignmentClassifier.hpp"
+ #include "io/LibraryInfo.hpp"
+ 
++#include <boost/format.hpp>
+ #include <boost/array.hpp>
+ #include <boost/bind.hpp>
+ #include <boost/lexical_cast.hpp>

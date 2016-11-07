@@ -13,6 +13,10 @@ source:
     # Use "local" (i.e., BioBuilds-provided) versions of boost and
     # samtools, instead of re-building them from source
     - use-local-libs.patch
+    # Make sure gtest gets the same CXXFLAGS as the rest of our system
+    - pass-cxxflags.patch
+    # Fix type-casting problem
+    - fix-test-assert.patch   # [osx]
     # Modify expected test results to overlook differences in NaN signs
     - tweak-test-data.patch   # [ppc64le or osx]
     # Make load() function compatible with Boost 1.60+
@@ -21,20 +25,18 @@ source:
 requirements:
   build:
     - cmake
-    - gcc     # [osx]
     - perl
-    - boost 1.60.0
+    - boost 1.62.0
     - samtools 0.1.19
   run:
-    - libgcc  # [osx]
     - perl
-    - boost 1.60.0
+    - boost 1.62.0
     - perl-statistics-descriptive
     - perl-math-cdf
     - perl-gdgraph-histogram
 
 build:
-  number: 1
+  number: 2
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
