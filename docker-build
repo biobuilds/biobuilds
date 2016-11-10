@@ -87,7 +87,7 @@ else
 fi
 
 echo "Launching image '$img'..." >&2
-docker run --rm --user $UID \
+docker run --rm \
     -e BB_MAKE_JOBS=${BB_MAKE_JOBS:-1} \
     -v "${basedir}:/src" \
     $docker_opts \

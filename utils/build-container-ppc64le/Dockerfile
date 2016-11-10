@@ -105,11 +105,21 @@ ENTRYPOINT ["/conda-build.sh"]
 # Install "conda-build" from the Anaconda "defaults" channel.
 # NOTE: Pin conda & conda-build versions to match what's available on ppc64le.
 RUN /opt/miniconda/bin/conda install --yes --quiet \
-        'conda==4.0.4' 'conda-build==1.19.2' 'anaconda-client' \
-    && echo 'conda ==4.0.4' > /opt/miniconda/conda-meta/pinned \
-    && echo 'conda-build ==1.19.2' >> /opt/miniconda/conda-meta/pinned \
+        'conda==4.2.12' 'conda-build==2.0.8' 'anaconda-client' \
+    && echo 'conda ==4.2.12' > /opt/miniconda/conda-meta/pinned \
+    && echo 'conda-build ==2.0.8' >> /opt/miniconda/conda-meta/pinned \
     # See above comments for why this `chmod` is needed
     && chmod -R go-w /opt/miniconda \
+    # "conda build" now creates build environments in $CONDA_BLD_PATH instead
+    # of "/tmp/.conda/envs" or "/opt/miniconda/envs"; since cross-device
+    # hard-linking is not possible, conda decides to symlink instead. However,
+    # symlinks break RPATH calculations (among other things), which in turn,
+    # can cause things like `gcc` to fail horribly. To work around this, we
+    # need to tell conda to copy files instead of symlinking, even though this
+    # is a fairly expensive (i.e., slow) operation.
+    && chmod u+w /tmp/.condarc \
+    && echo 'allow_softlinks: False' >> /tmp/.condarc \
+    && chmod u-w /tmp/.condarc \
     && /opt/miniconda/bin/conda clean --packages --tarballs --source-cache --yes
 
 # "Additional" build tools present in the build image used for the 2015.11 and
