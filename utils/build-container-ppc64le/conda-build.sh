@@ -35,6 +35,9 @@ CONDA_PLATFORM=`conda info | grep -i 'platform :' | awk '{print $3;}'`
 export CONDA_BLD_PATH=/tmp/conda-bld
 mkdir -p "${CONDA_BLD_PATH}"
 
+# Make the host's source cache avilable to reduce network traffic
+[ -d /src/conda-bld/src_cache ] && \
+    ln -sfn /src/conda-bld/src_cache "${CONDA_BLD_PATH}/src_cache"
 
 # Use local copies of existing BioBuilds packages to reduce network traffic
 if [ "/src/conda-bld/${CONDA_PLATFORM}" -o "/src/conda-bld/noarch" ]; then
@@ -78,3 +81,8 @@ for d in ${CONDA_PLATFORM} noarch; do
     find "${dest_dir}" -type f -newer /tmp/build_timestamp | \
         xargs chown ${DEST_UID}:${DEST_GID}
 done
+
+if [ -d /src/conda-bld/src_cache ]; then
+    find /src/conda-bld/src_cache -type f -uid $UID | \
+        xargs chown ${DEST_UID}:${DEST_GID}
+fi
