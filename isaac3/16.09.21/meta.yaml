@@ -16,7 +16,7 @@ requirements:
     - gcc 4.8.*       # [not ppc64le]
     - cmake
     - zlib
-    - boost 1.60.*
+    - boost 1.62.0
     - libxml2 >=2.7.8
     - libxslt >=1.1.26
   run:
@@ -24,14 +24,14 @@ requirements:
     # won't break things but better to have one less thing to worry about.
     - libgcc 4.8.*    # [not ppc64le]
     - zlib
-    - boost 1.60.*
+    - boost 1.62.0
     - libxml2 >=2.7.8
     - libxslt >=1.1.26
     - gnuplot
 
 build:
   skip: True  # [osx]
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
@@ -45,7 +45,7 @@ test:
   # to fail due to some ICU dynamic library issues.
   requires:
     - python 2.7.*
-    - boost 1.60.*
+    - boost 1.62.*
 
 about:
   home: "https://github.com/Illumina/isaac3"
