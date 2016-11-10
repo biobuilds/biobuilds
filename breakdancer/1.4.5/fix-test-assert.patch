@@ -1,0 +1,12 @@
+# clang++ does not have any implicit cast from "basic_istream" to bool
+--- test/lib/io/TestBam.cpp
++++ test/lib/io/TestBam.cpp
+@@ -107,7 +107,7 @@
+     size_t size = in.tellg();
+     in.seekg(0, std::ios::beg);
+     std::vector<char> buf(size);
+-    ASSERT_TRUE(in.read(buf.data(), size));
++    ASSERT_TRUE(bool(in.read(buf.data(), size)));
+     buf.push_back(0); // make sure buffer is null terminated
+     EXPECT_STREQ(samData.c_str(), buf.data());
+ 
