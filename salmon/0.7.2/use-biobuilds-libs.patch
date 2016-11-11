@@ -1,0 +1,160 @@
+--- CMakeLists.txt
++++ CMakeLists.txt
+@@ -184,26 +184,11 @@
+ if (NOT ZLIB_FOUND)
+ 	message (FATAL_ERROR "zlib must be installed before configuration & building can proceed")
+ endif()
++message("===========================================")
+ 
+ find_package (LibLZMA)
+ if (NOT LIBLZMA_FOUND)
+-    message ("Will attempt to fetch and build liblzma")
+-    message ("=======================================")
+-ExternalProject_Add(liblzma
+-    DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    URL http://tukaani.org/xz/xz-5.2.2.tar.gz
+-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/xz-5.2.2
+-    INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+-    BUILD_IN_SOURCE TRUE
+-    CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/external/xz-5.2.2/configure --prefix=<INSTALL_DIR> CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
+-    BUILD_COMMAND make
+-    INSTALL_COMMAND make install
+-)
+-# Tell cmake that the external project generated a library so we can
+-# add dependencies here instead of later
+-set (LIBLZMA_LIBRARIES ${GAT_SOURCE_DIR}/external/install/lib/liblzma.a)
+-set (LIBSTADEN_LDFLAGS "-L${GAT_SOURCE_DIR}/external/install/lib")
+-set (LIBSTADEN_CFLAGS "-I${GAT_SOURCE_DIR}/external/install/include")
++    message (FATAL_ERROR "lzma library not found")
+ else()
+     message("Found liblzma library: ${LIBLZMA_LIBRARIES}")
+     message("===========================================")
+@@ -211,23 +196,7 @@
+ 
+ find_package (BZip2)
+ if (NOT BZIP2_FOUND)
+-    message ("Will attempt to fetch and build libbz2")
+-    message ("=======================================")
+-ExternalProject_Add(libbz2
+-    DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    URL http://www.bzip.org/1.0.6/bzip2-1.0.6.tar.gz
+-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/bzip2-1.0.6
+-    INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+-    BUILD_IN_SOURCE TRUE
+-    CONFIGURE_COMMAND ""
+-    BUILD_COMMAND make CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
+-    INSTALL_COMMAND make install PREFIX=<INSTALL_DIR>
+-)
+-# Tell cmake that the external project generated a library so we can
+-# add dependencies here instead of later
+-set (BZIP2_LIBRARIES ${GAT_SOURCE_DIR}/external/install/lib/libbz2.a)
+-set (LIBSTADEN_LDFLAGS "-L${GAT_SOURCE_DIR}/external/install/lib -I${GAT_SOURCE_DIR}/external/install/include")
+-set (LIBSTADEN_CFLAGS "-I${GAT_SOURCE_DIR}/external/install/include")
++    message (FATAL_ERROR "bzip2 library not found")
+ else()
+     message("Found libbz2 library: ${BZIP2_LIBRARIES}")
+     message("===========================================")
+@@ -333,78 +302,10 @@
+ #
+ ##
+ if(NOT TBB_FOUND)
+-
+-set(TBB_WILL_RECONFIGURE TRUE)
+-# Set the appropriate compiler
+-if (CLANG)
+-    set(TBB_COMPILER "clang")
+-else()
+-    set(TBB_COMPILER "gcc")
++    message(FATAL_ERROR  "Intel TBB library not found.")
+ endif()
+-
+-message("Build system will fetch and build Intel Threading Building Blocks")
+-message("==================================================================")
+-# These are useful for the custom install step we'll do later
+-set(TBB_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/tbb44_20160526oss)
+-set(TBB_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install)
+-
+-if ("${TBB_COMPILER}" STREQUAL "gcc")
+-    ## Don't know why it's a problem yet, but if we're using
+-    ## GCC, get rid of the DO_ITT_NOTIFY flag
+-    set(TBB_CXXFLAGS "${TBB_CXXFLAGS} -UDO_ITT_NOTIFY")
+-endif()
+-
+-ExternalProject_Add(libtbb
+-	DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    URL https://www.threadingbuildingblocks.org/sites/default/files/software_releases/source/tbb44_20160526oss_src_0.tgz
+-    DOWNLOAD_COMMAND curl -k -L https://www.threadingbuildingblocks.org/sites/default/files/software_releases/source/tbb44_20160526oss_src_0.tgz -o tbb_20160526oss_src.tgz &&
+-                    tar -xzvf tbb_20160526oss_src.tgz
+-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/tbb44_20160526oss
+-    INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+-    PATCH_COMMAND "${TBB_PATCH_STEP}"
+-    CONFIGURE_COMMAND ""
+-    BUILD_COMMAND make CXXFLAGS=${TBB_CXXFLAGS} lambdas=1 compiler=${TBB_COMPILER} cfg=release tbb_build_prefix=LIBS
+-    INSTALL_COMMAND sh -c "cp ${TBB_SOURCE_DIR}/build/LIBS_release/*.${SHARED_LIB_EXTENSION}* ${TBB_INSTALL_DIR}/lib && cp -r ${TBB_SOURCE_DIR}/include/* ${TBB_INSTALL_DIR}/include"
+-    BUILD_IN_SOURCE 1
+-)
+-
+-SET( RECONFIG_FLAGS ${RECONFIG_FLAGS} -DTBB_WILL_RECONFIGURE=FALSE -DTBB_RECONFIGURE=TRUE)
+-ExternalProject_Add_Step(libtbb reconfigure
+-        COMMAND ${CMAKE_COMMAND} ${CMAKE_CURRENT_SOURCE_DIR} ${RECONFIG_FLAGS}
+-        DEPENDEES install
+-)
+-endif()
+-
+-##
+-# If we're fetching tbb, we need to have dummy paths for these variables
+-# so that CMake won't complain
+-##
+-if(TBB_WILL_RECONFIGURE)
+-    set(TBB_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/external/install/include)
+-    set(TBB_LIBRARY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/external/install/lib)
+-    #set(TBB_LIBRARIES tbb tbbmalloc)
+-    set(TBB_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/external/install/lib/libtbb.${SHARED_LIB_EXTENSION}
+-                      ${CMAKE_CURRENT_SOURCE_DIR}/external/install/lib/libtbbmalloc.${SHARED_LIB_EXTENSION}
+-    )
+-endif()
+-
+-##
+-#  Similar to the Boost trick above, the libtbb reconfigure should force this code
+-#  to be run on the second configuration pass, where it should appropriately set the
+-#  TBB_INSTALL_DIR variable.
+-##
+-if (TBB_RECONFIGURE)
+-    unset(TBB_FOUND CACHE)
+-    unset(TBB_INSTALL_DIR CACHE)
+-    unset(CMAKE_PREFIX_PATH CACHE)
+-    set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external/install)
+-    set(TBB_INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install)
+-    message("TBB_INSTALL_DIR = ${TBB_INSTALL_DIR}")
+-    find_package(TBB)
+-endif()
+-
+-
+ message("TBB_LIBRARIES = ${TBB_LIBRARIES}")
++message("==================================================================")
+ 
+ message("Build system will compile libgff")
+ message("==================================================================")
+@@ -486,21 +387,7 @@
+ endif()
+ 
+ if (NOT HAVE_FAST_MALLOC)
+-    message("Build system will fetch and use JEMalloc")
+-    message("==================================================================")
+-    ExternalProject_Add(libjemalloc
+-        DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-        DOWNLOAD_COMMAND curl -k -L https://github.com/COMBINE-lab/jemalloc/archive/4.0.4.tar.gz -o jemalloc-4.0.4.tar.gz &&
+-        tar -xzf jemalloc-4.0.4.tar.gz
+-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/jemalloc-4.0.4
+-        BUILD_IN_SOURCE TRUE
+-        INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+-        CONFIGURE_COMMAND sh -c "CC=${CMAKE_C_COMPILER} ./autogen.sh --prefix=<INSTALL_DIR>"
+-        INSTALL_COMMAND cp -r lib <INSTALL_DIR>/ && cp -r include <INSTALL_DIR>/
+-        )
+-
+-    set (FAST_MALLOC_LIB ${CMAKE_CURRENT_SOURCE_DIR}/external/install/lib/libjemalloc.a)
+-    set (HAVE_FAST_MALLOC TRUE)
++    message(FATAL_ERROR  "Fast malloc library (jemalloc) not found")
+ endif ()
+ 
+ 

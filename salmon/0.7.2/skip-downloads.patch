@@ -1,0 +1,75 @@
+--- CMakeLists.txt
++++ CMakeLists.txt
+@@ -248,7 +248,7 @@
+ include(ExternalProject)
+ ExternalProject_Add(libcereal
+     DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    DOWNLOAD_COMMAND curl -k -L https://github.com/USCiLab/cereal/archive/v1.1.2.tar.gz -o cereal-v1.1.2.tar.gz &&
++    DOWNLOAD_COMMAND test -f cereal-v1.1.2.tar.gz || curl -k -L https://github.com/USCiLab/cereal/archive/v1.1.2.tar.gz -o cereal-v1.1.2.tar.gz &&
+ 		tar -xzvf cereal-v1.1.2.tar.gz
+ 	SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/cereal-1.1.2
+     INSTALL_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/install
+@@ -264,7 +264,7 @@
+ include(ExternalProject)
+ ExternalProject_Add(libbwa
+     DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    DOWNLOAD_COMMAND curl -k -L https://github.com/COMBINE-lab/bwa/archive/0.7.12.3.tar.gz -o bwa-master.tar.gz &&
++    DOWNLOAD_COMMAND test -f bwa-master.tar.gz || curl -k -L https://github.com/COMBINE-lab/bwa/archive/0.7.12.3.tar.gz -o bwa-master.tar.gz &&
+                      mkdir -p bwa-master &&
+                      tar -xzvf bwa-master.tar.gz --strip-components=1 -C bwa-master
+     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/bwa-master
+@@ -282,7 +282,7 @@
+ message("==================================================================")
+ ExternalProject_Add(libjellyfish
+     DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    DOWNLOAD_COMMAND curl -k -L https://github.com/gmarcais/Jellyfish/releases/download/v2.2.6/jellyfish-2.2.6.tar.gz -o jellyfish-2.2.6.tgz &&
++    DOWNLOAD_COMMAND test -f jellyfish-2.2.6.tgz || curl -k -L https://github.com/gmarcais/Jellyfish/releases/download/v2.2.6/jellyfish-2.2.6.tar.gz -o jellyfish-2.2.6.tgz &&
+     	rm -fr jellyfish-2.2.6 &&
+      	tar -xzvf jellyfish-2.2.6.tgz
+     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/jellyfish-2.2.6
+@@ -311,7 +311,7 @@
+ message("==================================================================")
+ ExternalProject_Add(libgff
+     DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    DOWNLOAD_COMMAND curl -k -L https://github.com/Kingsford-Group/libgff/archive/v1.0.tar.gz -o libgff.tgz &&
++    DOWNLOAD_COMMAND test -f libgff.tgz || curl -k -L https://github.com/Kingsford-Group/libgff/archive/v1.0.tar.gz -o libgff.tgz &&
+     tar -xzvf libgff.tgz &&
+     rm -fr libgff &&
+     mv libgff-1.0 libgff
+@@ -334,7 +334,7 @@
+ message("==================================================================")
+ ExternalProject_Add(libstadenio
+     DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    DOWNLOAD_COMMAND curl -k -L https://github.com/COMBINE-lab/staden-io_lib/archive/v1.14.8.tar.gz -o staden-io_lib-v1.14.8.tar.gz &&
++    DOWNLOAD_COMMAND test -f staden-io_lib-v1.14.8.tar.gz || curl -k -L https://github.com/COMBINE-lab/staden-io_lib/archive/v1.14.8.tar.gz -o staden-io_lib-v1.14.8.tar.gz &&
+                      mkdir -p staden-io_lib-1.14.8 &&
+                      tar -xzf staden-io_lib-v1.14.8.tar.gz --strip-components=1 -C staden-io_lib-1.14.8 &&
+                      rm -fr staden-io_lib &&
+@@ -352,7 +352,7 @@
+ message("==================================================================")
+ ExternalProject_Add(libspdlog
+     DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    DOWNLOAD_COMMAND curl -k -L https://github.com/COMBINE-lab/spdlog/archive/v1.12.tar.gz -o spdlog-v1.12.tar.gz &&
++    DOWNLOAD_COMMAND test -f spdlog-v1.12.tar.gz || curl -k -L https://github.com/COMBINE-lab/spdlog/archive/v1.12.tar.gz -o spdlog-v1.12.tar.gz &&
+                      tar -xzf spdlog-v1.12.tar.gz &&
+                      rm -fr spdlog &&
+                      mv -f  spdlog-1.12 spdlog
+@@ -398,7 +398,7 @@
+ message("==================================================================")
+ ExternalProject_Add(libsparsehash
+     DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external
+-    DOWNLOAD_COMMAND curl -k -L https://github.com/COMBINE-lab/sparsehash/archive/sparsehash-2.0.2.tar.gz -o sparsehash-2.0.2.tar.gz &&
++    DOWNLOAD_COMMAND test -f sparsehash-2.0.2.tar.gz || curl -k -L https://github.com/COMBINE-lab/sparsehash/archive/sparsehash-2.0.2.tar.gz -o sparsehash-2.0.2.tar.gz &&
+         tar -xzf sparsehash-2.0.2.tar.gz
+     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/sparsehash-sparsehash-2.0.2
+     BUILD_IN_SOURCE TRUE
+--- scripts/fetchRapMap.sh
++++ scripts/fetchRapMap.sh
+@@ -17,6 +17,7 @@
+ fi
+ 
+ mkdir -p ${EXTERNAL_DIR}
++[ -f "${EXTERNAL_DIR}/rapmap.zip" ] || \
+ curl -k -L https://github.com/COMBINE-lab/RapMap/archive/salmon-v0.7.2.zip -o ${EXTERNAL_DIR}/rapmap.zip
+ #curl -k -L https://github.com/COMBINE-lab/RapMap/archive/develop-salmon.zip -o ${EXTERNAL_DIR}/rapmap.zip
+ rm -fr ${EXTERNAL_DIR}/RapMap

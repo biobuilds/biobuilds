@@ -1,0 +1,55 @@
+package:
+  name: salmon
+  version: "0.7.2"
+
+requirements:
+  build:
+    - cmake
+    - bzip2
+    - boost 1.62.0
+    - jemalloc
+    - tbb
+    - xz
+    - veclib-headers  # [ppc64le]
+    # Needed for C++11 support
+    - gcc 4.8.*       # [linux64]
+  run:
+    - boost 1.62.0
+    - jemalloc
+    - tbb
+    - xz
+    # Needed for C++11 support
+    - libgcc 4.8.*    # [linux64]
+
+source:
+  # Using this "combined" tarball to avoid having to re-download source
+  # archives for 3rd-party support libraries every time we run "conda build";
+  # saves a lot of network traffic when developing/debugging this conda recipe.
+  fn: "salmon-0.7.2-combined.tar.bz2"
+  url:
+    - "http://download.lab7.io/sources/salmon-0.7.2-combined.tar.bz2"
+  md5: "dca09a57d95163412ea24b6962877f14"
+  patches:
+    - use-biobuilds-boost.patch
+    - use-biobuilds-libs.patch
+    - skip-downloads.patch
+    - configure-flags.patch
+    - test-fixes.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  # NOTE: use of "source_files" option requires conda-build >= 2.0.0beta2
+  source_files:
+    - sample_data.tgz
+
+about:
+  home: "https://github.com/COMBINE-lab/salmon"
+  license: GPLv3
+  license_file: LICENSE
+  summary: "Highly-accurate, fast transcript-level quantification from RNA-seq reads"

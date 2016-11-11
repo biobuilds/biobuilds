@@ -1,0 +1,237 @@
+--- ksw.c
++++ ksw.c
+@@ -26,7 +26,7 @@
+ #include <stdlib.h>
+ #include <stdint.h>
+ #include <assert.h>
+-#include <emmintrin.h>
++#include <vec128int.h>
+ #include "ksw.h"
+ 
+ #ifdef USE_MALLOC_WRAPPERS
+@@ -116,11 +116,11 @@
+ 	kswr_t r;
+ 
+ #define __max_16(ret, xx) do { \
+-		(xx) = _mm_max_epu8((xx), _mm_srli_si128((xx), 8)); \
+-		(xx) = _mm_max_epu8((xx), _mm_srli_si128((xx), 4)); \
+-		(xx) = _mm_max_epu8((xx), _mm_srli_si128((xx), 2)); \
+-		(xx) = _mm_max_epu8((xx), _mm_srli_si128((xx), 1)); \
+-    	(ret) = _mm_extract_epi16((xx), 0) & 0x00ff; \
++		(xx) = vec_max16ub((xx), vec_shiftrightbytes1q((xx), 8)); \
++		(xx) = vec_max16ub((xx), vec_shiftrightbytes1q((xx), 4)); \
++		(xx) = vec_max16ub((xx), vec_shiftrightbytes1q((xx), 2)); \
++		(xx) = vec_max16ub((xx), vec_shiftrightbytes1q((xx), 1)); \
++    	(ret) = vec_extract8sh((xx), 0) & 0x00ff; \
+ 	} while (0)
+ 
+ 	// initialization
+@@ -128,25 +128,25 @@
+ 	minsc = (xtra&KSW_XSUBO)? xtra&0xffff : 0x10000;
+ 	endsc = (xtra&KSW_XSTOP)? xtra&0xffff : 0x10000;
+ 	m_b = n_b = 0; b = 0;
+-	zero = _mm_set1_epi32(0);
+-	oe_del = _mm_set1_epi8(_o_del + _e_del);
+-	e_del = _mm_set1_epi8(_e_del);
+-	oe_ins = _mm_set1_epi8(_o_ins + _e_ins);
+-	e_ins = _mm_set1_epi8(_e_ins);
+-	shift = _mm_set1_epi8(q->shift);
++	zero = vec_splat4sw(0);
++	oe_del = vec_splat16sb(_o_del + _e_del);
++	e_del = vec_splat16sb(_e_del);
++	oe_ins = vec_splat16sb(_o_ins + _e_ins);
++	e_ins = vec_splat16sb(_e_ins);
++	shift = vec_splat16sb(q->shift);
+ 	H0 = q->H0; H1 = q->H1; E = q->E; Hmax = q->Hmax;
+ 	slen = q->slen;
+ 	for (i = 0; i < slen; ++i) {
+-		_mm_store_si128(E + i, zero);
+-		_mm_store_si128(H0 + i, zero);
+-		_mm_store_si128(Hmax + i, zero);
++		vec_store1q(E + i, zero);
++		vec_store1q(H0 + i, zero);
++		vec_store1q(Hmax + i, zero);
+ 	}
+ 	// the core loop
+ 	for (i = 0; i < tlen; ++i) {
+ 		int j, k, cmp, imax;
+ 		__m128i e, h, t, f = zero, max = zero, *S = q->qp + target[i] * slen; // s is the 1st score vector
+-		h = _mm_load_si128(H0 + slen - 1); // h={2,5,8,11,14,17,-1,-1} in the above example
+-		h = _mm_slli_si128(h, 1); // h=H(i-1,-1); << instead of >> because x64 is little-endian
++		h = vec_load1q(H0 + slen - 1); // h={2,5,8,11,14,17,-1,-1} in the above example
++		h = vec_shiftleftbytes1q(h, 1); // h=H(i-1,-1); << instead of >> because x64 is little-endian
+ 		for (j = 0; LIKELY(j < slen); ++j) {
+ 			/* SW cells are computed in the following order:
+ 			 *   H(i,j)   = max{H(i-1,j-1)+S(i,j), E(i,j), F(i,j)}
+@@ -154,35 +154,35 @@
+ 			 *   F(i,j+1) = max{H(i,j)-q, F(i,j)-r}
+ 			 */
+ 			// compute H'(i,j); note that at the beginning, h=H'(i-1,j-1)
+-			h = _mm_adds_epu8(h, _mm_load_si128(S + j));
+-			h = _mm_subs_epu8(h, shift); // h=H'(i-1,j-1)+S(i,j)
+-			e = _mm_load_si128(E + j); // e=E'(i,j)
+-			h = _mm_max_epu8(h, e);
+-			h = _mm_max_epu8(h, f); // h=H'(i,j)
+-			max = _mm_max_epu8(max, h); // set max
+-			_mm_store_si128(H1 + j, h); // save to H'(i,j)
++			h = vec_addsaturating16ub(h, vec_load1q(S + j));
++			h = vec_subtractsaturating16ub(h, shift); // h=H'(i-1,j-1)+S(i,j)
++			e = vec_load1q(E + j); // e=E'(i,j)
++			h = vec_max16ub(h, e);
++			h = vec_max16ub(h, f); // h=H'(i,j)
++			max = vec_max16ub(max, h); // set max
++			vec_store1q(H1 + j, h); // save to H'(i,j)
+ 			// now compute E'(i+1,j)
+-			e = _mm_subs_epu8(e, e_del); // e=E'(i,j) - e_del
+-			t = _mm_subs_epu8(h, oe_del); // h=H'(i,j) - o_del - e_del
+-			e = _mm_max_epu8(e, t); // e=E'(i+1,j)
+-			_mm_store_si128(E + j, e); // save to E'(i+1,j)
++			e = vec_subtractsaturating16ub(e, e_del); // e=E'(i,j) - e_del
++			t = vec_subtractsaturating16ub(h, oe_del); // h=H'(i,j) - o_del - e_del
++			e = vec_max16ub(e, t); // e=E'(i+1,j)
++			vec_store1q(E + j, e); // save to E'(i+1,j)
+ 			// now compute F'(i,j+1)
+-			f = _mm_subs_epu8(f, e_ins);
+-			t = _mm_subs_epu8(h, oe_ins); // h=H'(i,j) - o_ins - e_ins
+-			f = _mm_max_epu8(f, t);
++			f = vec_subtractsaturating16ub(f, e_ins);
++			t = vec_subtractsaturating16ub(h, oe_ins); // h=H'(i,j) - o_ins - e_ins
++			f = vec_max16ub(f, t);
+ 			// get H'(i-1,j) and prepare for the next j
+-			h = _mm_load_si128(H0 + j); // h=H'(i-1,j)
++			h = vec_load1q(H0 + j); // h=H'(i-1,j)
+ 		}
+ 		// NB: we do not need to set E(i,j) as we disallow adjecent insertion and then deletion
+ 		for (k = 0; LIKELY(k < 16); ++k) { // this block mimics SWPS3; NB: H(i,j) updated in the lazy-F loop cannot exceed max
+-			f = _mm_slli_si128(f, 1);
++			f = vec_shiftleftbytes1q(f, 1);
+ 			for (j = 0; LIKELY(j < slen); ++j) {
+-				h = _mm_load_si128(H1 + j);
+-				h = _mm_max_epu8(h, f); // h=H'(i,j)
+-				_mm_store_si128(H1 + j, h);
+-				h = _mm_subs_epu8(h, oe_ins);
+-				f = _mm_subs_epu8(f, e_ins);
+-				cmp = _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_subs_epu8(f, h), zero));
++				h = vec_load1q(H1 + j);
++				h = vec_max16ub(h, f); // h=H'(i,j)
++				vec_store1q(H1 + j, h);
++				h = vec_subtractsaturating16ub(h, oe_ins);
++				f = vec_subtractsaturating16ub(f, e_ins);
++				cmp = vec_extractupperbit16sb(vec_compareeq16sb(vec_subtractsaturating16ub(f, h), zero));
+ 				if (UNLIKELY(cmp == 0xffff)) goto end_loop16;
+ 			}
+ 		}
+@@ -201,7 +201,7 @@
+ 		if (imax > gmax) {
+ 			gmax = imax; te = i; // te is the end position on the target
+ 			for (j = 0; LIKELY(j < slen); ++j) // keep the H1 vector
+-				_mm_store_si128(Hmax + j, _mm_load_si128(H1 + j));
++				vec_store1q(Hmax + j, vec_load1q(H1 + j));
+ 			if (gmax + q->shift >= 255 || gmax >= endsc) break;
+ 		}
+ 		S = H1; H1 = H0; H0 = S; // swap H0 and H1
+@@ -237,10 +237,10 @@
+ 	kswr_t r;
+ 
+ #define __max_8(ret, xx) do { \
+-		(xx) = _mm_max_epi16((xx), _mm_srli_si128((xx), 8)); \
+-		(xx) = _mm_max_epi16((xx), _mm_srli_si128((xx), 4)); \
+-		(xx) = _mm_max_epi16((xx), _mm_srli_si128((xx), 2)); \
+-    	(ret) = _mm_extract_epi16((xx), 0); \
++		(xx) = vec_max8sh((xx), vec_shiftrightbytes1q((xx), 8)); \
++		(xx) = vec_max8sh((xx), vec_shiftrightbytes1q((xx), 4)); \
++		(xx) = vec_max8sh((xx), vec_shiftrightbytes1q((xx), 2)); \
++    	(ret) = vec_extract8sh((xx), 0); \
+ 	} while (0)
+ 
+ 	// initialization
+@@ -248,49 +248,49 @@
+ 	minsc = (xtra&KSW_XSUBO)? xtra&0xffff : 0x10000;
+ 	endsc = (xtra&KSW_XSTOP)? xtra&0xffff : 0x10000;
+ 	m_b = n_b = 0; b = 0;
+-	zero = _mm_set1_epi32(0);
+-	oe_del = _mm_set1_epi16(_o_del + _e_del);
+-	e_del = _mm_set1_epi16(_e_del);
+-	oe_ins = _mm_set1_epi16(_o_ins + _e_ins);
+-	e_ins = _mm_set1_epi16(_e_ins);
++	zero = vec_splat4sw(0);
++	oe_del = vec_splat8sh(_o_del + _e_del);
++	e_del = vec_splat8sh(_e_del);
++	oe_ins = vec_splat8sh(_o_ins + _e_ins);
++	e_ins = vec_splat8sh(_e_ins);
+ 	H0 = q->H0; H1 = q->H1; E = q->E; Hmax = q->Hmax;
+ 	slen = q->slen;
+ 	for (i = 0; i < slen; ++i) {
+-		_mm_store_si128(E + i, zero);
+-		_mm_store_si128(H0 + i, zero);
+-		_mm_store_si128(Hmax + i, zero);
++		vec_store1q(E + i, zero);
++		vec_store1q(H0 + i, zero);
++		vec_store1q(Hmax + i, zero);
+ 	}
+ 	// the core loop
+ 	for (i = 0; i < tlen; ++i) {
+ 		int j, k, imax;
+ 		__m128i e, t, h, f = zero, max = zero, *S = q->qp + target[i] * slen; // s is the 1st score vector
+-		h = _mm_load_si128(H0 + slen - 1); // h={2,5,8,11,14,17,-1,-1} in the above example
+-		h = _mm_slli_si128(h, 2);
++		h = vec_load1q(H0 + slen - 1); // h={2,5,8,11,14,17,-1,-1} in the above example
++		h = vec_shiftleftbytes1q(h, 2);
+ 		for (j = 0; LIKELY(j < slen); ++j) {
+-			h = _mm_adds_epi16(h, *S++);
+-			e = _mm_load_si128(E + j);
+-			h = _mm_max_epi16(h, e);
+-			h = _mm_max_epi16(h, f);
+-			max = _mm_max_epi16(max, h);
+-			_mm_store_si128(H1 + j, h);
+-			e = _mm_subs_epu16(e, e_del);
+-			t = _mm_subs_epu16(h, oe_del);
+-			e = _mm_max_epi16(e, t);
+-			_mm_store_si128(E + j, e);
+-			f = _mm_subs_epu16(f, e_ins);
+-			t = _mm_subs_epu16(h, oe_ins);
+-			f = _mm_max_epi16(f, t);
+-			h = _mm_load_si128(H0 + j);
++			h = vec_addsaturating8sh(h, *S++);
++			e = vec_load1q(E + j);
++			h = vec_max8sh(h, e);
++			h = vec_max8sh(h, f);
++			max = vec_max8sh(max, h);
++			vec_store1q(H1 + j, h);
++			e = vec_subtractsaturating8uh(e, e_del);
++			t = vec_subtractsaturating8uh(h, oe_del);
++			e = vec_max8sh(e, t);
++			vec_store1q(E + j, e);
++			f = vec_subtractsaturating8uh(f, e_ins);
++			t = vec_subtractsaturating8uh(h, oe_ins);
++			f = vec_max8sh(f, t);
++			h = vec_load1q(H0 + j);
+ 		}
+ 		for (k = 0; LIKELY(k < 16); ++k) {
+-			f = _mm_slli_si128(f, 2);
++			f = vec_shiftleftbytes1q(f, 2);
+ 			for (j = 0; LIKELY(j < slen); ++j) {
+-				h = _mm_load_si128(H1 + j);
+-				h = _mm_max_epi16(h, f);
+-				_mm_store_si128(H1 + j, h);
+-				h = _mm_subs_epu16(h, oe_ins);
+-				f = _mm_subs_epu16(f, e_ins);
+-				if(UNLIKELY(!_mm_movemask_epi8(_mm_cmpgt_epi16(f, h)))) goto end_loop8;
++				h = vec_load1q(H1 + j);
++				h = vec_max8sh(h, f);
++				vec_store1q(H1 + j, h);
++				h = vec_subtractsaturating8uh(h, oe_ins);
++				f = vec_subtractsaturating8uh(f, e_ins);
++				if(UNLIKELY(!vec_extractupperbit16sb(vec_comparegt8sh(f, h)))) goto end_loop8;
+ 			}
+ 		}
+ end_loop8:
+@@ -307,7 +307,7 @@
+ 		if (imax > gmax) {
+ 			gmax = imax; te = i;
+ 			for (j = 0; LIKELY(j < slen); ++j)
+-				_mm_store_si128(Hmax + j, _mm_load_si128(H1 + j));
++				vec_store1q(Hmax + j, vec_load1q(H1 + j));
+ 			if (gmax >= endsc) break;
+ 		}
+ 		S = H1; H1 = H0; H0 = S;
