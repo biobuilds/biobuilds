@@ -1,0 +1,53 @@
+--- ext/tools/CMakeLists.txt
++++ ext/tools/CMakeLists.txt
+@@ -5,4 +5,5 @@
+ # See file LICENSE for details.
+ ############################################################################
+ 
+-add_subdirectory(bwa-0.7.12)
++# Using system 'bwa' instead of custom built one
++#add_subdirectory(bwa-0.7.12)
+--- src/spades_pipeline/easy_align.py
++++ src/spades_pipeline/easy_align.py
+@@ -23,7 +23,7 @@
+     log.addHandler(console)
+     #logging
+ 
+-    bwa_command='bin/bwa-spades'
++    bwa_command='bin/bwa'
+     index = alignment.index_bwa(bwa_command, log, contigs_file, os.path.join(out_dir, "bwa_index"), "bwtsw")
+     index = os.path.join(out_dir, "bwa_index", "index")
+     sam = alignment.align_bwa_pe_lib(bwa_command, index, left, right, os.path.join(out_dir, "align"), log, threads)
+--- src/spades_pipeline/spades_logic.py
++++ src/spades_pipeline/spades_logic.py
+@@ -62,7 +62,7 @@
+     #TODO: make something about spades.py and config param substitution 
+     if "bwa_paired" in cfg.__dict__:
+         subst_dict["bwa_enable"] = bool_to_str(True)
+-    subst_dict["path_to_bwa"] =  os.path.join(execution_home, "bwa-spades")
++    subst_dict["path_to_bwa"] =  os.path.join(execution_home, "bwa")
+     process_cfg.substitute_params(filename, subst_dict, log)
+ 
+ 
+--- src/spades_pipeline/support.py
++++ src/spades_pipeline/support.py
+@@ -72,7 +72,7 @@
+ 
+ 
+ def check_binaries(binary_dir, log):
+-    for binary in ["hammer", "ionhammer", "spades", "bwa-spades", "dipspades"]:
++    for binary in ["hammer", "ionhammer", "spades", "bwa", "dipspades"]:
+         binary_path = os.path.join(binary_dir, binary)
+         if not os.path.isfile(binary_path):
+             error("SPAdes binaries not found: " + binary_path + "\n" + get_spades_binaries_info_message(), log)
+--- src/spades_pipeline/truspades/reference_construction.py
++++ src/spades_pipeline/truspades/reference_construction.py
+@@ -136,7 +136,7 @@
+     return datasets
+ 
+ def ConstructSubreferences(datasets, reference_file, output_dir, index = None, threads = 1, log = None):
+-    bwa_command = "bin/bwa-spades"
++    bwa_command = "bin/bwa"
+     if log == None:
+         log = logging.getLogger('reference_construction')
+         log.setLevel(logging.INFO)
