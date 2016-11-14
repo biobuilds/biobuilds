@@ -1,0 +1,27 @@
+package:
+  name: mapper-test-data
+  version: "1.0"
+
+requirements:
+  build: []
+  run: []
+
+source:
+  fn: "bowtie2-2.2.9.tar.gz"
+  url:
+    - "https://github.com/BenLangmead/bowtie2/archive/v2.2.9.tar.gz"
+    - "http://download.lab7.io/sources/bowtie2-2.2.9.tar.gz"
+  md5: "168bdcd6a648e96d8a9a854cdbae24d8"
+
+build:
+  # Ideally, we'd make this a "noarch" package (since it's just text), but
+  # currently, that conda feature seems to be limited to Python packages only,
+  # and trying to build a package with "noarch_python: True" causes the build
+  # to fail in a variety of ways.
+  number: 0
+
+about:
+  home: "http://bowtie-bio.sourceforge.net/bowtie2/"
+  license: GPLv3
+  license_file: LICENSE
+  summary: "Example data from bowtie2 useful for testing short-read mappers"
