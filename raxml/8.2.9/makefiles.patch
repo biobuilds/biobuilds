@@ -1,0 +1,120 @@
+--- Makefile.AVX.PTHREADS.gcc
++++ Makefile.AVX.PTHREADS.gcc
+@@ -3,7 +3,7 @@
+ 
+ CC = gcc 
+ 
+-CFLAGS = -D_USE_PTHREADS  -D__SIM_SSE3 -O2 -D_GNU_SOURCE -msse3 -fomit-frame-pointer -funroll-loops  -D__AVX #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
++override CFLAGS += -D_USE_PTHREADS  -D__SIM_SSE3 -O2 -D_GNU_SOURCE -msse3 -fomit-frame-pointer -funroll-loops  -D__AVX #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
+ 
+ 
+ LIBRARIES = -lm -pthread 
+@@ -49,7 +49,7 @@
+  mem_alloc.o eigen.o  : mem_alloc.c  $(GLOBAL_DEPS)
+ 
+ eigen.o : eigen.c $(GLOBAL_DEPS)
+-	$(CC) -c -o eigen.o eigen.c 
++	$(CC) $(CFLAGS) -c -o eigen.o eigen.c 
+ clean : 
+ 	$(RM) *.o raxmlHPC-PTHREADS-AVX
+ 
+--- Makefile.AVX.PTHREADS.mac
++++ Makefile.AVX.PTHREADS.mac
+@@ -3,7 +3,7 @@
+ 
+ CC = clang 
+ 
+-CFLAGS = -D_USE_PTHREADS -D__SIM_SSE3 -O2 -D_GNU_SOURCE -msse3 -fomit-frame-pointer -funroll-loops  -D__AVX #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
++override CFLAGS += -D_USE_PTHREADS -D__SIM_SSE3 -O2 -D_GNU_SOURCE -msse3 -fomit-frame-pointer -funroll-loops  -D__AVX #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
+ 
+ 
+ LIBRARIES = -lm -pthread 
+@@ -49,7 +49,7 @@
+  mem_alloc.o eigen.o  : mem_alloc.c  $(GLOBAL_DEPS)
+ 
+ eigen.o : eigen.c $(GLOBAL_DEPS)
+-	$(CC) -c -o eigen.o eigen.c 
++	$(CC) $(CFLAGS) -c -o eigen.o eigen.c 
+ clean : 
+ 	$(RM) *.o raxmlHPC-PTHREADS-AVX
+ 
+--- Makefile.AVX2.PTHREADS.gcc
++++ Makefile.AVX2.PTHREADS.gcc
+@@ -3,7 +3,7 @@
+ 
+ CC = gcc 
+ 
+-CFLAGS = -D_USE_PTHREADS  -D__SIM_SSE3 -O2 -D_GNU_SOURCE -msse3 -fomit-frame-pointer -funroll-loops  -D__AVX #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
++override CFLAGS += -D_USE_PTHREADS  -D__SIM_SSE3 -O2 -D_GNU_SOURCE -msse3 -fomit-frame-pointer -funroll-loops  -D__AVX #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
+ 
+ 
+ LIBRARIES = -lm -pthread 
+@@ -49,7 +49,7 @@
+  mem_alloc.o eigen.o  : mem_alloc.c  $(GLOBAL_DEPS)
+ 
+ eigen.o : eigen.c $(GLOBAL_DEPS)
+-	$(CC) -c -o eigen.o eigen.c 
++	$(CC) $(CFLAGS) -c -o eigen.o eigen.c 
+ clean : 
+ 	$(RM) *.o raxmlHPC-PTHREADS-AVX2
+ 
+--- Makefile.AVX2.PTHREADS.mac
++++ Makefile.AVX2.PTHREADS.mac
+@@ -3,7 +3,7 @@
+ 
+ CC = clang 
+ 
+-CFLAGS = -D_USE_PTHREADS -D__SIM_SSE3 -O2 -D_GNU_SOURCE -msse3 -fomit-frame-pointer -funroll-loops  -D__AVX #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
++override CFLAGS += -D_USE_PTHREADS -D__SIM_SSE3 -O2 -D_GNU_SOURCE -msse3 -fomit-frame-pointer -funroll-loops  -D__AVX #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
+ 
+ 
+ LIBRARIES = -lm -pthread 
+@@ -49,7 +49,7 @@
+  mem_alloc.o eigen.o  : mem_alloc.c  $(GLOBAL_DEPS)
+ 
+ eigen.o : eigen.c $(GLOBAL_DEPS)
+-	$(CC) -c -o eigen.o eigen.c 
++	$(CC) $(CFLAGS) -c -o eigen.o eigen.c 
+ clean : 
+ 	$(RM) *.o raxmlHPC-PTHREADS-AVX2
+ 
+--- Makefile.SSE3.PTHREADS.gcc
++++ Makefile.SSE3.PTHREADS.gcc
+@@ -3,7 +3,7 @@
+ 
+ CC = gcc 
+ 
+-CFLAGS = -D_USE_PTHREADS -D__SIM_SSE3 -D_GNU_SOURCE -msse3 -O2 -fomit-frame-pointer -funroll-loops  #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
++override CFLAGS += -D_USE_PTHREADS -D__SIM_SSE3 -D_GNU_SOURCE -msse3 -O2 -fomit-frame-pointer -funroll-loops  #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
+ 
+ 
+ LIBRARIES = -lm -pthread 
+@@ -44,7 +44,7 @@
+  mem_alloc.o eigen.o  : mem_alloc.c  $(GLOBAL_DEPS)
+ 
+ eigen.o : eigen.c $(GLOBAL_DEPS)
+-	$(CC) -c -o eigen.o eigen.c 
++	$(CC) $(CFLAGS) -c -o eigen.o eigen.c 
+ clean : 
+ 	$(RM) *.o raxmlHPC-PTHREADS-SSE3
+ 
+--- Makefile.SSE3.PTHREADS.mac
++++ Makefile.SSE3.PTHREADS.mac
+@@ -3,7 +3,7 @@
+ 
+ CC = clang
+ 
+-CFLAGS = -D_USE_PTHREADS -D__SIM_SSE3 -O2 -D_GNU_SOURCE -msse3 -fomit-frame-pointer -funroll-loops  #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
++override CFLAGS += -D_USE_PTHREADS -D__SIM_SSE3 -D_GNU_SOURCE -msse3 -O2 -fomit-frame-pointer -funroll-loops  #-Wall -pedantic -Wunused-parameter -Wredundant-decls  -Wreturn-type  -Wswitch-default -Wunused-value -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int -Wimport  -Wunused  -Wunused-function  -Wunused-label -Wno-int-to-pointer-cast -Wbad-function-cast  -Wmissing-declarations -Wmissing-prototypes  -Wnested-externs  -Wold-style-definition -Wstrict-prototypes  -Wdeclaration-after-statement -Wpointer-sign -Wextra -Wredundant-decls -Wunused -Wunused-function -Wunused-parameter -Wunused-value  -Wunused-variable -Wformat  -Wformat-nonliteral -Wparentheses -Wsequence-point -Wuninitialized -Wundef -Wbad-function-cast
+ 
+ 
+ LIBRARIES = -lm -pthread 
+@@ -44,7 +44,7 @@
+  mem_alloc.o eigen.o  : mem_alloc.c  $(GLOBAL_DEPS)
+ 
+ eigen.o : eigen.c $(GLOBAL_DEPS)
+-	$(CC) -c -o eigen.o eigen.c 
++	$(CC) $(CFLAGS) -c -o eigen.o eigen.c 
+ clean : 
+ 	$(RM) *.o raxmlHPC-PTHREADS-SSE3
+ 

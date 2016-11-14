@@ -1,0 +1,38 @@
+package:
+  name: "raxml"
+  version: "8.2.9"
+
+source:
+  fn: "raxml-8.2.9.tar.gz"
+  url:
+    - "https://github.com/stamatak/standard-RAxML/archive/v8.2.9.tar.gz"
+    - "http://download.lab7.io/sources/raxml-8.2.9.tar.gz"
+  md5: "ba77f7df7ce5e2a7967decd9e4278a72"
+  patches:
+    - makefiles.patch
+    - ppc64le-support.patch   # [ppc64le]
+
+requirements:
+  build:
+    - gcc 4.8.*       # [not ppc64le]
+    - veclib-headers  # [ppc64le]
+  run:
+    - libgcc 4.8.*    # [not ppc64le]
+    - perl
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  files:
+    - test_data.tar.bz2
+
+about:
+  home: "http://sco.h-its.org/exelixis/web/software/raxml/index.html"
+  license: GPLv3
+  license_file: gpl-3.0.txt
+  summary: "Tool for Maximum-likelihood based phylogenetic inference"
