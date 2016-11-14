@@ -74,15 +74,15 @@ for d in ${CONDA_PLATFORM} noarch; do
     # Use "find" instead of globbing to prevent script failure in case no
     # package files were placed inside this ${src_dir}.
     find ${src_dir} -type f -name '*.tar.bz2' | \
-        xargs -I% cp -pv % ${dest_dir}
+        xargs --no-run-if-empty -I% cp -pv % ${dest_dir}
 
     conda index ${dest_dir}
 
     find "${dest_dir}" -type f -newer /tmp/build_timestamp | \
-        xargs chown ${DEST_UID}:${DEST_GID}
+        xargs --no-run-if-empty chown ${DEST_UID}:${DEST_GID}
 done
 
 if [ -d /src/conda-bld/src_cache ]; then
     find /src/conda-bld/src_cache -type f -uid $UID | \
-        xargs chown ${DEST_UID}:${DEST_GID}
+        xargs --no-run-if-empty chown ${DEST_UID}:${DEST_GID}
 fi
