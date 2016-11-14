@@ -1,0 +1,29 @@
+package:
+  name: biopython
+  version: "1.68"
+
+source:
+  fn: "biopython-1.68.tar.gz"
+  url:
+    - "http://biopython.org/DIST/biopython-1.68.tar.gz"
+    - "http://download.lab7.io/biopython-1.68.tar.gz"
+  md5: "078e915185485a5327937029b7577ddc"
+
+requirements:
+  build:
+    - python
+    # Requires conda-build 1.18 or greater
+    - numpy x.x
+  run:
+    - python
+    # Requires conda-build 1.18 or greater
+    - numpy x.x
+
+build:
+  # "bb<n>" to distinguish our build from the one in the "defaults" channel
+  string: "bb0"
+
+about:
+  home: http://biopython.org/
+  license: BSD-like
+  summary: Python tools for computational molecular biology
