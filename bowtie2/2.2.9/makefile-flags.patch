@@ -1,0 +1,149 @@
+--- Makefile
++++ Makefile
+@@ -167,9 +167,9 @@
+ 
+ SSE_FLAG=-msse2 
+ 
+-DEBUG_FLAGS    = -O0 -g3 -m64 $(SSE_FLAG)
++DEBUG_FLAGS   ?= -O0 -g3 -m64 $(SSE_FLAG)
+ DEBUG_DEFS     = -DCOMPILER_OPTIONS="\"$(DEBUG_FLAGS) $(EXTRA_FLAGS)\""
+-RELEASE_FLAGS  = -O3 -m64 $(SSE_FLAG) -funroll-loops -g3
++RELEASE_FLAGS ?= -O3 -m64 $(SSE_FLAG) -funroll-loops -g3
+ RELEASE_DEFS   = -DCOMPILER_OPTIONS="\"$(RELEASE_FLAGS) $(EXTRA_FLAGS)\""
+ NOASSERT_FLAGS = -DNDEBUG
+ FILE_FLAGS     = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE
+@@ -266,7 +266,7 @@
+ 		$(INC) \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) $(BUILD_CPPS_MAIN) \
+-		$(LIBS) $(BUILD_LIBS)
++		$(LDFLAGS) $(LIBS) $(BUILD_LIBS)
+ 
+ bowtie2-build-l: bt2_build.cpp $(SHARED_CPPS) $(HEADERS)
+ 	$(CXX) $(RELEASE_FLAGS) $(RELEASE_DEFS) $(EXTRA_FLAGS) \
+@@ -274,7 +274,7 @@
+ 		$(INC) \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) $(BUILD_CPPS_MAIN) \
+-		$(LIBS) $(BUILD_LIBS)
++		$(LDFLAGS) $(LIBS) $(BUILD_LIBS)
+ 
+ bowtie2-build-s-debug: bt2_build.cpp $(SHARED_CPPS) $(HEADERS)
+ 	$(CXX) $(DEBUG_FLAGS) $(DEBUG_DEFS) $(EXTRA_FLAGS) \
+@@ -282,7 +282,7 @@
+ 		$(INC) \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) $(BUILD_CPPS_MAIN) \
+-		$(LIBS) $(BUILD_LIBS)
++		$(LDFLAGS) $(LIBS) $(BUILD_LIBS)
+ 
+ bowtie2-build-l-debug: bt2_build.cpp $(SHARED_CPPS) $(HEADERS)
+ 	$(CXX) $(DEBUG_FLAGS) $(DEBUG_DEFS) $(EXTRA_FLAGS) \
+@@ -290,7 +290,7 @@
+ 		$(INC) \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) $(BUILD_CPPS_MAIN) \
+-		$(LIBS) $(BUILD_LIBS)
++		$(LDFLAGS) $(LIBS) $(BUILD_LIBS)
+ 
+ #
+ # bowtie2-align targets
+@@ -302,7 +302,7 @@
+ 		$(INC) \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) $(SEARCH_CPPS_MAIN) \
+-		$(LIBS) $(SEARCH_LIBS)
++		$(LDFLAGS) $(LIBS) $(SEARCH_LIBS)
+ 
+ bowtie2-align-l: bt2_search.cpp $(SEARCH_CPPS) $(SHARED_CPPS) $(HEADERS) $(SEARCH_FRAGMENTS)
+ 	$(CXX) $(RELEASE_FLAGS) $(RELEASE_DEFS) $(EXTRA_FLAGS) \
+@@ -310,7 +310,7 @@
+ 		$(INC) \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) $(SEARCH_CPPS_MAIN) \
+-		$(LIBS) $(SEARCH_LIBS)
++		$(LDFLAGS) $(LIBS) $(SEARCH_LIBS)
+ 
+ bowtie2-align-s-debug: bt2_search.cpp $(SEARCH_CPPS) $(SHARED_CPPS) $(HEADERS) $(SEARCH_FRAGMENTS)
+ 	$(CXX) $(DEBUG_FLAGS) \
+@@ -319,7 +319,7 @@
+ 		$(INC) \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) $(SEARCH_CPPS_MAIN) \
+-		$(LIBS) $(SEARCH_LIBS)
++		$(LDFLAGS) $(LIBS) $(SEARCH_LIBS)
+ 
+ bowtie2-align-l-debug: bt2_search.cpp $(SEARCH_CPPS) $(SHARED_CPPS) $(HEADERS) $(SEARCH_FRAGMENTS)
+ 	$(CXX) $(DEBUG_FLAGS) \
+@@ -328,7 +328,7 @@
+ 		$(INC) \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) $(SEARCH_CPPS_MAIN) \
+-		$(LIBS) $(SEARCH_LIBS)
++		$(LDFLAGS) $(LIBS) $(SEARCH_LIBS)
+ 
+ #
+ # bowtie2-inspect targets
+@@ -341,7 +341,7 @@
+ 		$(INC) -I . \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) \
+-		$(LIBS) $(INSPECT_LIBS)
++		$(LDFLAGS) $(LIBS) $(INSPECT_LIBS)
+ 
+ bowtie2-inspect-l: bt2_inspect.cpp $(HEADERS) $(SHARED_CPPS)
+ 	$(CXX) $(RELEASE_FLAGS) \
+@@ -350,7 +350,7 @@
+ 		$(INC) -I . \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) \
+-		$(LIBS) $(INSPECT_LIBS)
++		$(LDFLAGS) $(LIBS) $(INSPECT_LIBS)
+ 
+ bowtie2-inspect-s-debug: bt2_inspect.cpp $(HEADERS) $(SHARED_CPPS) 
+ 	$(CXX) $(DEBUG_FLAGS) \
+@@ -359,7 +359,7 @@
+ 		$(INC) -I . \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) \
+-		$(LIBS) $(INSPECT_LIBS)
++		$(LDFLAGS) $(LIBS) $(INSPECT_LIBS)
+ 
+ bowtie2-inspect-l-debug: bt2_inspect.cpp $(HEADERS) $(SHARED_CPPS)
+ 	$(CXX) $(DEBUG_FLAGS) \
+@@ -368,7 +368,7 @@
+ 		$(INC) -I . \
+ 		-o $@ $< \
+ 		$(SHARED_CPPS) \
+-		$(LIBS) $(INSPECT_LIBS)
++		$(LDFLAGS) $(LIBS) $(INSPECT_LIBS)
+ 
+ #
+ # bowtie2-dp targets
+@@ -381,7 +381,7 @@
+ 		$(INC) -I . \
+ 		-o $@ $< \
+ 		$(DP_CPPS) $(SHARED_CPPS) \
+-		$(LIBS) $(SEARCH_LIBS)
++		$(LDFLAGS) $(LIBS) $(SEARCH_LIBS)
+ 
+ bowtie2-dp-debug: bt2_dp.cpp $(HEADERS) $(SHARED_CPPS) $(DP_CPPS)
+ 	$(CXX) $(DEBUG_FLAGS) \
+@@ -390,7 +390,7 @@
+ 		$(INC) -I . \
+ 		-o $@ $< \
+ 		$(DP_CPPS) $(SHARED_CPPS) \
+-		$(LIBS) $(SEARCH_LIBS)
++		$(LDFLAGS) $(LIBS) $(SEARCH_LIBS)
+ 
+ bowtie2.bat:
+ 	echo "@echo off" > bowtie2.bat
+@@ -441,7 +441,7 @@
+ 		$(INC) -I . \
+ 		-o $@ $< \
+ 		aligner_seed.cpp bt2_idx.cpp ccnt_lut.cpp alphabet.cpp bt2_io.cpp \
+-		$(LIBS)
++		$(LDFLAGS) $(LIBS)
+ 
+ .PHONY: doc
+ doc: doc/manual.html MANUAL
