@@ -1,0 +1,19 @@
+package:
+  name: libidn2
+  version: "0.11"
+
+source:
+  fn: "libidn2-0.11.tar.gz"
+  url:
+    - "ftp://alpha.gnu.org/gnu/libidn/libidn2-0.11.tar.gz"
+    - "http://download.lab7.io/sources/libidn2-0.11.tar.gz"
+  md5: "b5a572bfd1d5d0ecc2314b61f53596f5"
+
+build:
+  number: 0
+
+about:
+  home: "https://www.gnu.org/software/libidn/#libidn2"
+  license: GPLv3
+  license_file: COPYING
+  summary: "Library for internationalized domain names (IDNA2008) support"

@@ -1,0 +1,28 @@
+package:
+  name: libssh2
+  version: "1.8.0"
+
+source:
+  fn: "libssh2-1.8.0.tar.gz"
+  url:
+    - "https://www.libssh2.org/download/libssh2-1.8.0.tar.gz"
+    - "http://download.lab7.io/sources/libssh2-1.8.0.tar.gz"
+  md5: "3d1147cae66e2959ea5441b183de1b1c"
+
+requirements:
+  build:
+    - autoconf-update
+    - openssl
+    - zlib
+  run:
+    - openssl
+    - zlib
+
+build:
+  number: 0
+
+about:
+  home: "https://www.libssh2.org/"
+  license: BSD
+  license_file: COPYING
+  summary: "Client-side C library for the SSH2 protocol"
