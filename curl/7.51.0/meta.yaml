@@ -1,0 +1,37 @@
+package:
+  name: curl
+  version: 7.51.0
+
+source:
+  fn: "curl-7.51.0.tar.bz2"
+  url:
+    - "https://curl.haxx.se/download/curl-7.51.0.tar.bz2"
+    - "http://download.lab7.io/sources/curl-7.51.0.tar.bz2"
+  md5: "09a7c5769a7eae676d5e2c86d51f167e"
+
+requirements:
+  build:
+    - libidn2
+    - libssh2
+    - openssl
+    - zlib
+  run:
+    - libidn2
+    - libssh2
+    - openssl
+    - zlib
+
+build:
+  number: 0
+  # Needed to fix path to CA certificate bundle
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - curl -V
+    - curl -D/dev/stderr -s https://www.google.com >/dev/null
+
+about:
+  license: MIT
+  license_file: COPYING
+  summary: "Multi-protocol file transfer library and CLI utility"
