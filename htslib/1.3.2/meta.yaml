@@ -1,0 +1,39 @@
+package:
+  name: htslib
+  version: "1.3.2"
+
+requirements:
+  build:
+    - zlib
+    - curl 7.51.0
+  run:
+    - zlib
+    - curl 7.51.0
+
+source:
+  fn: htslib-1.3.2.tar.bz2
+  url:
+    - "https://github.com/samtools/htslib/releases/download/1.3.2/htslib-1.3.2.tar.bz2"
+    - "http://download.lab7.io/sources/htslib-1.3.2.tar.bz2"
+  md5: "64742a2a812da1bb6eb4417128be6944"
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  files:
+    - test.gff
+  commands:
+    - htsfile test.gff
+    - bgzip test.gff
+    - tabix test.gff.gz
+
+about:
+  home: http://www.htslib.org/
+  license: MIT
+  license_file: LICENSE
+  summary: "unified library for accessing common file formats used for high-throughput sequencing data"

@@ -1,0 +1,12 @@
+package:
+  name: tabix
+  version: "1.3.2"
+
+requirements:
+  run:
+    - htslib 1.3.2
+
+about:
+  home: http://www.htslib.org/doc/tabix.html
+  license: MIT
+  summary: "Generic indexer for tab-delimited genome position files"
