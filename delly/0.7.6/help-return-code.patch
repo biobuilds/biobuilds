@@ -1,0 +1,22 @@
+--- src/cov.cpp
++++ src/cov.cpp
+@@ -252,7 +252,7 @@
+       std::cout << "Usage: " << argv[0] << " [OPTIONS] -g <ref.fa> <sample1.bam> <sample2.bam> ..." << std::endl;
+       std::cout << visible_options << "\n"; 
+     }
+-    return 1; 
++    return (vm.count("help") ? 0 : 1);
+   }
+   if (vm.count("bp-count")) c.bp_flag = true;
+   else c.bp_flag = false;
+--- src/dpe.cpp
++++ src/dpe.cpp
+@@ -353,7 +353,7 @@
+       std::cout << "Usage: " << argv[0] << " [OPTIONS] <deldup.bcf>" << std::endl;
+       std::cout << visible_options << "\n"; 
+     }
+-    return 1; 
++    return (vm.count("help") ? 0 : 1);
+   }
+ 
+   // Check input VCF file

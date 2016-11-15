@@ -1,0 +1,44 @@
+package:
+  name: delly
+  version: "0.7.6"
+
+requirements:
+  # NOTE: Currently unable to use gcc/libgcc on OS X to get OpenMP support
+  # because our version of Boost links to libc++ instead of libstdc++, because
+  # rather unfortunately, OS X's libstdc++ is not fully compatible with gcc's
+  # libstdc++. (See the delly # 0.7.2 and Boost 1.60.0 recipes for details.)
+  build:
+    - boost 1.62.0
+    - htslib 1.3.2
+  run:
+    - boost 1.62.0
+    - htslib 1.3.2
+
+source:
+  fn: delly-0.7.6.tar.gz
+  url:
+    - "https://github.com/tobiasrausch/delly/archive/v0.7.6.tar.gz"
+    - "http://download.lab7.io/sources/delly-0.7.6.tar.gz"
+  md5: "a3e284dc71d592ac61943f30ce01149e"
+  patches:
+    - makefile.patch
+    - help-return-code.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_MAKE_JOBS
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+
+test:
+  commands:
+    - "delly -?"
+    - "delly-cov -?"
+    - "delly-dpe -?"
+
+about:
+  home: "https://github.com/tobiasrausch/delly"
+  license: GPLv3
+  license_file: LICENSE
+  summary: "Structural variant discovery by integrated paired-end and split-read analysis"
