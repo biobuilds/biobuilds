@@ -1,0 +1,38 @@
+package:
+  name: libgd
+  version: "2.2.3"
+
+source:
+  fn: libgd-2.2.3.tar.gz
+  url:
+    - "https://github.com/libgd/libgd/releases/download/gd-2.2.3/libgd-2.2.3.tar.gz"
+    - "http://download.lab7.io/sources/libgd-2.2.3.tar.gz"
+  md5: "76a350a1af39e3e5bdfa70f18831f179"
+
+build:
+  number: 0
+  binary_relocation: true
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+requirements:
+  build:
+    - libpng
+    - libtiff
+    - freetype
+    - jpeg
+    - zlib
+  run:
+    - libpng
+    - libtiff
+    - freetype
+    - jpeg
+    - zlib
+
+about:
+  home: https://libgd.github.io/
+  license: BSD-like
+  license_file: COPYING
+  summary: "Library for the dynamic creation of images"
