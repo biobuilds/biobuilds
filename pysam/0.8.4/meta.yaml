@@ -12,13 +12,14 @@ source:
 requirements:
   build:
     - python
-    - htslib >=1.2.1
+    - htslib 1.3.2
     - cython
   run:
     - python
-    - htslib >=1.2.1
+    - htslib 1.3.2
 
 build:
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS

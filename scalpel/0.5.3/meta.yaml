@@ -19,7 +19,6 @@ requirements:
     - perl-mldbm-sync
     - perl-parallel-forkmanager
     - perl-text-nsp
-    - samtools >=1.1
     - bamtools >=2.3
   run:
     - perl
@@ -32,7 +31,7 @@ requirements:
     - bamtools >=2.3
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS

@@ -119,7 +119,7 @@ make install
 cd "${SRC_DIR}/trinity-plugins/scaffold_iworm_contigs"
 make clean
 make CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS} -lpthread" \
-    LIBHTS="${PREFIX}/lib/libhts.a -lz"
+    LIBHTS="${PREFIX}/lib/libhts.a -ldl -lz"
 install -d "${TGT_DIR}/trinity-plugins/scaffold_iworm_contigs"
 install -m 0755 scaffold_iworm_contigs \
     "${TGT_DIR}/trinity-plugins/scaffold_iworm_contigs"
