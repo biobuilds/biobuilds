@@ -1,0 +1,42 @@
+--- make/Makefile.linux64_sse2
++++ make/Makefile.linux64_sse2
+@@ -12,7 +12,7 @@
+ 
+ SHELL=/bin/bash
+ 
+-CC = gcc -g -O -msse2
++CC ?= gcc -g -O -msse2
+ #CC= gcc -pg -g -O -msse2 -ffast-math
+ #CC = gcc -g -DDEBUG -msse2
+ 
+@@ -25,7 +25,7 @@
+ 
+ # standard options
+ 
+-CFLAGS= -DSHOW_HELP -DSHOWSIM -DUNIX -DTIMES -DHZ=100 -DMAX_WORKERS=8 -DTHR_EXIT=pthread_exit  -DM10_CONS  -D_REENTRANT -DHAS_INTTYPES -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DUSE_FSEEKO -DSAMP_STATS -DPGM_DOC -DUSE_MMAP  -D_LARGEFILE64_SOURCE  -DBIG_LIB64
++CFLAGS+= -DSHOW_HELP -DSHOWSIM -DUNIX -DTIMES -DHZ=100 -DMAX_WORKERS=8 -DTHR_EXIT=pthread_exit  -DM10_CONS  -D_REENTRANT -DHAS_INTTYPES -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DUSE_FSEEKO -DSAMP_STATS -DPGM_DOC -DUSE_MMAP  -D_LARGEFILE64_SOURCE  -DBIG_LIB64
+ # -I/usr/include/mysql -DMYSQL_DB
+ # -DSUPERFAMNUM -DSFCHAR="'|'" 
+ 
+--- make/Makefile36m.common
++++ make/Makefile36m.common
+@@ -34,7 +34,7 @@
+ # and "-L/usr/lib64/mysql -lmysqlclient -lz" in LIB_M
+ # some systems may also require a LD_LIBRARY_PATH change
+ 
+-LIB_M= -lm -lz
++LIB_M= $(LDFLAGS) -lm -lz
+ #LIB_M= -L/usr/lib64/mysql -lmysqlclient -lz -lm
+ NCBL_LIB=ncbl2_mlib.o
+ #NCBL_LIB=ncbl2_mlib.o mysql_lib.o
+--- make/Makefile36mpi.common
++++ make/Makefile36mpi.common
+@@ -36,7 +36,7 @@
+ #LIB_M= -L/usr/local/lib/mysql -lmysqlclient -lz -lm
+ #NCBL_LIB=ncbl2_mlib.o mysql_lib.o
+ NCBL_LIB=ncbl2_mlib.o
+-LIB_M = -lm -lz
++LIB_M = $(LDFLAGS) -lm -lz
+ 
+ include ../make/Makefile.mp_com2
+ 
