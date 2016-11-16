@@ -1,0 +1,32 @@
+package:
+  name: harfbuzz
+  version: 0.9.42
+
+source:
+  fn: "harfbuzz-0.9.42.tar.bz2"
+  url:
+    - "https://www.freedesktop.org/software/harfbuzz/release/harfbuzz-0.9.42.tar.bz2"
+    - "http://download.lab7.io/sources/harfbuzz-0.9.42.tar.bz2"
+  md5: "3df00213ec622341a25923f66d2e641a"
+
+build:
+  # Give our package a large build number so it's preferred over the
+  # corresponding package (if any) in the "defaults" channel.
+  number: 700
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - freetype
+    - cairo
+    - glib
+  run:
+    - freetype
+    - cairo
+    - glib
+
+about:
+  home: "https://www.freedesktop.org/wiki/Software/HarfBuzz/"
+  license: MIT
+  license_file: COPYING
+  summary: "OpenType text shaping engine"

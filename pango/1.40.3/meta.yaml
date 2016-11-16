@@ -1,0 +1,39 @@
+package:
+  name: pango
+  version: 1.40.3
+
+source:
+  fn: "pango-1.40.3.tar.xz"
+  url:
+    - "http://ftp.gnome.org/pub/GNOME/sources/pango/1.40/pango-1.40.3.tar.xz"
+    - "http://download.lab7.io/sources/pango-1.40.3.tar.xz"
+  md5: "17c26720f5a862a12f7e1745e2f1d966"
+  patches:
+    # From Ubuntu sources; seems to be related to a missing font
+    - disable-layout-test.patch
+
+build:
+  # Give our package a large build number so it's preferred over the
+  # corresponding package (if any) in the "defaults" channel.
+  number: 700
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - fontconfig
+    - freetype
+    - harfbuzz
+    - cairo >=1.12.10
+    - glib
+  run:
+    - fontconfig
+    - freetype
+    - harfbuzz
+    - cairo >=1.12.10
+    - glib
+
+about:
+  home: http://www.pango.org/
+  license: LGPL
+  license_file: COPYING
+  summary: "Library for text layout and rendering, with emphasis on internationalization"

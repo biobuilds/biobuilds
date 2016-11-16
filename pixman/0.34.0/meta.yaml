@@ -1,0 +1,29 @@
+package:
+  name: pixman
+  version: 0.34.0
+
+source:
+  fn: "pixman-0.34.0.tar.gz"
+  url:
+    - "https://www.cairographics.org/releases/pixman-0.34.0.tar.gz"
+    - "http://download.lab7.io/sources/pixman-0.34.0.tar.gz"
+  md5: "e80ebae4da01e77f68744319f01d52a3"
+
+requirements:
+  build:
+    - libpng
+    - zlib
+  run:
+    - libpng
+    - zlib
+
+build:
+  # Give our package a large build number so it's preferred over the
+  # corresponding package (if any) in the "defaults" channel.
+  number: 700
+
+about:
+  home: http://www.pixman.org/
+  license: MIT
+  license_file: COPYING
+  summary: Low-level software library for pixel manipulation

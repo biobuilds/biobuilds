@@ -1,0 +1,36 @@
+package:
+  name: cairo
+  version: 1.14.6
+
+source:
+  fn: "cairo-1.14.6.tar.xz"
+  url:
+    - "https://www.cairographics.org/releases/cairo-1.14.6.tar.xz"
+    - "http://download.lab7.io/sources/cairo-1.14.6.tar.xz"
+  sha1: "0a59324e6cbe031b5b898ff8b9e2ffceb9d114f5"
+
+build:
+  # Give our package a large build number so it's preferred over the
+  # corresponding package (if any) in the "defaults" channel.
+  number: 700
+  detect_binary_files_with_prefix: True
+
+requirements:
+  build:
+    - freetype
+    - fontconfig
+    - pixman
+    - libpng        # needed for png backend
+    - zlib          # needed for PS and PDF backends
+  run:
+    - freetype
+    - fontconfig
+    - pixman
+    - libpng
+    - zlib
+
+about:
+  home: http://cairographics.org/
+  license: LGPL 2.1, MPL 1.1
+  license_file: COPYING
+  summary: 2D graphics library with support for multiple output devices
