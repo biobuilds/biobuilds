@@ -4,13 +4,15 @@ package:
 
 source:
   fn: graphviz-2.38.0.tar.gz
-  url: http://download.lab7.io/sources/graphviz-2.38.0.tar.gz
+  url:
+    - "http://www.graphviz.org/pub/graphviz/stable/SOURCES/graphviz-2.38.0.tar.gz"
+    - "http://download.lab7.io/sources/graphviz-2.38.0.tar.gz"
   md5: 5b6a829b2ac94efcd5fa3c223ed6d3ae
   patches:
      - gvconfig_libdir.patch
 
 build:
-  string: "bb1"
+  string: "bb2"
   binary_relocation: true
   script_env:
     - BB_ARCH_FLAGS
@@ -18,14 +20,10 @@ build:
     - BB_MAKE_JOBS
 
 requirements:
-  # NOTE: Not specifying the libgd build as there's a bug in conda that
-  # prevents it from correctly and recursively install all the libgd
-  # dependencies when we run "conda install gnuplot=5.0.0=1".
-  # For details, see: https://github.com/conda/conda/issues/2066
   build:
-    - libgd 2.1.0
+    - libgd 2.2.3
   run:
-    - libgd 2.1.0
+    - libgd 2.2.3
 
 test:
   files:

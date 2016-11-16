@@ -7,9 +7,11 @@ else
 fi
 
 perl Build.PL
-./Build
-./Build test
-./Build install --installdirs site
+# Use "perl ./Build" instead of "./Build" to prevent "conda build" failures
+# caused by "#!" lines > 255 chars triggering a "bad interpreter" error.
+perl ./Build
+perl ./Build test
+perl ./Build install --installdirs site
 
 # Remove obsolete scripts (i.e., the ones that the README tells us not to run)
 cd "${PREFIX}"
