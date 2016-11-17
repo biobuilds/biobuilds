@@ -1,0 +1,18 @@
+package:
+  name: snpsift
+  version: "4.3c"
+
+source:
+  fn: snpEff-4.3c.zip
+  url:
+    - "http://downloads.sourceforge.net/project/snpeff/snpEff_v4_3c_core.zip"
+    - "http://download.lab7.io/sources/snpEff-4.3c.zip"
+  md5: "dd92e8e6a8bcaf7b51b8d230549dea1f"
+
+build:
+  number: 0
+
+about:
+  home: "http://snpeff.sourceforge.net/SnpSift.html"
+  license: LGPL
+  summary: "Toolbox for filtering and manipulating annotated VCF files"
