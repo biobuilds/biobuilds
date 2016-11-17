@@ -1,0 +1,18 @@
+package:
+  name: picard
+  version: "2.7.1"
+
+source:
+  fn: "picard-2.7.1.jar"
+  url:
+    - "https://github.com/broadinstitute/picard/releases/download/2.7.1/picard.jar"
+    - "http://download.lab7.io/sources/picard-2.7.1.jar"
+  md5: "323c048b5c33ce4cccfd8b481539968b"
+
+build:
+  number: 0
+
+about:
+  home: "http://broadinstitute.github.io/picard/"
+  license: MIT
+  summary: "Java tools for working with NGS data in the BAM format"
