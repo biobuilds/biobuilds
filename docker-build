@@ -5,9 +5,13 @@ basedir=$(cd "`dirname ${BASH_SOURCE[0]}`" && pwd)
 img="lab7io/build:biobuilds"
 
 shell=0
-docker_opts=
 build_pkgs=
 build_opts=
+
+# Always allocate a pseudo-TTY in (-t) and attach STDIN to (-i) the container;
+# if we don't, conda build messages (particularly in the test phase) can
+# disappear into the void, which making debugging recipes difficult.
+docker_opts="-t -i"
 
 abort() {
     msg=${1:-"Unknown error"}
@@ -39,7 +43,6 @@ while [ "$1" != "" ]; do
             basedir="${1#*=}"
             ;;
         "--shell")
-            docker_opts="-i -t"
             shell=1
             ;;
         "-c" | "--channel" | "--python" | "--numpy" | "--perl" | "--R")
