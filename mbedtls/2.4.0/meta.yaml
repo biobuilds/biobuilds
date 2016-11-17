@@ -1,0 +1,27 @@
+package:
+  name: mbedtls
+  version: "2.4.0"
+
+source:
+  fn: mbedtls-2.4.0.tar.gz
+  url:
+    - "https://tls.mbed.org/download/mbedtls-2.4.0-apache.tgz"
+    - "http://download.lab7.io/sources/mbedtls-2.4.0.tar.gz"
+  sha1: "20fe40f9f831ca63839967178e3db5aaf77705d3"
+
+requirements:
+  build:
+    - cmake
+    - zlib
+  run:
+    - zlib
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+
+about:
+  home: "https://tls.mbed.org/"
+  license: "Apache 2.0"
+  license_file: "apache-2.0.txt"
+  summary: "Portable, easy to use, readable and flexible SSL/TLS library"
