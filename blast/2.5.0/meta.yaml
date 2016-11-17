@@ -1,0 +1,74 @@
+package:
+  name: blast
+  version: "2.5.0"
+
+# Need conda's gcc/libgcc to get C++11 and OpenMP support
+requirements:
+  build:
+    - autoconf-update
+    - gcc >=4.8.5     # [not ppc64le]
+    - bzip2
+    - lzo
+    - openssl
+    - zlib
+  run:
+    - libgcc >=4.8.5  # [not ppc64le]
+    - openssl
+    - zlib
+    - perl
+    - perl-list-moreutils
+    - python 2.7*
+
+source:
+  fn: "ncbi-blast-2.5.0+-src.tar.gz"
+  url:
+    - "ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.5.0+-src.tar.gz"
+    - "http://download.lab7.io/sources/ncbi-blast-2.5.0+-src.tar.gz"
+  md5: "54ad4f2ea15715487b3de712a9d27be8"
+  patches:
+    - prefix-paths.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - blastdb_aliastool -version >/dev/null
+    - blastdbcheck -version >/dev/null
+    - blastdbcmd -version >/dev/null
+    - blastdbcp -version >/dev/null
+    - blast_formatter -version >/dev/null
+    - blastn -version >/dev/null
+    - blastp -version >/dev/null
+    - blastx -version >/dev/null
+    - convert2blastmask -version >/dev/null
+    - datatool -version >/dev/null
+    - deltablast -version >/dev/null
+    - dustmasker -version >/dev/null
+    - gene_info_reader -version >/dev/null
+    - legacy_blast.pl -version >/dev/null
+    - makeblastdb -version >/dev/null
+    - makembindex -version >/dev/null
+    - makeprofiledb -version >/dev/null
+    - psiblast -version >/dev/null
+    - rpsblast -version >/dev/null
+    - rpstblastn -version >/dev/null
+    - seedtop -version >/dev/null
+    - segmasker -version >/dev/null
+    - seqdb_demo -version >/dev/null
+    - seqdb_perf -version >/dev/null
+    - tblastn -version >/dev/null
+    - tblastx -version >/dev/null
+    - update_blastdb.pl -version >/dev/null
+    - windowmasker -version >/dev/null
+    - windowmasker_2.2.22_adapter.py >/dev/null
+
+about:
+  home: http://blast.ncbi.nlm.nih.gov/
+  license: Public domain
+  license_file: c++/scripts/projects/blast/LICENSE
+  summary: "NCBI implementation of the BLAST search/alignment algorithm"
