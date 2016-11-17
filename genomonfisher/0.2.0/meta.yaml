@@ -1,0 +1,34 @@
+package:
+  name: genomonfisher
+  version: 0.2.0
+
+source:
+  fn: genomonfisher-0.2.0.tar.gz
+  url:
+    - "https://github.com/Genomon-Project/GenomonFisher/archive/v0.2.0.tar.gz"
+    - "http://download.lab7.io/sources/genomonfisher-0.2.0.tar.gz"
+  md5: "b272f6731d75643d773bd60cdff833a4"
+
+requirements:
+  build:
+    - python
+  run:
+    - python
+    - pysam
+    - scipy
+    - samtools
+
+build:
+  number: 0
+
+test:
+  requires:
+    - bwa 0.7.15
+    - scipy 0.18.1
+    - mapper-test-data
+
+about:
+  home: "https://github.com/Genomon-Project/GenomonFisher"
+  license: GPLv3
+  license_file: LICENSE
+  summary: "Genomon Fisher exact test mutation caller"
