@@ -1,0 +1,92 @@
+# Stop build system from trying to put everything in "${PREFIX}/usr" when run
+# as root; without these, build in Docker containers will fail.
+--- ngs-bam/Makefile.install
++++ ngs-bam/Makefile.install
+@@ -64,11 +64,7 @@
+ INCLUDE_SYMLINK = $(ROOT)/usr/include/ngs-bam
+ PROFILE_FILE = $(ROOT)/etc/profile.d/ngs-bam
+ 
+-ifeq (linux, $(OS))
+-    ifeq (0, $(shell id -u))
+-        LINUX_ROOT = true
+-    endif
+-endif
++LINUX_ROOT = false
+ 
+ install: copylibs copyincludes copyexamples
+ ifeq (true, $(LINUX_ROOT))
+--- ngs-bam/setup/install.perl
++++ ngs-bam/setup/install.perl
+@@ -1315,7 +1315,7 @@
+     }
+ }
+ 
+-sub linux_root { $^O eq 'linux' && `id -u` == 0 }
++sub linux_root { return 0; }
+ 
+ sub fatal_config {
+     if ($OPT{debug}) {
+--- ngs-java/Makefile.java
++++ ngs-java/Makefile.java
+@@ -59,12 +59,7 @@
+ JAR_TARGET = $(INST_JARDIR)/ngs-java.jar
+ DOC_TARGET = $(INST_SHAREDIR)/doc/
+ 
+-ifeq (linux, $(OS))
+-    ifeq (0, $(shell id -u))
+-        LINUX_ROOT = true
+-        DOC_TARGET = $(ROOT)/usr/local/share/doc/ngs/
+-    endif
+-endif
++LINUX_ROOT = false
+ 
+ install: $(TARGETS) $(INST_JARDIR) $(INST_JARDIR)/ngs-java.jar.$(VERSION) copydocs copyexamples
+ ifeq (true, $(LINUX_ROOT))
+--- ngs-java/setup/install.perl
++++ ngs-java/setup/install.perl
+@@ -1312,7 +1312,7 @@
+     }
+ }
+ 
+-sub linux_root { $^O eq 'linux' && `id -u` == 0 }
++sub linux_root { return 0; }
+ 
+ sub fatal_config {
+     if ($OPT{debug}) {
+--- ngs-python/setup/install.perl
++++ ngs-python/setup/install.perl
+@@ -1312,7 +1312,7 @@
+     }
+ }
+ 
+-sub linux_root { $^O eq 'linux' && `id -u` == 0 }
++sub linux_root { return 0; }
+ 
+ sub fatal_config {
+     if ($OPT{debug}) {
+--- ngs-sdk/Makefile.install
++++ ngs-sdk/Makefile.install
+@@ -63,11 +63,7 @@
+ INCLUDE_SYMLINK = $(ROOT)/usr/include/ngs
+ PROFILE_FILE = $(ROOT)/etc/profile.d/ngs-sdk
+ 
+-ifeq (linux, $(OS))
+-    ifeq (0, $(shell id -u))
+-        LINUX_ROOT = true
+-    endif
+-endif
++LINUX_ROOT = false
+ 
+ install: copylibs copyincludes copyexamples
+ ifeq (true, $(LINUX_ROOT))
+--- ngs-sdk/setup/install.perl
++++ ngs-sdk/setup/install.perl
+@@ -1312,7 +1312,7 @@
+     }
+ }
+ 
+-sub linux_root { $^O eq 'linux' && `id -u` == 0 }
++sub linux_root { return 0; }
+ 
+ sub fatal_config {
+     if ($OPT{debug}) {
