@@ -1,0 +1,45 @@
+package:
+  name: mothur
+  # NOTE: version string differs slightly from the git tag (as reflected in the
+  # source file names below), but we'll stick with what the upstream developers
+  # call this release.
+  version: "1.38.1"
+
+requirements:
+  build:
+    - boost ==1.62.0
+    - zlib
+    - readline
+    - ncurses
+  run:
+    - boost ==1.62.0
+    - zlib
+    - readline
+    - ncurses
+
+source:
+  fn: "mothur-1.38.1.1.tar.gz"
+  url:
+    - "https://github.com/mothur/mothur/archive/v1.38.1.1.tar.gz"
+    - "http://download.lab7.io/sources/mothur-1.38.1.1.tar.gz"
+  md5: "73eed040c1f128cfb73875d19944529e"
+  patches:
+    - makefiles.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+test:
+  commands:
+    - mothur --help >/dev/null
+    - uchime --help >/dev/null
+
+about:
+  home: "http://www.mothur.org/"
+  license: GPLv3
+  license_file: LICENSE.md
+  summary: "Bioinformatics tools for microbial ecology "

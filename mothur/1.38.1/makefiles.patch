@@ -1,0 +1,43 @@
+--- Makefile
++++ Makefile
+@@ -14,7 +14,7 @@
+ USEBOOST ?= yes
+ BOOST_LIBRARY_DIR="\"Enter_your_boost_library_path_here\""
+ BOOST_INCLUDE_DIR="\"Enter_your_boost_include_path_here\""
+-MOTHUR_FILES="\"Enter_your_default_path_here\""
++MOTHUR_FILES="\"$(PREFIX)\""
+ RELEASE_DATE = "\"8/9/2016\""
+ VERSION = "\"1.38.1\""
+ 
+@@ -41,7 +41,7 @@
+ 
+ ifeq  ($(strip $(USEREADLINE)),yes)
+     CXXFLAGS += -DUSE_READLINE
+-    LIBS += -lreadline
++    LIBS += $(READLINE_LIBS)
+ endif
+ 
+ 
+@@ -79,7 +79,10 @@
+ 	$(CXX) $(LDFLAGS) $(TARGET_ARCH) -o $@ $(OBJECTS) $(LIBS)
+ 
+ uchime:
+-	cd source/uchime_src && ./mk && mv uchime ../../ && cd ..
++	cd source/uchime_src && \
++		env ENV_GCC_OPTS="$(CXXFLAGS)" ENV_LINK_OPTS="$(LDFLAGS)" ./mk && \
++		mv uchime ../../ && \
++		cd ..
+ 
+ install : mothur
+ 
+--- source/uchime_src/mk
++++ source/uchime_src/mk
+@@ -17,7 +17,7 @@
+ #if [ `uname -s` == Linux ] ; then
+ #    LINK_OPTS=-static
+ #fi
+-g++ $LINK_OPTS $ENV_LINK_OPTS -g -o uchime $ObjNames >> mk.stdout 2>> tmp.stderr
++g++ $LINK_OPTS $ENV_LINK_OPTS -o uchime $ObjNames >> mk.stdout 2>> tmp.stderr
+ cat tmp.stderr
+ cat tmp.stderr >> mk.stderr
+ rm -f tmp.stderr
