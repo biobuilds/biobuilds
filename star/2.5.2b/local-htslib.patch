@@ -1,0 +1,105 @@
+--- source/BAMfunctions.cpp
++++ source/BAMfunctions.cpp
+@@ -1,5 +1,5 @@
+ #include "BAMfunctions.h"
+-#include "htslib/htslib/kstring.h"
++#include "htslib/kstring.h"
+ 
+ string bam_cigarString (bam1_t *b) {//output CIGAR string
+ //    kstring_t strK;
+--- source/IncludeDefine.h
++++ source/IncludeDefine.h
+@@ -28,8 +28,8 @@
+ #define ERROR_OUT string ( __FILE__ ) +":"+ to_string ( (uint) __LINE__ ) +":"+ string ( __FUNCTION__ )
+ 
+ //external libs
+-#define SAMTOOLS_BGZF_H "htslib/htslib/bgzf.h"
+-#define SAMTOOLS_SAM_H  "htslib/htslib/sam.h"
++#define SAMTOOLS_BGZF_H "htslib/bgzf.h"
++#define SAMTOOLS_SAM_H  "htslib/sam.h"
+ 
+ using namespace std;
+ 
+--- source/Makefile
++++ source/Makefile
+@@ -12,8 +12,9 @@
+ CXX ?= g++
+ 
+ # pre-defined flags
+-LDFLAGS_shared := -pthread -Lhtslib -Bstatic -lhts -Bdynamic -lz -lrt
+-LDFLAGS_static := -static -static-libgcc -pthread -Lhtslib -lhts -lz
++LIBHTS ?= -Lhtslib -Bstatic -lhts -Bdynamic
++LDFLAGS_shared := -pthread $(LIBHTS) -lz -lrt
++LDFLAGS_static := -static -static-libgcc -pthread -lhts -lz
+ LDFLAGS_Mac :=-pthread -lz htslib/libhts.a
+ LDFLAGS_Mac_static :=-pthread -lz -static-libgcc htslib/libhts.a
+ LDFLAGS_gdb := $(LDFLAGS_shared)
+@@ -84,10 +85,10 @@
+ ifneq ($(MAKECMDGOALS),CLEAN)
+ ifneq ($(MAKECMDGOALS),STARforMac)
+ ifneq ($(MAKECMDGOALS),STARforMacGDB)
+-Depend.list: $(SOURCES) parametersDefault.xxd htslib
++Depend.list: $(SOURCES) parametersDefault.xxd
+ 	echo $(SOURCES)
+ 	/bin/rm -f ./Depend.list
+-	$(CXX) $(CXXFLAGS_common) -MM $^ >> Depend.list
++	$(CXX) $(CPPFLAGS) $(CXXFLAGS_common) -MM $^ >> Depend.list
+ include Depend.list
+ endif
+ endif
+--- source/STAR.cpp
++++ source/STAR.cpp
+@@ -26,7 +26,7 @@
+ #include "sjdbInsertJunctions.h"
+ #include "bam_cat.h"
+ 
+-#include "htslib/htslib/sam.h"
++#include "htslib/sam.h"
+ #include "parametersDefault.xxd"
+ 
+ 
+--- source/bamRemoveDuplicates.cpp
++++ source/bamRemoveDuplicates.cpp
+@@ -1,7 +1,7 @@
+ #include <unordered_map>
+ #include "bamRemoveDuplicates.h"
+ #include <iostream>
+-#include "htslib/htslib/sam.h"
++#include "htslib/sam.h"
+ #include "IncludeDefine.h"
+ #include SAMTOOLS_BGZF_H
+ #include "ErrorWarning.h"
+--- source/bam_cat.c
++++ source/bam_cat.c
+@@ -52,8 +52,8 @@
+ #include <stdlib.h>
+ #include <unistd.h>
+ 
+-#include "htslib/htslib/bgzf.h"
+-#include "htslib/htslib/sam.h"
++#include "htslib/bgzf.h"
++#include "htslib/sam.h"
+ #include <cstring>
+ 
+ #define BUF_SIZE 0x10000
+--- source/bam_cat.h
++++ source/bam_cat.h
+@@ -1,7 +1,7 @@
+ #ifndef CODE_bam_cat
+ #define CODE_bam_cat
+ 
+-#include "htslib/htslib/sam.h"
++#include "htslib/sam.h"
+ 
+ int bam_cat(int nfn, char * const *fn, const bam_hdr_t *h, const char* outbam);
+ 
+--- source/signalFromBAM.h
++++ source/signalFromBAM.h
+@@ -1,6 +1,6 @@
+ #ifndef CODE_signalFromBAM
+ #define CODE_signalFromBAM
+-#include "htslib/htslib/sam.h"
++#include "htslib/sam.h"
+ #include  <fstream>
+ #include <string>
+ #include "Stats.h"

@@ -1,0 +1,11 @@
+--- source/Makefile
++++ source/Makefile
+@@ -13,7 +13,7 @@
+ 
+ # pre-defined flags
+ LIBHTS ?= -Lhtslib -Bstatic -lhts -Bdynamic
+-LDFLAGS_shared := -pthread $(LIBHTS) -lz -lrt
++LDFLAGS_shared := -pthread $(LIBHTS) -lz
+ LDFLAGS_static := -static -static-libgcc -pthread -lhts -lz
+ LDFLAGS_Mac :=-pthread -lz htslib/libhts.a
+ LDFLAGS_Mac_static :=-pthread -lz -static-libgcc htslib/libhts.a
