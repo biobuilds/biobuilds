@@ -1,0 +1,461 @@
+--- FusionFilter/blast_and_promiscuity_filter.pl
++++ FusionFilter/blast_and_promiscuity_filter.pl
+@@ -1,9 +1,8 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+ use Carp;
+-use FindBin;
+ use Getopt::Long qw(:config posix_default no_ignore_case bundling pass_through);                                                 
+ 
+ my $Evalue = 1e-3;
+@@ -100,7 +99,7 @@
+ =cut
+ 
+ 
+-my $UTILDIR = "$FindBin::Bin/util";
++my $UTILDIR = "@@prefix@@/share/fusion-filter/util";
+ 
+ 
+ main: {
+--- FusionFilter/lib/Fasta_reader.pm
++++ FusionFilter/lib/Fasta_reader.pm
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl -w
++#!@@prefix@@/bin/perl -w
+ 
+ # lightweight fasta reader capabilities:
+ package Fasta_reader;
+--- FusionFilter/lib/Gene_obj.pm
++++ FusionFilter/lib/Gene_obj.pm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ package main;
+ our $DEBUG;
+--- FusionFilter/lib/Gene_obj_indexer.pm
++++ FusionFilter/lib/Gene_obj_indexer.pm
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl
++#!@@prefix@@/bin/perl
+ 
+ package Gene_obj_indexer;
+ use strict;
+--- FusionFilter/lib/Gene_overlap_check.pm
++++ FusionFilter/lib/Gene_overlap_check.pm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ package Gene_overlap_check;
+ 
+--- FusionFilter/lib/Longest_orf.pm
++++ FusionFilter/lib/Longest_orf.pm
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl
++#!@@prefix@@/bin/perl
+ 
+ package main;
+ our $SEE; 
+--- FusionFilter/lib/Nuc_translator.pm
++++ FusionFilter/lib/Nuc_translator.pm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ package main;
+ our $SEE;
+--- FusionFilter/lib/TiedHash.pm
++++ FusionFilter/lib/TiedHash.pm
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl
++#!@@prefix@@/bin/perl
+ 
+ package TiedHash;
+ use strict;
+--- FusionFilter/prep_genome_lib.pl
++++ FusionFilter/prep_genome_lib.pl
+@@ -1,11 +1,10 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+ use Carp;
+ use Getopt::Long qw(:config posix_default no_ignore_case bundling pass_through);
+-use FindBin;
+-use lib ("$FindBin::Bin/lib");
++use lib ("@@prefix@@/share/fusion-filter/lib");
+ use Pipeliner;
+ use Cwd;
+ use File::Path;
+@@ -120,7 +119,7 @@
+ $blast_pairs_file = &Pipeliner::ensure_full_path($blast_pairs_file) if $blast_pairs_file;
+ $output_dir = &Pipeliner::ensure_full_path($output_dir) if $output_dir;
+ 
+-my $UTILDIR = $FindBin::Bin . "/util";
++my $UTILDIR = "@@prefix@@/share/fusion-filter/util";
+ 
+ unless ($output_dir) {
+     $output_dir = cwd();
+--- FusionFilter/util/blast_filter.pl
++++ FusionFilter/util/blast_filter.pl
+@@ -1,10 +1,9 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+ use Carp;
+-use FindBin;
+-use lib ("$FindBin::Bin/../lib");
++use lib ("@@prefix@@/share/fusion-filter/lib");
+ use Getopt::Long qw(:config posix_default no_ignore_case bundling pass_through);                                                 
+ use TiedHash;
+ use Data::Dumper;
+--- FusionFilter/util/blast_outfmt6_replace_trans_id_w_gene_symbol.pl
++++ FusionFilter/util/blast_outfmt6_replace_trans_id_w_gene_symbol.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+--- FusionFilter/util/gencode_extract_relevant_gtf_exons.pl
++++ FusionFilter/util/gencode_extract_relevant_gtf_exons.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+--- FusionFilter/util/gtf_file_to_cDNA_seqs.pl
++++ FusionFilter/util/gtf_file_to_cDNA_seqs.pl
+@@ -1,9 +1,8 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+-use FindBin;
+-use lib ("$FindBin::Bin/../lib");
++use lib ("@@prefix@@/share/fusion-filter/lib");
+ use Gene_obj;
+ use Gene_obj_indexer;
+ use GTF_utils;
+--- FusionFilter/util/gtf_to_gene_spans.pl
++++ FusionFilter/util/gtf_to_gene_spans.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+--- FusionFilter/util/index_blast_pairs.pl
++++ FusionFilter/util/index_blast_pairs.pl
+@@ -1,9 +1,8 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+-use FindBin;
+-use lib ("$FindBin::Bin/../lib");
++use lib ("@@prefix@@/share/fusion-filter/lib");
+ use TiedHash;
+ use Carp;
+ 
+--- FusionFilter/util/index_cdna_seqs.pl
++++ FusionFilter/util/index_cdna_seqs.pl
+@@ -1,9 +1,8 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+-use FindBin;
+-use lib ("$FindBin::Bin/../lib");
++use lib ("@@prefix@@/share/fusion-filter/lib");
+ use TiedHash;
+ use Carp;
+ use Fasta_reader;
+--- FusionFilter/util/just_blast_test.pl
++++ FusionFilter/util/just_blast_test.pl
+@@ -1,10 +1,9 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+ use Carp;
+-use FindBin;
+-use lib ("$FindBin::Bin/../lib");
++use lib ("@@prefix@@/share/fusion-filter/lib");
+ use Fasta_reader;
+ use Getopt::Long qw(:config posix_default no_ignore_case bundling pass_through);                                                 
+ use TiedHash;
+--- FusionFilter/util/paralog_clustering_util/get_top_blast_pairs.pl
++++ FusionFilter/util/paralog_clustering_util/get_top_blast_pairs.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+--- FusionFilter/util/paralog_clustering_util/outfmt6_add_percent_match_length.group_segments.to_Markov_Clustering.pl
++++ FusionFilter/util/paralog_clustering_util/outfmt6_add_percent_match_length.group_segments.to_Markov_Clustering.pl
+@@ -1,12 +1,11 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+ 
+ use Carp;
+ use Getopt::Long qw(:config posix_default no_ignore_case bundling pass_through);
+-use FindBin;
+-use lib ("$FindBin::Bin/../../lib");
++use lib ("@@prefix@@/share/fusion-filter/lib");
+ use Pipeliner;
+ use File::Basename;
+ 
+--- FusionFilter/util/promiscuity_filter.pl
++++ FusionFilter/util/promiscuity_filter.pl
+@@ -1,13 +1,12 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+ use Carp;
+-use FindBin;
+ use Getopt::Long qw(:config posix_default no_ignore_case bundling pass_through);                                                 
+ use Data::Dumper;
+ use List::Util qw(max);
+-use lib ("$FindBin::Bin/../lib");
++use lib ("@@prefix@@/share/fusion-filter/lib");
+ use Gene_overlap_check;
+ 
+ my $MAX_PROMISCUITY = 3;  # perhaps a poor choice of words, but still a best fit IMHO.
+--- PerlLib/DelimParser.pm
++++ PerlLib/DelimParser.pm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ # classes for DelimParser::Reader and DelimParser::Writer
+ 
+--- PerlLib/Fasta_reader.pm
++++ PerlLib/Fasta_reader.pm
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl -w
++#!@@prefix@@/bin/perl -w
+ 
+ # lightweight fasta reader capabilities:
+ package Fasta_reader;
+--- PerlLib/Gene_obj.pm
++++ PerlLib/Gene_obj.pm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ package main;
+ our $DEBUG;
+--- PerlLib/Gene_obj_indexer.pm
++++ PerlLib/Gene_obj_indexer.pm
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl
++#!@@prefix@@/bin/perl
+ 
+ package Gene_obj_indexer;
+ use strict;
+--- PerlLib/Longest_orf.pm
++++ PerlLib/Longest_orf.pm
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl
++#!@@prefix@@/bin/perl
+ 
+ package main;
+ our $SEE; 
+--- PerlLib/Nuc_translator.pm
++++ PerlLib/Nuc_translator.pm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ package main;
+ our $SEE;
+--- PerlLib/TiedHash.pm
++++ PerlLib/TiedHash.pm
+@@ -1,4 +1,4 @@
+-#!/usr/local/bin/perl
++#!@@prefix@@/bin/perl
+ 
+ package TiedHash;
+ use strict;
+--- STAR-Fusion
++++ STAR-Fusion
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ # contributed by Brian Haas, Broad Institute, 2015
+ 
+@@ -6,8 +6,7 @@
+ use warnings;
+ use Carp;
+ use Cwd;
+-use FindBin;
+-use lib ("$FindBin::Bin/PerlLib");
++use lib ("@@prefix@@/share/star-fusion/PerlLib");
+ use Pipeliner;
+ use Set::IntervalTree;
+ use File::Basename;
+@@ -18,7 +17,7 @@
+ my $VERSION = "0.8.0";
+ 
+ 
+-my $UTILDIR = "$FindBin::Bin/util";
++my $UTILDIR = "@@prefix@@/share/star-fusion/util";
+ 
+ ## Options
+ my $output_dir = "";
+--- util/STAR-Fusion.filter
++++ util/STAR-Fusion.filter
+@@ -1,10 +1,9 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+ use Carp;
+-use FindBin;
+-use lib ("$FindBin::Bin/../PerlLib");
++use lib ("@@prefix@@/share/star-fusion/PerlLib");
+ use Fasta_reader;
+ use Getopt::Long qw(:config posix_default no_ignore_case bundling pass_through);                                                 
+ use TiedHash;
+@@ -229,7 +228,7 @@
+     close $stage1_ofh;
+     
+     ## Run the blast and promiscuity filter
+-    my $cmd = "$FindBin::Bin/../FusionFilter/blast_and_promiscuity_filter.pl --out_prefix $intermediates_out_prefix -E $Evalue --max_promiscuity $MAX_PROMISCUITY --fusion_preds $stage1_preds_file --genome_lib_dir $genome_lib_dir ";
++    my $cmd = "@@prefix@@/bin/blast_and_promiscuity_filter.pl --out_prefix $intermediates_out_prefix -E $Evalue --max_promiscuity $MAX_PROMISCUITY --fusion_preds $stage1_preds_file --genome_lib_dir $genome_lib_dir ";
+     &process_cmd($cmd);  # generates $out_prefix.final and $out_prefix.filt
+ 
+     # rename final output file:
+@@ -239,12 +238,12 @@
+     
+     
+ 
+-    &process_cmd("$FindBin::Bin/column_exclusions.pl $stage1_preds_file JunctionReads,SpanningFrags > $stage1_preds_file.abridged");
+-    &process_cmd("$FindBin::Bin/column_exclusions.pl $filter_info_file JunctionReads,SpanningFrags > $filter_info_file.abridged");
++    &process_cmd("@@prefix@@/share/star-fusion/util/column_exclusions.pl $stage1_preds_file JunctionReads,SpanningFrags > $stage1_preds_file.abridged");
++    &process_cmd("@@prefix@@/share/star-fusion/util/column_exclusions.pl $filter_info_file JunctionReads,SpanningFrags > $filter_info_file.abridged");
+     
+ 
+-    &process_cmd("$FindBin::Bin/column_exclusions.pl $out_prefix.fusion_candidates.final  JunctionReads,SpanningFrags > $out_prefix.fusion_candidates.final.abridged");
+-    &process_cmd("$FindBin::Bin/column_exclusions.pl $stage1_preds_file.post_blast_filter.post_promisc_filter JunctionReads,SpanningFrags > $stage1_preds_file.post_blast_filter.post_promisc_filter.abridged");
++    &process_cmd("@@prefix@@/share/star-fusion/util/column_exclusions.pl $out_prefix.fusion_candidates.final  JunctionReads,SpanningFrags > $out_prefix.fusion_candidates.final.abridged");
++    &process_cmd("@@prefix@@/share/star-fusion/util/column_exclusions.pl $stage1_preds_file.post_blast_filter.post_promisc_filter JunctionReads,SpanningFrags > $stage1_preds_file.post_blast_filter.post_promisc_filter.abridged");
+     
+ 
+     exit(0);
+--- util/STAR-Fusion.predict
++++ util/STAR-Fusion.predict
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ # contributed by Brian Haas, Broad Institute, 2015
+ 
+@@ -6,11 +6,10 @@
+ use warnings;
+ use Carp;
+ use Cwd;
+-use FindBin;
+ use Set::IntervalTree;
+ use File::Basename;
+ use Data::Dumper;
+-use lib ("$FindBin::Bin/../PerlLib");
++use lib ("@@prefix@@/share/star-fusion/PerlLib");
+ use SAM_reader;
+ use SAM_entry;
+ use Gene_obj_indexer;
+@@ -20,7 +19,7 @@
+ 
+ use Getopt::Long qw(:config posix_default no_ignore_case bundling pass_through);
+ 
+-my $UTILDIR = "$FindBin::Bin/util";
++my $UTILDIR = "@@prefix@@/share/star-fusion/util";
+ 
+ ## Options
+ my $out_prefix = "star-fusion";
+--- util/column_exclusions.pl
++++ util/column_exclusions.pl
+@@ -1,9 +1,8 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+-use FindBin;
+-use lib ("$FindBin::Bin/../PerlLib");
++use lib ("@@prefix@@/share/star-fusion/PerlLib");
+ use DelimParser;
+ 
+ my $usage = "\n\tusage: $0 inputFile.tab comma-delim-headers-exclude\n\n";
+--- util/convert_to_FFPM.pl
++++ util/convert_to_FFPM.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+--- util/get_FUSION_EVIDENCE_fastqs.pl
++++ util/get_FUSION_EVIDENCE_fastqs.pl
+@@ -1,9 +1,8 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+-use FindBin;
+-use lib ("$FindBin::Bin/../PerlLib");
++use lib ("@@prefix@@/share/star-fusion/PerlLib");
+ use Fastq_reader;
+ use Process_cmd;
+ use DelimParser;
+--- util/incorporate_FFPM_into_final_report.pl
++++ util/incorporate_FFPM_into_final_report.pl
+@@ -1,10 +1,9 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+ 
+-use FindBin;
+-use lib ("$FindBin::Bin/../PerlLib");
++use lib ("@@prefix@@/share/star-fusion/PerlLib");
+ use DelimParser;
+ 
+ my $usage = "\n\n\tusage: $0 left.fq finspector.fusion_predictions.final.abridged\n\n";
+--- util/partition_FUSION_EVIDENCE_fastqs_by_fusion.pl
++++ util/partition_FUSION_EVIDENCE_fastqs_by_fusion.pl
+@@ -1,9 +1,8 @@
+-#!/usr/bin/env perl
++#!@@prefix@@/bin/perl
+ 
+ use strict;
+ use warnings;
+-use FindBin;
+-use lib ("$FindBin::Bin/../PerlLib");
++use lib ("@@prefix@@/share/star-fusion/PerlLib");
+ use Fastq_reader;
+ use Process_cmd;
+ 
