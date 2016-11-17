@@ -1,0 +1,25 @@
+package:
+  name: tassel
+  version: "5.2.31"
+
+source:
+  fn: "tassel-5.2.31.tar.bz2"
+  url:
+    - "https://bitbucket.org/tasseladmin/tassel-5-standalone/get/V5.2.31.tar.bz2"
+    - "http://download.lab7.io/sources/tassel-5.2.31.tar.bz2"
+  md5: "026742c643e2dd3830dc75b8d0106dc1"
+  patches:
+    - munge-paths.patch
+    - check-java-version.patch
+
+requirements:
+  run:
+    - perl    # needed by launch scripts
+
+build:
+  number: 1
+
+about:
+  home: "http://www.maizegenetics.net/#!tassel/c17q9"
+  license: LGPL
+  summary: "Java platform for analysis of crop genomic diversity"

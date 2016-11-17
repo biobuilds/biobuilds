@@ -1,0 +1,42 @@
+--- run_pipeline.pl
++++ run_pipeline.pl
+@@ -3,6 +3,18 @@
+ use strict;
+ use File::Basename;
+ 
++# Sanity check Java version (avoids some confusing messages)
++my @java_version = split /\s+/, `java -version 2>&1`;
++if($? ne 0) {
++    print STDERR "ERROR: Java 1.8 or above must be installed to run TASSEL.\n";
++    exit 1;
++}
++my $java_minor_ver = (split /\./, $java_version[2])[1];
++if($java_minor_ver lt 8) {
++    print STDERR "ERROR: Java 1.8 or above must be installed to run TASSEL.\n";
++    exit 1;
++}
++
+ my $dirname = dirname(__FILE__);
+ my $top = "@@sharedir@@";
+ 
+--- start_tassel.pl
++++ start_tassel.pl
+@@ -3,6 +3,18 @@
+ use strict;
+ use File::Basename;
+ 
++# Sanity check Java version (avoids some confusing messages)
++my @java_version = split /\s+/, `java -version 2>&1`;
++if($? ne 0) {
++    print STDERR "ERROR: Java 1.8 or above must be installed to run TASSEL.\n";
++    exit 1;
++}
++my $java_minor_ver = (split /\./, $java_version[2])[1];
++if($java_minor_ver lt 8) {
++    print STDERR "ERROR: Java 1.8 or above must be installed to run TASSEL.\n";
++    exit 1;
++}
++
+ my $dirname = dirname(__FILE__);
+ my $top = "@@sharedir@@";
+ 
