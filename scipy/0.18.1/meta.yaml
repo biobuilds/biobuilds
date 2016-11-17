@@ -1,0 +1,34 @@
+package:
+  name: scipy
+  version: 0.18.1
+
+source:
+  fn: "scipy-0.18.1.tar.gz"
+  url:
+    - "https://pypi.python.org/packages/22/41/b1538a75309ae4913cdbbdc8d1cc54cae6d37981d2759532c1aa37a41121/scipy-0.18.1.tar.gz"
+    - "http://download.lab7.io/sources/scipy-0.18.1.tar.gz"
+  md5: "5fb5fb7ccb113ab3a039702b6c2f3327"
+
+build:
+  skip: True  [not ppc64le]
+  number: 0
+
+requirements:
+  build:
+    - python
+    - numpy x.x
+    - openblas
+  run:
+    - python
+    - numpy x.x
+    - openblas
+
+test:
+  requires:
+    - nose
+
+about:
+  home: "http://www.scipy.org/"
+  license: BSD
+  license_file: LICENSE.txt
+  summary: "Scientific Computing Library for Python"
