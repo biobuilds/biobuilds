@@ -1,0 +1,22 @@
+--- sra-tools-2.8.0/build/ld.mac.clang.sh
++++ sra-tools-2.8.0/build/ld.mac.clang.sh
+@@ -36,7 +36,7 @@
+ then
+     LD="$LD -Wl,-arch_multiple"
+ else
+-    LD="$LD -Wl,-arch,$ARCH"
++    LD="$LD -Wl,-arch,$ARCH -headerpad_max_install_names"
+ fi
+ 
+ # build command
+--- sra-tools-2.8.0/build/ld.mac.gcc.sh
++++ sra-tools-2.8.0/build/ld.mac.gcc.sh
+@@ -36,7 +36,7 @@
+ then
+     LD="$LD -Wl,-arch_multiple"
+ else
+-    LD="$LD -Wl,-arch,$ARCH"
++    LD="$LD -Wl,-arch,$ARCH -headerpad_max_install_names"
+ fi
+ 
+ # build command

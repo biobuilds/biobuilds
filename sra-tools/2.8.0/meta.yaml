@@ -1,0 +1,108 @@
+package:
+  name: sra-tools
+  version: "2.8.0"
+
+source:
+  # Lab7-generated combined-source tarball since we need the full ncbi-vdb
+  # source tree is needed to build sra-tools; a "separately installed" ncbi-vdb
+  # package (i.e., one with just the headers and libraries from "make install")
+  # currently can't be used to build sra-tools due to an existing upstream bug.
+  # (see https://github.com/ncbi/sra-tools/issues/11 for details).
+  #
+  # Since nothing else currently builds on top of ncbi-vdb, we should be able
+  # to safely roll both source trees into a single conda recipe and package.
+  fn: "sratools+ncbi-vdb-2.8.0.tar.gz"
+  url:
+    - "http://download.lab7.io/sources/sratools+ncbi-vdb-2.8.0.tar.gz"
+  md5: "3346411e40e2bdea5ba794916f69f6fb"
+  patches:
+    - vdb-ext-libmagic.patch
+    - vdb-use-ext-libs.patch
+    - vdb-install-libkdf5.patch
+    #- vdb-ignore-root.patch
+    - vdb-ppc64le-support.patch   # [ppc64le]
+    - sra-use-dyn-libs.patch
+    #- sra-ignore-root.patch
+    - sra-osx-headerpad.patch     # [osx]
+    - sra-ppc64le-support.patch   # [ppc64le]
+
+requirements:
+  # * Use conda's GCC 4.8 to avoid "redefinition of typedef 'VRefVariation'"
+  #   errors (in libs/search/sw-search.c:79 & interfaces/search/grep.h:285)
+  #   when linking sw-search.pic.o with default gcc-4.4 toolchain on CentOS 6.
+  build:
+    # WARNING: Requesting gcc 4.8.5 build 6 because build 7 contains a library
+    # (libiberty.a) in "$PREFIX/lib64", which breaks the logic of our build
+    # process. (sra-tools' "configure" look in "${PREFIX}/lib64", instead of
+    # "${PREFIX}/lib", for libraries, so we need to be able to symlink the two.
+    - gcc 4.8.5 6     # [linux64]
+    - veclib-headers  # [ppc64le]
+    - ncbi-ngs-sdk 1.3.0
+    - zlib
+    - libxml2
+    - bzip2
+    - libmagic
+    - hdf5
+    - mbedtls
+  run:
+    - libgcc 4.8.*    # [linux64]
+    - zlib
+    - libxml2
+    - libmagic
+    - hdf5
+    - mbedtls
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  #detect_binary_files_with_prefix: True
+
+test:
+  commands:
+    - abi-dump --help >/dev/null
+    - abi-load --help >/dev/null
+    - align-info --help >/dev/null
+    - bam-load --help >/dev/null
+    - cache-mgr --help >/dev/null
+    - cg-load --help >/dev/null
+    - copycat --help >/dev/null
+    - fastdump --help >/dev/null
+    - fastq-dump --help >/dev/null
+    - fastq-load --help >/dev/null
+    - helicos-load --help >/dev/null
+    - illumina-dump --help >/dev/null
+    - illumina-load --help >/dev/null
+    - kar --help >/dev/null
+    - kdbmeta --help >/dev/null
+    - kget --help >/dev/null
+    - latf-load --help >/dev/null
+    - pacbio-load --help >/dev/null
+    - prefetch --help >/dev/null
+    - rcexplain --help >/dev/null
+    - sam-dump --help >/dev/null
+    - sff-dump --help >/dev/null
+    - sff-load --help >/dev/null
+    - sra-pileup --help >/dev/null
+    - sra-sort --help >/dev/null
+    - sra-stat --help >/dev/null
+    - srapath --help >/dev/null
+    - srf-load --help >/dev/null
+    - test-sra --help >/dev/null
+    - vdb-config --help >/dev/null
+    - vdb-copy --help >/dev/null
+    - vdb-decrypt --help >/dev/null
+    - vdb-dump --help >/dev/null
+    - vdb-encrypt --help >/dev/null
+    - vdb-lock --help >/dev/null
+    #- vdb-passwd --help >/dev/null    # Obsolete! "--help" has non-zero exit
+    - vdb-unlock --help >/dev/null
+    - vdb-validate --help >/dev/null
+
+about:
+  home: "https://github.com/ncbi/sra-tools"
+  license: Public domain
+  license_file: sra-tools-2.8.0/LICENSE
+  summary: "Collection of tools and libraries for accessing the NCBI Sequence Read Archive (SRA)"

@@ -1,0 +1,25 @@
+--- sra-tools-2.8.0/build/Makefile.install
++++ sra-tools-2.8.0/build/Makefile.install
+@@ -62,11 +62,6 @@
+       $(COPY) $(BINDIR)/$@$(EXEX) $(BINDIR)/$@$(VERSION_EXEX) $(BINDIR)/$@$(MAJVERS_EXEX) $(INST_BINDIR) && \
+       echo "done"
+     
+-ifeq (linux, $(OS))
+-    ifeq (0, $(shell id -u))
+-        LINUX_ROOT = true
+-    endif
+-endif
+ 
+ install: installexes
+ ifeq (true, $(LINUX_ROOT))
+--- sra-tools-2.8.0/setup/install.perl
++++ sra-tools-2.8.0/setup/install.perl
+@@ -1312,7 +1312,7 @@
+     }
+ }
+ 
+-sub linux_root { $^O eq 'linux' && `id -u` == 0 }
++sub linux_root { return 0; }
+ 
+ sub fatal_config {
+     if ($OPT{debug}) {

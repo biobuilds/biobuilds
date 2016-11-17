@@ -1,0 +1,834 @@
+489b1c9 sra-use-dyn-libs.patch
+--- sra-tools-2.8.0/build/ld.linux.exe.sh
++++ sra-tools-2.8.0/build/ld.linux.exe.sh
+@@ -298,14 +298,7 @@
+ then
+     if grep -q XML2_LIBDIR ${BUILD_DIR}/Makefile.config.linux.$ARCH > /dev/null
+     then
+-        if grep -q 'OS_DISTRIBUTOR = Ubuntu' ${BUILD_DIR}/Makefile.config.linux.$ARCH > /dev/null
+-        then
+-            ##### Do not link libxml2 statically on Ubuntu: it does not compile
+-            XMLLIBDIR="-L$(grep XML2_LIBDIR ${BUILD_DIR}/Makefile.config.linux.$ARCH | perl -e'while(<>){if(/XML2_LIBDIR = (.+)/){print $1}}')"
+-        else
+-            ##### Link libxml2 statically on all linux-es except Ubuntu
+-            XMLLIBDIR="-Wl,-Bstatic -L$(grep XML2_LIBDIR ${BUILD_DIR}/Makefile.config.linux.$ARCH | perl -e'while(<>){if(/XML2_LIBDIR = (.+)/){print $1}}')"
+-        fi
++        XMLLIBDIR="-L$(grep XML2_LIBDIR ${BUILD_DIR}/Makefile.config.linux.$ARCH | perl -e'while(<>){if(/XML2_LIBDIR = (.+)/){print $1}}')"
+     fi
+     if [ $HAVE_XML -ne 0 ]
+     then
+--- sra-tools-2.8.0/build/ld.linux.gcc.sh
++++ sra-tools-2.8.0/build/ld.linux.gcc.sh
+@@ -26,8 +26,8 @@
+ # define linker params
+ LD_EXPORT_GLOBAL="-Wl,--export-dynamic"
+ LD_MULTIPLE_DEFS="-Wl,-zmuldefs"
+-LD_STATIC="-Wl,-Bstatic"
+-LD_DYNAMIC="-Wl,-Bdynamic"
++LD_STATIC=""
++LD_DYNAMIC=""
+ LD_ALL_SYMBOLS="-Wl,-whole-archive"
+ LD_REF_SYMBOLS="-Wl,-no-whole-archive"
+ 
+@@ -35,7 +35,8 @@
+ DLIB_CMD="$LD -shared"
+ 
+ #EXE_CMD="$LD -static-libstdc++ -static-libgcc"
+-source "${0%exe.sh}exe_cmd.sh" # EXE_CMD is defined in build/ld.linux.exe_cmd.sh
++#source "${0%exe.sh}exe_cmd.sh" # EXE_CMD is defined in build/ld.linux.exe_cmd.sh
++EXE_CMD="$LD"
+ 
+ EXE_STATIC_CMD="$EXE_CMD"
+ #EXE_CMD="$LD"
+--- sra-tools-2.8.0/test/fastq-loader/Makefile
++++ sra-tools-2.8.0/test/fastq-loader/Makefile
+@@ -57,7 +57,7 @@
+ 	-sktst \
+ 	-sfastqloader \
+ 	-sload \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(TEST_BINDIR)/wb-test-fastq: $(FASTQ_TEST_OBJ)
+ 	$(LP) --exe -o $@ $^ $(FASTQ_TEST_LIB)
+--- sra-tools-2.8.0/test/fuse/Makefile
++++ sra-tools-2.8.0/test/fuse/Makefile
+@@ -52,7 +52,7 @@
+ 	$(addsuffix .$(OBJX),$(REMOTE_FUSER_TEST_SRC))
+     
+ REMOTE_FUSER_TEST_LIB =   \
+-	-sncbi-vdb-static   \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz  \
+ 	-skapp
+ 
+ $(TEST_BINDIR)/remote-fuser-test: $(REMOTE_FUSER_TEST_OBJ)
+--- sra-tools-2.8.0/test/general-loader/Makefile
++++ sra-tools-2.8.0/test/general-loader/Makefile
+@@ -58,7 +58,7 @@
+ 	$(addsuffix .$(OBJX),$(TEST_GEN_LOAD_SRC))
+ 
+ TEST_GEN_LOAD_LIB =   \
+-	-sncbi-wvdb-static  \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz  \
+     -sload              \
+ 	-skapp              \
+     -sktst              \
+@@ -121,7 +121,7 @@
+ 
+ $(TEST_BINDIR)/makeinputs: makeinputs.cpp
+ 	@# generate numbered input streams for tool tests
+-	$(CXX) makeinputs.cpp testsource.cpp -o $(TEST_BINDIR)/makeinputs -I$(INCDIRS) -L$(VDB_LIBDIR) -lncbi-vdb-static
++	$(CXX) makeinputs.cpp testsource.cpp -o $(TEST_BINDIR)/makeinputs -I$(INCDIRS) -L$(VDB_LIBDIR) $(LDFLAGS) -lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz
+ 
+ tool-tests: $(TEST_BINDIR)/makeinputs
+ 	@mkdir -p input && $(TEST_BINDIR)/makeinputs && rm $(TEST_BINDIR)/makeinputs
+--- sra-tools-2.8.0/test/network-test/Makefile
++++ sra-tools-2.8.0/test/network-test/Makefile
+@@ -92,7 +92,7 @@
+ 
+ TOOL_LIB = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/network-test: $(TOOL_OBJ)
+--- sra-tools-2.8.0/test/ngs-pileup/Makefile
++++ sra-tools-2.8.0/test/ngs-pileup/Makefile
+@@ -52,7 +52,7 @@
+ TEST_NGS_PILEUP_LIB =   \
+ 	-sngs-c++           \
+ 	-sncbi-ngs-c++      \
+-	-sncbi-vdb-static   \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz   \
+ 	-skapp              \
+     -sktst              \
+ 
+--- sra-tools-2.8.0/test/samline/Makefile
++++ sra-tools-2.8.0/test/samline/Makefile
+@@ -83,7 +83,7 @@
+ 
+ CMN_LIBS = \
+ 	-skapp \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ #-------------------------------------------------------------------------------
+--- sra-tools-2.8.0/test/vcf-loader/Makefile
++++ sra-tools-2.8.0/test/vcf-loader/Makefile
+@@ -63,7 +63,7 @@
+ VCF_TEST_LIB = \
+ 	-skapp \
+ 	-sktst \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+     -svcfloader 
+ 
+ $(TEST_BINDIR)/test-vcf-loader: $(VCF_TEST_OBJ)
+--- sra-tools-2.8.0/test/vdb-dump/Makefile
++++ sra-tools-2.8.0/test/vdb-dump/Makefile
+@@ -74,7 +74,7 @@
+ MAKEDB_LIB = \
+ 	-skapp \
+ 	-sktst \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/vdb-dump-makedb: $(MAKEDB_OBJ)
+ 	$(LP) --exe -o $@ $^ $(MAKEDB_LIB)
+--- sra-tools-2.8.0/test/vschema/Makefile
++++ sra-tools-2.8.0/test/vschema/Makefile
+@@ -94,7 +94,7 @@
+ 
+ TEST_IDX_TEXT_CHECKLOOKUP_LIB =   \
+ 	-L$(LIBDIR) \
+-	-sncbi-vdb
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz
+ 
+ idx-text-checklookup: $(TEST_IDX_TEXT_CHECKLOOKUP_OBJ)
+ 	$(LP) --exe -o ./idx-text-checklookup $^ $(TEST_IDX_TEXT_CHECKLOOKUP_LIB)
+--- sra-tools-2.8.0/tools/align-cache/Makefile
++++ sra-tools-2.8.0/tools/align-cache/Makefile
+@@ -70,7 +70,7 @@
+ ALIGN_CACHE_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-sm \
+ 	-sload
+ 
+--- sra-tools-2.8.0/tools/align-info/Makefile
++++ sra-tools-2.8.0/tools/align-info/Makefile
+@@ -69,7 +69,7 @@
+ ALIGN_INFO_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/align-info: $(ALIGN_INFO_OBJ)
+--- sra-tools-2.8.0/tools/bam-loader/Makefile
++++ sra-tools-2.8.0/tools/bam-loader/Makefile
+@@ -83,7 +83,7 @@
+ 	-lkapp \
+ 	-stk-version \
+ 	-lload \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/bam-load: $(BAMLOAD_OBJ)
+@@ -103,7 +103,7 @@
+ SAMVIEW_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/samview: $(SAMVIEW_OBJ)
+--- sra-tools-2.8.0/tools/cache-mgr/Makefile
++++ sra-tools-2.8.0/tools/cache-mgr/Makefile
+@@ -68,7 +68,7 @@
+ TOOL_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/cache-mgr: $(TOOL_OBJ)
+--- sra-tools-2.8.0/tools/ccextract/Makefile
++++ sra-tools-2.8.0/tools/ccextract/Makefile
+@@ -84,7 +84,7 @@
+ 	-stk-version \
+     -lkxfs \
+     -lkxml \
+-	-sncbi-vdb
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz
+ 
+ $(BINDIR)/ccextract: $(CCEXTRACT_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(CCEXTRACT_LIB)
+--- sra-tools-2.8.0/tools/cg-load/Makefile
++++ sra-tools-2.8.0/tools/cg-load/Makefile
+@@ -88,7 +88,7 @@
+ 	-lkapp \
+ 	-stk-version \
+ 	-lload \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/cg-load: $(CGLOAD_OBJ)
+--- sra-tools-2.8.0/tools/copycat/Makefile
++++ sra-tools-2.8.0/tools/copycat/Makefile
+@@ -90,9 +90,9 @@
+ COPYCAT_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-skff \
+-	-smagic-static
++	-lmagic
+ 
+ 
+ $(BINDIR)/copycat: $(COPYCAT_OBJ)
+--- sra-tools-2.8.0/tools/dbgap-mount/Makefile
++++ sra-tools-2.8.0/tools/dbgap-mount/Makefile
+@@ -90,7 +90,7 @@
+ ZDB_DEMO_OBJ = \
+ 	$(addsuffix .$(OBJX),$(ZDB_DEMO_SRC))
+ 
+-ZDB_DEMO_LIB = -lkapp -stk-version -lncbi-vdb -lxfs $(DOCAN_LIBS)
++ZDB_DEMO_LIB = -lkapp -stk-version -lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz -lxfs $(DOCAN_LIBS)
+ 
+ $(BINDIR)/demo: $(ZDB_DEMO_OBJ)
+ 	@echo $(TOP)
+@@ -112,8 +112,8 @@
+ ZDB_TOOL_OBJ = \
+ 	$(addsuffix .$(OBJX),$(ZDB_TOOL_SRC))
+ 
+-# ZDB_TOOL_LIB = -lkapp -lncbi-vdb -lxfs $(DOCAN_LIBS)
+-ZDB_TOOL_LIB = -sxfs -skapp -stk-version -sncbi-vdb -skfg $(DOCAN_LIBS)
++# ZDB_TOOL_LIB = -lkapp -lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz -lxfs $(DOCAN_LIBS)
++ZDB_TOOL_LIB = -sxfs -skapp -stk-version -lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz -skfg $(DOCAN_LIBS)
+ 
+ $(BINDIR)/dbgap-mount-tool: $(ZDB_TOOL_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(ZDB_TOOL_LIB)
+--- sra-tools-2.8.0/tools/fastdump/Makefile
++++ sra-tools-2.8.0/tools/fastdump/Makefile
+@@ -81,7 +81,7 @@
+ TOOL_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/fastdump: $(TOOL_OBJ)
+--- sra-tools-2.8.0/tools/fastq-dump/Makefile
++++ sra-tools-2.8.0/tools/fastq-dump/Makefile
+@@ -72,7 +72,7 @@
+ DUMP_LIBS = \
+ 	-lncbi-ngs-c++    \
+ 	-lngs-c++         \
+-	-lncbi-vdb-static \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lkapp \
+ 	-stk-version
+ 
+--- sra-tools-2.8.0/tools/fastq-loader/Makefile
++++ sra-tools-2.8.0/tools/fastq-loader/Makefile
+@@ -158,7 +158,7 @@
+ 	-skapp \
+ 	-stk-version \
+     -sload \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-sm
+ 
+ $(BINDIR)/latf-load: $(FASTQ_LOAD_OBJ)
+--- sra-tools-2.8.0/tools/fuse/Makefile
++++ sra-tools-2.8.0/tools/fuse/Makefile
+@@ -136,7 +136,7 @@
+ SRA_FUSER_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lfuse \
+ 	-lrt
+ 
+@@ -176,7 +176,7 @@
+ REMOTE_FUSER_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lfuse \
+ 	-lrt
+ 
+@@ -196,7 +196,7 @@
+ SRA_MAKEIDX_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-lncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-ssrareader \
+ 
+ $(BINDIR)/sra-makeidx: $(SRA_MAKEIDX_OBJ)
+--- sra-tools-2.8.0/tools/general-loader/Makefile
++++ sra-tools-2.8.0/tools/general-loader/Makefile
+@@ -121,7 +121,7 @@
+ 	$(addsuffix .$(OBJX),$(GEN_LOAD_SRC))
+ 
+ GEN_LOAD_LIBS = \
+-	-sncbi-wvdb-static \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-sload \
+ 	-skapp \
+ 	-stk-version \
+--- sra-tools-2.8.0/tools/kar/Makefile
++++ sra-tools-2.8.0/tools/kar/Makefile
+@@ -71,7 +71,7 @@
+ KAR_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/kar: $(KAR_OBJ)
+@@ -91,7 +91,7 @@
+ SRA_KAR_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/sra-kar: $(SRA_KAR_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(SRA_KAR_LIB)
+--- sra-tools-2.8.0/tools/keyring-srv/Makefile
++++ sra-tools-2.8.0/tools/keyring-srv/Makefile
+@@ -102,7 +102,7 @@
+ KEYRING_SRV_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-lncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/keyring-srv: $(KEYRING_SRV_OBJ)
+--- sra-tools-2.8.0/tools/kget/Makefile
++++ sra-tools-2.8.0/tools/kget/Makefile
+@@ -69,7 +69,7 @@
+ TOOL_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/kget: $(TOOL_OBJ)
+--- sra-tools-2.8.0/tools/kqsh/Makefile
++++ sra-tools-2.8.0/tools/kqsh/Makefile
+@@ -200,7 +200,7 @@
+ KQSH_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/kqsh: $(KQSH_OBJ)
+--- sra-tools-2.8.0/tools/ngs-pileup/Makefile
++++ sra-tools-2.8.0/tools/ngs-pileup/Makefile
+@@ -72,7 +72,7 @@
+ 
+ NGS_PILEUP_LIBS = \
+ 	-sncbi-ngs-c++    \
+-	-sncbi-vdb-static \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-sngs-c++         \
+ 	-skapp \
+ 	-stk-version \
+--- sra-tools-2.8.0/tools/pacbio-load/Makefile
++++ sra-tools-2.8.0/tools/pacbio-load/Makefile
+@@ -106,7 +106,7 @@
+ 	-skdf5 \
+ 	-sload \
+ 	-shdf5 \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-sm \
+ 
+ ifdef HDF5_LIBDIR
+--- sra-tools-2.8.0/tools/pileup-stats/Makefile
++++ sra-tools-2.8.0/tools/pileup-stats/Makefile
+@@ -71,7 +71,7 @@
+ 	-L$(NGS_LIBDIR)   \
+ 	-sgeneral-writer  \
+ 	-sncbi-ngs-c++    \
+-	-sncbi-vdb-static \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-sngs-c++         \
+ 	-skapp \
+ 	-stk-version \
+--- sra-tools-2.8.0/tools/prefetch/Makefile
++++ sra-tools-2.8.0/tools/prefetch/Makefile
+@@ -71,7 +71,7 @@
+ PREFETCH_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ 
+--- sra-tools-2.8.0/tools/qual-recalib-stat/Makefile
++++ sra-tools-2.8.0/tools/qual-recalib-stat/Makefile
+@@ -77,7 +77,7 @@
+ Q_RECAL_STAT_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/qual-recalib-stat: $(Q_RECAL_STAT_OBJ)
+--- sra-tools-2.8.0/tools/rd-filter-redact/Makefile
++++ sra-tools-2.8.0/tools/rd-filter-redact/Makefile
+@@ -70,7 +70,7 @@
+ READ_FILTER_REDACT_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/read-filter-redact: $(READ_FILTER_REDACT_OBJ)
+@@ -88,7 +88,7 @@
+ TEST_READ_WRITE_CURSOR_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-lncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/test-read-write-cursor: $(TEST_READ_WRITE_CURSOR_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(TEST_READ_WRITE_CURSOR_LIB)
+--- sra-tools-2.8.0/tools/sra-dump/Makefile
++++ sra-tools-2.8.0/tools/sra-dump/Makefile
+@@ -71,7 +71,7 @@
+ DUMP_COMMON_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ #-------------------------------------------------------------------------------
+--- sra-tools-2.8.0/tools/sra-load/Makefile
++++ sra-tools-2.8.0/tools/sra-load/Makefile
+@@ -96,7 +96,7 @@
+ 	-lkapp \
+ 	-stk-version \
+ 	-lload \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	$(LIBXML) \
+ 	-lm
+ 
+--- sra-tools-2.8.0/tools/sra-pileup/Makefile
++++ sra-tools-2.8.0/tools/sra-pileup/Makefile
+@@ -88,7 +88,7 @@
+ TOOL_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/sra-pileup: $(TOOL_OBJ)
+@@ -121,7 +121,7 @@
+ SAMDUMP3_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ ifdef NCBI
+--- sra-tools-2.8.0/tools/sra-seq-count/Makefile
++++ sra-tools-2.8.0/tools/sra-seq-count/Makefile
+@@ -65,7 +65,7 @@
+ 	-stk-version \
+ 	-sncbi-ngs-c++ \
+ 	-sngs-c++ \
+-	-sncbi-vdb-static
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz
+ 
+ #-------------------------------------------------------------------------------
+ # fastq-dump
+--- sra-tools-2.8.0/tools/sra-shell/sra-gui/Makefile
++++ sra-tools-2.8.0/tools/sra-shell/sra-gui/Makefile
+@@ -73,7 +73,7 @@
+ SRA_GUI_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-lncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/sra-gui: $(SRA_GUI_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../../shared/toolkit.vers -o $@ $^ $(SRA_GUI_LIB)
+--- sra-tools-2.8.0/tools/sra-shell/sra-shell/Makefile
++++ sra-tools-2.8.0/tools/sra-shell/sra-shell/Makefile
+@@ -80,7 +80,7 @@
+ SRA_SHELL_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-lncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/sra-shell: $(SRA_SHELL_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../../shared/toolkit.vers -o $@ $^ $(SRA_SHELL_LIB)
+--- sra-tools-2.8.0/tools/sra-sort/Makefile
++++ sra-tools-2.8.0/tools/sra-sort/Makefile
+@@ -103,7 +103,7 @@
+ SRA_SORT_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/sra-sort: $(SRA_SORT_OBJ)
+@@ -119,7 +119,7 @@
+ 	$(addsuffix .$(OBJX),$(DBB_SRC))
+ 
+ DBB_LIB = \
+-	-lncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/dump-blob-boundaries: $(DBB_OBJ)
+ 	$(LD) --exe -o $@ $^ $(DBB_LIB)
+--- sra-tools-2.8.0/tools/sra-stat/Makefile
++++ sra-tools-2.8.0/tools/sra-stat/Makefile
+@@ -71,7 +71,7 @@
+ SRASTAT_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-sload \
+ 	-lm \
+ 
+--- sra-tools-2.8.0/tools/sra/Makefile
++++ sra-tools-2.8.0/tools/sra/Makefile
+@@ -69,7 +69,7 @@
+ TABLE_VERS_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-lncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/table-vers: $(TABLE_VERS_OBJ)
+--- sra-tools-2.8.0/tools/srapath/Makefile
++++ sra-tools-2.8.0/tools/srapath/Makefile
+@@ -72,7 +72,7 @@
+ SRAPATH_LIB += \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/srapath: $(SRAPATH_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(SRAPATH_LIB)
+--- sra-tools-2.8.0/tools/update-schema/Makefile
++++ sra-tools-2.8.0/tools/update-schema/Makefile
+@@ -69,7 +69,7 @@
+ UPDATE_SCHEMA_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/vdb-update-schema: $(UPDATE_SCHEMA_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(UPDATE_SCHEMA_LIB)
+--- sra-tools-2.8.0/tools/util/Makefile
++++ sra-tools-2.8.0/tools/util/Makefile
+@@ -85,7 +85,7 @@
+ RCEXPLAIN_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/rcexplain: $(RCEXPLAIN_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(RCEXPLAIN_LIB)
+@@ -103,7 +103,7 @@
+ KDBMETA_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/kdbmeta: $(KDBMETA_OBJ)
+@@ -123,7 +123,7 @@
+ VDB_LOCK_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-lock: $(VDB_LOCK_OBJ)
+@@ -143,7 +143,7 @@
+ VDB_UNLOCK_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-unlock: $(VDB_UNLOCK_OBJ)
+@@ -162,7 +162,7 @@
+ TESTLD_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/testld: $(TESTLD_OBJ)
+@@ -183,7 +183,7 @@
+ T_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/test-sra: $(T_OBJ)
+@@ -201,7 +201,7 @@
+ TXT2KDB_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/txt2kdb: $(TXT2KDB_OBJ)
+@@ -219,7 +219,7 @@
+ MD5CP_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/md5cp: $(MD5CP_OBJ)
+@@ -238,7 +238,7 @@
+ ROWWRITETEST_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/rowwritetest: $(ROWWRITETEST_OBJ)
+@@ -258,7 +258,7 @@
+ CRC32SUM_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/crc32sum: $(CRC32SUM_OBJ)
+@@ -278,7 +278,7 @@
+ SAMVIEW_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/samview: $(SAMVIEW_OBJ)
+@@ -311,7 +311,7 @@
+ SORTREADTEST_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/sortreadtest: $(SORTREADTEST_OBJ)
+@@ -331,7 +331,7 @@
+ VDB_PASSWD_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/vdb-passwd: $(VDB_PASSWD_OBJ)
+@@ -350,7 +350,7 @@
+ SCHEMA_REPLACE_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/schema-replace: $(SCHEMA_REPLACE_OBJ)
+@@ -368,7 +368,7 @@
+ PACBIO_CORRECT_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ 
+ $(BINDIR)/pacbio-correct: $(PACBIO_CORRECT_OBJ)
+@@ -386,7 +386,7 @@
+ KDBINDEX_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 
+ $(BINDIR)/kdb-index: $(KDBINDEX_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(KDBINDEX_LIB)
+--- sra-tools-2.8.0/tools/vdb-config/Makefile
++++ sra-tools-2.8.0/tools/vdb-config/Makefile
+@@ -75,7 +75,7 @@
+ 	-stui        \
+ 	-skapp       \
+ 	-stk-version \
+-	-sncbi-vdb   \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz   \
+ 	-sm
+ 
+ $(BINDIR)/vdb-config: $(VDB_CONFIG_OBJ)
+--- sra-tools-2.8.0/tools/vdb-copy/Makefile
++++ sra-tools-2.8.0/tools/vdb-copy/Makefile
+@@ -84,7 +84,7 @@
+ VDB_COPY_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-wvdb \
++	-lncbi-wvdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-copy: $(VDB_COPY_OBJ)
+--- sra-tools-2.8.0/tools/vdb-decrypt/Makefile
++++ sra-tools-2.8.0/tools/vdb-decrypt/Makefile
+@@ -75,7 +75,7 @@
+ VDB_DECRYPT_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz
+ 
+ $(BINDIR)/vdb-decrypt: $(VDB_DECRYPT_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(VDB_DECRYPT_LIB)
+@@ -95,7 +95,7 @@
+ VDB_ENCRYPT_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz
+ 
+ $(BINDIR)/vdb-encrypt: $(VDB_ENCRYPT_OBJ)
+ 	$(LD) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(VDB_ENCRYPT_LIB)
+--- sra-tools-2.8.0/tools/vdb-diff/Makefile
++++ sra-tools-2.8.0/tools/vdb-diff/Makefile
+@@ -72,7 +72,7 @@
+ VDB_DIFF_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-diff: $(VDB_DIFF_OBJ)
+--- sra-tools-2.8.0/tools/vdb-dump/Makefile
++++ sra-tools-2.8.0/tools/vdb-dump/Makefile
+@@ -84,7 +84,7 @@
+ VDB_DUMP_LIB = \
+ 	-skapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-dump: $(VDB_DUMP_OBJ)
+--- sra-tools-2.8.0/tools/vdb-validate/Makefile
++++ sra-tools-2.8.0/tools/vdb-validate/Makefile
+@@ -70,7 +70,7 @@
+ VDB_VALIDATE_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/vdb-validate: $(VDB_VALIDATE_OBJ)
+@@ -89,8 +89,8 @@
+ CHECK_CORRUPT_LIB = \
+ 	-lkapp \
+ 	-stk-version \
+-	-sncbi-vdb \
++	-lncbi-vdb -lmbedtls -lmbedx509 -lmbedcrypto -lbz2 -lz \
+ 	-lm
+ 
+ $(BINDIR)/check-corrupt: $(CHECK_CORRUPT_OBJ)
+-	$(LP) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(CHECK_CORRUPT_LIB)
+\ No newline at end of file
++	$(LP) --exe --vers $(SRCDIR)/../../shared/toolkit.vers -o $@ $^ $(CHECK_CORRUPT_LIB)

@@ -1,0 +1,11 @@
+--- ncbi-vdb-2.8.0/build/Makefile.install
++++ ncbi-vdb-2.8.0/build/Makefile.install
+@@ -32,6 +32,8 @@
+ # install
+ # 
+ LIBRARIES_TO_INSTALL = \
++    kdf5.$(VERSION_LIBX) \
++    kdf5.$(VERSION_SHLX) \
+     ncbi-vdb.$(VERSION_LIBX) \
+     ncbi-vdb.$(VERSION_SHLX) \
+     ncbi-wvdb.$(VERSION_LIBX) \

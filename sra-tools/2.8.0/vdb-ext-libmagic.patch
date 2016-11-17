@@ -1,0 +1,14 @@
+--- ncbi-vdb-2.8.0/setup/package.prl
++++ ncbi-vdb-2.8.0/setup/package.prl
+@@ -45,6 +45,11 @@
+               include => 'hdf5.h',
+               lib     => 'libhdf5.a',
+             },
++            { name    => 'magic',
++              option  => 'with-magic-prefix',
++              origin  => 'E',
++              type    => 'LIO',
++            },
+             { name    => 'xml2',
+               option  => 'with-xml2-prefix',
+               origin  => 'E',

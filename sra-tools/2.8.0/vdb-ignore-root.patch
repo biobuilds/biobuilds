@@ -1,0 +1,25 @@
+--- ncbi-vdb-2.8.0/build/Makefile.install
++++ ncbi-vdb-2.8.0/build/Makefile.install
+@@ -62,11 +62,6 @@ INCLUDE_SYMLINK = $(ROOT)/usr/include/ncbi-vdb
+ PROFILE_FILE = $(ROOT)/etc/profile.d/ncbi-vdb
+ KONFIG_DIR = $(ROOT)/etc/ncbi
+ 
+-ifeq (linux, $(OS))
+-    ifeq (0, $(shell id -u))
+-        LINUX_ROOT = true
+-    endif
+-endif
+ 
+ install: copylibs copyincludes 
+ ifeq (true, $(LINUX_ROOT))
+--- ncbi-vdb-2.8.0/setup/install.perl
++++ ncbi-vdb-2.8.0/setup/install.perl
+@@ -1312,7 +1312,7 @@ sub prepare {
+     }
+ }
+ 
+-sub linux_root { $^O eq 'linux' && `id -u` == 0 }
++sub linux_root { return 0; }
+ 
+ sub fatal_config {
+     if ($OPT{debug}) {

@@ -1,0 +1,2735 @@
+--- ncbi-vdb-2.8.0/build/Makefile.gcc
++++ ncbi-vdb-2.8.0/build/Makefile.gcc
+@@ -80,6 +80,12 @@
+ 	OPT += -Wall
+ endif
+ 
++ifeq (ppc64le, $(ARCH))
++	# "-fsigned-char" forces GCC to make the same assumption about the
++	# signedness of plain "char" declaraction as it does on x86_64.
++	OPT += -Wall -fsigned-char
++endif
++
+ endif
+ 
+ ifeq (mac,$(OS))
+new file mode 100644
+--- /dev/null
++++ ncbi-vdb-2.8.0/interfaces/cc/gcc/ppc64le/arch-impl.h
+@@ -0,0 +1,374 @@
++/*===========================================================================
++*  Based on "interfaces/cc/vc++/noarch/arch-impl.h"; modified by Cheng H. Lee
++*  (cheng.lee@lab7.io) to support little-endian POWER8 (ppc64le) systems. The
++*  original source file contained the following notice:
++*  --------------------------------------------------------------------------
++*
++*                            PUBLIC DOMAIN NOTICE
++*               National Center for Biotechnology Information
++*
++*  This software/database is a "United States Government Work" under the
++*  terms of the United States Copyright Act.  It was written as part of
++*  the author's official duties as a United States Government employee and
++*  thus cannot be copyrighted.  This software/database is freely available
++*  to the public for use. The National Library of Medicine and the U.S.
++*  Government have not placed any restriction on its use or reproduction.
++*
++*  Although all reasonable efforts have been taken to ensure the accuracy
++*  and reliability of the software and data, the NLM and the U.S.
++*  Government do not and cannot warrant the performance or results that
++*  may be obtained by using this software or data. The NLM and the U.S.
++*  Government disclaim all warranties, express or implied, including
++*  warranties of performance, merchantability or fitness for any particular
++*  purpose.
++*
++*  Please cite the author in any work or product based on this material.
++*
++* ===========================================================================
++*
++*/
++
++#ifndef _h_arch_impl_
++#define _h_arch_impl_
++
++#include <stdint.h>
++#include "byteswap.h"
++
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* this table is very simple to calculate
++   but simpler yet to use for lookup */
++static const int8_t lsbit_map [] =
++{
++    -1, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     7, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     6, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     5, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0,
++     4, 0, 1, 0, 2, 0, 1, 0, 3, 0, 1, 0, 2, 0, 1, 0
++};
++
++static __inline__
++int16_t uint16_lsbit ( uint16_t self )
++{
++    /* detect no bits are set */
++    if ( self == 0 )
++        return -1;
++
++    /* detect bits set in lower byte */
++    if ( ( uint8_t ) self != 0 )
++        return lsbit_map [ ( uint8_t ) self ];
++
++    /* return bit set in upper byte */
++    return lsbit_map [ self >> 8 ] + 8;
++}
++
++static __inline__
++int32_t uint32_lsbit ( uint32_t self )
++{
++    /* detect no bits are set */
++    if ( self == 0 )
++        return -1;
++
++    /* detect bits set in lower word */
++    if ( ( uint16_t ) self != 0 )
++        return uint16_lsbit ( ( uint16_t ) self );
++
++    /* return bit set in upper word */
++    return uint16_lsbit ( self >> 16 ) + 16;
++}
++
++static const int8_t msbit_map [] =
++{
++    -1, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
++     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
++     5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
++     5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
++     6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
++     6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
++     6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
++     6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
++     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
++     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
++     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
++     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
++     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
++     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
++     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
++     7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7
++};
++
++static __inline__
++int16_t uint16_msbit ( uint16_t self )
++{
++    uint8_t upper = ( uint8_t ) ( self >> 8 );
++
++    /* detect no bits are set */
++    if ( self == 0 )
++        return -1;
++
++    /* detect bits set in upper byte */
++    if ( upper != 0 )
++        return msbit_map [ upper ] + 8;
++
++    /* return bit set in lower byte */
++    return msbit_map [ ( uint8_t ) self ];
++}
++
++static __inline__
++int32_t uint32_msbit ( uint32_t self )
++{
++    uint16_t upper = ( uint16_t ) ( self >> 16 );
++
++    /* detect no bits are set */
++    if ( self == 0 )
++        return -1;
++
++    /* detect bits set in upper word */
++    if ( upper != 0 )
++        return uint16_msbit ( upper ) + 16;
++
++    /* return bit set in lower word */
++    return uint16_msbit ( ( uint16_t ) self );
++}
++
++typedef struct int128_t int128_t;
++struct int128_t
++{
++    uint64_t lo;
++    int64_t hi;
++};
++
++static __inline__
++int64_t int128_hi ( const int128_t *self )
++{
++    return self -> hi;
++}
++
++static __inline__
++uint64_t int128_lo ( const int128_t *self )
++{
++    return self -> lo;
++}
++
++static __inline__
++void int128_sethi ( int128_t *self, int64_t i )
++{
++    self -> hi = i;
++}
++
++static __inline__
++void int128_setlo ( int128_t *self, uint64_t i )
++{
++    self -> lo = i;
++}
++
++typedef struct uint128_t uint128_t;
++struct uint128_t
++{
++    uint64_t lo;
++    uint64_t hi;
++};
++
++static __inline__
++uint64_t uint128_hi ( const uint128_t *self )
++{
++    return self -> hi;
++}
++
++static __inline__
++uint64_t uint128_lo ( const uint128_t *self )
++{
++    return self -> lo;
++}
++
++static __inline__
++void uint128_sethi ( uint128_t *self, uint64_t i )
++{
++    self -> hi = i;
++}
++
++static __inline__
++void uint128_setlo ( uint128_t *self, uint64_t i )
++{
++    self -> lo = i;
++}
++
++static __inline__
++void int128_add ( int128_t *self, const int128_t *i )
++{
++    uint64_t carry = ( ( const uint32_t* ) self ) [ 0 ] + ( ( const uint32_t* ) i ) [ 0 ];
++    self -> hi += i -> hi;
++    carry = ( ( const uint32_t* ) self ) [ 1 ] + ( ( const uint32_t* ) i ) [ 1 ] + ( carry >> 32 );
++    self -> lo += i -> lo;
++    self -> hi += carry >> 32;
++}
++
++static __inline__
++void int128_sub ( int128_t *self, const int128_t *i )
++{
++    int carry = i -> lo > self -> lo;
++    self -> hi -= i -> hi;
++    self -> lo -= i -> lo;
++    self -> hi -= carry;
++}
++
++static __inline__
++void int128_sar ( int128_t *self, uint32_t i )
++{
++    if ( i < 64 )
++    {
++        self -> lo = ( self -> hi << ( 64 - i ) ) |  ( self -> lo >> i );
++        self -> hi >>= i;
++    }
++    else
++    {
++        self -> lo = self -> hi >> ( i - 64 );
++        self -> hi >>= 63;
++    }
++}
++
++static __inline__
++void int128_shl ( int128_t *self, uint32_t i )
++{
++    if ( i < 64 )
++    {
++        self -> hi = ( self -> hi << i ) | ( int64_t ) ( self -> lo >> ( 64 - i ) );
++        self -> lo <<= i;
++    }
++    else
++    {
++        self -> hi = ( int64_t ) ( self -> lo << ( i - 64 ) );
++        self -> lo = 0;
++    }
++}
++
++static __inline__
++void uint128_and ( uint128_t *self, const uint128_t *i )
++{
++    self -> lo &= i -> lo;
++    self -> hi &= i -> hi;
++}
++
++static __inline__
++void uint128_or ( uint128_t *self, const uint128_t *i )
++{
++    self -> lo |= i -> lo;
++    self -> hi |= i -> hi;
++}
++
++static __inline__
++void uint128_orlo ( uint128_t *self, uint64_t i )
++{
++    self -> lo |= i;
++}
++
++static __inline__
++void uint128_xor ( uint128_t *self, const uint128_t *i )
++{
++    self -> lo ^= i -> lo;
++    self -> hi ^= i -> hi;
++}
++
++static __inline__
++void uint128_not ( uint128_t *self )
++{
++    self -> lo = ~ self -> lo;
++    self -> hi = ~ self -> hi;
++}
++
++static __inline__
++void uint128_shr ( uint128_t *self, uint32_t i )
++{
++    if ( i < 64 )
++    {
++        self -> lo = ( self -> hi << ( 64 - i ) ) |  ( self -> lo >> i );
++        self -> hi >>= i;
++    }
++    else
++    {
++        self -> lo = self -> hi >> ( i - 64 );
++        self -> hi >>= 63;
++    }
++}
++
++static __inline__
++void uint128_shl ( uint128_t *self, uint32_t i )
++{
++    if ( i < 64 )
++    {
++        self -> hi = ( self -> hi << i ) | ( self -> lo >> ( 64 - i ) );
++        self -> lo <<= i;
++    }
++    else
++    {
++        self -> hi = self -> lo << ( i - 64 );
++        self -> lo = 0;
++    }
++}
++
++static __inline__
++void uint128_bswap ( uint128_t *self )
++{
++    uint64_t tmp = bswap_64 ( self -> lo );
++    self -> lo = bswap_64 ( self -> hi );
++    ( ( uint64_t* ) self ) [ 1 ] = tmp;
++}
++
++static __inline__
++void uint128_bswap_copy ( uint128_t *to, const uint128_t *from )
++{
++    to -> lo = bswap_64 ( from -> hi );
++    to -> hi = bswap_64 ( from -> lo );
++}
++
++static __inline__
++uint32_t uint32_rol ( uint32_t val, uint8_t bits )
++{
++    uint32_t rtn;
++    rtn = ( val << bits ) | ( val >> ( 32 - bits ) );
++    return rtn;
++}
++
++static __inline__
++uint32_t uint32_ror ( uint32_t val, uint8_t bits )
++{
++    uint32_t rtn;
++    rtn = ( val >> bits ) | ( val << ( 32 - bits ) );
++    return rtn;
++}
++
++static __inline__
++uint64_t uint64_rol ( uint64_t val, uint8_t bits )
++{
++    uint64_t rtn;
++    rtn = ( val << bits ) | ( val >> ( 64 - bits ) );
++    return rtn;
++}
++
++static __inline__
++uint64_t uint64_ror ( uint64_t val, uint8_t bits )
++{
++    uint64_t rtn;
++    rtn = ( val >> bits ) | ( val << ( 64 - bits ) );
++    return rtn;
++}
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _h_arch_impl_ */
+new file mode 100644
+--- /dev/null
++++ ncbi-vdb-2.8.0/interfaces/cc/gcc/ppc64le/atomic.h
+@@ -0,0 +1,182 @@
++/*===========================================================================
++*  Based on "interfaces/cc/gcc/x86_64/atomic.h"; modified by Cheng H. Lee
++*  (cheng.lee@lab7.io) to support little-endian POWER8 (ppc64le) systems. The
++*  original source file contained the following notice:
++*  --------------------------------------------------------------------------
++*
++*                            PUBLIC DOMAIN NOTICE
++*               National Center for Biotechnology Information
++*
++*  This software/database is a "United States Government Work" under the
++*  terms of the United States Copyright Act.  It was written as part of
++*  the author's official duties as a United States Government employee and
++*  thus cannot be copyrighted.  This software/database is freely available
++*  to the public for use. The National Library of Medicine and the U.S.
++*  Government have not placed any restriction on its use or reproduction.
++*
++*  Although all reasonable efforts have been taken to ensure the accuracy
++*  and reliability of the software and data, the NLM and the U.S.
++*  Government do not and cannot warrant the performance or results that
++*  may be obtained by using this software or data. The NLM and the U.S.
++*  Government disclaim all warranties, express or implied, including
++*  warranties of performance, merchantability or fitness for any particular
++*  purpose.
++*
++*  Please cite the author in any work or product based on this material.
++*  --------------------------------------------------------------------------
++*
++*  TODO (CHL): reimplement to use ppc64le assembly instead of GCC builtins
++* ===========================================================================
++*
++*/
++
++#ifndef _h_atomic_
++#define _h_atomic_
++
++#ifndef _h_atomic32_
++#include "atomic32.h"
++#endif
++
++#ifndef _h_atomic64_
++#include "atomic64.h"
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#if DFLT_ATOMIC_BITS == 32
++#define ATOMIC_NAME( suffix ) \
++    atomic32_ ## suffix
++typedef int atomic_int;
++#else
++#define ATOMIC_NAME( suffix ) \
++    atomic64_ ## suffix
++typedef long int atomic_int;
++#endif
++
++typedef struct ATOMIC_NAME ( t ) atomic_t;
++
++typedef struct atomic_ptr_t atomic_ptr_t;
++struct atomic_ptr_t
++{
++    void * volatile ptr;
++};
++
++/* ( * v ) */
++#define atomic_read( v ) \
++    ATOMIC_NAME ( read ) ( v )
++
++/* ( * v ) = i */
++#define atomic_set( v, i ) \
++    ATOMIC_NAME ( set ) ( v, i )
++
++/* prior = ( * v ), ( * v ) += i, prior */
++#define atomic_read_and_add( v, i ) \
++    ATOMIC_NAME ( read_and_add ) ( v, i )
++
++/* ( * v ) += i */
++#define atomic_add( v, i ) \
++    ATOMIC_NAME ( add ) ( v, i )
++
++/* ( * v ) += i */
++#define atomic_add_and_read( v, i ) \
++    ATOMIC_NAME ( add_and_read ) ( v, i )
++
++/* ( void ) ++ ( * v ) */
++#define atomic_inc( v ) \
++    ATOMIC_NAME ( inc ) ( v )
++
++/* ( void ) -- ( * v ) */
++#define atomic_dec( v ) \
++    ATOMIC_NAME ( dec ) ( v )
++
++/* -- ( * v ) == 0 */
++#define atomic_dec_and_test( v ) \
++    ATOMIC_NAME ( dec_and_test ) ( v )
++
++/* ++ ( * v ) == 0
++   when atomic_dec_and_test uses predecrement, you want
++   postincrement to this function. so it isn't very useful */
++#define atomic_inc_and_test( v ) \
++    ATOMIC_NAME ( inc_and_test ) ( v )
++
++/* ( * v ) -- == 0
++   HERE's useful */
++#define atomic_test_and_inc( v ) \
++    ATOMIC_NAME ( test_and_inc ) ( v )
++
++/* prior = ( * v ), ( * v ) = ( prior == t ? s : prior ), prior */
++#define atomic_test_and_set( v, s, t ) \
++    ATOMIC_NAME ( test_and_set ) ( v, s, t )
++
++/* N.B. - THIS FUNCTION IS FOR 64 BIT PTRS ONLY */
++static __inline__
++void *atomic_test_and_set_ptr ( atomic_ptr_t *v, void *s, void *t )
++{
++    // TODO: test for correctness and atomicity
++    return __sync_val_compare_and_swap(&(v->ptr), t, s);
++}
++
++/* val = ( * v ), ( ( * v ) = ( val < t ) ? val + i : val ), val */
++#define atomic_read_and_add_lt( v, i, t ) \
++    ATOMIC_NAME ( read_and_add_lt ) ( v, i, t )
++
++/* val = ( * v ), ( ( * v ) = ( val <= t ) ? val + i : val ), val */
++#define atomic_read_and_add_le( v, i, t ) \
++    ATOMIC_NAME ( read_and_add_le ) ( v, i, t )
++
++/* val = ( * v ), ( ( * v ) = ( val == t ) ? val + i : val ), val */
++#define atomic_read_and_add_eq( v, i, t ) \
++    ATOMIC_NAME ( read_and_add_eq ) ( v, i, t )
++
++/* val = ( * v ), ( ( * v ) = ( val != t ) ? val + i : val ), val */
++#define atomic_read_and_add_ne( v, i, t ) \
++    ATOMIC_NAME ( read_and_add_ne ) ( v, i, t )
++
++/* val = ( * v ), ( ( * v ) = ( val >= t ) ? val + i : val ), val */
++#define atomic_read_and_add_ge( v, i, t ) \
++    ATOMIC_NAME ( read_and_add_ge ) ( v, i, t )
++
++/* val = ( * v ), ( ( * v ) = ( val > t ) ? val + i : val ), val */
++#define atomic_read_and_add_gt( v, i, t ) \
++    ATOMIC_NAME ( read_and_add_gt ) ( v, i, t )
++
++/* val = ( * v ), ( ( * v ) = ( ( val & 1 ) == 1 ) ? val + i : val ), val */
++#define atomic_read_and_add_odd( v, i ) \
++    ATOMIC_NAME ( read_and_add_odd ) ( v, i )
++
++/* val = ( * v ), ( ( * v ) = ( ( val & 1 ) == 0 ) ? val + i : val ), val */
++#define atomic_read_and_add_even( v, i ) \
++    ATOMIC_NAME ( read_and_add_even ) ( v, i )
++
++/* DEPRECATED */
++
++/* val = ( * v ), ( * v ) = ( val < t ? val + i : val ), ( val < t ? 1 : 0 ) */
++#define atomic_add_if_lt( v, i, t ) \
++    ATOMIC_NAME ( add_if_lt ) ( v, i, t )
++
++/* val = ( * v ), ( * v ) = ( val <= t ? val + i : val ), ( val <= t ? 1 : 0 ) */
++#define atomic_add_if_le( v, i, t ) \
++    ATOMIC_NAME ( add_if_le ) ( v, i, t )
++
++/* val = ( * v ), ( * v ) = ( val == t ? val + i : val ), ( val == t ? 1 : 0 ) */
++#define atomic_add_if_eq( v, i, t ) \
++    ATOMIC_NAME ( add_if_eq ) ( v, i, t )
++
++/* val = ( * v ), ( * v ) = ( val >= t ? val + i : val ), ( val >= t ? 1 : 0 ) */
++#define atomic_add_if_ge( v, i, t ) \
++    ATOMIC_NAME ( add_if_ge ) ( v, i, t )
++
++/* val = ( * v ), ( * v ) = ( val > t ? val + i : val ), ( val > t ? 1 : 0 ) */
++#define atomic_add_if_gt( v, i, t ) \
++    ATOMIC_NAME ( add_if_gt ) ( v, i, t )
++
++#undef LOCK
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _h_atomic_ */
+new file mode 100644
+--- /dev/null
++++ ncbi-vdb-2.8.0/interfaces/cc/gcc/ppc64le/atomic32.h
+@@ -0,0 +1,209 @@
++/*===========================================================================
++*  Based on "interfaces/cc/gcc/x86_64/atomic32.h"; modified by Cheng H. Lee
++*  (cheng.lee@lab7.io) to support little-endian POWER8 (ppc64le) systems. The
++*  original source file contained the following notice:
++*  --------------------------------------------------------------------------
++*
++*                            PUBLIC DOMAIN NOTICE
++*               National Center for Biotechnology Information
++*
++*  This software/database is a "United States Government Work" under the
++*  terms of the United States Copyright Act.  It was written as part of
++*  the author's official duties as a United States Government employee and
++*  thus cannot be copyrighted.  This software/database is freely available
++*  to the public for use. The National Library of Medicine and the U.S.
++*  Government have not placed any restriction on its use or reproduction.
++*
++*  Although all reasonable efforts have been taken to ensure the accuracy
++*  and reliability of the software and data, the NLM and the U.S.
++*  Government do not and cannot warrant the performance or results that
++*  may be obtained by using this software or data. The NLM and the U.S.
++*  Government disclaim all warranties, express or implied, including
++*  warranties of performance, merchantability or fitness for any particular
++*  purpose.
++*
++*  Please cite the author in any work or product based on this material.
++*  --------------------------------------------------------------------------
++*
++*  TODO (CHL): reimplement to use ppc64le assembly instead of GCC builtins
++* ===========================================================================
++*
++*/
++
++#ifndef _h_atomic32_
++#define _h_atomic32_
++
++#ifndef __GNUC__
++#error ppc64le/atomic32.h currently requires gcc
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/*
++ * Make sure gcc doesn't try to be clever and move things around
++ * on us. We need to use _exactly_ the address the user gave us,
++ * not some alias that contains the same information.
++ */
++typedef struct atomic32_t atomic32_t;
++struct atomic32_t
++{
++    volatile int counter;
++};
++
++/* int atomic32_read ( const atomic32_t *v ); */
++#define atomic32_read( v ) \
++    ( ( v ) -> counter )
++
++/* void atomic32_set ( atomic32_t *v, int i ); */
++#define atomic32_set( v, i ) \
++    ( ( void ) ( ( ( v ) -> counter ) = ( i ) ) )
++
++/* add to v -> counter and return the prior value */
++static __inline__ int atomic32_read_and_add ( atomic32_t *v, int i )
++{
++    return __sync_fetch_and_add(&(v->counter), i);
++}
++
++/* if no read is needed, define the least expensive atomic add */
++#define atomic32_add( v, i ) \
++    atomic32_read_and_add ( v, i )
++
++/* add to v -> counter and return the result */
++static __inline__ int atomic32_add_and_read ( atomic32_t *v, int i )
++{
++    return __sync_add_and_fetch(&(v->counter), i);
++}
++
++/* just don't try to find out what the result was */
++static __inline__ void atomic32_inc ( atomic32_t *v )
++{
++    __sync_fetch_and_add(&(v->counter), 1);
++}
++
++static __inline__ void atomic32_dec ( atomic32_t *v )
++{
++    __sync_fetch_and_sub(&(v->counter), 1);
++}
++
++/* decrement by one and test result for 0 */
++static __inline__ int atomic32_dec_and_test ( atomic32_t *v )
++{
++    // TODO: test for correctness
++    return (__sync_sub_and_fetch(&(v->counter), 1) == 0);
++}
++
++/* when atomic32_dec_and_test uses predecrement, you want
++   postincrement to this function. so it isn't very useful */
++static __inline__ int atomic32_inc_and_test ( atomic32_t *v )
++{
++    // TODO: test for correctness
++    return (__sync_add_and_fetch(&(v->counter), 1) == 0);
++}
++
++/* HERE's useful */
++#define atomic32_test_and_inc( v ) \
++    ( atomic32_read_and_add ( v, 1 ) == 0 )
++
++static __inline__ int atomic32_test_and_set ( atomic32_t *v, int s, int t )
++{
++    return __sync_val_compare_and_swap(&(v->counter), t, s);
++}
++
++/* conditional modifications */
++static __inline__
++int atomic32_read_and_add_lt ( atomic32_t *v, int i, int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter < t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic32_add_if_lt( v, i, t ) \
++    ( atomic32_read_and_add_lt ( v, i, t ) < ( t ) )
++
++static __inline__
++int atomic32_read_and_add_le ( atomic32_t *v, int i, int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter <= t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic32_add_if_le( v, i, t ) \
++    ( atomic32_read_and_add_le ( v, i, t ) <= ( t ) )
++
++static __inline__
++int atomic32_read_and_add_eq ( atomic32_t *v, int i, int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter == t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic32_add_if_eq( v, i, t ) \
++    ( atomic32_read_and_add_eq ( v, i, t ) == ( t ) )
++
++static __inline__
++int atomic32_read_and_add_ne ( atomic32_t *v, int i, int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter != t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic32_add_if_ne( v, i, t ) \
++    ( atomic32_read_and_add_ne ( v, i, t ) != ( t ) )
++
++static __inline__
++int atomic32_read_and_add_ge ( atomic32_t *v, int i, int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter >= t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic32_add_if_ge( v, i, t ) \
++    ( atomic32_read_and_add_ge ( v, i, t ) >= ( t ) )
++
++static __inline__
++int atomic32_read_and_add_gt ( atomic32_t *v, int i, int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter > t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic32_add_if_gt( v, i, t ) \
++    ( atomic32_read_and_add_gt ( v, i, t ) > ( t ) )
++
++static __inline__
++int atomic32_read_and_add_odd ( atomic32_t *v, int i )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter % 2 == 1) ?
++         __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++static __inline__
++int atomic32_read_and_add_even ( atomic32_t *v, int i )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter % 2 == 0) ?
++         __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _h_atomic32_ */
+new file mode 100644
+--- /dev/null
++++ ncbi-vdb-2.8.0/interfaces/cc/gcc/ppc64le/atomic64.h
+@@ -0,0 +1,209 @@
++/*===========================================================================
++*  Based on "interfaces/cc/gcc/x86_64/atomic64.h"; modified by Cheng H. Lee
++*  (cheng.lee@lab7.io) to support little-endian POWER8 (ppc64le) systems. The
++*  original source file contained the following notice:
++*  --------------------------------------------------------------------------
++*
++*                            PUBLIC DOMAIN NOTICE
++*               National Center for Biotechnology Information
++*
++*  This software/database is a "United States Government Work" under the
++*  terms of the United States Copyright Act.  It was written as part of
++*  the author's official duties as a United States Government employee and
++*  thus cannot be copyrighted.  This software/database is freely available
++*  to the public for use. The National Library of Medicine and the U.S.
++*  Government have not placed any restriction on its use or reproduction.
++*
++*  Although all reasonable efforts have been taken to ensure the accuracy
++*  and reliability of the software and data, the NLM and the U.S.
++*  Government do not and cannot warrant the performance or results that
++*  may be obtained by using this software or data. The NLM and the U.S.
++*  Government disclaim all warranties, express or implied, including
++*  warranties of performance, merchantability or fitness for any particular
++*  purpose.
++*
++*  Please cite the author in any work or product based on this material.
++*  --------------------------------------------------------------------------
++*
++*  TODO (CHL): reimplement to use ppc64le assembly instead of GCC builtins
++* ===========================================================================
++*
++*/
++
++#ifndef _h_atomic64_
++#define _h_atomic64_
++
++#ifndef __GNUC__
++#error ppc64le/atomic64.h currently requires gcc
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/*
++ * Make sure gcc doesn't try to be clever and move things around
++ * on us. We need to use _exactly_ the address the user gave us,
++ * not some alias that contains the same information.
++ */
++typedef struct atomic64_t atomic64_t;
++struct atomic64_t
++{
++    volatile long int counter;
++};
++
++/* int atomic64_read ( const atomic64_t *v ); */
++#define atomic64_read( v ) \
++    ( ( v ) -> counter )
++
++/* void atomic64_set ( atomic64_t *v, long int i ); */
++#define atomic64_set( v, i ) \
++    ( ( void ) ( ( ( v ) -> counter ) = ( i ) ) )
++
++/* add to v -> counter and return the prior value */
++static __inline__ long int atomic64_read_and_add ( atomic64_t *v, long int i )
++{
++    return __sync_fetch_and_add(&(v->counter), i);
++}
++
++/* if no read is needed, define the least expensive atomic add */
++#define atomic64_add( v, i ) \
++    atomic64_read_and_add ( v, i )
++
++/* add to v -> counter and return the result */
++static __inline__ long int atomic64_add_and_read ( atomic64_t *v, long int i )
++{
++    return __sync_add_and_fetch(&(v->counter), i);
++}
++
++/* just don't try to find out what the result was */
++static __inline__ void atomic64_inc ( atomic64_t *v )
++{
++    __sync_fetch_and_add(&(v->counter), 1);
++}
++
++static __inline__ void atomic64_dec ( atomic64_t *v )
++{
++    __sync_fetch_and_sub(&(v->counter), 1);
++}
++
++/* decrement by one and test result for 0 */
++static __inline__ int atomic64_dec_and_test ( atomic64_t *v )
++{
++    // TODO: test for correctness
++    return (__sync_sub_and_fetch(&(v->counter), 1) == 0);
++}
++
++/* when atomic64_dec_and_test uses predecrement, you want
++   postincrement to this function. so it isn't very useful */
++static __inline__ int atomic64_inc_and_test ( atomic64_t *v )
++{
++    // TODO: test for correctness
++    return (__sync_add_and_fetch(&(v->counter), 1) == 0);
++}
++
++/* HERE's useful */
++#define atomic64_test_and_inc( v ) \
++    ( atomic64_read_and_add ( v, 1L ) == 0 )
++
++static __inline__ long int atomic64_test_and_set ( atomic64_t *v, long int s, long int t )
++{
++    return __sync_val_compare_and_swap(&(v->counter), t, s);
++}
++
++/* conditional modifications */
++static __inline__
++long int atomic64_read_and_add_lt ( atomic64_t *v, long int i, long int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter < t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic64_add_if_lt( v, i, t ) \
++    ( atomic64_read_and_add_lt ( v, i, t ) < ( t ) )
++
++static __inline__
++long int atomic64_read_and_add_le ( atomic64_t *v, long int i, long int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter <= t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic64_add_if_le( v, i, t ) \
++    ( atomic64_read_and_add_le ( v, i, t ) <= ( t ) )
++
++static __inline__
++long int atomic64_read_and_add_eq ( atomic64_t *v, long int i, long int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter == t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic64_add_if_eq( v, i, t ) \
++    ( atomic64_read_and_add_eq ( v, i, t ) == ( t ) )
++
++static __inline__
++long int atomic64_read_and_add_ne ( atomic64_t *v, long int i, long int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter != t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic64_add_if_ne( v, i, t ) \
++    ( atomic64_read_and_add_ne ( v, i, t ) != ( t ) )
++
++static __inline__
++long int atomic64_read_and_add_ge ( atomic64_t *v, long int i, long int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter >= t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic64_add_if_ge( v, i, t ) \
++    ( atomic64_read_and_add_ge ( v, i, t ) >= ( t ) )
++
++static __inline__
++long int atomic64_read_and_add_gt ( atomic64_t *v, long int i, long int t )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter > t) ?
++        __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#define atomic64_add_if_gt( v, i, t ) \
++    ( atomic64_read_and_add_gt ( v, i, t ) > ( t ) )
++
++static __inline__
++long int atomic64_read_and_add_odd ( atomic64_t *v, long int i )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter % 2 == 1) ?
++         __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++static __inline__
++long int atomic64_read_and_add_even ( atomic64_t *v, long int i )
++{
++    // TODO: test for correctness and atomicity
++    return (v->counter % 2 == 0) ?
++         __sync_fetch_and_add(&(v->counter), i) :
++        v->counter;
++}
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _h_atomic64_ */
+new file mode 100644
+--- /dev/null
++++ ncbi-vdb-2.8.0/interfaces/cc/gcc/ppc64le/bitstr.h
+@@ -0,0 +1,43 @@
++/*===========================================================================
++*  Copied from "interfaces/cc/gcc/x86_64/bitstr.h" by Cheng H. Lee
++*  (cheng.lee@lab7.io) to support little-endian POWER8 (ppc64le) systems. The
++*  original source file contained the following notice:
++*  --------------------------------------------------------------------------
++*
++*                            PUBLIC DOMAIN NOTICE
++*               National Center for Biotechnology Information
++*
++*  This software/database is a "United States Government Work" under the
++*  terms of the United States Copyright Act.  It was written as part of
++*  the author's official duties as a United States Government employee and
++*  thus cannot be copyrighted.  This software/database is freely available
++*  to the public for use. The National Library of Medicine and the U.S.
++*  Government have not placed any restriction on its use or reproduction.
++*
++*  Although all reasonable efforts have been taken to ensure the accuracy
++*  and reliability of the software and data, the NLM and the U.S.
++*  Government do not and cannot warrant the performance or results that
++*  may be obtained by using this software or data. The NLM and the U.S.
++*  Government disclaim all warranties, express or implied, including
++*  warranties of performance, merchantability or fitness for any particular
++*  purpose.
++*
++*  Please cite the author in any work or product based on this material.
++*
++* ===========================================================================
++*
++*/
++
++#ifndef _h_bitstr_
++#define _h_bitstr_
++
++/* use 64-bit accumulator, 32-bit word size */
++#define WRDSIZE 32
++#define WRDSHIFT 5
++#define WRD uint32_t
++#define ACC uint64_t
++#define BSWAP( x ) bswap_32 ( x )
++
++#include "../noarch/bitstr.h"
++
++#endif /* _h_bitstr_ */
+new file mode 100644
+--- /dev/null
++++ ncbi-vdb-2.8.0/interfaces/cc/gcc/ppc64le/byteswap.h
+@@ -0,0 +1,76 @@
++/*===========================================================================
++*  Based on "interfaces/cc/gcc/x86_64/byteswap.h"; modified by Cheng H. Lee
++*  (cheng.lee@lab7.io) to support little-endian POWER8 (ppc64le) systems. The
++*  original source file contained the following notice:
++*  --------------------------------------------------------------------------
++*
++*                            PUBLIC DOMAIN NOTICE
++*               National Center for Biotechnology Information
++*
++*  This software/database is a "United States Government Work" under the
++*  terms of the United States Copyright Act.  It was written as part of
++*  the author's official duties as a United States Government employee and
++*  thus cannot be copyrighted.  This software/database is freely available
++*  to the public for use. The National Library of Medicine and the U.S.
++*  Government have not placed any restriction on its use or reproduction.
++*
++*  Although all reasonable efforts have been taken to ensure the accuracy
++*  and reliability of the software and data, the NLM and the U.S.
++*  Government do not and cannot warrant the performance or results that
++*  may be obtained by using this software or data. The NLM and the U.S.
++*  Government disclaim all warranties, express or implied, including
++*  warranties of performance, merchantability or fitness for any particular
++*  purpose.
++*
++*  Please cite the author in any work or product based on this material.
++*  --------------------------------------------------------------------------
++*
++*  TODO (CHL): reimplement to use ppc64le assembly instead of GCC builtins
++* ===========================================================================
++*
++*/
++
++#ifndef _h_byteswap_
++#define _h_byteswap_
++
++#ifdef _BYTESWAP_H
++#warning "GNU byteswap.h being used"
++#else
++
++#ifndef __GNUC__
++#error "ppc64le/byteswap.h" currently requires gcc
++#endif
++
++#define _BYTESWAP_H	1234
++
++#include <stdint.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++/* perform single instruction byte swap */
++static __inline__ uint16_t bswap_16 ( uint16_t i )
++{
++    return __builtin_bswap16(i);
++}
++
++/* perform single instruction byte swap */
++static __inline__ uint32_t bswap_32 ( uint32_t i )
++{
++    return __builtin_bswap32(i);
++}
++
++/* perform multi-instruction byte swap */
++static __inline__ uint64_t bswap_64 ( uint64_t i )
++{
++    return __builtin_bswap64(i);
++}
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _BYTESWAP_H */
++#endif /* _h_byteswap_ */
+new file mode 100644
+--- /dev/null
++++ ncbi-vdb-2.8.0/interfaces/cc/gcc/ppc64le/strtol.h
+@@ -0,0 +1,73 @@
++/*===========================================================================
++*  Copied from "interfaces/cc/gcc/x86_64/strtol.h" by Cheng H. Lee
++*  (cheng.lee@lab7.io) to support little-endian POWER8 (ppc64le) systems. The
++*  original source file contained the following notice:
++*  --------------------------------------------------------------------------
++*
++*                            PUBLIC DOMAIN NOTICE
++*               National Center for Biotechnology Information
++*
++*  This software/database is a "United States Government Work" under the
++*  terms of the United States Copyright Act.  It was written as part of
++*  the author's official duties as a United States Government employee and
++*  thus cannot be copyrighted.  This software/database is freely available
++*  to the public for use. The National Library of Medicine and the U.S.
++*  Government have not placed any restriction on its use or reproduction.
++*
++*  Although all reasonable efforts have been taken to ensure the accuracy
++*  and reliability of the software and data, the NLM and the U.S.
++*  Government do not and cannot warrant the performance or results that
++*  may be obtained by using this software or data. The NLM and the U.S.
++*  Government disclaim all warranties, express or implied, including
++*  warranties of performance, merchantability or fitness for any particular
++*  purpose.
++*
++*  Please cite the author in any work or product based on this material.
++*
++* ===========================================================================
++*
++*/
++
++#ifndef _h_strtol_
++#define _h_strtol_
++
++#ifndef _h_klib_defs_
++#include <klib/defs.h>
++#endif
++
++#include <stdlib.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++
++/*--------------------------------------------------------------------------
++ * strtoi32
++ * strtou32
++ *  based upon actual usage
++ */
++#define strtoi32( str, endp, base ) \
++    ( int32_t ) strtol ( str, endp, base )
++
++#define strtou32( str, endp, base ) \
++    ( uint32_t ) strtoul ( str, endp, base )
++
++
++/*--------------------------------------------------------------------------
++ * strtoi64
++ * strtou64
++ *  based upon actual usage
++ */
++#define strtoi64( str, endp, base ) \
++    strtol ( str, endp, base )
++
++#define strtou64( str, endp, base ) \
++    strtoul ( str, endp, base )
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _h_strtol_ */
+--- ncbi-vdb-2.8.0/libs/search/nucstrstr.c
++++ ncbi-vdb-2.8.0/libs/search/nucstrstr.c
+@@ -44,6 +44,10 @@
+ #define TRACE_RESULT 1
+ #define TRACE_PATMASK 1
+ 
++#if defined(__PPC64__)
++#include <veclib/vec128int.h>
++#endif
++
+ #if __INTEL_COMPILER || defined __SSE2__
+ 
+ #include <emmintrin.h>
+@@ -148,7 +152,7 @@
+ #if TRACE_OPERATIONS
+ 
+ #define COPY_NUCREG( to, from ) \
+-    _mm_storeu_si128 ( ( __m128i* ) ( to ) . b, ( from ) )
++    vec_storeu1q ( ( __m128i* ) ( to ) . b, ( from ) )
+ 
+ /* sprintf_2na
+  *  print 2na sequence
+@@ -408,8 +412,8 @@
+     nucpat_t pattern, nucpat_t mask )
+ {
+     char str [ 65 ];
+-    nucreg_t nr = _mm_loadu_si128 ( ( const __m128i* ) pattern . b );
+-    nucreg_t nm = _mm_loadu_si128 ( ( const __m128i* ) mask . b );
++    nucreg_t nr = vec_loadu1q ( ( const __m128i* ) pattern . b );
++    nucreg_t nm = vec_loadu1q ( ( const __m128i* ) mask . b );
+ 
+     assert ( size < sizeof str );
+     memcpy ( str, fasta, size );
+@@ -425,8 +429,8 @@
+     nucpat_t pattern, nucpat_t mask )
+ {
+     char str [ 33 ];
+-    nucreg_t nr = _mm_loadu_si128 ( ( const __m128i* ) pattern . b );
+-    nucreg_t nm = _mm_loadu_si128 ( ( const __m128i* ) mask . b );
++    nucreg_t nr = vec_loadu1q ( ( const __m128i* ) pattern . b );
++    nucreg_t nm = vec_loadu1q ( ( const __m128i* ) mask . b );
+ 
+     assert ( size < sizeof str );
+     memcpy ( str, fasta, size );
+@@ -441,8 +445,8 @@
+ void PARSE_2NA_SHIFT ( unsigned int idx, nucpat_t pattern, nucpat_t mask )
+ {
+     char str [ 65 ];
+-    nucreg_t nr = _mm_loadu_si128 ( ( const __m128i* ) pattern . b );
+-    nucreg_t nm = _mm_loadu_si128 ( ( const __m128i* ) mask . b );
++    nucreg_t nr = vec_loadu1q ( ( const __m128i* ) pattern . b );
++    nucreg_t nm = vec_loadu1q ( ( const __m128i* ) mask . b );
+ 
+     printf ( "  %s - pattern [ %u ]\n", sprintf_2na ( str, sizeof str, nr ), idx );
+     printf ( "  %s - mask [ %u ]\n", sprintf_m2na ( str, sizeof str, nm ), idx );
+@@ -452,8 +456,8 @@
+ void PARSE_4NA_SHIFT ( unsigned int idx, nucpat_t pattern, nucpat_t mask )
+ {
+     char str [ 33 ];
+-    nucreg_t nr = _mm_loadu_si128 ( ( const __m128i* ) pattern . b );
+-    nucreg_t nm = _mm_loadu_si128 ( ( const __m128i* ) mask . b );
++    nucreg_t nr = vec_loadu1q ( ( const __m128i* ) pattern . b );
++    nucreg_t nm = vec_loadu1q ( ( const __m128i* ) mask . b );
+ 
+     printf ( "  %s - pattern [ %u ]\n", sprintf_4na ( str, sizeof str, nr ), idx );
+     printf ( "  %s - mask [ %u ]\n", sprintf_m4na ( str, sizeof str, nm ), idx );
+@@ -1439,9 +1443,9 @@
+     __m128i buffer;
+     ( void ) ignore;
+     if ( ( ( size_t ) src & 15 ) == 0 )
+-        buffer = _mm_load_si128 ( ( const __m128i* ) src );
++        buffer = vec_load1q ( ( const __m128i* ) src );
+     else
+-        buffer = _mm_loadu_si128 ( ( const __m128i* ) src );
++        buffer = vec_loadu1q ( ( const __m128i* ) src );
+     return buffer;
+ }
+ #else
+@@ -1454,9 +1458,9 @@
+     if ( ( bytes = end - src ) >= 16 )
+     {
+         if ( ( ( size_t ) src & 15 ) == 0 )
+-            buffer = _mm_load_si128 ( ( const __m128i* ) src );
++            buffer = vec_load1q ( ( const __m128i* ) src );
+         else
+-            buffer = _mm_loadu_si128 ( ( const __m128i* ) src );
++            buffer = vec_loadu1q ( ( const __m128i* ) src );
+     }
+     else
+     {
+@@ -1483,21 +1487,21 @@
+             memset ( & tmp . b [ bytes ], 0, sizeof tmp . b - bytes );
+         }
+ 
+-        buffer = _mm_loadu_si128 ( ( const __m128i* ) tmp . b );
++        buffer = vec_loadu1q ( ( const __m128i* ) tmp . b );
+     }
+     return buffer;
+ }
+ #endif
+ 
+ #define prime_registers( self ) \
+-    p0 = _mm_load_si128 ( ( const __m128i* ) self -> query [ 0 ] . pattern . b ); \
+-    m0 = _mm_load_si128 ( ( const __m128i* ) self -> query [ 0 ] . mask . b ); \
+-    p1 = _mm_load_si128 ( ( const __m128i* ) self -> query [ 1 ] . pattern . b ); \
+-    m1 = _mm_load_si128 ( ( const __m128i* ) self -> query [ 1 ] . mask . b ); \
+-    p2 = _mm_load_si128 ( ( const __m128i* ) self -> query [ 2 ] . pattern . b ); \
+-    m2 = _mm_load_si128 ( ( const __m128i* ) self -> query [ 2 ] . mask . b ); \
+-    p3 = _mm_load_si128 ( ( const __m128i* ) self -> query [ 3 ] . pattern . b ); \
+-    m3 = _mm_load_si128 ( ( const __m128i* ) self -> query [ 3 ] . mask . b )
++    p0 = vec_load1q ( ( const __m128i* ) self -> query [ 0 ] . pattern . b ); \
++    m0 = vec_load1q ( ( const __m128i* ) self -> query [ 0 ] . mask . b ); \
++    p1 = vec_load1q ( ( const __m128i* ) self -> query [ 1 ] . pattern . b ); \
++    m1 = vec_load1q ( ( const __m128i* ) self -> query [ 1 ] . mask . b ); \
++    p2 = vec_load1q ( ( const __m128i* ) self -> query [ 2 ] . pattern . b ); \
++    m2 = vec_load1q ( ( const __m128i* ) self -> query [ 2 ] . mask . b ); \
++    p3 = vec_load1q ( ( const __m128i* ) self -> query [ 3 ] . pattern . b ); \
++    m3 = vec_load1q ( ( const __m128i* ) self -> query [ 3 ] . mask . b )
+ 
+ static
+ int eval_2na_8 ( const NucStrFastaExpr *self,
+@@ -1505,7 +1509,7 @@
+ {
+ #define qbytes 1
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi8 ( a, b )
++    vec_compareeq16sb ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -1591,27 +1595,27 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, p0 );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_2NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, p1 );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_2NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, p2 );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_2NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, p3 );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_2NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -1672,14 +1676,14 @@
+ 
+ #if qbytes > 1
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 1 );
++                buffer = vec_shiftrightbytes1q ( buffer, 1 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+                 {
+                     slam >>= 8;
+                     slam |= ( int ) p [ 0 ] << 8;
+-                    buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                    buffer = vec_insert8sh ( buffer, slam, 7 );
+                 }
+                 
+                 /* always increment source */
+@@ -1708,12 +1712,12 @@
+             {
+                 if ( ( ( size_t ) ( p - src ) & 1 ) != 0 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 1 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 1 );
+                     if ( p < end )
+                     {
+                         slam >>= 8;
+                         slam |= ( int ) p [ 0 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                     ++ p;
+                 }
+@@ -1721,55 +1725,55 @@
+                 if ( src + 16 <= end ) switch ( p - src )
+                 {
+                 case 4:
+-                    buffer = _mm_srli_si128 ( buffer, 12 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 12 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
+                     break;
+                 case 6:
+-                    buffer = _mm_srli_si128 ( buffer, 10 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 10 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
+                     break;
+                 case 8:
+-                    buffer = _mm_srli_si128 ( buffer, 8 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 8 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
+                     break;
+                 case 10:
+-                    buffer = _mm_srli_si128 ( buffer, 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
+                     break;
+                 case 12:
+-                    buffer = _mm_srli_si128 ( buffer, 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
+                     break;
+                 case 14:
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
+                     break;
+                 }
+ 
+                 else for ( ; p - src < 16; p += 2 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                     if ( p < end )
+                     {
+                         slam = p [ 0 ];
+                         if ( p + 1 < end )
+                             slam |= ( int ) p [ 1 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                 }
+             }
+@@ -1798,7 +1802,7 @@
+ {
+ #define qbytes 2
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi16 ( a, b )
++    vec_compareeq8sh ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -1884,27 +1888,27 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, p0 );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_2NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, p1 );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_2NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, p2 );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_2NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, p3 );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_2NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -1965,14 +1969,14 @@
+ 
+ #if qbytes > 1
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 1 );
++                buffer = vec_shiftrightbytes1q ( buffer, 1 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+                 {
+                     slam >>= 8;
+                     slam |= ( int ) p [ 0 ] << 8;
+-                    buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                    buffer = vec_insert8sh ( buffer, slam, 7 );
+                 }
+                 
+                 /* always increment source */
+@@ -2001,12 +2005,12 @@
+             {
+                 if ( ( ( size_t ) ( p - src ) & 1 ) != 0 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 1 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 1 );
+                     if ( p < end )
+                     {
+                         slam >>= 8;
+                         slam |= ( int ) p [ 0 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                     ++ p;
+                 }
+@@ -2014,55 +2018,55 @@
+                 if ( src + 16 <= end ) switch ( p - src )
+                 {
+                 case 4:
+-                    buffer = _mm_srli_si128 ( buffer, 12 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 12 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
+                     break;
+                 case 6:
+-                    buffer = _mm_srli_si128 ( buffer, 10 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 10 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
+                     break;
+                 case 8:
+-                    buffer = _mm_srli_si128 ( buffer, 8 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 8 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
+                     break;
+                 case 10:
+-                    buffer = _mm_srli_si128 ( buffer, 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
+                     break;
+                 case 12:
+-                    buffer = _mm_srli_si128 ( buffer, 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
+                     break;
+                 case 14:
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
+                     break;
+                 }
+ 
+                 else for ( ; p - src < 16; p += 2 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                     if ( p < end )
+                     {
+                         slam = p [ 0 ];
+                         if ( p + 1 < end )
+                             slam |= ( int ) p [ 1 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                 }
+             }
+@@ -2091,7 +2095,7 @@
+ {
+ #define qbytes 4
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi32 ( a, b )
++    vec_compare4sw ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -2177,27 +2181,27 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, p0 );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_2NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, p1 );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_2NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, p2 );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_2NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, p3 );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_2NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -2258,14 +2262,14 @@
+ 
+ #if qbytes > 1
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 1 );
++                buffer = vec_shiftrightbytes1q ( buffer, 1 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+                 {
+                     slam >>= 8;
+                     slam |= ( int ) p [ 0 ] << 8;
+-                    buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                    buffer = vec_insert8sh ( buffer, slam, 7 );
+                 }
+                 
+                 /* always increment source */
+@@ -2294,12 +2298,12 @@
+             {
+                 if ( ( ( size_t ) ( p - src ) & 1 ) != 0 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 1 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 1 );
+                     if ( p < end )
+                     {
+                         slam >>= 8;
+                         slam |= ( int ) p [ 0 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                     ++ p;
+                 }
+@@ -2307,55 +2311,55 @@
+                 if ( src + 16 <= end ) switch ( p - src )
+                 {
+                 case 4:
+-                    buffer = _mm_srli_si128 ( buffer, 12 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 12 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
+                     break;
+                 case 6:
+-                    buffer = _mm_srli_si128 ( buffer, 10 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 10 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
+                     break;
+                 case 8:
+-                    buffer = _mm_srli_si128 ( buffer, 8 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 8 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
+                     break;
+                 case 10:
+-                    buffer = _mm_srli_si128 ( buffer, 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
+                     break;
+                 case 12:
+-                    buffer = _mm_srli_si128 ( buffer, 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
+                     break;
+                 case 14:
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
+                     break;
+                 }
+ 
+                 else for ( ; p - src < 16; p += 2 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                     if ( p < end )
+                     {
+                         slam = p [ 0 ];
+                         if ( p + 1 < end )
+                             slam |= ( int ) p [ 1 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                 }
+             }
+@@ -2384,7 +2388,7 @@
+ {
+ #define qbytes 8
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi32 ( a, b )
++    vec_compare4sw ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -2471,27 +2475,27 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, p0 );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_2NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, p1 );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_2NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, p2 );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_2NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, p3 );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_2NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -2552,14 +2556,14 @@
+ 
+ #if qbytes > 1
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 1 );
++                buffer = vec_shiftrightbytes1q ( buffer, 1 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+                 {
+                     slam >>= 8;
+                     slam |= ( int ) p [ 0 ] << 8;
+-                    buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                    buffer = vec_insert8sh ( buffer, slam, 7 );
+                 }
+                 
+                 /* always increment source */
+@@ -2588,12 +2592,12 @@
+             {
+                 if ( ( ( size_t ) ( p - src ) & 1 ) != 0 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 1 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 1 );
+                     if ( p < end )
+                     {
+                         slam >>= 8;
+                         slam |= ( int ) p [ 0 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                     ++ p;
+                 }
+@@ -2601,55 +2605,55 @@
+                 if ( src + 16 <= end ) switch ( p - src )
+                 {
+                 case 4:
+-                    buffer = _mm_srli_si128 ( buffer, 12 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 12 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
+                     break;
+                 case 6:
+-                    buffer = _mm_srli_si128 ( buffer, 10 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 10 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
+                     break;
+                 case 8:
+-                    buffer = _mm_srli_si128 ( buffer, 8 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 8 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
+                     break;
+                 case 10:
+-                    buffer = _mm_srli_si128 ( buffer, 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
+                     break;
+                 case 12:
+-                    buffer = _mm_srli_si128 ( buffer, 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
+                     break;
+                 case 14:
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
+                     break;
+                 }
+ 
+                 else for ( ; p - src < 16; p += 2 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                     if ( p < end )
+                     {
+                         slam = p [ 0 ];
+                         if ( p + 1 < end )
+                             slam |= ( int ) p [ 1 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                 }
+             }
+@@ -2678,7 +2682,7 @@
+ {
+ #define qbytes 16
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi32 ( a, b )
++    vec_compare4sw ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -2764,27 +2768,27 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, p0 );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_2NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, p1 );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_2NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, p2 );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_2NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, p3 );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_2NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -2845,14 +2849,14 @@
+ 
+ #if qbytes > 1
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 1 );
++                buffer = vec_shiftrightbytes1q ( buffer, 1 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+                 {
+                     slam >>= 8;
+                     slam |= ( int ) p [ 0 ] << 8;
+-                    buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                    buffer = vec_insert8sh ( buffer, slam, 7 );
+                 }
+                 
+                 /* always increment source */
+@@ -2881,12 +2885,12 @@
+             {
+                 if ( ( ( size_t ) ( p - src ) & 1 ) != 0 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 1 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 1 );
+                     if ( p < end )
+                     {
+                         slam >>= 8;
+                         slam |= ( int ) p [ 0 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                     ++ p;
+                 }
+@@ -2894,55 +2898,55 @@
+                 if ( src + 16 <= end ) switch ( p - src )
+                 {
+                 case 4:
+-                    buffer = _mm_srli_si128 ( buffer, 12 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 12 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
+                     break;
+                 case 6:
+-                    buffer = _mm_srli_si128 ( buffer, 10 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 10 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
+                     break;
+                 case 8:
+-                    buffer = _mm_srli_si128 ( buffer, 8 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 8 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
+                     break;
+                 case 10:
+-                    buffer = _mm_srli_si128 ( buffer, 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
+                     break;
+                 case 12:
+-                    buffer = _mm_srli_si128 ( buffer, 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
+                     break;
+                 case 14:
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
+                     break;
+                 }
+ 
+                 else for ( ; p - src < 16; p += 2 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                     if ( p < end )
+                     {
+                         slam = p [ 0 ];
+                         if ( p + 1 < end )
+                             slam |= ( int ) p [ 1 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                 }
+             }
+@@ -2972,7 +2976,7 @@
+ #define positional 1
+ #define qbytes 16
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi32 ( a, b )
++    vec_compare4sw ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -3068,27 +3072,27 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, p0 );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_2NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, p1 );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_2NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, p2 );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_2NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, p3 );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_2NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -3171,14 +3175,14 @@
+ 
+ #if qbytes > 1
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 1 );
++                buffer = vec_shiftrightbytes1q ( buffer, 1 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+                 {
+                     slam >>= 8;
+                     slam |= ( int ) p [ 0 ] << 8;
+-                    buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                    buffer = vec_insert8sh ( buffer, slam, 7 );
+                 }
+                 
+                 /* always increment source */
+@@ -3207,12 +3211,12 @@
+             {
+                 if ( ( ( size_t ) ( p - src ) & 1 ) != 0 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 1 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 1 );
+                     if ( p < end )
+                     {
+                         slam >>= 8;
+                         slam |= ( int ) p [ 0 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                     ++ p;
+                 }
+@@ -3220,55 +3224,55 @@
+                 if ( src + 16 <= end ) switch ( p - src )
+                 {
+                 case 4:
+-                    buffer = _mm_srli_si128 ( buffer, 12 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 12 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 5 ], 7 );
+                     break;
+                 case 6:
+-                    buffer = _mm_srli_si128 ( buffer, 10 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 10 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 3 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 4 ], 7 );
+                     break;
+                 case 8:
+-                    buffer = _mm_srli_si128 ( buffer, 8 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 8 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 3 ], 7 );
+                     break;
+                 case 10:
+-                    buffer = _mm_srli_si128 ( buffer, 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 5 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 2 ], 7 );
+                     break;
+                 case 12:
+-                    buffer = _mm_srli_si128 ( buffer, 4 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 4 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 6 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 1 ], 7 );
+                     break;
+                 case 14:
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
+-                    buffer = _mm_insert_epi16 ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
++                    buffer = vec_insert8sh ( buffer, ( ( const uint16_t* ) p ) [ 0 ], 7 );
+                     break;
+                 }
+ 
+                 else for ( ; p - src < 16; p += 2 )
+                 {
+-                    buffer = _mm_srli_si128 ( buffer, 2 );
++                    buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                     if ( p < end )
+                     {
+                         slam = p [ 0 ];
+                         if ( p + 1 < end )
+                             slam |= ( int ) p [ 1 ] << 8;
+-                        buffer = _mm_insert_epi16 ( buffer, slam, 7 );
++                        buffer = vec_insert8sh ( buffer, slam, 7 );
+                     }
+                 }
+             }
+@@ -3311,7 +3315,7 @@
+     tmp . w [ 6 ] = expand_2na [ src [ 6 ] ];
+     tmp . w [ 7 ] = expand_2na [ src [ 7 ] ];
+ 
+-    buffer = _mm_loadu_si128 ( ( const __m128i* ) tmp . b );
++    buffer = vec_loadu1q ( ( const __m128i* ) tmp . b );
+     return buffer;
+ }
+ #else
+@@ -3355,7 +3359,7 @@
+         }
+     }
+ 
+-    buffer = _mm_loadu_si128 ( ( const __m128i* ) tmp . b );
++    buffer = vec_loadu1q ( ( const __m128i* ) tmp . b );
+     return buffer;
+ }
+ #endif
+@@ -3366,7 +3370,7 @@
+ {
+ #define qbytes 2
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi16 ( a, b )
++    vec_compareeq8sh ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -3446,31 +3450,31 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, p0 );
+-                rj = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, p0 );
++                rj = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_4NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, p1 );
+-                rj = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, p1 );
++                rj = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_4NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, p2 );
+-                rj = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, p2 );
++                rj = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_4NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, p3 );
+-                rj = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, p3 );
++                rj = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_4NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -3531,11 +3535,11 @@
+ 
+ #if qbytes > 2
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+                 
+                 /* always increment source */
+                 ++ p;
+@@ -3561,9 +3565,9 @@
+                 buffer = prime_buffer_4na ( src, end );
+             else for ( ; p - src < 8; ++ p )
+             {
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+             }
+ #endif
+ 
+@@ -3588,7 +3592,7 @@
+ {
+ #define qbytes 4
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi32 ( a, b )
++    vec_compare4sw ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -3668,31 +3672,31 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, p0 );
+-                rj = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, p0 );
++                rj = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_4NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, p1 );
+-                rj = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, p1 );
++                rj = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_4NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, p2 );
+-                rj = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, p2 );
++                rj = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_4NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, p3 );
+-                rj = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, p3 );
++                rj = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_4NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -3753,11 +3757,11 @@
+ 
+ #if qbytes > 2
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+                 
+                 /* always increment source */
+                 ++ p;
+@@ -3783,9 +3787,9 @@
+                 buffer = prime_buffer_4na ( src, end );
+             else for ( ; p - src < 8; ++ p )
+             {
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+             }
+ #endif
+ 
+@@ -3810,7 +3814,7 @@
+ {
+ #define qbytes 8
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi32 ( a, b )
++    vec_compare4sw ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -3891,31 +3895,31 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, p0 );
+-                rj = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, p0 );
++                rj = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_4NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, p1 );
+-                rj = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, p1 );
++                rj = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_4NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, p2 );
+-                rj = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, p2 );
++                rj = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_4NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, p3 );
+-                rj = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, p3 );
++                rj = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_4NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -3976,11 +3980,11 @@
+ 
+ #if qbytes > 2
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+                 
+                 /* always increment source */
+                 ++ p;
+@@ -4006,9 +4010,9 @@
+                 buffer = prime_buffer_4na ( src, end );
+             else for ( ; p - src < 8; ++ p )
+             {
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+             }
+ #endif
+ 
+@@ -4033,7 +4037,7 @@
+ {
+ #define qbytes 16
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi32 ( a, b )
++    vec_compare4sw ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -4113,31 +4117,31 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, p0 );
+-                rj = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, p0 );
++                rj = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_4NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, p1 );
+-                rj = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, p1 );
++                rj = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_4NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, p2 );
+-                rj = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, p2 );
++                rj = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_4NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, p3 );
+-                rj = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, p3 );
++                rj = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_4NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -4198,11 +4202,11 @@
+ 
+ #if qbytes > 2
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+                 
+                 /* always increment source */
+                 ++ p;
+@@ -4228,9 +4232,9 @@
+                 buffer = prime_buffer_4na ( src, end );
+             else for ( ; p - src < 8; ++ p )
+             {
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+             }
+ #endif
+ 
+@@ -4256,7 +4260,7 @@
+ #define positional 1
+ #define qbytes 16
+ #define _mm_cmpeq_epi( a, b ) \
+-    _mm_cmpeq_epi32 ( a, b )
++    vec_compare4sw ( a, b )
+ #if NEVER_MATCH
+ #define res_adj( res ) \
+     res = 0
+@@ -4346,31 +4350,31 @@
+ 
+                 /* perform comparisons */
+     case 0:
+-                ri = _mm_and_si128 ( buffer, p0 );
+-                rj = _mm_and_si128 ( buffer, m0 );
++                ri = vec_bitand1q ( buffer, p0 );
++                rj = vec_bitand1q ( buffer, m0 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                ra = _mm_movemask_epi8 ( ri );
++                ra = vec_extractupperbit16sb ( ri );
+                 res_adj ( ra );
+                 ALIGN_4NA_RESULT ( buffer, p0, m0, ri, ra );
+     case 1:
+-                ri = _mm_and_si128 ( buffer, p1 );
+-                rj = _mm_and_si128 ( buffer, m1 );
++                ri = vec_bitand1q ( buffer, p1 );
++                rj = vec_bitand1q ( buffer, m1 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rb = _mm_movemask_epi8 ( ri );
++                rb = vec_extractupperbit16sb ( ri );
+                 res_adj ( rb );
+                 ALIGN_4NA_RESULT ( buffer, p1, m1, ri, rb );
+     case 2:
+-                ri = _mm_and_si128 ( buffer, p2 );
+-                rj = _mm_and_si128 ( buffer, m2 );
++                ri = vec_bitand1q ( buffer, p2 );
++                rj = vec_bitand1q ( buffer, m2 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rc = _mm_movemask_epi8 ( ri );
++                rc = vec_extractupperbit16sb ( ri );
+                 res_adj ( rc );
+                 ALIGN_4NA_RESULT ( buffer, p2, m2, ri, rc );
+     case 3:
+-                ri = _mm_and_si128 ( buffer, p3 );
+-                rj = _mm_and_si128 ( buffer, m3 );
++                ri = vec_bitand1q ( buffer, p3 );
++                rj = vec_bitand1q ( buffer, m3 );
+                 ri = _mm_cmpeq_epi ( ri, rj );
+-                rd = _mm_movemask_epi8 ( ri );
++                rd = vec_extractupperbit16sb ( ri );
+                 res_adj ( rd );
+                 ALIGN_4NA_RESULT ( buffer, p3, m3, ri, rd );
+ 
+@@ -4453,11 +4457,11 @@
+ 
+ #if qbytes > 2
+                 /* shift buffer */
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+ 
+                 /* bring in new byte */
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+                 
+                 /* always increment source */
+                 ++ p;
+@@ -4483,9 +4487,9 @@
+                 buffer = prime_buffer_4na ( src, end );
+             else for ( ; p - src < 8; ++ p )
+             {
+-                buffer = _mm_srli_si128 ( buffer, 2 );
++                buffer = vec_shiftrightbytes1q ( buffer, 2 );
+                 if ( p < end )
+-                    buffer = _mm_insert_epi16 ( buffer, expand_2na [ * p ], 7 );
++                    buffer = vec_insert8sh ( buffer, expand_2na [ * p ], 7 );
+             }
+ #endif
+ 
+--- ncbi-vdb-2.8.0/setup/konfigure.perl
++++ ncbi-vdb-2.8.0/setup/konfigure.perl
+@@ -213,7 +213,7 @@
+ 
+ print "checking machine architecture... " unless ($AUTORUN);
+ println $MARCH unless ($AUTORUN);
+-unless ($MARCH =~ /x86_64/i || $MARCH =~ /i?86/i) {
++unless ($MARCH =~ /x86_64/i || $MARCH =~ /i?86/i || $MARCH =~ /ppc64le/i) {
+     println "configure: error: unsupported architecture '$OSTYPE'";
+     exit 1;
+ }
+@@ -300,6 +300,8 @@
+ 
+ if ($MARCH =~ /x86_64/i) {
+     $BITS = 64;
++} elsif ($MARCH =~ /ppc64le/i) {
++    $BITS = 64;
+ } elsif ($MARCH eq 'fat86') {
+     $BITS = '32_64';
+ } elsif ($MARCH =~ /i?86/i) {
