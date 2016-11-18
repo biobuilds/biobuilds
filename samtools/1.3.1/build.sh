@@ -54,3 +54,13 @@ env LD_LIBRARY_PATH="${PREFIX}/lib" \
 ##-------------------------------------------------------------------------
 
 make install
+
+# Some applications still rely on this API instead of using htslib exclusively,
+# so install the headers and static library in ${PREFIX}.
+#
+# WARNING: this package and htslib both provide a "sam.h" that aren't actually
+# compatible with each other. Be extra careful about which file you're actually
+# #including when using this package for development work.
+install -d "${PREFIX}/lib" "${PREFIX}/include/samtools"
+install -m 0644 libbam.a "${PREFIX}/lib"
+install -m 0644 *.h "${PREFIX}/include/samtools"

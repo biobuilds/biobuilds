@@ -20,7 +20,7 @@ source:
   md5: "a7471aa5a1eb7fc9cc4c6491d73c2d88"
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
