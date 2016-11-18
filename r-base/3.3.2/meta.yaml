@@ -1,0 +1,81 @@
+package:
+  name: r-base
+  version: 3.3.2
+
+source:
+  fn: "R-3.3.2.tar.gz"
+  url:
+    - "https://cran.r-project.org/src/base/R-3/R-3.3.2.tar.gz"
+    - "http://download.lab7.io/sources/R-3.3.2.tar.gz"
+  sha1: "0e39e9c2d28fe6bab9c55ca23e08ba8727fd2fca"
+  patches:
+    - share-make-vars.mk.patch  # build recommended packages separately
+    - mac-unicode.patch
+    # Patches from the "r" channel and "conda-recipes" repository
+    - 0008-Darwin-set-DYLD_FALLBACK_LIBRARY_PATH.patch
+    #- 0009-AC_SEARCH_LIBS-ncursesw-then-ncurses.patch
+    - 0011-Linux-Do-not-modify-LD_LIBRARY_PATH.patch
+
+build:
+  # Window users should use the "r" anaconda channel instead
+  skip: True  # [win]
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+
+requirements:
+  build:
+    - gcc         # [not ppc64le]
+    - bzip2
+    - cairo       # [linux]
+    - curl        # needed so CRAN package installs work
+    - gsl
+    - icu 58.1
+    - jpeg 8d*
+    - libpng
+    - libtiff
+    - libxml2
+    - ncurses
+    - pango       # [linux]
+    - pcre
+    - readline
+    - tk
+    - xz
+    - zlib
+
+  run:
+    - libgcc    # [not ppc64le]
+    - bzip2
+    - cairo     # [linux]
+    - curl      # needed so CRAN package installs work
+    - gsl
+    - icu 58.1
+    - jpeg
+    - libpng
+    - libtiff
+    - libxml2
+    - ncurses
+    - pango     # [linux]
+    - pcre
+    - readline
+    - tk
+    - xz
+    - zlib
+
+test:
+  commands:
+    - R -h
+    - R --version
+    - Rscript --version
+    - Rscript -e 'cat("ok\\n")'
+
+about:
+  home: http://www.r-project.org/
+  license: GPL
+  summary: "Base binaries for the R statistical computing environment. You should install the 'r-recommended' package as well."

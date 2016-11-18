@@ -1,0 +1,73 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-matrix
+  version: "1.2_7.1"
+
+source:
+  fn: Matrix_1.2-7.1.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/Matrix_1.2-7.1.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/Matrix/Matrix_1.2-7.1.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  # Needed to ensure $PREFIX is long enough that patchelf doesn't change the
+  # size of the .so file(s), as changing the size of compiled R libraries
+  # triggers "ELF load command alignment not page-aligned" errors on ppc64le.
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base
+    - r-lattice
+    - posix               # [win]
+    - {{native}}toolchain # [win]
+    - gcc                 # [not ppc64le and not win]
+
+  run:
+    - r-base
+    - r-lattice
+    - libgcc              # [not ppc64le and not win]
+
+test:
+  commands:
+    - $R -e "library('Matrix')" # [not win]
+    - "\"%R%\" -e \"library('Matrix')\"" # [win]
+
+about:
+  home: http://Matrix.R-forge.R-project.org/
+  license: GPLv2
+  summary: "Classes and methods for dense and sparse matrix operations"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: Matrix
+# Version: 1.2-7.1
+# Date: 2016-08-29
+# Priority: recommended
+# Title: Sparse and Dense Matrix Classes and Methods
+# Author: Douglas Bates <bates@stat.wisc.edu> and Martin Maechler
+# Maintainer: Martin Maechler <mmaechler+Matrix@gmail.com>
+# Contact: Doug and Martin <Matrix-authors@R-project.org>
+# Description: Classes and methods for dense and sparse matrices and operations on them using 'LAPACK' and 'SuiteSparse'.
+# Depends: R (>= 3.0.1)
+# Imports: methods, graphics, grid, stats, utils, lattice
+# Suggests: expm, MASS
+# Enhances: MatrixModels, graph, SparseM, sfsmisc
+# Encoding: UTF-8
+# LazyData: no
+# LazyDataNote: not possible, since we use data/*.R *and* our classes
+# BuildResaveData: no
+# License: GPL (>= 2) | file LICENCE
+# URL: http://Matrix.R-forge.R-project.org/
+# NeedsCompilation: yes
+# Packaged: 2016-08-30 11:21:22 UTC; maechler
+# Repository: CRAN
+# Date/Publication: 2016-09-01 12:23:14
+#----------------------------------------------------------------------
