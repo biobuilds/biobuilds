@@ -1,5 +1,5 @@
 package:
-  name: r-biobase
+  name: bioconductor-biobase
   version: "2.30.0"
 
 source:
@@ -11,13 +11,14 @@ requirements:
   build:
     - r
     - gcc  # [not ppc64le]
-    - r-biocgenerics >=0.3.2
+    - bioconductor-biocgenerics >=0.3.2
   run:
     - r
     - libgcc  # [not ppc64le]
-    - r-biocgenerics >=0.3.2
+    - bioconductor-biocgenerics >=0.3.2
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/

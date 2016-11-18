@@ -1,5 +1,5 @@
 package:
-  name: r-multtest
+  name: bioconductor-multtest
   version: "2.26.0"
 
 source:
@@ -11,16 +11,16 @@ requirements:
   build:
     - r
     - gcc     # [not win and not ppc64le]
-    - r-biocgenerics
-    - r-biobase
+    - bioconductor-biocgenerics
+    - bioconductor-biobase
   run:
     - r
     - libgcc  # [not win and not ppc64le]
-    - r-biocgenerics
-    - r-biobase
+    - bioconductor-biocgenerics
+    - bioconductor-biobase
 
 build:
-  number: 0
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/

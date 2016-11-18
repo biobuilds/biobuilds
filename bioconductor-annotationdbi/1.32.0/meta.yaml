@@ -1,5 +1,5 @@
 package:
-  name: r-annotationdbi
+  name: bioconductor-annotationdbi
   version: "1.32.0"
 
 source:
@@ -13,20 +13,20 @@ requirements:
     - gcc  # [not ppc64le]
     - r-dbi
     - r-rsqlite
-    - r-biocgenerics >=0.15.10
-    - r-biobase >=1.17.0
-    - r-iranges
+    - bioconductor-biocgenerics >=0.15.10
+    - bioconductor-biobase >=1.17.0
+    - bioconductor-iranges
   run:
     - r
     - libgcc  # [not ppc64le]
     - r-dbi
     - r-rsqlite
-    - r-biocgenerics >=0.15.10
-    - r-biobase >=1.17.0
-    - r-iranges
+    - bioconductor-biocgenerics >=0.15.10
+    - bioconductor-biobase >=1.17.0
+    - bioconductor-iranges
 
 build:
-  number: 1
+  number: 2
   rpaths:
     - lib/R/lib/
     - lib/

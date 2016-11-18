@@ -1,5 +1,5 @@
 package:
-  name: r-biocgenerics
+  name: bioconductor-biocgenerics
   version: "0.16.1"
 
 source:
@@ -8,6 +8,7 @@ source:
   md5: c2148ffd86fc6f1f819c7f68eb2c744f
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/

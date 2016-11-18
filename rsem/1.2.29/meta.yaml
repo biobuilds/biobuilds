@@ -13,7 +13,7 @@ requirements:
     - perl
     - python
     - r
-    - r-ebseq >=1.2.0
+    - bioconductor-ebseq >=1.2.0
 
 source:
   fn: rsem-1.2.29.tar.gz
@@ -27,7 +27,7 @@ source:
     - perl-paths.patch
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS

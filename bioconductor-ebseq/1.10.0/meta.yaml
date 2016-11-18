@@ -1,5 +1,5 @@
 package:
-  name: r-ebseq
+  name: bioconductor-ebseq
   version: "1.10.0"
 
 source:
@@ -20,6 +20,7 @@ requirements:
     - r-testthat
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/

@@ -1,5 +1,5 @@
 package:
-  name: r-biocinstaller
+  name: bioconductor-biocinstaller
   version: "1.20.1"
 
 source:
@@ -8,6 +8,7 @@ source:
   md5: d6758faae696c9bbed2c5c43fcefdb00
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/

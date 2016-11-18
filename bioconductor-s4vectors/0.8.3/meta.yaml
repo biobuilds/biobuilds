@@ -1,5 +1,5 @@
 package:
-  name: r-s4vectors
+  name: bioconductor-s4vectors
   version: "0.8.3"
 
 source:
@@ -11,13 +11,14 @@ requirements:
   build:
     - r
     - gcc  # [not ppc64le]
-    - r-biocgenerics >=0.15.10
+    - bioconductor-biocgenerics >=0.15.10
   run:
     - r
     - libgcc  # [not ppc64le]
-    - r-biocgenerics >=0.15.10
+    - bioconductor-biocgenerics >=0.15.10
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/

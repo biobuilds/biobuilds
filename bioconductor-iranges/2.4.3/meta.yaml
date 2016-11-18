@@ -1,5 +1,5 @@
 package:
-  name: r-iranges
+  name: bioconductor-iranges
   version: "2.4.3"
 
 source:
@@ -11,15 +11,16 @@ requirements:
   build:
     - r
     - gcc  # [not ppc64le]
-    - r-biocgenerics >=0.15.10
-    - r-s4vectors >=0.7.19
+    - bioconductor-biocgenerics >=0.15.10
+    - bioconductor-s4vectors >=0.7.19
   run:
     - r
     - libgcc  # [not ppc64le]
-    - r-biocgenerics >=0.15.10
-    - r-s4vectors >=0.7.19
+    - bioconductor-biocgenerics >=0.15.10
+    - bioconductor-s4vectors >=0.7.19
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
