@@ -1,0 +1,60 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-memoise
+  version: "1.0.0"
+
+source:
+  fn: memoise_1.0.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/memoise_1.0.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/memoise/memoise_1.0.0.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - r-digest >=0.6.3
+
+  run:
+    - r-base
+    - r-digest >=0.6.3
+
+test:
+  commands:
+    - $R -e "library('memoise')" # [not win]
+    - "\"%R%\" -e \"library('memoise')\"" # [win]
+
+about:
+  home: https://github.com/hadley/memoise
+  license: MIT + file LICENSE
+  summary: "Cache the results of a function so that it returns the pre-computed value when called again with the same arguments"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Encoding: UTF-8
+# Package: memoise
+# Title: Memoisation of Functions
+# Version: 1.0.0
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", role = "aut"), person("Jim", "Hester", , "jim.hester@rstudio.com", role = c("aut", "cre")), person("Kirill", "MAzller", , "krlmlr+r@mailbox.org", role = "aut"))
+# Description: Cache the results of a function so that when you call it again with the same arguments it returns the pre-computed value.
+# URL: https://github.com/hadley/memoise
+# BugReports: https://github.com/hadley/memoise/issues
+# Imports: digest (>= 0.6.3)
+# Suggests: testthat
+# License: MIT + file LICENSE
+# RoxygenNote: 5.0.1
+# NeedsCompilation: no
+# Packaged: 2016-01-28 19:30:15 UTC; jhester
+# Author: Hadley Wickham [aut], Jim Hester [aut, cre], Kirill MAzller [aut]
+# Maintainer: Jim Hester <jim.hester@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2016-01-29 05:58:01
+#----------------------------------------------------------------------

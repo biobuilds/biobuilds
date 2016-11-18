@@ -1,0 +1,58 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-mnormt
+  version: "1.5_5"
+
+source:
+  fn: mnormt_1.5-5.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/mnormt_1.5-5.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/mnormt/mnormt_1.5-5.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - posix               # [win]
+    - {{native}}toolchain # [win]
+    - gcc                 # [not win and not ppc64le]
+
+  run:
+    - r-base
+    - libgcc              # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('mnormt')" # [not win]
+    - "\"%R%\" -e \"library('mnormt')\"" # [win]
+
+about:
+  home: 'http://azzalini.stat.unipd.it/SW/Pkg-mnormt'
+  license: GPLv2
+  summary: 'Multivariate normal and t distributions, computed using a non-Monte Carlo method'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: mnormt
+# Version: 1.5-5
+# Date: 2016-10-15
+# Title: The Multivariate Normal and t Distributions
+# Author: Fortran code by Alan Genz, R code by Adelchi Azzalini
+# Maintainer: Adelchi Azzalini <adelchi.azzalini@unipd.it>
+# Depends: R (>= 2.2.0)
+# Description: Functions are provided for computing the density and the distribution function of multivariate normal and "t" random variables, and for generating random vectors sampled from these distributions.   Probabilities are computed via non-Monte Carlo methods; different routines  are used in the case d=1, d=2, d>2, if d denotes the number of dimensions.
+# License: GPL-2 | GPL-3
+# URL: http://azzalini.stat.unipd.it/SW/Pkg-mnormt
+# NeedsCompilation: yes
+# Packaged: 2016-10-14 12:26:21 UTC; aa
+# Repository: CRAN
+# Date/Publication: 2016-10-15 13:08:50
+#----------------------------------------------------------------------

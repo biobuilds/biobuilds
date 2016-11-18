@@ -1,0 +1,62 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-digest
+  version: "0.6.10"
+
+source:
+  fn: digest_0.6.10.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/digest_0.6.10.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/digest/digest_0.6.10.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base
+    - posix               # [win]
+    - {{native}}toolchain # [win]
+    - gcc                 # [not win and not ppc64le]
+
+  run:
+    - r-base
+    - libgcc              # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('digest')" # [not win]
+    - "\"%R%\" -e \"library('digest')\"" # [win]
+
+about:
+  home: http://dirk.eddelbuettel.com/code/digest.html
+  license: GPLv2
+  summary: "digest() function for performing hash digests of arbitrary R objects"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: digest
+# Author: Dirk Eddelbuettel <edd@debian.org> with contributions  by Antoine Lucas, Jarek Tuszynski, Henrik Bengtsson, Simon Urbanek, Mario Frasca, Bryan Lewis, Murray Stokely, Hannes Muehleisen, Duncan Murdoch, Jim Hester, Wush Wu, Qiang Kou, Thierry Onkelinx,  Michel Lang and Viliam Simko.
+# Version: 0.6.10
+# Date: 2016-08-02
+# Maintainer: Dirk Eddelbuettel <edd@debian.org>
+# Title: Create Compact Hash Digests of R Objects
+# Description: Implementation of a function 'digest()' for the creation  of hash digests of arbitrary R objects (using the 'md5', 'sha-1', 'sha-256',  'crc32', 'xxhash' and 'murmurhash' algorithms) permitting easy comparison of R language objects, as well as a function 'hmac()' to create hash-based message authentication code. Please note that this package is not meant to be deployed for cryptographic purposes for which more comprehensive (and widely tested) libraries such as 'OpenSSL' should be used.
+# URL: http://dirk.eddelbuettel.com/code/digest.html
+# BugReports: https://github.com/eddelbuettel/digest/issues
+# Depends: R (>= 2.4.1)
+# License: GPL-2
+# Suggests: knitr, rmarkdown
+# VignetteBuilder: knitr
+# NeedsCompilation: yes
+# Packaged: 2016-08-02 12:33:03.551145 UTC; edd
+# Repository: CRAN
+# Date/Publication: 2016-08-02 16:59:46
+#----------------------------------------------------------------------

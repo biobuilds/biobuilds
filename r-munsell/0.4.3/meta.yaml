@@ -1,0 +1,58 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-munsell
+  version: "0.4.3"
+
+source:
+  fn: munsell_0.4.3.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/munsell_0.4.3.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/munsell/munsell_0.4.3.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - r-colorspace
+
+  run:
+    - r-base
+    - r-colorspace
+
+test:
+  commands:
+    - $R -e "library('munsell')" # [not win]
+    - "\"%R%\" -e \"library('munsell')\"" # [win]
+
+about:
+  home: 'https://cran.r-project.org/web/packages/munsell/index.html'
+  license: MIT
+  license_file: LICENSE
+  summary: 'Functions for exploring and using the Munsell colour system'
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: munsell
+# Type: Package
+# Title: Utilities for Using Munsell Colours
+# Version: 0.4.3
+# Author: Charlotte Wickham <cwickham@gmail.com>
+# Maintainer: Charlotte Wickham <cwickham@gmail.com>
+# Description: Provides easy access to, and manipulation of, the Munsell  colours. Provides a mapping between Munsell's  original notation (e.g. "5R 5/10") and hexadecimal strings suitable  for use directly in R graphics. Also provides utilities  to explore slices through the Munsell colour tree, to transform  Munsell colours and display colour palettes.
+# Suggests: ggplot2, testthat
+# Imports: colorspace, methods
+# License: MIT + file LICENSE
+# RoxygenNote: 5.0.1
+# NeedsCompilation: no
+# Packaged: 2016-02-12 19:58:18 UTC; wickhamc
+# Repository: CRAN
+# Date/Publication: 2016-02-13 00:46:00
+#----------------------------------------------------------------------
