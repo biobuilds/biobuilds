@@ -19,7 +19,7 @@ source:
 build:
   # Window users should use the "r" anaconda channel instead
   skip: True  # [win]
-  number: 0
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/

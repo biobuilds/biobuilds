@@ -57,11 +57,17 @@ elif [ `uname` == Darwin ]; then
     # Prevent configure from finding Fink or Homebrew.
     export PATH="$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
+    # Default to using using Apple's LLVM compilers for C and C++. Note that
+    # when using clang++ to build C++11 code on OS X, make sure we use libc++
+    # instead of libstdc++, or we'll running into all sorts of errors (missing
+    # headers, missing symbols, wrong namespaces, etc.)
     cat >> config.site <<EOF
 CC=clang
 CXX=clang++
 F77=gfortran
 OBJC=clang
+CXX1XSTD='-std=c++11 -stdlib=libc++'
+SHLIB_CXX1XLDFLAGS='-stdlib=libc++'
 EOF
 
     GUI_OPTS="--without-x --with-aqua"
