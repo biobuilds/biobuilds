@@ -1,0 +1,28 @@
+package:
+  name: pcre
+  version: "8.39"
+
+source:
+  fn: "pcre-8.39.tar.gz"
+  url:
+    - "ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.39.tar.gz"
+    - "http://download.lab7.io/sources/pcre-8.39.tar.gz"
+  md5: "26a76d97e04c89fe9ce22ecc1cd0b315"
+
+requirements:
+  build:
+    - zlib
+    - bzip2
+  run:
+    - zlib
+
+build:
+  # Give ourselves a high enough build number that this package will take
+  # precedence over the one available from the "defaults" channel.
+  number: 700
+
+about:
+  home: http://www.pcre.org/
+  license: BSD
+  license_file: LICENCE
+  summary: Regular expression library using Perl 5 syntax
