@@ -1,0 +1,78 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-readr
+  version: "1.0.0"
+
+source:
+  fn: readr_1.0.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/readr_1.0.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/readr/readr_1.0.0.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - r-bh
+    - r-r6
+    - r-rcpp
+    - r-curl
+    - r-hms
+    - r-tibble
+    - posix               # [win]
+    - {{native}}toolchain # [win]
+    - gcc                 # [not win and not ppc64le]
+
+  run:
+    - r-base
+    - r-bh
+    - r-r6
+    - r-rcpp
+    - r-curl
+    - r-hms
+    - r-tibble
+    - libgcc              # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('readr')" # [not win]
+    - "\"%R%\" -e \"library('readr')\"" # [win]
+
+about:
+  home: https://github.com/hadley/readr
+  license: GPLv2
+  summary: Read flat/tabular text files from disk (or a connection).
+  license_family: GPL3
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: readr
+# Version: 1.0.0
+# Title: Read Tabular Data
+# Description: Read flat/tabular text files from disk (or a connection).
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")), person("Jim", "Hester", , "jim.hester@rstudio.com", "aut"), person("Romain", "Francois", role = "aut"), person("R Core Team", role = "ctb", comment = "Date time code adapted from R"), person("RStudio", role = "cph"), person("Jukka", "Jaylnki", role = c("ctb", "cph"), comment = "grisu3 implementation"), person("Mikkel", "Jrgensen", role = c("ctb", "cph"), comment = "grisu3 implementation"))
+# Encoding: UTF-8
+# Depends: R (>= 3.0.2)
+# LinkingTo: Rcpp, BH
+# Imports: Rcpp (>= 0.11.5), curl, tibble, hms, R6
+# Suggests: testthat, knitr, rmarkdown, stringi, covr
+# License: GPL (>= 2) | file LICENSE
+# BugReports: https://github.com/hadley/readr/issues
+# URL: https://github.com/hadley/readr
+# VignetteBuilder: knitr
+# RoxygenNote: 5.0.1
+# NeedsCompilation: yes
+# Packaged: 2016-08-03 15:26:00 UTC; hadley
+# Author: Hadley Wickham [aut, cre], Jim Hester [aut], Romain Francois [aut], R Core Team [ctb] (Date time code adapted from R), RStudio [cph], Jukka Jaylnki [ctb, cph] (grisu3 implementation), Mikkel Jrgensen [ctb, cph] (grisu3 implementation)
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2016-08-03 17:55:25
+#----------------------------------------------------------------------

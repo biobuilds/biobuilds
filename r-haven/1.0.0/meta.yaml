@@ -1,0 +1,77 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-haven
+  version: "1.0.0"
+
+source:
+  fn: haven_1.0.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/haven_1.0.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/haven/haven_1.0.0.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - r-bh
+    - r-rcpp
+    - r-hms
+    - r-readr >=0.1.0
+    - r-tibble
+    - posix               # [win]
+    - {{native}}toolchain # [win]
+    - gcc                 # [not win and not ppc64le]
+
+  run:
+    - r-base
+    - r-bh
+    - r-rcpp
+    - r-hms
+    - r-readr >=0.1.0
+    - r-tibble
+    - libgcc              # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('haven')" # [not win]
+    - "\"%R%\" -e \"library('haven')\"" # [win]
+
+about:
+  home: "https://github.com/hadley/haven"
+  license: MIT
+  summary: "Import foreign statistical formats ('SPSS', 'Stata', 'SAS') into R"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: haven
+# Version: 1.0.0
+# Title: Import and Export 'SPSS', 'Stata' and 'SAS' Files
+# Description: Import foreign statistical formats into R via the embedded 'ReadStat' C library (https://github.com/WizardMac/ReadStat).
+# License: MIT + file LICENSE
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", role = c("aut", "cre")), person("Evan", "Miller", , role = c("aut", "cph"), comment = "Author of included ReadStat code"), person("RStudio", role = "cph") )
+# Depends: R (>= 3.1.0)
+# Suggests: testthat, knitr, rmarkdown, covr
+# LinkingTo: Rcpp, BH
+# Imports: Rcpp (>= 0.11.4), readr (>= 0.1.0), hms, tibble
+# LazyData: true
+# URL: https://github.com/hadley/haven, https://github.com/WizardMac/ReadStat
+# BugReports: https://github.com/hadley/haven/issues
+# VignetteBuilder: knitr
+# SystemRequirements: GNU make
+# RoxygenNote: 5.0.1
+# Encoding: UTF-8
+# NeedsCompilation: yes
+# Packaged: 2016-09-23 20:35:30 UTC; hadley
+# Author: Hadley Wickham [aut, cre], Evan Miller [aut, cph] (Author of included ReadStat code), RStudio [cph]
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2016-09-23 22:44:41
+#----------------------------------------------------------------------

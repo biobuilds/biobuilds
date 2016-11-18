@@ -1,0 +1,77 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-tidyr
+  version: "0.6.0"
+
+source:
+  fn: tidyr_0.6.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/tidyr_0.6.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/tidyr/tidyr_0.6.0.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - r-rcpp
+    - r-dplyr >=0.4
+    - r-lazyeval
+    - r-magrittr
+    - r-stringi
+    - r-tibble
+    - posix               # [win]
+    - {{native}}toolchain # [win]
+    - gcc                 # [not win and not ppc64le]
+
+  run:
+    - r-base
+    - r-rcpp
+    - r-dplyr >=0.4
+    - r-lazyeval
+    - r-magrittr
+    - r-stringi
+    - r-tibble
+    - libgcc              # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('tidyr')" # [not win]
+    - "\"%R%\" -e \"library('tidyr')\"" # [win]
+
+about:
+  home: https://github.com/hadley/tidyr
+  license: MIT
+  summary: Easily tidy data with `spread()` and `gather()` functions
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: tidyr
+# Title: Easily Tidy Data with `spread()` and `gather()` Functions
+# Version: 0.6.0
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")), person("RStudio", role = "cph") )
+# Description: An evolution of 'reshape2'. It's designed specifically for data tidying (not general reshaping or aggregating) and works well with 'dplyr' data pipelines.
+# Depends: R (>= 3.1.0)
+# License: MIT + file LICENSE
+# LazyData: true
+# Imports: tibble, dplyr (>= 0.4), stringi, lazyeval, magrittr, Rcpp
+# URL: https://github.com/hadley/tidyr
+# BugReports: https://github.com/hadley/tidyr/issues
+# Suggests: knitr, testthat, covr, gapminder, rmarkdown
+# VignetteBuilder: knitr
+# LinkingTo: Rcpp
+# RoxygenNote: 5.0.1
+# NeedsCompilation: yes
+# Packaged: 2016-08-11 22:23:45 UTC; hadley
+# Author: Hadley Wickham [aut, cre], RStudio [cph]
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2016-08-12 10:20:52
+#----------------------------------------------------------------------

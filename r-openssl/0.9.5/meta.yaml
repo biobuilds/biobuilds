@@ -1,0 +1,63 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-openssl
+  version: "0.9.5"
+
+source:
+  fn: openssl_0.9.5.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/openssl_0.9.5.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/openssl/openssl_0.9.5.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - posix               # [win]
+    - {{native}}toolchain # [win]
+    - gcc                 # [not win and not ppc64le]
+
+  run:
+    - r-base
+    - libgcc              # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('openssl')" # [not win]
+    - "\"%R%\" -e \"library('openssl')\"" # [win]
+
+about:
+  home: "https://github.com/jeroenooms/openssl#readme"
+  license: MIT
+  summary: Toolkit for encryption, signatures and certificates based on OpenSSL
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: openssl
+# Type: Package
+# Title: Toolkit for Encryption, Signatures and Certificates Based on OpenSSL
+# Version: 0.9.5
+# Authors@R: c( person("Jeroen", "Ooms", , "jeroen.ooms@stat.ucla.edu", role = c("cre", "aut")), person("Oliver", "Keyes", role = "ctb"))
+# Description: Bindings to OpenSSL libssl and libcrypto, plus custom SSH pubkey parsers. Supports RSA, DSA and EC curves P-256, P-384 and P-521. Cryptographic signatures can either be created and verified manually or via x509 certificates. AES can be used in cbc, ctr or gcm mode for symmetric encryption; RSA for asymmetric (public key) encryption or EC for Diffie Hellman. High-level envelope functions combine RSA and AES for encrypting arbitrary sized data. Other utilities include key generators, hash functions (md5, sha1, sha256, etc), base64 encoder, a secure random number generator, and 'bignum' math methods for manually performing crypto calculations on large multibyte integers.
+# License: MIT + file LICENSE
+# URL: https://github.com/jeroenooms/openssl#readme
+# BugReports: https://github.com/jeroenooms/openssl/issues
+# SystemRequirements: OpenSSL >= 1.0.1
+# VignetteBuilder: knitr
+# Suggests: testthat, digest, knitr, rmarkdown, jsonlite, jose
+# RoxygenNote: 5.0.1.9000
+# NeedsCompilation: yes
+# Packaged: 2016-10-27 19:59:19 UTC; jeroen
+# Author: Jeroen Ooms [cre, aut], Oliver Keyes [ctb]
+# Maintainer: Jeroen Ooms <jeroen.ooms@stat.ucla.edu>
+# Repository: CRAN
+# Date/Publication: 2016-10-28 10:51:16
+#----------------------------------------------------------------------

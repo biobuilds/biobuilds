@@ -1,0 +1,69 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-xml2
+  version: "1.0.0"
+
+source:
+  fn: xml2_1.0.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/xml2_1.0.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/xml2/xml2_1.0.0.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - r-bh
+    - r-rcpp >=0.11.4.6
+    - posix               # [win]
+    - {{native}}toolchain # [win]
+    - gcc                 # [not win and not ppc64le]
+
+  run:
+    - r-base
+    - r-bh
+    - r-rcpp >=0.11.4.6
+    - libgcc              # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('xml2')" # [not win]
+    - "\"%R%\" -e \"library('xml2')\"" # [win]
+
+about:
+  home: https://github.com/hadley/xml2/
+  license: GPLv2
+  summary: "Work with XML files using a simple, consistent interface"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: xml2
+# Version: 1.0.0
+# Title: Parse XML
+# Description: Work with XML files using a simple, consistent interface. Built on top of the 'libxml2' C library.
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")), person("James", "Hester", , "james.hester@rstudio.com", "aut"), person("Jeroen", "Ooms", role = "ctb"), person("RStudio", role = "cph"), person("R Foundation", role = "ctb", comment = "Copy of R-project homepage cached as example") )
+# URL: https://github.com/hadley/xml2/
+# BugReports: https://github.com/hadley/xml2/issues/
+# Depends: R (>= 3.1.0)
+# Imports: Rcpp
+# LinkingTo: Rcpp (>= 0.11.4.6), BH
+# Suggests: testthat, curl, covr, knitr, rmarkdown, magrittr, httr
+# SystemRequirements: libxml2: libxml2-dev (deb), libxml2-devel (rpm)
+# License: GPL (>= 2)
+# RoxygenNote: 5.0.1
+# VignetteBuilder: knitr
+# NeedsCompilation: yes
+# Packaged: 2016-06-23 22:32:03 UTC; jhester
+# Author: Hadley Wickham [aut, cre], James Hester [aut], Jeroen Ooms [ctb], RStudio [cph], R Foundation [ctb] (Copy of R-project homepage cached as example)
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2016-06-24 11:57:15
+#----------------------------------------------------------------------

@@ -1,0 +1,61 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-jsonlite
+  version: "1.1"
+
+source:
+  fn: jsonlite_1.1.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/jsonlite_1.1.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/jsonlite/jsonlite_1.1.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - posix               # [win]
+    - {{native}}toolchain # [win]
+    - gcc                 # [not win and not ppc64le]
+
+  run:
+    - r-base
+    - libgcc              # [not win and not ppc64le]
+
+test:
+  commands:
+    - $R -e "library('jsonlite')" # [not win]
+    - "\"%R%\" -e \"library('jsonlite')\"" # [win]
+
+about:
+  home: "http://arxiv.org/abs/1403.2805"
+  license: MIT
+  summary: A robust, high performance json parser and generator for R
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: jsonlite
+# Version: 1.1
+# Title: A Robust, High Performance JSON Parser and Generator for R
+# License: MIT + file LICENSE
+# NeedsCompilation: yes
+# Depends: methods
+# Author: Jeroen Ooms, Duncan Temple Lang, Lloyd Hilaiel
+# URL: http://arxiv.org/abs/1403.2805, https://www.opencpu.org/posts/jsonlite-a-smarter-json-encoder
+# BugReports: http://github.com/jeroenooms/jsonlite/issues
+# Maintainer: Jeroen Ooms <jeroen.ooms@stat.ucla.edu>
+# VignetteBuilder: knitr, R.rsp
+# Description: A fast JSON parser and generator optimized for statistical data and the web. Started out as a fork of 'RJSONIO', but has been completely rewritten in recent versions. The package offers flexible, robust, high performance tools for working with JSON in R and is particularly powerful for building pipelines and interacting with a web API. The implementation is based on the mapping described in the vignette (Ooms, 2014). In addition to converting JSON data from/to R objects, 'jsonlite' contains functions to stream, validate, and prettify JSON data. The unit tests included with the package verify that all edge cases are encoded and decoded consistently for use with dynamic data in systems and applications.
+# Suggests: httr, curl, plyr, testthat, knitr, rmarkdown, R.rsp
+# RoxygenNote: 5.0.1
+# Packaged: 2016-09-14 10:32:48 UTC; jeroen
+# Repository: CRAN
+# Date/Publication: 2016-09-14 19:44:17
+#----------------------------------------------------------------------

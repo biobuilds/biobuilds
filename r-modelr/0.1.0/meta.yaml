@@ -1,0 +1,73 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-modelr
+  version: "0.1.0"
+
+source:
+  fn: modelr_0.1.0.tar.gz
+  url:
+    - http://cran.r-project.org/src/contrib/modelr_0.1.0.tar.gz
+    - http://cran.r-project.org/src/contrib/Archive/modelr/modelr_0.1.0.tar.gz
+
+build:
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - r-broom
+    - r-dplyr
+    - r-lazyeval >=0.2.0
+    - r-magrittr
+    - r-purrr >=0.2.2
+    - r-tibble
+    - r-tidyr >=0.6.0
+
+  run:
+    - r-base
+    - r-broom
+    - r-dplyr
+    - r-lazyeval >=0.2.0
+    - r-magrittr
+    - r-purrr >=0.2.2
+    - r-tibble
+    - r-tidyr >=0.6.0
+
+test:
+  commands:
+    - $R -e "library('modelr')" # [not win]
+    - "\"%R%\" -e \"library('modelr')\"" # [win]
+
+about:
+  home: https://github.com/hadley/modelr
+  license: GPLv3
+  summary: Modelling functions that work with R pipes
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: modelr
+# Version: 0.1.0
+# Title: Modelling Functions that Work with the Pipe
+# Description: Functions for modelling that help you seamlessly integrate modelling into a pipeline of data manipulation and visualisation.
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", role = c("aut", "cre")), person("RStudio", role = "cph") )
+# License: GPL-3
+# LazyData: true
+# Depends: R (>= 3.1.0)
+# Imports: magrittr, purrr (>= 0.2.2), lazyeval (>= 0.2.0), tibble, broom, dplyr, tidyr (>= 0.6.0)
+# Suggests: testthat, ggplot2, covr
+# URL: https://github.com/hadley/modelr
+# BugReports: https://github.com/hadley/modelr/issues
+# RoxygenNote: 5.0.1
+# NeedsCompilation: no
+# Packaged: 2016-08-30 22:46:56 UTC; hadley
+# Author: Hadley Wickham [aut, cre], RStudio [cph]
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2016-08-31 20:46:56
+#----------------------------------------------------------------------
