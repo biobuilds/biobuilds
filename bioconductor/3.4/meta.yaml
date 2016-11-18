@@ -1,0 +1,25 @@
+package:
+  name: bioconductor
+  # Note about conda package version number:
+  #   <major.minor> = Bioconductor release
+  #   <patch> = BiocInstaller release
+  version: 3.4.012400
+
+build:
+  number: 0
+
+requirements:
+  run:
+    - r
+    - r-dbi 0.5_1
+    - r-rsqlite 1.0.0
+    - bioconductor-annotationdbi 1.36.0
+    - bioconductor-biobase 2.34.0
+    - bioconductor-biocgenerics 0.20.0
+    - bioconductor-biocinstaller 1.24.0
+    - bioconductor-iranges 2.8.1
+    - bioconductor-s4vectors 0.12.0
+
+about:
+  home: "https://www.bioconductor.org/"
+  summary: "Minimal set of BioConductor packages installed by biocLite()"

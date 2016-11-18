@@ -1,0 +1,42 @@
+package:
+  name: bioconductor-annotationdbi
+  version: "1.36.0"
+
+source:
+  fn: "AnnotationDbi_1.36.0.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/AnnotationDbi_1.36.0.tar.gz"
+  md5: "5475b65da64953574575dadc3a7fee74"
+
+requirements:
+  build:
+    - r >=2.7.0
+    - gcc       # [not ppc64le and not win]
+    - r-dbi
+    - r-rsqlite
+    - bioconductor-biobase >=1.17.0
+    - bioconductor-biocgenerics >=0.15.10
+    - bioconductor-iranges
+  run:
+    - r
+    - libgcc    # [not ppc64le and not win]
+    - r-dbi
+    - r-rsqlite
+    - bioconductor-biobase >=1.17.0
+    - bioconductor-biocgenerics >=0.15.10
+    - bioconductor-iranges
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('AnnotationDbi')"            # [not win]
+    - "\"%R%\" -e \"library('AnnotationDbi')\""  # [win]
+
+about:
+  home: "http://bioconductor.org/packages/release/bioc/html/AnnotationDbi.html"
+  license: Artistic 2.0
+  summary: "Annotation Database Interface"

@@ -1,0 +1,31 @@
+package:
+  name: bioconductor-biocgenerics
+  version: "0.20.0"
+
+source:
+  fn: "BiocGenerics_0.20.0.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/BiocGenerics_0.20.0.tar.gz"
+  md5: "acb8cb2256a0aca5ac0d66c4ce30a9da"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r
+
+  run:
+    - r
+
+test:
+  commands:
+    - $R -e "library('BiocGenerics')"           # [not win]
+    - "\"%R%\" -e \"library('BiocGenerics')\""  # [win]
+
+about:
+  home: "http://bioconductor.org/packages/release/bioc/html/BiocGenerics.html"
+  license: Artistic 2.0
+  summary: "S4 generic functions needed by many Bioconductor packages"

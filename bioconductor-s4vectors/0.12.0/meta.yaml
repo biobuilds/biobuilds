@@ -1,0 +1,35 @@
+package:
+  name: bioconductor-s4vectors
+  version: "0.12.0"
+
+source:
+  fn: "S4Vectors_0.12.0.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/S4Vectors_0.12.0.tar.gz"
+  md5: "6e21230bdc7e27246f04e07b2ae9c5f2"
+
+requirements:
+  build:
+    - r
+    - gcc     # [not ppc64le and not win]
+    - bioconductor-biocgenerics >=0.15.10
+  run:
+    - r
+    - libgcc  # [not ppc64le and not win]
+    - bioconductor-biocgenerics >=0.15.10
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - $R -e "library('S4Vectors')"            # [not win]
+    - "\"%R%\" -e \"library('S4Vectors')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/S4Vectors.html"
+  license: Artistic 2.0
+  summary: "S4 implementation of vectors and lists"
