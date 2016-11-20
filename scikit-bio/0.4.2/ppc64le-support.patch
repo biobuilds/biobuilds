@@ -1,0 +1,319 @@
+--- skbio/alignment/_lib/ssw.c
++++ skbio/alignment/_lib/ssw.c
+@@ -35,7 +35,12 @@
+  *
+  */
+ 
++#ifdef __x86_64__
+ #include <emmintrin.h>
++#elif defined(__PPC64__)
++#include <veclib/vec128int.h>
++#endif
++
+ #include <stdint.h>
+ #include <stdlib.h>
+ #include <stdio.h>
+@@ -134,11 +139,11 @@
+                              uint8_t bias,  /* Shift 0 point to a positive value. */
+                              int32_t maskLen) {  
+       
+-#define max16(m, vm) (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 8)); \
+-                      (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 4)); \
+-                      (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 2)); \
+-                      (vm) = _mm_max_epu8((vm), _mm_srli_si128((vm), 1)); \
+-                      (m) = _mm_extract_epi16((vm), 0)
++#define max16(m, vm) (vm) = vec_max16ub((vm), vec_shiftrightbytes1q((vm), 8)); \
++                      (vm) = vec_max16ub((vm), vec_shiftrightbytes1q((vm), 4)); \
++                      (vm) = vec_max16ub((vm), vec_shiftrightbytes1q((vm), 2)); \
++                      (vm) = vec_max16ub((vm), vec_shiftrightbytes1q((vm), 1)); \
++                      (m) = vec_extract8sh((vm), 0)
+ 
+     uint8_t max = 0;                             /* the max alignment score */
+     int32_t end_read = readLen - 1;
+@@ -152,7 +157,7 @@
+     int32_t* end_read_column = (int32_t*) calloc(refLen, sizeof(int32_t));
+     
+     /* Define 16 byte 0 vector. */
+-    __m128i vZero = _mm_set1_epi32(0);
++    __m128i vZero = vec_splat4sw(0);
+ 
+     __m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
+     __m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));
+@@ -161,13 +166,13 @@
+ 
+     int32_t i, j;
+     /* 16 byte insertion begin vector */
+-    __m128i vGapO = _mm_set1_epi8(weight_gapO);
++    __m128i vGapO = vec_splat16sb(weight_gapO);
+     
+     /* 16 byte insertion extension vector */
+-    __m128i vGapE = _mm_set1_epi8(weight_gapE); 
++    __m128i vGapE = vec_splat16sb(weight_gapE); 
+     
+     /* 16 byte bias vector */
+-    __m128i vBias = _mm_set1_epi8(bias);    
++    __m128i vBias = vec_splat16sb(bias);    
+ 
+     __m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
+     __m128i vMaxMark = vZero; /* Trace the highest score till the previous column. */   
+@@ -192,7 +197,7 @@
+ //      fprintf(stderr, "middle[%d]: %d\n", i, maxColumn[i]);
+ 
+         __m128i vH = pvHStore[segLen - 1];
+-        vH = _mm_slli_si128 (vH, 1); /* Shift the 128-bit value in vH left by 1 byte. */
++        vH = vec_shiftleftbytes1q (vH, 1); /* Shift the 128-bit value in vH left by 1 byte. */
+         __m128i* vP = vProfile + ref[i] * segLen; /* Right part of the vProfile */
+ 
+         /* Swap the 2 H buffers. */
+@@ -202,8 +207,8 @@
+         
+         /* inner loop to process the query sequence */
+         for (j = 0; LIKELY(j < segLen); ++j) {
+-            vH = _mm_adds_epu8(vH, _mm_load_si128(vP + j));
+-            vH = _mm_subs_epu8(vH, vBias); /* vH will be always > 0 */
++            vH = vec_addsaturating16ub(vH, vec_load1q(vP + j));
++            vH = vec_subtractsaturating16ub(vH, vBias); /* vH will be always > 0 */
+     //  max16(maxColumn[i], vH);
+     //  fprintf(stderr, "H[%d]: %d\n", i, maxColumn[i]);
+ //  int8_t* t;
+@@ -211,69 +216,69 @@
+ //for (t = (int8_t*)&vH, ti = 0; ti < 16; ++ti) fprintf(stderr, "%d\t", *t++);
+ 
+             /* Get max from vH, vE and vF. */
+-            e = _mm_load_si128(pvE + j);
+-            vH = _mm_max_epu8(vH, e);
+-            vH = _mm_max_epu8(vH, vF);
+-            vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
++            e = vec_load1q(pvE + j);
++            vH = vec_max16ub(vH, e);
++            vH = vec_max16ub(vH, vF);
++            vMaxColumn = vec_max16ub(vMaxColumn, vH);
+             
+     //  max16(maxColumn[i], vMaxColumn);
+     //  fprintf(stderr, "middle[%d]: %d\n", i, maxColumn[i]);
+ //  for (t = (int8_t*)&vMaxColumn, ti = 0; ti < 16; ++ti) fprintf(stderr, "%d\t", *t++);
+ 
+             /* Save vH values. */
+-            _mm_store_si128(pvHStore + j, vH);
++            vec_store1q(pvHStore + j, vH);
+ 
+             /* Update vE value. */
+-            vH = _mm_subs_epu8(vH, vGapO); /* saturation arithmetic, result >= 0 */
+-            e = _mm_subs_epu8(e, vGapE);
+-            e = _mm_max_epu8(e, vH);
+-            _mm_store_si128(pvE + j, e);
++            vH = vec_subtractsaturating16ub(vH, vGapO); /* saturation arithmetic, result >= 0 */
++            e = vec_subtractsaturating16ub(e, vGapE);
++            e = vec_max16ub(e, vH);
++            vec_store1q(pvE + j, e);
+             
+             /* Update vF value. */
+-            vF = _mm_subs_epu8(vF, vGapE);
+-            vF = _mm_max_epu8(vF, vH);
++            vF = vec_subtractsaturating16ub(vF, vGapE);
++            vF = vec_max16ub(vF, vH);
+             
+             /* Load the next vH. */
+-            vH = _mm_load_si128(pvHLoad + j);
++            vH = vec_load1q(pvHLoad + j);
+         }
+ 
+         /* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
+         /* reset pointers to the start of the saved data */
+         j = 0;
+-        vH = _mm_load_si128 (pvHStore + j);
++        vH = vec_load1q (pvHStore + j);
+ 
+         /*  the computed vF value is for the given column.  since */
+         /*  we are at the end, we need to shift the vF value over */
+         /*  to the next column. */
+-        vF = _mm_slli_si128 (vF, 1);
+-        vTemp = _mm_subs_epu8 (vH, vGapO);
+-        vTemp = _mm_subs_epu8 (vF, vTemp);
+-        vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
+-        cmp  = _mm_movemask_epi8 (vTemp);
++        vF = vec_shiftleftbytes1q (vF, 1);
++        vTemp = vec_subtractsaturating16ub (vH, vGapO);
++        vTemp = vec_subtractsaturating16ub (vF, vTemp);
++        vTemp = vec_compareeq16sb (vTemp, vZero);
++        cmp  = vec_extractupperbit16sb (vTemp);
+ 
+         while (cmp != 0xffff) 
+         {
+-            vH = _mm_max_epu8 (vH, vF);
+-            vMaxColumn = _mm_max_epu8(vMaxColumn, vH);
+-            _mm_store_si128 (pvHStore + j, vH);
+-            vF = _mm_subs_epu8 (vF, vGapE);
++            vH = vec_max16ub (vH, vF);
++            vMaxColumn = vec_max16ub(vMaxColumn, vH);
++            vec_store1q (pvHStore + j, vH);
++            vF = vec_subtractsaturating16ub (vF, vGapE);
+             j++;
+             if (j >= segLen)
+             {
+                 j = 0;
+-                vF = _mm_slli_si128 (vF, 1);
++                vF = vec_shiftleftbytes1q (vF, 1);
+             }
+-            vH = _mm_load_si128 (pvHStore + j);
++            vH = vec_load1q (pvHStore + j);
+ 
+-            vTemp = _mm_subs_epu8 (vH, vGapO);
+-            vTemp = _mm_subs_epu8 (vF, vTemp);
+-            vTemp = _mm_cmpeq_epi8 (vTemp, vZero);
+-            cmp  = _mm_movemask_epi8 (vTemp);
++            vTemp = vec_subtractsaturating16ub (vH, vGapO);
++            vTemp = vec_subtractsaturating16ub (vF, vTemp);
++            vTemp = vec_compareeq16sb (vTemp, vZero);
++            cmp  = vec_extractupperbit16sb (vTemp);
+         }
+ 
+-        vMaxScore = _mm_max_epu8(vMaxScore, vMaxColumn);
+-        vTemp = _mm_cmpeq_epi8(vMaxMark, vMaxScore);
+-        cmp = _mm_movemask_epi8(vTemp);
++        vMaxScore = vec_max16ub(vMaxScore, vMaxColumn);
++        vTemp = vec_compareeq16sb(vMaxMark, vMaxScore);
++        cmp = vec_extractupperbit16sb(vTemp);
+         if (cmp != 0xffff) {
+             uint8_t temp; 
+             vMaxMark = vMaxScore;
+@@ -378,10 +383,10 @@
+                              uint16_t terminate, 
+                              int32_t maskLen) { 
+ 
+-#define max8(m, vm) (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 8)); \
+-                    (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 4)); \
+-                    (vm) = _mm_max_epi16((vm), _mm_srli_si128((vm), 2)); \
+-                    (m) = _mm_extract_epi16((vm), 0)
++#define max8(m, vm) (vm) = vec_max8sh((vm), vec_shiftrightbytes1q((vm), 8)); \
++                    (vm) = vec_max8sh((vm), vec_shiftrightbytes1q((vm), 4)); \
++                    (vm) = vec_max8sh((vm), vec_shiftrightbytes1q((vm), 2)); \
++                    (m) = vec_extract8sh((vm), 0)
+     
+     uint16_t max = 0;                            /* the max alignment score */
+     int32_t end_read = readLen - 1;
+@@ -395,7 +400,7 @@
+     int32_t* end_read_column = (int32_t*) calloc(refLen, sizeof(int32_t));
+     
+     /* Define 16 byte 0 vector. */
+-    __m128i vZero = _mm_set1_epi32(0);
++    __m128i vZero = vec_splat4sw(0);
+ 
+     __m128i* pvHStore = (__m128i*) calloc(segLen, sizeof(__m128i));
+     __m128i* pvHLoad = (__m128i*) calloc(segLen, sizeof(__m128i));
+@@ -404,10 +409,10 @@
+ 
+     int32_t i, j, k;
+     /* 16 byte insertion begin vector */
+-    __m128i vGapO = _mm_set1_epi16(weight_gapO);
++    __m128i vGapO = vec_splat8sh(weight_gapO);
+     
+     /* 16 byte insertion extension vector */
+-    __m128i vGapE = _mm_set1_epi16(weight_gapE);    
++    __m128i vGapE = vec_splat8sh(weight_gapE);    
+ 
+     /* 16 byte bias vector */
+     __m128i vMaxScore = vZero; /* Trace the highest score of the whole SW matrix. */
+@@ -427,7 +432,7 @@
+                                Any errors to vH values will be corrected in the Lazy_F loop. 
+                              */
+         __m128i vH = pvHStore[segLen - 1];
+-        vH = _mm_slli_si128 (vH, 2); /* Shift the 128-bit value in vH left by 2 byte. */
++        vH = vec_shiftleftbytes1q (vH, 2); /* Shift the 128-bit value in vH left by 2 byte. */
+         
+         /* Swap the 2 H buffers. */
+         __m128i* pv = pvHLoad;
+@@ -440,48 +445,48 @@
+         
+         /* inner loop to process the query sequence */
+         for (j = 0; LIKELY(j < segLen); j ++) {
+-            vH = _mm_adds_epi16(vH, _mm_load_si128(vP + j));
++            vH = vec_addsaturating8sh(vH, vec_load1q(vP + j));
+ 
+             /* Get max from vH, vE and vF. */
+-            e = _mm_load_si128(pvE + j);
+-            vH = _mm_max_epi16(vH, e);
+-            vH = _mm_max_epi16(vH, vF);
+-            vMaxColumn = _mm_max_epi16(vMaxColumn, vH);
++            e = vec_load1q(pvE + j);
++            vH = vec_max8sh(vH, e);
++            vH = vec_max8sh(vH, vF);
++            vMaxColumn = vec_max8sh(vMaxColumn, vH);
+             
+             /* Save vH values. */
+-            _mm_store_si128(pvHStore + j, vH);
++            vec_store1q(pvHStore + j, vH);
+ 
+             /* Update vE value. */
+-            vH = _mm_subs_epu16(vH, vGapO); /* saturation arithmetic, result >= 0 */
+-            e = _mm_subs_epu16(e, vGapE);
+-            e = _mm_max_epi16(e, vH);
+-            _mm_store_si128(pvE + j, e);
++            vH = vec_subtractsaturating8uh(vH, vGapO); /* saturation arithmetic, result >= 0 */
++            e = vec_subtractsaturating8uh(e, vGapE);
++            e = vec_max8sh(e, vH);
++            vec_store1q(pvE + j, e);
+ 
+             /* Update vF value. */
+-            vF = _mm_subs_epu16(vF, vGapE);
+-            vF = _mm_max_epi16(vF, vH);
++            vF = vec_subtractsaturating8uh(vF, vGapE);
++            vF = vec_max8sh(vF, vH);
+             
+             /* Load the next vH. */
+-            vH = _mm_load_si128(pvHLoad + j);
++            vH = vec_load1q(pvHLoad + j);
+         }
+ 
+         /* Lazy_F loop: has been revised to disallow adjecent insertion and then deletion, so don't update E(i, j), learn from SWPS3 */
+         for (k = 0; LIKELY(k < 8); ++k) {
+-            vF = _mm_slli_si128 (vF, 2);
++            vF = vec_shiftleftbytes1q (vF, 2);
+             for (j = 0; LIKELY(j < segLen); ++j) {
+-                vH = _mm_load_si128(pvHStore + j);
+-                vH = _mm_max_epi16(vH, vF);
+-                _mm_store_si128(pvHStore + j, vH);
+-                vH = _mm_subs_epu16(vH, vGapO);
+-                vF = _mm_subs_epu16(vF, vGapE);
+-                if (UNLIKELY(! _mm_movemask_epi8(_mm_cmpgt_epi16(vF, vH)))) goto end;
++                vH = vec_load1q(pvHStore + j);
++                vH = vec_max8sh(vH, vF);
++                vec_store1q(pvHStore + j, vH);
++                vH = vec_subtractsaturating8uh(vH, vGapO);
++                vF = vec_subtractsaturating8uh(vF, vGapE);
++                if (UNLIKELY(! vec_extractupperbit16sb(vec_comparegt8sh(vF, vH)))) goto end;
+             }
+         }
+ 
+ end:    
+-        vMaxScore = _mm_max_epi16(vMaxScore, vMaxColumn);   
+-        vTemp = _mm_cmpeq_epi16(vMaxMark, vMaxScore);
+-        cmp = _mm_movemask_epi8(vTemp);
++        vMaxScore = vec_max8sh(vMaxScore, vMaxColumn);   
++        vTemp = vec_compareeq8sh(vMaxMark, vMaxScore);
++        cmp = vec_extractupperbit16sb(vTemp);
+         if (cmp != 0xffff) {
+             uint16_t temp; 
+             vMaxMark = vMaxScore;
+--- skbio/alignment/_lib/ssw.h
++++ skbio/alignment/_lib/ssw.h
+@@ -14,7 +14,12 @@
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <string.h>
++
++#ifdef __x86_64__
+ #include <emmintrin.h>
++#elif defined(__PPC64__)
++#include <veclib/vec128int.h>
++#endif
+ 
+ /*! @typedef    structure of the query profile  */
+ struct _profile;
+@@ -127,4 +132,4 @@
+ }
+ #endif  // __cplusplus
+ 
+-#endif  // SSW_H
+\ No newline at end of file
++#endif  // SSW_H
