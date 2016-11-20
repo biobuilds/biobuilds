@@ -1,0 +1,29 @@
+package:
+  name: future
+  version: "0.16.0"
+
+source:
+  fn: "future-0.16.0.tar.gz"
+  url:
+    - "https://pypi.python.org/packages/00/2b/8d082ddfed935f3608cc61140df6dcbf0edea1bc3ab52fb6c29ae3e81e85/future-0.16.0.tar.gz"
+    - "http://download.lab7.io/sources/future-0.16.0.tar.gz"
+  md5: "3e8e88a2bda48d54b1da7634d04760d7"
+
+requirements:
+  build:
+    - python
+  run:
+    - python
+
+build:
+  number: 0
+
+test:
+  imports:
+    - future
+
+about:
+  home: "http://python-future.org"
+  license: MIT
+  license_file: LICENSE.txt
+  summary: Clean single-source support for Python 3 and 2

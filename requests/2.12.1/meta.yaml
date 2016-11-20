@@ -1,0 +1,30 @@
+package:
+  name: requests
+  version: "2.12.1"
+
+source:
+  fn: "requests-2.12.1.tar.gz"
+  url:
+    - "https://pypi.python.org/packages/6e/40/7434b2d9fe24107ada25ec90a1fc646e97f346130a2c51aa6a2b1aba28de/requests-2.12.1.tar.gz"
+    - "http://download.lab7.io/sources/requests-2.12.1.tar.gz"
+  md5: "8c8ff05ea401ea22718038c3a416ea50"
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+
+build:
+  number: 0
+
+test:
+  imports:
+    - requests
+
+about:
+  home: "http://docs.python-requests.org/en/latest/index.html"
+  license: Apache
+  license_file: LICENSE
+  summary: "Python HTTP(S) for humans"
