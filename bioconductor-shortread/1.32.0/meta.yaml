@@ -1,0 +1,44 @@
+package:
+  name: bioconductor-shortread
+  version: "1.32.0"
+
+source:
+  fn: "ShortRead_1.32.0.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/ShortRead_1.32.0.tar.gz"
+  md5: "39278ebceb3399e669274248978fad20"
+
+requirements:
+  build:
+    - r
+    - r-hwriter
+    - r-latticeextra
+    - bioconductor-biocgenerics >=0.11.3
+    - bioconductor-biocparallel
+    - bioconductor-biostrings >=2.37.1
+    - bioconductor-rsamtools >=1.21.4
+    - bioconductor-genomicalignments >=1.5.4
+  run:
+    - r
+    - r-hwriter
+    - r-latticeextra
+    - bioconductor-biocgenerics >=0.11.3
+    - bioconductor-biocparallel
+    - bioconductor-biostrings >=2.37.1
+    - bioconductor-rsamtools >=1.21.4
+    - bioconductor-genomicalignments >=1.5.4
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('ShortRead')"            # [not win]
+    - "\"%R%\" -e \"library('ShortRead')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/ShortRead.html"
+  license: "Artistic 2.0"
+  summary: "FASTQ input and manipulation"

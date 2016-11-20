@@ -1,0 +1,38 @@
+package:
+  name: bioconductor-biostrings
+  version: "2.42.0"
+
+source:
+  fn: "Biostrings_2.42.0.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/Biostrings_2.42.0.tar.gz"
+  md5: "054e88aefd344f8a03e94dfb4daa96da"
+
+requirements:
+  build:
+    - r
+    - bioconductor-biocgenerics >=0.15.6
+    - bioconductor-s4vectors >=0.11.1
+    - bioconductor-iranges >=2.5.27
+    - bioconductor-xvector >=0.11.6
+  run:
+    - r
+    - bioconductor-biocgenerics >=0.15.6
+    - bioconductor-s4vectors >=0.11.1
+    - bioconductor-iranges >=2.5.27
+    - bioconductor-xvector >=0.11.6
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('Biostrings')"            # [not win]
+    - "\"%R%\" -e \"library('Biostrings')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/Biostrings.html"
+  license: "Artistic 2.0"
+  summary: "String objects representing biological sequences, and matching algorithms"

@@ -1,0 +1,31 @@
+package:
+  name: bioconductor-zlibbioc
+  version: "1.20.0"
+
+source:
+  fn: "zlibbioc_1.20.0.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/zlibbioc_1.20.0.tar.gz"
+  md5: "f68b45fca70f39c7958fb43c0504c546"
+
+requirements:
+  build:
+    - r
+  run:
+    - r
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - $R -e "library('zlibbioc')"            # [not win]
+    - "\"%R%\" -e \"library('zlibbioc')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/zlibbioc.html"
+  license: "Artistic 2.0"
+  summary: "An R packaged zlib-1.2.5"

@@ -1,0 +1,36 @@
+package:
+  name: bioconductor-genomeinfodb
+  version: "1.10.1"
+
+source:
+  fn: "GenomeInfoDb_1.10.1.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/GenomeInfoDb_1.10.1.tar.gz"
+  md5: "a5b61b309c04e09182fad6efa3a8ce16"
+
+requirements:
+  build:
+    - r
+    - bioconductor-biocgenerics >=0.13.8
+    - bioconductor-s4vectors >=0.9.25
+    - bioconductor-iranges >=1.99.26
+  run:
+    - r
+    - bioconductor-biocgenerics >=0.13.8
+    - bioconductor-s4vectors >=0.9.25
+    - bioconductor-iranges >=1.99.26
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('GenomeInfoDb')"            # [not win]
+    - "\"%R%\" -e \"library('GenomeInfoDb')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/GenomeInfoDb.html"
+  license: "Artistic 2.0"
+  summary: "Utilities for manipulating chromosome and other 'seqname' identifiers"

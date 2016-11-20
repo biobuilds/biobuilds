@@ -1,0 +1,46 @@
+package:
+  name: bioconductor-genomicalignments
+  version: "1.10.0"
+
+source:
+  fn: "GenomicAlignments_1.10.0.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/GenomicAlignments_1.10.0.tar.gz"
+  md5: "6e6af96adcad077abdb5889e5620cd6a"
+
+requirements:
+  build:
+    - r
+    - bioconductor-biocgenerics >=0.15.3
+    - bioconductor-s4vectors >=0.9.40
+    - bioconductor-iranges >=2.5.36
+    - bioconductor-genomeinfodb >=1.1.20
+    - bioconductor-genomicranges >=1.25.6
+    - bioconductor-summarizedexperiment >=0.3.1
+    - bioconductor-biostrings >=2.37.1
+    - bioconductor-rsamtools >=1.21.4
+  run:
+    - r
+    - bioconductor-biocgenerics >=0.15.3
+    - bioconductor-s4vectors >=0.9.40
+    - bioconductor-iranges >=2.5.36
+    - bioconductor-genomeinfodb >=1.1.20
+    - bioconductor-genomicranges >=1.25.6
+    - bioconductor-summarizedexperiment >=0.3.1
+    - bioconductor-biostrings >=2.37.1
+    - bioconductor-rsamtools >=1.21.4
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('GenomicAlignments')"            # [not win]
+    - "\"%R%\" -e \"library('GenomicAlignments')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/GenomicAlignments.html"
+  license: "Artistic 2.0"
+  summary: "Representation and manipulation of short genomic alignments"

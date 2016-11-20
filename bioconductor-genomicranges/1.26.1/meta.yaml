@@ -1,0 +1,40 @@
+package:
+  name: bioconductor-genomicranges
+  version: "1.26.1"
+
+source:
+  fn: "GenomicRanges_1.26.1.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/GenomicRanges_1.26.1.tar.gz"
+  md5: "80d92e6491b6d00cb02491fc2c0368d0"
+
+requirements:
+  build:
+    - r
+    - bioconductor-biocgenerics >=0.17.5
+    - bioconductor-s4vectors >=0.9.47
+    - bioconductor-iranges >=2.7.8
+    - bioconductor-genomeinfodb >=1.1.20
+    - bioconductor-xvector
+  run:
+    - r
+    - bioconductor-biocgenerics >=0.17.5
+    - bioconductor-s4vectors >=0.9.47
+    - bioconductor-iranges >=2.7.8
+    - bioconductor-genomeinfodb >=1.1.20
+    - bioconductor-xvector
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('GenomicRanges')"            # [not win]
+    - "\"%R%\" -e \"library('GenomicRanges')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/GenomicRanges.html"
+  license: "Artistic 2.0"
+  summary: "Utilities for manipulating chromosome and other 'seqname' identifiers"

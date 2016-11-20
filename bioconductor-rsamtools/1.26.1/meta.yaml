@@ -1,0 +1,41 @@
+package:
+  name: bioconductor-rsamtools
+  version: "1.26.1"
+
+source:
+  fn: "Rsamtools_1.26.1.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/Rsamtools_1.26.1.tar.gz"
+  md5: "53b695db2aaea899348d7ccea464197e"
+
+requirements:
+  # TODO: Find a way to use the samtools/htslib we provide...
+  build:
+    - r
+    - r-bitops
+    - bioconductor-biocparallel
+    - bioconductor-biostrings >=2.37.1
+    - bioconductor-genomeinfodb >=1.1.3
+    - bioconductor-genomicranges >=1.21.6
+  run:
+    - r
+    - r-bitops
+    - bioconductor-biocparallel
+    - bioconductor-biostrings >=2.37.1
+    - bioconductor-genomeinfodb >=1.1.3
+    - bioconductor-genomicranges >=1.21.6
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('Rsamtools')"            # [not win]
+    - "\"%R%\" -e \"library('Rsamtools')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/Rsamtools.html"
+  license: "Artistic 2.0"
+  summary: "Binary alignment (BAM), FASTA, variant call (BCF), and tabix file import"

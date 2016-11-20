@@ -1,0 +1,63 @@
+{% set posix = 'm2-' if win else '' %}
+{% set native = 'm2w64-' if win else '' %}
+
+package:
+  name: r-futile.logger
+  version: "1.4.3"
+
+source:
+  fn: futile.logger_1.4.3.tar.gz
+  url:
+    - "http://cran.r-project.org/src/contrib/futile.logger_1.4.3.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/futile.logger/futile.logger_1.4.3.tar.gz"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base
+    - r-futile.options
+    - r-lambda.r >=1.1.0
+  run:
+    - r-base
+    - r-futile.options
+    - r-lambda.r >=1.1.0
+
+test:
+  commands:
+    - $R -e "library('futile.logger')" # [not win]
+    - "\"%R%\" -e \"library('futile.logger')\"" # [win]
+
+about:
+  license: LGPLv3
+  summary: "Logging utility for R based on log4j"
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+
+# Package: futile.logger
+# Type: Package
+# Title: A Logging Utility for R
+# Version: 1.4.3
+# Date: 2016-07-10
+# Author: Brian Lee Yung Rowe
+# Maintainer: Brian Lee Yung Rowe <r@zatonovo.com>
+# Depends: R (>= 3.0.0)
+# Imports: utils, lambda.r (>= 1.1.0), futile.options
+# Suggests: testthat, jsonlite
+# Description: Provides a simple yet powerful logging utility. Based loosely on log4j, futile.logger takes advantage of R idioms to make logging a convenient and easy to use replacement for cat and print statements.
+# License: LGPL-3
+# LazyLoad: yes
+# NeedsCompilation: no
+# ByteCompile: yes
+# Collate: 'options.R' 'appender.R' 'constants.R' 'layout.R' 'logger.R' 'scat.R' 'futile.logger-package.R'
+# RoxygenNote: 5.0.1
+# Packaged: 2016-07-10 13:44:30 UTC; brian
+# Repository: CRAN
+# Date/Publication: 2016-07-10 16:57:47
+#----------------------------------------------------------------------

@@ -1,0 +1,39 @@
+package:
+  name: bioconductor-xvector
+  version: "0.14.0"
+
+source:
+  fn: "XVector_0.14.0.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/XVector_0.14.0.tar.gz"
+  md5: "a9d4103b5fc68628ff6dd3f78902fdbf"
+
+requirements:
+  build:
+    - r
+    - bioconductor-biocgenerics >=0.19.2
+    - bioconductor-s4vectors >=0.9.29
+    - bioconductor-iranges >=2.5.27
+    - bioconductor-zlibbioc
+  run:
+    - r
+    - bioconductor-biocgenerics >=0.19.2
+    - bioconductor-s4vectors >=0.9.29
+    - bioconductor-iranges >=2.5.27
+    - bioconductor-zlibbioc
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - $R -e "library('XVector')"            # [not win]
+    - "\"%R%\" -e \"library('XVector')\""   # [win]
+
+about:
+  home: "http://bioconductor.org/packages/release/bioc/html/XVector.html"
+  license: "Artistic 2.0"
+  summary: "Representation and manpulation of external sequences"

@@ -1,0 +1,34 @@
+package:
+  name: bioconductor-summarizedexperiment
+  version: "1.4.0"
+
+source:
+  fn: "SummarizedExperiment_1.4.0.tar.gz"
+  url: "https://bioconductor.org/packages/3.4/bioc/src/contrib/SummarizedExperiment_1.4.0.tar.gz"
+  md5: "35159a339981efa22e96db639dadc850"
+
+requirements:
+  build:
+    - r
+    - bioconductor-biobase
+    - bioconductor-genomicranges >=1.23.15
+  run:
+    - r
+    - bioconductor-biobase
+    - bioconductor-genomicranges >=1.23.15
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('SummarizedExperiment')"            # [not win]
+    - "\"%R%\" -e \"library('SummarizedExperiment')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html"
+  license: "Artistic 2.0"
+  summary: "SummarizedExperiment container"
