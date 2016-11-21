@@ -1,0 +1,88 @@
+--- convert-sam-for-rsem
++++ convert-sam-for-rsem
+@@ -19,7 +19,7 @@
+ 	   "h|help" => \$help) or pd2usage(-exitval => 2, -verbose => 2);
+ 
+ 	   
+-pod2usage(-verbose => 2) if ($help == 1);
++pod2usage(-exitval => 0, -verbose => 2) if ($help == 1);
+ pod2usage(-msg => "Invalid number of arguments!", -exitval => 2, -verbose => 2) if (scalar(@ARGV) != 2);
+ 
+ my $command;
+--- rsem-calculate-expression
++++ rsem-calculate-expression
+@@ -193,7 +193,7 @@
+ 	   "q|quiet" => \$quiet,
+ 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
+ 
+-pod2usage(-verbose => 2) if ($help == 1);
++pod2usage(-exitval => 0, -verbose => 2) if ($help == 1);
+ &showVersionInfo('@@share_dir@@') if ($version == 1);
+ 
+ #check parameters and options
+--- rsem-control-fdr
++++ rsem-control-fdr
+@@ -12,7 +12,7 @@
+ 	   "soft-threshold" => \$soft,
+ 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
+ 
+-pod2usage(-verbose => 2) if ($help == 1);
++pod2usage(-exitval => 0, -verbose => 2) if ($help == 1);
+ pod2usage(-msg => "Invalid number of arguments!", -exitval => 2, -verbose => 2) if (scalar(@ARGV) != 3);
+ pod2usage(-msg => "--hard-threshold and --soft-threshold cannot be set at the same time!", -exitval => 2, -verbose => 2) if ($hard && $soft);
+ 
+--- rsem-generate-ngvector
++++ rsem-generate-ngvector
+@@ -14,7 +14,7 @@
+ GetOptions("k=i" => \$k,
+ 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
+ 
+-pod2usage(-verbose => 2) if ($help == 1);
++pod2usage(-exitval => 0, -verbose => 2) if ($help == 1);
+ pod2usage(-msg => "Invalid number of arguments!", -exitval => 2, -verbose => 2) if (scalar(@ARGV) != 2);
+ 
+ my $command = "";
+--- rsem-plot-transcript-wiggles
++++ rsem-plot-transcript-wiggles
+@@ -23,7 +23,7 @@
+ 	   "memory-per-thread=s" => \$mem,
+ 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
+ 
+-pod2usage(-verbose => 2) if ($help == 1);
++pod2usage(-exitval => 0, -verbose => 2) if ($help == 1);
+ pod2usage(-msg => "Invalid number of arguments!", -exitval => 2, -verbose => 2) if (scalar(@ARGV) != 3);
+ 
+ my $alleleS = 0;
+--- rsem-prepare-reference
++++ rsem-prepare-reference
+@@ -58,7 +58,7 @@
+ 	   "q|quiet" => \$quiet,
+ 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
+ 
+-pod2usage(-verbose => 2) if ($help == 1);
++pod2usage(-exitval => 0, -verbose => 2) if ($help == 1);
+ pod2usage(-msg => "--transcript-to-gene-map and --allele-to-gene-map are mutually exclusive!", -exitval => 2, -verbose => 2) if (($mappingF ne "") && ($alleleMappingF ne ""));
+ pod2usage(-msg => "--gtf and --gff3 are mutually exclusive!", -exitval => 2, -verbose => 2) if (($gtfF ne "") && ($gff3F ne ""));
+ pod2usage(-msg => "--gtf/--gff3 and --allele-to-gene-map are mutually exclusive!", -exitval => 2, -verbose => 2) if ((($gtfF ne "") || ($gff3F ne "")) && ($alleleMappingF ne ""));
+--- rsem-run-ebseq
++++ rsem-run-ebseq
+@@ -14,7 +14,7 @@
+ GetOptions("ngvector=s" => \$ngvF,
+ 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
+ 
+-pod2usage(-verbose => 2) if ($help == 1);
++pod2usage(-exitval => 0, -verbose => 2) if ($help == 1);
+ pod2usage(-msg => "Invalid number of arguments!", -exitval => 2, -verbose => 2) if (scalar(@ARGV) != 3);
+ pod2usage(-msg => "ngvector file cannot be named as #! # is reserved for other purpose!", -exitval => 2, -verbose => 2) if ($ngvF eq "#");
+ 
+--- rsem-run-prsem-testing-procedure
++++ rsem-run-prsem-testing-procedure
+@@ -48,7 +48,7 @@
+ 	   "q|quiet" => \$quiet,
+ 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
+ 
+-pod2usage(-verbose => 2) if ($help == 1);
++pod2usage(-exitval => 0, -verbose => 2) if ($help == 1);
+ &showVersionInfo('@@share_dir@@') if ($version == 1);
+ 
+ #check parameters and options

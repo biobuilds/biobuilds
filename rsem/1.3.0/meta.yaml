@@ -1,0 +1,68 @@
+package:
+  name: rsem
+  version: "1.3.0"
+
+requirements:
+  build:
+    - htslib 1.3.*
+    - samtools 1.3.*
+    # Use BioBuilds Boost package instead of one from 'default' channel
+    # to ensure consistency across all the platforms we support.
+    - boost 1.62.*
+    - r
+    # Needed by the pRSEM component
+    - r-catools >=1.17.1
+    - r-data.table >=1.9.6
+    - bioconductor-genomicranges >=1.24.3
+    - bioconductor-shortread >=1.30.0
+  run:
+    - samtools 1.3*
+    - perl
+    - python
+    - r
+    # Needed by the EBSeq component
+    - bioconductor-ebseq >=1.2.0
+    # Needed by the pRSEM component
+    - r-catools >=1.17.1
+    - r-data.table >=1.9.6
+    - bioconductor-genomicranges >=1.24.3
+    - bioconductor-shortread >=1.30.0
+
+source:
+  fn: "rsem-1.3.0.tar.gz"
+  url:
+    - "https://github.com/deweylab/RSEM/archive/v1.3.0.tar.gz"
+    - "http://download.lab7.io/sources/rsem-1.3.0.tar.gz"
+  md5: "9728161625d339d022130e2428604bf5"
+  patches:
+    - use-system-libs.patch
+    - ebseq-install.patch
+    - prefix-paths.patch
+    - help-exit-codes.patch
+
+build:
+  number: 0
+  script_env:
+    - BB_ARCH_FLAGS
+    - BB_OPT_FLAGS
+    - BB_MAKE_JOBS
+  skip_compile_pyc:
+    - libexec/{{ environ['PKG_NAME'] }}/pRSEM/*.py
+
+about:
+  home: "http://deweylab.github.io/RSEM/"
+  license: GPLv3
+  license_file: COPYING
+  summary: "Accurate quantification of gene and isoform expression from RNA-Seq data"
+
+extra:
+  notes: >
+    The pRSEM component is *NOT* functional out of the box. It requires the
+    UCSC `bigWigSummary` application, which we cannot re-distribute due to
+    licensing restrictions. To get pRSEM working, you must first download
+    `bigWigSummary` for your platform (x86_64 OS X or x86_64 Linux) from
+    <http://hgdownload.soe.ucsc.edu/admin/exe/> and install it into the correct
+    conda environment's (e.g., BioBuilds) "bin" directory. WARNING: you, the
+    end user, accept responsibility for being compliant with the UCSC Genome
+    Browser utilities license, as described in the "Source & Utilities
+    Downloads" section of <http://hgdownload.cse.ucsc.edu/downloads.html>.

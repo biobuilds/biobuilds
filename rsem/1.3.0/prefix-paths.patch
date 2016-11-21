@@ -1,0 +1,453 @@
+--- EBSeq/rsem-for-ebseq-find-DE
++++ EBSeq/rsem-for-ebseq-find-DE
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env Rscript
++#!@@bin_dir@@/Rscript
+ 
+ argv <- commandArgs(TRUE)
+ if (length(argv) < 6) {
+@@ -15,7 +15,7 @@
+ nc <- length(argv) - 4;
+ num_reps <- as.numeric(argv[5:(5+nc-1)])
+ 
+-.libPaths(c(.libPaths(), path))
++#.libPaths(c(.libPaths(), path))
+ library(EBSeq)
+ 
+ DataMat <- data.matrix(read.table(data_matrix_file))
+--- EBSeq/rsem-for-ebseq-generate-ngvector-from-clustering-info
++++ EBSeq/rsem-for-ebseq-generate-ngvector-from-clustering-info
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env Rscript
++#!@@bin_dir@@/Rscript
+ 
+ argv <- commandArgs(TRUE)
+ if (length(argv) != 2) {
+--- convert-sam-for-rsem
++++ convert-sam-for-rsem
+@@ -1,15 +1,11 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use Getopt::Long;
+ use Pod::Usage;
+ use File::Basename;
+ 
+-use FindBin;
+-use lib $FindBin::RealBin;
+-use rsem_perl_utils qw(runCommand getSAMTOOLS);
+-
+-use Env qw(@PATH);
+-@PATH = ($FindBin::RealBin, "$FindBin::RealBin/" . getSAMTOOLS(), @PATH);
++use lib '@@share_dir@@';
++use rsem_perl_utils qw(runCommand);
+ 
+ use strict;
+ 
+--- extract-transcript-to-gene-map-from-trinity
++++ extract-transcript-to-gene-map-from-trinity
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use strict;
+ 
+--- pRSEM/ChIPSeqExperiment.py
++++ pRSEM/ChIPSeqExperiment.py
+@@ -60,7 +60,7 @@
+     else:
+       fenc = self.param.imd_name + '_prsem.chipseq_target_encoding'
+ 
+-    Util.runCommand('/bin/env', 'Rscript', self.param.chipseq_rscript,
++    Util.runCommand('@@bin_dir@@', 'Rscript', self.param.chipseq_rscript,
+                     'guessFqEncoding', nthr, fin, fenc,
+                     self.param.prsem_rlib_dir, quiet=self.param.quiet )
+ 
+@@ -206,7 +206,7 @@
+ 
+ 
+ def getNPeaksByIDR(fpeaka, fpeakb, idr_prefix, prm, out_q):
+-  Util.runCommand('/bin/env', 'Rscript', prm.idr_script, fpeaka, fpeakb,
++  Util.runCommand('@@bin_dir@@', 'Rscript', prm.idr_script, fpeaka, fpeakb,
+                   '-1', idr_prefix, '0', 'F', 'signal.value', prm.idr_scr_dir,
+                   prm.fgenome_table, quiet=prm.quiet)
+   fidr = idr_prefix + '-overlapped-peaks.txt'
+@@ -224,7 +224,7 @@
+   if not os.path.exists(spp_tmpdir):
+     os.mkdir(spp_tmpdir)
+   fout = prm.temp_dir + tgt_tagalign.basename + '_phantom.tab'
+-  Util.runCommand('/bin/env', 'Rscript', prm.spp_script,
++  Util.runCommand('@@bin_dir@@', 'Rscript', prm.spp_script,
+                   "-c=%s"      % tgt_tagalign.fullname,
+                   "-i=%s"      % fctrl_tagalign,
+                   "-npeak=%d"  % prm.N_PEAK,
+--- pRSEM/Param.py
++++ pRSEM/Param.py
+@@ -154,7 +154,7 @@
+     prm.rnaseq_rscript = prm.prsem_scr_dir + 'process-rnaseq.R'
+     prm.fti            = prm.ref_name + '.ti'
+     prm.ffasta         = prm.ref_name + '.transcripts.fa'
+-    prm.bigwigsummary_bin = prm.prsem_scr_dir + 'bigWigSummary'
++    prm.bigwigsummary_bin = '@@bin_dir@@/bigWigSummary'
+    #prm.fall_exon_crd     = prm.imd_name  + '_prsem.all_exon_crd'
+    #prm.fall_tr_crd       = prm.imd_name  + '_prsem.all_tr_crd'
+    #prm.ftraining_tr_crd  = prm.imd_name  + '_prsem.training_tr_crd'
+--- pRSEM/Prsem.py
++++ pRSEM/Prsem.py
+@@ -1,4 +1,4 @@
+-#!/bin/env python
++#!@@bin_dir@@/python
+ 
+ __doc__="""
+ 
+@@ -93,7 +93,7 @@
+         f_fexon.write("%s\t%d\t%s\t%s\t%d\t%d\n" % (tr.transcript_id, i+1,
+                       tr.chrom, tr.strand, exon_start, exon_end))
+ 
+-  Util.runCommand('/bin/env', 'Rscript', prm.rnaseq_rscript, 'selTrainingTr',
++  Util.runCommand('@@bin_dir@@', 'Rscript', prm.rnaseq_rscript, 'selTrainingTr',
+                   prm.prsem_rlib_dir, prm.fall_tr_crd, prm.fall_exon_crd,
+                   prm.TRAINING_MIN_MAPPABILITY, prm.FLANKING_WIDTH,
+                   prm.ftraining_tr_crd, quiet=prm.quiet)
+@@ -132,7 +132,7 @@
+     f_fout.write("%s\t%s\t%s\n" % (tgtid, faln, fftrs))
+   f_fout.close()
+ 
+-  Util.runCommand('/bin/env', 'Rscript', prm.rnaseq_rscript,
++  Util.runCommand('@@bin_dir@@', 'Rscript', prm.rnaseq_rscript,
+                   'prepMultiTargetsFeatures', prm.prsem_rlib_dir,
+                   prm.fall_tr_crd, prm.ftraining_tr_crd,
+                   prm.fisoforms_results, prm.FLANKING_WIDTH,
+@@ -141,7 +141,7 @@
+                   prm.finfo_multi_targets, prm.num_threads, quiet=prm.quiet)
+ 
+   ## learn prior from partitioning by combined external data set
+-  Util.runCommand('/bin/env', 'Rscript', prm.rnaseq_rscript,
++  Util.runCommand('@@bin_dir@@', 'Rscript', prm.rnaseq_rscript,
+                   'genPriorByCombinedTSSSignals', prm.prsem_rlib_dir,
+                   prm.finfo_multi_targets, prm.flgt_model_multi_targets,
+                   prm.fall_tr_features, prm.fpvalLL, prm.fall_tr_prior,
+@@ -183,7 +183,7 @@
+   ## isoforms in training set will be labeled
+   if not os.path.exists(prm.fchipseq_peaks):
+     sys.exit("File not exists: %s\n" % prm.fchipseq_peaks)
+-  Util.runCommand('/bin/env', 'Rscript', prm.rnaseq_rscript,
++  Util.runCommand('@@bin_dir@@', 'Rscript', prm.rnaseq_rscript,
+                   'prepPeakSignalGCLenFeatures', prm.prsem_rlib_dir,
+                   prm.fall_tr_crd, prm.ftraining_tr_crd, prm.fall_tr_features,
+                   prm.fisoforms_results, prm.FLANKING_WIDTH,
+@@ -195,7 +195,7 @@
+     sys.exit("Failed to generate file: %s\n" % prm.fall_tr_gc)
+ 
+   ## learn and generate prior for all transcripts
+-  Util.runCommand('/bin/env', 'Rscript', prm.rnaseq_rscript,
++  Util.runCommand('@@bin_dir@@', 'Rscript', prm.rnaseq_rscript,
+                   'genPriorByPeakSignalGCLen', prm.prsem_rlib_dir,
+                   prm.fall_tr_features, prm.partition_model, prm.fall_tr_prior,
+                   quiet=prm.quiet)
+@@ -213,7 +213,7 @@
+   ## isoforms in training set will be labeled
+   if not os.path.exists(prm.fchipseq_peaks):
+     sys.exit("File not exists: %s\n" % prm.fchipseq_peaks)
+-  Util.runCommand('/bin/env', 'Rscript', prm.rnaseq_rscript,
++  Util.runCommand('@@bin_dir@@', 'Rscript', prm.rnaseq_rscript,
+                   'prepTSSPeakFeatures', prm.prsem_rlib_dir,
+                   prm.fall_tr_crd, prm.ftraining_tr_crd, prm.fall_tr_features,
+                   prm.fisoforms_results, prm.FLANKING_WIDTH,
+@@ -222,7 +222,7 @@
+   if not os.path.exists(prm.fall_tr_features):
+     sys.exit("Failed to generate file: %s\n" % prm.fall_tr_features)
+ 
+-  Util.runCommand('/bin/env', 'Rscript', prm.rnaseq_rscript,
++  Util.runCommand('@@bin_dir@@', 'Rscript', prm.rnaseq_rscript,
+                   'genPriorByTSSPeak', prm.prsem_rlib_dir,
+                   prm.fall_tr_features,  prm.fpvalLL, prm.fall_tr_prior,
+                   quiet=prm.quiet)
+--- pRSEM/phantompeakqualtools/run_spp.R
++++ pRSEM/phantompeakqualtools/run_spp.R
+@@ -646,6 +646,9 @@
+ 	}
+ }
+ 
++# Make sure we use the right SPP library
++.libPaths(c('@@prsem_rlib_dir@@', .libPaths()))
++
+ # Load SPP library
+ library(spp)
+ 
+--- pRSEM/phantompeakqualtools/run_spp_nodups.R
++++ pRSEM/phantompeakqualtools/run_spp_nodups.R
+@@ -646,6 +646,9 @@
+ 	}
+ }
+ 
++# Make sure we use the right SPP library
++.libPaths(c('@@prsem_rlib_dir@@', .libPaths()))
++
+ # Load SPP library
+ library(spp)
+ 
+--- pRSEM/prsem-calculate-expression
++++ pRSEM/prsem-calculate-expression
+@@ -1,4 +1,4 @@
+-#!/bin/env python
++#!@@bin_dir@@/python
+ 
+ __doc__="""
+ 
+--- pRSEM/prsem-prepare-reference
++++ pRSEM/prsem-prepare-reference
+@@ -1,4 +1,4 @@
+-#!/bin/env python
++#!@@bin_dir@@/python
+ 
+ __doc__="""
+ 
+--- pRSEM/prsem-testing-procedure
++++ pRSEM/prsem-testing-procedure
+@@ -1,4 +1,4 @@
+-#!/bin/env python
++#!@@bin_dir@@/python
+ 
+ __doc__="""
+ 
+--- rsem-calculate-expression
++++ rsem-calculate-expression
+@@ -1,15 +1,11 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use Getopt::Long qw(:config no_auto_abbrev);
+ use Pod::Usage;
+ use File::Basename;
+-use FindBin;
+-use lib $FindBin::RealBin;
+-use rsem_perl_utils qw(runCommand collectResults showVersionInfo getSAMTOOLS hasPolyA);
+ 
+-use Env qw(@PATH);
+-
+-@PATH = ($FindBin::RealBin, "$FindBin::RealBin/" . getSAMTOOLS(), @PATH);
++use lib '@@share_dir@@';
++use rsem_perl_utils qw(runCommand collectResults showVersionInfo hasPolyA);
+ 
+ use strict;
+ use warnings;
+@@ -198,7 +194,7 @@
+ 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
+ 
+ pod2usage(-verbose => 2) if ($help == 1);
+-&showVersionInfo($FindBin::RealBin) if ($version == 1);
++&showVersionInfo('@@share_dir@@') if ($version == 1);
+ 
+ #check parameters and options
+ 
+@@ -684,7 +680,7 @@
+ 
+ ## To-do: only run gibbs sampling once, either for pRSEM or uniform prior 1
+ if ( $run_prsem ) {
+-  $command = "$FindBin::RealBin/pRSEM/prsem-calculate-expression " .
++  $command = '@@share_dir@@/pRSEM/prsem-calculate-expression ' .
+              " --num-threads $nThreads " .
+              " --partition-model $partition_model " .
+              " --gibbs-burnin $BURNIN " .
+--- rsem-control-fdr
++++ rsem-control-fdr
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use Getopt::Long;
+ use Pod::Usage;
+--- rsem-gen-transcript-plots
++++ rsem-gen-transcript-plots
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env Rscript
++#!@@bin_dir@@/Rscript
+ 
+ ### Some constants
+ 
+--- rsem-generate-data-matrix
++++ rsem-generate-data-matrix
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use strict;
+ 
+--- rsem-generate-ngvector
++++ rsem-generate-ngvector
+@@ -1,15 +1,11 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use Getopt::Long;
+ use Pod::Usage;
+ 
+-use FindBin;
+-use lib $FindBin::RealBin;
++use lib '@@share_dir@@';
+ use rsem_perl_utils;
+ 
+-use Env qw(@PATH);
+-@PATH = ("$FindBin::RealBin/EBSeq", @PATH);
+-
+ use strict;
+ 
+ my $k = 25;
+--- rsem-gff3-to-gtf
++++ rsem-gff3-to-gtf
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@bin_dir@@/python
+ 
+ # Copyright (c) 2016
+ # Bo Li (University of California, Berkeley)
+--- rsem-plot-model
++++ rsem-plot-model
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env Rscript
++#!@@bin_dir@@/Rscript
+ 
+ argv <- commandArgs(TRUE)
+ if (length(argv) != 2) {
+--- rsem-plot-transcript-wiggles
++++ rsem-plot-transcript-wiggles
+@@ -1,14 +1,10 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use Getopt::Long;
+ use Pod::Usage;
+ 
+-use FindBin;
+-use lib $FindBin::RealBin;
+-use rsem_perl_utils qw(runCommand getSAMTOOLS);
+-
+-use Env qw(@PATH);
+-@PATH = ($FindBin::RealBin, "$FindBin::RealBin/" . getSAMTOOLS(), @PATH);
++use lib '@@share_dir@@';
++use rsem_perl_utils qw(runCommand);
+ 
+ use strict;
+ 
+--- rsem-prepare-reference
++++ rsem-prepare-reference
+@@ -1,15 +1,11 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use Getopt::Long qw(:config no_auto_abbrev);
+ use Pod::Usage;	
+ use File::Basename;
+-use FindBin;
+-use lib $FindBin::RealBin;
++use lib '@@share_dir@@';
+ use rsem_perl_utils;
+ 
+-use Env qw(@PATH);
+-@PATH = ($FindBin::RealBin, @PATH);
+-
+ use strict;
+ use warnings;
+ 
+@@ -178,7 +174,7 @@
+ }
+ 
+ if ( $prep_prsem ) {
+-    $command = "$FindBin::RealBin/pRSEM/prsem-prepare-reference " .
++    $command = '@@share_dir@@/pRSEM/prsem-prepare-reference ' .
+                  " --num-threads $star_nthreads " .
+                  " --bowtie-path $bowtie_path " .
+                  " --mappability-bigwig-file $mappability_bigwig_file";
+--- rsem-refseq-extract-primary-assembly
++++ rsem-refseq-extract-primary-assembly
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@bin_dir@@/python
+ 
+ from sys import argv, exit
+ 
+--- rsem-run-ebseq
++++ rsem-run-ebseq
+@@ -1,15 +1,11 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use Getopt::Long;
+ use Pod::Usage;
+ 
+-use FindBin;
+-use lib $FindBin::RealBin;
++use lib '@@share_dir@@';
+ use rsem_perl_utils;
+ 
+-use Env qw(@PATH);
+-@PATH = ("$FindBin::RealBin/EBSeq", @PATH);
+-
+ use strict;
+ 
+ my $ngvF = "";
+@@ -31,7 +27,7 @@
+ if ($ngvF eq "") { $ngvF = "#"; }
+ 
+ $" = " ";
+-$command = "rsem-for-ebseq-find-DE $FindBin::RealBin/EBSeq $ngvF $ARGV[0] $ARGV[2] @conditions";
++$command = "rsem-for-ebseq-find-DE @@share_dir@@ $ngvF $ARGV[0] $ARGV[2] @conditions";
+ &runCommand($command)
+ 
+ __END__
+--- rsem-run-prsem-testing-procedure
++++ rsem-run-prsem-testing-procedure
+@@ -1,14 +1,11 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ use Getopt::Long;
+ use Pod::Usage;
+ use File::Basename;
+-use FindBin;
+-use lib $FindBin::RealBin;
+-use rsem_perl_utils qw(runCommand collectResults showVersionInfo);
+ 
+-use Env qw(@PATH);
+-@PATH = ($FindBin::RealBin, "$FindBin::RealBin/sam", @PATH);
++use lib '@@share_dir@@';
++use rsem_perl_utils qw(runCommand collectResults showVersionInfo);
+ 
+ use strict;
+ use warnings;
+@@ -52,7 +49,7 @@
+ 	   "h|help" => \$help) or pod2usage(-exitval => 2, -verbose => 2);
+ 
+ pod2usage(-verbose => 2) if ($help == 1);
+-&showVersionInfo($FindBin::RealBin) if ($version == 1);
++&showVersionInfo('@@share_dir@@') if ($version == 1);
+ 
+ #check parameters and options
+ {
+@@ -141,7 +138,7 @@
+ my $command = "";
+ 
+ {
+-  $command = "$FindBin::RealBin/pRSEM/prsem-testing-procedure " .
++  $command = '@@share_dir@@/pRSEM/prsem-testing-procedure ' .
+              " --num-threads $nThreads " .
+              " --partition-model $partition_model ";
+ 
+--- rsem_perl_utils.pm
++++ rsem_perl_utils.pm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@bin_dir@@/perl
+ 
+ package rsem_perl_utils;
+ 
+@@ -10,7 +10,7 @@
+ our @EXPORT_OK = qw(runCommand collectResults showVersionInfo getSAMTOOLS hasPolyA);
+ 
+ my $version = "RSEM v1.2.31"; # Update version info here
+-my $samtools = "samtools-1.3"; # If update to another version of SAMtools, need to change this
++my $samtools = "samtools"; # If update to another version of SAMtools, need to change this
+ 
+ # command, {err_msg}
+ sub runCommand {
