@@ -25,11 +25,17 @@ source:
     - samtools-build.patch
 
 build:
-  number: 2
+  number: 3
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
     - BB_MAKE_JOBS
+  no_link:
+    # This script relies on readlink(1) to set PATH to the "tophat" binary;
+    # force a copy into the install environment to prevent symlinks from
+    # "confusing" readlink(1) and causing an bogus python interpreter from
+    # being used. (Fixes <https://github.com/lab7/biobuilds/issues/8>)
+    - bin/tophat2
 
 test:
   # Test data source: http://ccb.jhu.edu/software/tophat/downloads/test_data.tar.gz
