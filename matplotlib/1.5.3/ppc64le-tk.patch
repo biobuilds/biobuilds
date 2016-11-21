@@ -1,0 +1,27 @@
+# Need to explicitly disable 'tkagg' on linux-ppc64le to prevent _tkinter
+# ImportErrors in the tests. NOTE: need to patch "setupext.py" as well since
+# matplot pull request #6442 triggers use of tkagg even when we've disabled it
+# in the setup.cfg file, which can lead to various run-time failures.
+--- setup.cfg.template
++++ setup.cfg.template
+@@ -66,7 +66,7 @@
+ #macosx = auto
+ #pyside = auto
+ #qt4agg = auto
+-#tkagg = auto
++tkagg = False
+ #windowing = auto
+ #wxagg = auto
+ 
+--- setupext.py
++++ setupext.py
+@@ -1637,7 +1637,7 @@ class BackendTkAgg(OptionalBackendPackage):
+     force = True
+ 
+     def check(self):
+-        return "installing; run-time loading from Python Tcl / Tk"
++        raise CheckFailed("tk support not available on ppc64le")
+ 
+     def get_extension(self):
+         sources = [
+

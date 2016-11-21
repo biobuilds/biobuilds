@@ -1,0 +1,65 @@
+package:
+  name: matplotlib
+  version: 1.5.3
+
+source:
+  fn: "matplotlib-1.5.3.tar.gz"
+  url:
+    - "https://pypi.python.org/packages/75/4e/2374eed18ac34421ccd7b4907080abd3009e112ca2c11b100c18961312e0/matplotlib-1.5.3.tar.gz"
+    - "http://download.lab7.io/sources/matplotlib-1.5.3.tar.gz"
+  md5: "ba993b06113040fee6628d74b80af0fd"
+  patches:
+    - cfg_notests.patch
+    - cfg_tkagg.patch     [not ppc64le]
+    - ppc64le-tk.patch    [ppc64le]
+    - cfg_qt4agg.patch    [not osx and not ppc64le]
+    - rctmp_pyside.patch  [not osx and not ppc64le]
+    #- osx-tk.patch        [osx]
+    - osx-framework.patch   [osx]
+
+requirements:
+  # Disabling 'tk' on ppc64le since the upstream Python lacks tk support (i.e.,
+  # the recipe's tests fail with an "ImportError: No module named _tkinter").
+  build:
+    - python
+    - setuptools
+    - numpy x.x
+    - python-dateutil
+    - freetype
+    - pyparsing
+    - pytz
+    - py2cairo            [linux and py2k]
+    - tornado
+    - libpng
+    - tk                  [not osx and not ppc64le]
+    - pyqt                [not osx and not ppc64le]
+    - cycler
+    - nose
+  run:
+    - python
+    - numpy x.x
+    - python-dateutil
+    - freetype            [unix]
+    - pytz
+    - pyparsing
+    - py2cairo            [linux and py2k]
+    - libpng
+    - tk                  [not osx and not ppc64le]
+    - pyqt                [not osx and not ppc64le]
+    - cycler
+
+build:
+  number: 1
+
+test:
+  requires:
+    - nose
+    - mock
+  imports:
+    - matplotlib
+
+about:
+  home: http://matplotlib.org/
+  license: PSF
+  license_file: LICENSE/LICENSE
+  summary: "Python 2D plotting library"

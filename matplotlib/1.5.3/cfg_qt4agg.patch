@@ -1,0 +1,11 @@
+--- setup.cfg.template
++++ setup.cfg.template
+@@ -81,7 +81,7 @@
+ # if you have disabled the relevent extension modules.  Agg will be used
+ # by default.
+ #
+-#backend = Agg
++backend = Qt5Agg
+ #
+ 
+ [package_data]
