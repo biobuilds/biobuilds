@@ -19,7 +19,7 @@ source:
 build:
   # Window users should use the "r" anaconda channel instead
   skip: True  # [win]
-  number: 1
+  number: 2
   rpaths:
     - lib/R/lib/
     - lib/
@@ -36,7 +36,11 @@ requirements:
     - cairo       # [linux]
     - curl        # needed so CRAN package installs work
     - gsl
-    - icu 58.1
+    # Match the ICU version used by the Qt 5 (if one exists for the platform),
+    # so trying to install this along with Qt 5-dependent packages (e.g.,
+    # matplotlib) doesn't end up creating an unresolvable dependency graph.
+    - icu 58.1    # [ppc64le]
+    - icu 54.1    # [osx or linux64]
     - jpeg 8d*
     - libpng
     - libtiff
@@ -55,7 +59,9 @@ requirements:
     - cairo     # [linux]
     - curl      # needed so CRAN package installs work
     - gsl
-    - icu 58.1
+    # See comments in the "build" section above
+    - icu 58.1    # [ppc64le]
+    - icu 54.1    # [osx or linux64]
     - jpeg
     - libpng
     - libtiff

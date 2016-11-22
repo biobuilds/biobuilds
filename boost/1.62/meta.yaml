@@ -8,13 +8,19 @@ requirements:
     # Boost's dynamic libraries record the specific version of the ICU
     # libraries they were linked against, so specify the version here so
     # things don't get confused and break at runtime.
-    - icu 58.1
+    #
+    # Match the ICU version used by the Qt 5 (if one exists for the platform),
+    # so trying to install this along with Qt 5-dependent packages (e.g.,
+    # matplotlib) doesn't end up creating an unresolvable dependency graph.
+    - icu 58.1    # [ppc64le]
+    - icu 54.1    # [osx or linux64]
     - zlib
     - bzip2
   run:
     - python
-    # See comment in the "build" section above.
-    - icu 58.1
+    # See comments in the "build" section above
+    - icu 58.1    # [ppc64le]
+    - icu 54.1    # [osx or linux64]
     - zlib
 
 source:
@@ -26,7 +32,7 @@ source:
   sha256: "36c96b0f6155c98404091d8ceb48319a28279ca0333fba1ad8611eb90afb2ca0"
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
