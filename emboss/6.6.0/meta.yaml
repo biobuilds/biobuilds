@@ -5,9 +5,9 @@ package:
 requirements:
   build:
     - autoconf-update
-    - libgd 2.1.0
+    - libgd 2.2.3
   run:
-    - libgd 2.1.0
+    - libgd 2.2.3
 
 source:
   fn: EMBOSS-6.6.0.tar.gz
@@ -17,7 +17,7 @@ source:
   md5: "cc3fca80cb0618deb10fa0d29fe90e4b"
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
