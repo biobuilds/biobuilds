@@ -1,6 +1,6 @@
 BioBuilds 2016.04 was released on 11 April 2016.
 
-The most significant change for this release has been updates to 21 packages and the addition of 25 new packages, including BioPerl and NCBI SRA Tools. For further details, refer to "[Application in BioBuilds 2016.04](#applications-in-biobuilds-2016-04)" table below.
+The most significant change for this release has been updates to 21 packages and the addition of 25 new packages, including BioPerl and NCBI SRA Tools. For further details, refer to "[Application in BioBuilds 2016.04](#applications-in-biobuilds-201604)" table below.
 
 If you encounter any bugs running a BioBuilds application, please send feel free to send bugs reports to [bugs@biobuilds.org](mailto:bugs@biobuilds.org) or [create a issue](https://github.com/lab7/biobuilds/issues) in the GitHub repository.
 

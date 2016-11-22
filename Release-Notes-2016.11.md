@@ -1,6 +1,6 @@
 BioBuilds 2016.11 was released on 22 November 2016.
 
-This release updates 36 packages and adds 19 packages, including LUMPY, PLINK-NG, RAxML, Salmon, and SPAdes. For further details, refer to "[Application in BioBuilds 2016.11](#applications-in-biobuilds-2016.11)" table below.
+This release updates 36 packages and adds 19 packages, including LUMPY, PLINK-NG, RAxML, Salmon, and SPAdes. For further details, refer to "[Application in BioBuilds 2016.11](#applications-in-biobuilds-201611)" table below.
 
 If you encounter any bugs running a BioBuilds application, please send feel free to send bugs reports to [bugs@biobuilds.org](mailto:bugs@biobuilds.org) or [create a issue](https://github.com/lab7/biobuilds/issues) in the GitHub repository.
 
