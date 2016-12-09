@@ -94,7 +94,6 @@ While every effort has been made to make BioBuilds as self-contained as possible
 - The SOAP3-DP and Barracuda applications are GPU-accelerated applications, and therefore, require that the appropriate nVidia hardware and [drivers](http://www.nvidia.com/Download/index.aspx?lang=en-us) (including libcuda.so) be installed on your system.
 - Some applications may see performance benefits from specific hardware configurations. In particular, the POWER8 version of the Illumina aligner (iSAAC) has better performance on hardware running in SMT4 or SMT8 mode, with the application's `-j` option set to the appropriate number of hardware threads.
 
-
 # Applications in BioBuilds 2016.11
 
 The following table lists applications included in the BioBuilds 2016.11 release; note that for brevity, certain support libraries and dependent packages (e.g., individual R packages) are not listed.
@@ -119,11 +118,12 @@ The following table lists applications included in the BioBuilds 2016.11 release
 | BWA           | 0.7.15        | Upgrade                 |
 | chimerascan   | 0.4.5a        | No change               |
 | ClustalW      | 2.1           | No change               |
+| conda         | >= 4.2.12     | Upgraded, as needed [1] |
 | Cufflinks     | 2.2.1         | No change               |
 | cutadapt      | 1.11          | New                     |
 | DELLY2        | 0.7.6         | Upgrade                 |
 | DIAMOND       | 0.8.24        | New                     |
-| EBSEQ (R)     | 1.14.0        | Upgrade                 |
+| EBSEQ (Bioconductor) | 1.14.0        | Upgrade                 |
 | EMBOSS        | 6.6.0         | Upgrade                 |
 | FASTA         | 36.3.8e       | Upgrade                 |
 | FASTQC        | 0.11.5        | No change               |
@@ -147,6 +147,7 @@ The following table lists applications included in the BioBuilds 2016.11 release
 | NCBI BLAST+   | 2.5.0         | Upgrade                 |
 | NumPy         | 1.11.2        | Upgrade                 |
 | Oases         | 0.2.8         | No change               |
+| OpenBLAS      | 0.2.19        | Upgrade                 |
 | Pandas        | 0.19.1        | Upgrade                 |
 | parallel      | 20160922      | New                     |
 | Perl          | 5.22.0        | No change               |
@@ -181,7 +182,7 @@ The following table lists applications included in the BioBuilds 2016.11 release
 | SPAdes        | 3.9.0         | New                     |
 | SplazerS      | 1.3.3         | No change               |
 | SQLite        | 3.13.0        | Upgrade                 |
-| SRA Tools     | Variable      | Upgrade, as needed      |
+| SRA Tools     | >= 2.8.0      | Upgraded, as needed [2] |
 | STAR          | 2.5.2b        | Upgrade                 |
 | STAR-fusion   | 0.8.0         | Upgrade                 |
 | tabix         | 1.3.2         | Upgrade                 |
@@ -195,4 +196,7 @@ The following table lists applications included in the BioBuilds 2016.11 release
 | vcftools      | 0.1.14        | New                     |
 | Velvet        | 1.2.10        | No change               |
 
-**Note**: The "SRA Tools" package version is marked as "Variable" since updates may be made available through the "biobuilds" conda channel to help ensure protocol and/or format compatiblity with the NCBI SRA server.
+
+[1] "conda" is the package manager used by BioBuilds and may be upgraded by its provider ([Continuum Analytics](https://www.continuum.io)) as necessary. The version listed here (4.2.12) was the most current when BioBuilds 2016.11 was released, but BioBuilds should work with any newer version of `conda`.
+
+[2] The "SRA Tools" package is marked as "Upgraded, as needed", since updates may be provided through the "biobuilds" conda channel to ensure protocol and/or format compatiblity with the NCBI SRA server. The version listed here (2.8.0) was the most current when BioBuilds 2016.11 was initially released.
