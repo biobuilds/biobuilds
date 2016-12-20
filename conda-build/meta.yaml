@@ -7,7 +7,9 @@ source:
   git_tag: 2.0.9
 
 build:
-  number: 0
+  number: 1
+  skip: True    # [not ppc64le]
+  include_recipe: False
   entry_points:
     - conda-build = conda_build.cli.main_build:main
     - conda-convert = conda_build.cli.main_convert:main
