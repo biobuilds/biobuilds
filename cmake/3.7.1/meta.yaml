@@ -1,0 +1,43 @@
+package:
+  name: cmake
+  version: "3.7.1"
+
+source:
+  fn: "cmake-3.7.1.tar.gz"
+  url:
+    - "https://cmake.org/files/v3.7/cmake-3.7.1.tar.gz"
+    - "http://download.lab7.io/sources/cmake-3.7.1.tar.gz"
+  sha1: "d00c720847c0a2aff817c36377569efbb677fb08"
+
+requirements:
+  build:
+    - bzip2
+    - curl
+    - expat
+    - ncurses
+    - xz
+    - zlib
+  run:
+    - bzip2
+    - curl
+    - expat
+    - ncurses
+    - xz
+    - zlib
+
+build:
+  # Give our package a large build number so it's preferred over the
+  # corresponding package (if any) in the "defaults" channel.
+  number: 700
+
+test:
+  files:
+    - test-https-download.cmake
+  commands:
+    - cmake --version
+    - cmake -V -P test-https-download.cmake
+
+about:
+  home: "https://cmake.org/"
+  license: BSD
+  summary: "Open-source, cross-platform tools designed to build, test, and package software"
