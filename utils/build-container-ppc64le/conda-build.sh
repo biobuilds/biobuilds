@@ -40,7 +40,7 @@ mkdir -p "${CONDA_BLD_PATH}"
     ln -sfn /src/conda-bld/src_cache "${CONDA_BLD_PATH}/src_cache"
 
 # Use local copies of existing BioBuilds packages to reduce network traffic
-if [ "/src/conda-bld/${CONDA_PLATFORM}" -o "/src/conda-bld/noarch" ]; then
+if [ -d "/src/conda-bld/${CONDA_PLATFORM}" -o -d "/src/conda-bld/noarch" ]; then
     channel_opts="-c file:///src/conda-bld"
 else
     channel_opts=
