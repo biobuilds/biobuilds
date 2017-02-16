@@ -32,9 +32,9 @@ Several applications within the BioBuilds package have their own specific requir
 
 To install BioBuilds 2016.04, please first download the appropriate Miniconda installer from Continuum Analytics:
 
-* [OS X on x86_64](https://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh)
-* [Linux on x86_64](https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh)
-* [Linux on POWER8](http://repo.continuum.io/miniconda/Miniconda-latest-Linux-ppc64le.sh)
+* [OS X on x86_64](https://repo.continuum.io/miniconda/Miniconda-3.16.0-MacOSX-x86_64.sh)
+* [Linux on x86_64](https://repo.continuum.io/miniconda/Miniconda-3.16.0-Linux-x86_64.sh)
+* [Linux on POWER8](https://repo.continuum.io/miniconda/Miniconda-3.16.0-Linux-ppc64le.sh)
 
 Then install Miniconda by running `bash Miniconda-latest-<os>-<arch>.sh`, where `<os>` is either "Linux" or "MacOSX", and `<arch>` is either "x86_64" or "ppc64le"; for further details, refer to the [Conda Quick Install Guide](http://conda.pydata.org/docs/install/quick.html).
 
