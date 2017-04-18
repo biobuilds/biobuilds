@@ -1,0 +1,12 @@
+# Make sure "make check" returns non-zero if one or more tests fail
+--- easel/devkit/sqc
++++ easel/devkit/sqc
+@@ -495,6 +495,8 @@
+ unlink $tmp if -e $tmp;
+ unlink "$tmp.stderr" if -e "$tmp.stderr";
+ 
++# Set exit code based on how many tests failed
++exit ($badtest > 0);
+ 
+ sub check_status
+ {

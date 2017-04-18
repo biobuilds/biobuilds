@@ -37,6 +37,6 @@ env CC="$hmmer_gcc" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
 
 
 ## Build and install
-make -j${BB_MAKE_JOBS}
+make -j${BB_MAKE_JOBS} V=1
 make check
 make install

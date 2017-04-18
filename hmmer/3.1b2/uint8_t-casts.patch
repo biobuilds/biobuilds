@@ -1,0 +1,29 @@
+--- ./src/impl_sse/p7_oprofile.c.orig
++++ ./src/impl_sse/p7_oprofile.c
+@@ -660,7 +660,15 @@
+   uint8_t b;
+ 
+   sc  = -1.0f * roundf(om->scale_b * sc);                          /* ugh. sc is now an integer cost represented in a float...           */
+-  b   = (sc > 255 - om->bias_b) ? 255 : (uint8_t) sc + om->bias_b; /* and now we cast, saturate, and bias it to an unsigned char cost... */
++  /* The C standard says casting an out-of-range float to an unsigned integer
++   * type is an undefined behavior. The expectation here seems to be that
++   * negative values of "sc" should be cast to 255. To ensure that this happens
++   * consistently across platforms (x86_64 and POWER) and compilers, we first
++   * need to cast "sc" to a signed int before casting it into an uint8_t.
++   *
++   * Thanks to Kathy Tzeng and Bill Schmidt from IBM for the fix.
++   */
++  b   = (sc > 255 - om->bias_b) ? 255 : (uint8_t)(signed int) sc + om->bias_b; /* and now we cast, saturate, and bias it to an unsigned char cost... */
+   return b;
+ }
+  
+@@ -676,7 +684,8 @@
+   uint8_t b;
+ 
+   sc  = -1.0f * roundf(om->scale_b * sc);       /* ugh. sc is now an integer cost represented in a float...    */
+-  b   = (sc > 255.) ? 255 : (uint8_t) sc;	/* and now we cast and saturate it to an unsigned char cost... */
++  /* See above for why this double cast is needed */
++  b   = (sc > 255.) ? 255 : (uint8_t)(signed int) sc;	/* and now we cast and saturate it to an unsigned char cost... */
+   return b;
+ }
+  
