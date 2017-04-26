@@ -68,7 +68,9 @@ ENV PATH /opt/miniconda/bin:$PATH
 # Install a minimal set of X11 development packages from the official Ubuntu
 # repository; these are needed for building conda packages that depend on the
 # cairo vector graphics library (among other things).
-RUN apt-get update && apt-get install --no-install-recommends -q -y \
+RUN apt-get update \
+    && apt-get dist-upgrade -y \
+    && apt-get install --no-install-recommends -q -y \
         libx11-dev \
         libxext-dev \
         libxrender-dev \

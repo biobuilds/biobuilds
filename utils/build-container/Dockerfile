@@ -69,7 +69,8 @@ ENV PATH /opt/miniconda/bin:$PATH
 # Install a minimal set of X11 development packages from the official CentOS
 # repository; these are needed for building conda packages that depend on the
 # cairo vector graphics library (among other things).
-RUN yum install -y \
+RUN yum upgrade -y \
+    && yum install -y \
         libX11-devel \
         libXext-devel \
         libXrender-devel \
