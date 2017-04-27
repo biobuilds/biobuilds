@@ -6,6 +6,7 @@ shell=0
 img=
 build_pkgs=
 build_opts=
+make_jobs=
 
 # Always allocate a pseudo-TTY in (-t) and attach STDIN to (-i) the container;
 # if we don't, conda build messages (particularly in the test phase) can
@@ -46,6 +47,16 @@ while [ "$1" != "" ]; do
         "--shell")
             shell=1
             ;;
+        "-j" | "--jobs")
+            shift; make_jobs="$1"
+            ;;
+        "-j"*)
+            make_jobs="${1:2}"
+            ;;
+        "--jobs="*)
+            make_jobs="${1#*=}"
+            [[ -z "$make_jobs" ]] && abort "'--jobs' must have non-empty value"
+            ;;
         "-c" | "--channel" | "--python" | "--numpy" | "--perl" | "--R")
             # conda options that take an additional argument
             build_opts="$build_opts $1"
@@ -78,6 +89,11 @@ if [[ -f "${PKG_CACHE_DIR}/.index.json" && \
 fi
 
 # Sanity check arguments
+if [[ ! -z "$make_jobs" ]]; then
+    [[ "$make_jobs" -gt 0 ]] || \
+        abort "value for '-j'/'--jobs' must be integer > 0"
+    BB_MAKE_JOBS=${make_jobs}
+fi
 if [ $shell -eq 0 ]; then
     [ "x$build_pkgs" == "x" ] && \
         abort "must specify at least one package to build!"
