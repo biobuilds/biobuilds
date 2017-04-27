@@ -2,9 +2,8 @@
 
 basedir=$(cd "`dirname ${BASH_SOURCE[0]}`" && pwd)
 
-img="lab7io/build:biobuilds"
-
 shell=0
+img=
 build_pkgs=
 build_opts=
 
@@ -19,12 +18,14 @@ abort() {
     exit 1
 }
 
-# Make sure we use the image appropriate for this architecture.
-# WARNING: this munging only applies to the default image used by this script;
-# when invoking with the "--img" option, the user is responsible for providing
-# an architecture-appropriate image name.
-if [ `uname -m` == 'ppc64le' ]; then
-    img="${img}-ppc64le"
+if [[ -z "$BB_BUILD_IMAGE" ]]; then
+    case `uname -m` in
+        x86_64)  img="lab7io/build:biobuilds" ;;
+        ppc64le) img="lab7io/build:biobuilds-ppc64le" ;;
+        *) abort 'No default build image for this architecture' ;;
+    esac
+else
+    img="${BB_BUILD_IMAGE}"
 fi
 
 # Process command line arguments
