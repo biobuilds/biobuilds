@@ -117,12 +117,26 @@ fi
 #   CPUs used when building recipes that use the "biobuilds-build" package to
 #   configure their build environment.
 #
+# - Pass the $BB_* environment variables to provide some level of backwards
+#   compatibility with legacy recipes that do not configure their build
+#   environment using the "biobuilds-build" package. Note that as of the
+#   2017.05 release, the build container's ENTRYPOINT script no longer sources
+#   "bb-build-flags.env"; to rebuild older recipes using the standard set of
+#   build flags, you will have to do one of the following:
+#
+#     - "Manually" set and export $BB_ARCH_FLAGS and $BB_OPT_FLAGS;
+#     - Source the environment script _before_ running "docker-build"; or
+#     - Build using an older (pre-2017.05) image using either the "--img"
+#       option or the $BB_BUILD_IMAGE environment variable.
+#
 #------------------------------------------------------------------------------
 echo "Launching image '$img'..." >&2
 docker run --rm \
     -e MAKE_JOBS=${make_jobs} \
     -e FEATURE_OPT=${FEATURE_OPT} \
     -e BB_MAKE_JOBS=${BB_MAKE_JOBS:-1} \
+    -e BB_ARCH_FLAGS="${BB_ARCH_FLAGS:-}" \
+    -e BB_OPT_FLAGS="${BB_OPT_FLAGS:-}" \
     -v "${basedir}:/src" \
     $docker_opts \
     "$img" $build_opts $build_pkgs
