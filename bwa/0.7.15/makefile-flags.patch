@@ -1,13 +1,17 @@
 --- Makefile
 +++ Makefile
-@@ -1,6 +1,6 @@
- CC=			gcc
+@@ -1,8 +1,8 @@
+-CC=			gcc
++CC ?=			gcc
  #CC=			clang --analyze
 -CFLAGS=		-g -Wall -Wno-unused-function -O2
-+CFLAGS?=		-g -Wall -Wno-unused-function -O2
++CFLAGS ?=		-g -Wall -Wno-unused-function -O2
  WRAP_MALLOC=-DUSE_MALLOC_WRAPPERS
- AR=			ar
+-AR=			ar
++AR ?=			ar
  DFLAGS=		-DHAVE_PTHREAD $(WRAP_MALLOC)
+ LOBJS=		utils.o kthread.o kstring.o ksw.o bwt.o bntseq.o bwa.o bwamem.o bwamem_pair.o bwamem_extra.o malloc_wrap.o \
+ 			QSufSort.o bwt_gen.o rope.o rle.o is.o bwtindex.o
 @@ -27,10 +27,10 @@
  all:$(PROG)
  
