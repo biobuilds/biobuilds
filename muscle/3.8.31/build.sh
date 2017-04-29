@@ -1,10 +1,8 @@
 #!/bin/bash
 
-# If available, pull in BioBuilds optimization flags
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CXXFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+[ -f "${BUILD_ENV}" ] && . "${BUILD_ENV}" -v
 
 cd src
 
@@ -26,6 +24,6 @@ clean:
 RULES
 
 make clean
-make -j${BB_MAKE_JOBS} CXXFLAGS="${CXXFLAGS}" LDLIBS="${LDFLAGS}"
+make -j${MAKE_JOBS} CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" LDLIBS="${LDFLAGS}"
 install -d "${PREFIX}/bin"
 install -m 0755 muscle "${PREFIX}/bin"
