@@ -4,20 +4,29 @@ package:
 
 source:
   fn: clustalw-2.1.tar.gz
-  url: http://download.lab7.io/sources/clustalw-2.1.tar.gz
+  url:
+    - "http://www.clustal.org/download/current/clustalw-2.1.tar.gz"
+    - "http://download.lab7.io/sources/clustalw-2.1.tar.gz"
   md5: 144df8440a0ae083d5167616c8ceeb41
 
+requirements:
+  build:
+    - biobuilds-build
+  run:
+    - biobuilds-opt     # [opt]
+
 build:
-  number: 0
-  script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
+  number: 1
+  features:
+    - opt     # [opt]
 
 test:
   files:
     - kras.fa
   commands:
-    - "clustalw2 kras.fa && [ -f kras.aln ]"
+    # Use `test` instead of `[` to prevent conda build from tripping up by
+    # trying to parse out a preprocessing selector from the test command.
+    - "clustalw2 kras.fa && test -f kras.aln"
 
 about:
   home: http://www.clustal.org/clustal2/
