@@ -106,8 +106,17 @@ else
     build_pkgs=
 fi
 
+#------------------------------------------------------------------------------
+# Launch the build container.
+#
+# - Set the MAKE_JOBS environment variable so users can control the number of
+#   CPUs used when building recipes that use the "biobuilds-build" package to
+#   configure their build environment.
+#
+#------------------------------------------------------------------------------
 echo "Launching image '$img'..." >&2
 docker run --rm \
+    -e MAKE_JOBS=${make_jobs} \
     -e BB_MAKE_JOBS=${BB_MAKE_JOBS:-1} \
     -v "${basedir}:/src" \
     $docker_opts \
