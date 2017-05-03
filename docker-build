@@ -7,6 +7,7 @@ img=
 build_pkgs=
 build_opts=
 make_jobs=
+FEATURE_OPT=0
 
 # Always allocate a pseudo-TTY in (-t) and attach STDIN to (-i) the container;
 # if we don't, conda build messages (particularly in the test phase) can
@@ -56,6 +57,9 @@ while [ "$1" != "" ]; do
         "--jobs="*)
             make_jobs="${1#*=}"
             [[ -z "$make_jobs" ]] && abort "'--jobs' must have non-empty value"
+            ;;
+        "-o" | "--opt")
+            FEATURE_OPT=1
             ;;
         "-c" | "--channel" | "--python" | "--numpy" | "--perl" | "--R")
             # conda options that take an additional argument
@@ -117,6 +121,7 @@ fi
 echo "Launching image '$img'..." >&2
 docker run --rm \
     -e MAKE_JOBS=${make_jobs} \
+    -e FEATURE_OPT=${FEATURE_OPT} \
     -e BB_MAKE_JOBS=${BB_MAKE_JOBS:-1} \
     -v "${basedir}:/src" \
     $docker_opts \

@@ -1,0 +1,17 @@
+package:
+  name: biobuilds-opt
+  version: 2017.05
+
+build:
+  track_features:
+    - opt
+
+requirements:
+  build: []
+  run:
+    - intel-icc-libs    # [linux64]
+    - intel-ifort-libs  # [linux64]
+    - ibm-at-runtime    # [ppc64le]
+
+about:
+  summary: "Meta-package for tracking the 'opt' feature on BioBuilds packages"
