@@ -5,9 +5,6 @@ abort() {
     exit 1
 }
 
-[ -f "/src/bb-build-flags.env" ] || \
-    abort "Could not find BioBuilds sources in /src"
-
 # "--shell" option to drop into an interactive shell instead of immediately
 # running "conda build"; this is particularly useful for recipe debugging.
 shell=0
@@ -19,7 +16,17 @@ for arg in "$@"; do
 done
 
 cd "/src"
-source bb-build-flags.env ${BB_MAKE_JOBS:-1}
+
+# As of the 2017.05 release, we favor having a build-time dependency on the
+# "biobuilds-build" package over externally-provided environment variables as
+# the method for supplying/managing common build flags. Done to:
+#
+#   1. Improve the consistency of "conda build", especially when (re)building
+#      from outside a "lab7io/biobuilds" Docker container; and
+#   2. Make it easier to configure build flags when building packages with the
+#      "opt" feature enabled.
+#
+#source bb-build-flags.env ${BB_MAKE_JOBS:-1}
 
 # If requested, drop to an interactive shell instead running "conda build"
 if [ $shell -eq 1 ]; then

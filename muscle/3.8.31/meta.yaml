@@ -9,12 +9,16 @@ source:
     - http://download.lab7.io/sources/muscle-3.8.31.tar.gz
   md5: f767f00fd15f0c5db944d41936779e10
 
+requirements:
+  build:
+    - biobuilds-build
+  run:
+    - biobuilds-opt   # [opt]
+
 build:
-  number: 0
-  script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+  number: 1
+  features:
+    - opt   # [opt]
 
 test:
   files:

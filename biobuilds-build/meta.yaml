@@ -1,0 +1,15 @@
+package:
+  name: biobuilds-build
+  version: "2017.05"
+
+requirements:
+  build: []
+  run: []
+
+build:
+  number: 0
+
+about:
+  home: "https://www.biobuilds.org/"
+  license: BSD
+  summary: "Support scripts for building BioBuilds packages"
