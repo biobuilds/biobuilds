@@ -1,21 +1,30 @@
 #!/bin/bash
 
-command -v pkg-config >/dev/null || \
-    { echo "Could not find 'pkg-config' command" >&2; exit 1; }
-
 # configure
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CXXFLAGS="${CXXFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
-CXXFALGS="${CXXFLAGS} -Wall -Wno-unused-function"
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
+CXXFLAGS="${CXXFLAGS} -Wall -Wno-unused-function"
 
-PLATFORM=$( [ `uname -s` == 'Darwin' ] && echo "MAC" || echo "UNIX" )
+# Let Intel C++ compiler go wild trying to parallelize/optimize some loops.
+# OK...this is bad idea. Takes a huge amount of RAM (> 16-GiB), and
+# "conda build" gave up waiting for the process to finish.
+#if [[ "${CXX}" == *"icpc" ]]; then
+#    CXXFLAGS="${CXXFLAGS} -qoverride-limits"
+#fi
+
+case "$BUILD_OS" in
+  'darwin') PLATFORM="MAC" ;;
+  *) PLATFORM="UNIX" ;;
+esac
 
 # build
-env CXXFLAGS="${CXXFLAGS} $(pkg-config --cflags zlib)" \
-    LDFLAGS="${LDFLAGS} $(pkg-config --libs zlib)" \
-    make -j${BB_MAKE_JOBS} FORCE_DYNAMIC=1 SYS=${PLATFORM}
+env CXX_UNIX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
+    LDFLAGS="${LDFLAGS}" \
+    make -j${MAKE_JOBS} FORCE_DYNAMIC=1 SYS=${PLATFORM}
 
 # install
 DOC_DIR="${PREFIX}/share/doc/plink"

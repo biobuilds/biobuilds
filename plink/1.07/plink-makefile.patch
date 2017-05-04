@@ -1,6 +1,6 @@
---- Makefile.orig	2014-11-06 18:13:58.571664215 -0600
-+++ Makefile	2014-11-06 18:15:16.883661009 -0600
-@@ -22,8 +22,8 @@
+--- Makefile
++++ Makefile
+@@ -22,19 +22,22 @@
  SYS = UNIX
  
  # Leave blank after "=" to disable; put "= 1" to enable
@@ -11,7 +11,11 @@
  FORCE_32BIT = 
  WITH_ZLIB = 1
  WITH_LAPACK = 
-@@ -34,7 +34,10 @@
+ FORCE_DYNAMIC = 
+ 
+ # Put C++ compiler here; Windows has it's own specific version
+-CXX_UNIX = g++
++CXX_UNIX ?= g++
  CXX_WIN = c:\bin\mingw\bin\mingw32-g++.exe
  
  # Any other compiler flags here ( -Wall, -g, etc)

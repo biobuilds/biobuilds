@@ -5,28 +5,34 @@ package:
 requirements:
   build:
     - zlib
+    - biobuilds-build
   run:
     - zlib
+    - biobuilds-opt     # [opt]
 
 source:
   fn: plink-1.07-src.zip
-  url: http://download.lab7.io/sources/plink-1.07-src.zip
+  url:
+    - "http://zzz.bwh.harvard.edu/plink/dist/plink-1.07-src.zip"
+    - "http://download.lab7.io/sources/plink-1.07-src.zip"
   md5: 4566376791df4e69459b849bd7078fa3
   patches:
     - plink-makefile.patch
     - plink-sources.patch
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt         # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 test:
+   # NOTE: this use of "source_files" requires conda-build >= 2.0.9
+  source_files:
+    - test.map
+    - test.ped
   commands:
-    - cp -f "${SRC_DIR}/test.map" .
-    - cp -f "${SRC_DIR}/test.ped" .
     - plink --file test --freq --out test
     - plink --file test --assoc --out test
     - plink --file test --make-bed --out test
