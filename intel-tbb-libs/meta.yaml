@@ -1,0 +1,24 @@
+{% set version = "2017.2.174" %}
+
+package:
+  name: intel-tbb-libs
+  version: {{ version }}
+
+source:
+  # No source URL; registration required to download the Intel Performance
+  # Libraries <https://software.intel.com/en-us/performance-libraries>
+  fn: "intel-tbb-libs-{{ version }}.tgz"
+  sha1: "fc442784994ddc6e99b5fb2f7c4d413b13ed89a9"
+
+requirements:
+  build: []
+  run: []
+
+build:
+  skip: True    # [not linux64]
+  number: 0
+
+about:
+  summary: "Intel Thread Building Blocks (TBB) runtime libraries"
+  license: "EULA for Intel(R) Software Development Products (Version March 2016)"
+  license_file: "license.txt"
