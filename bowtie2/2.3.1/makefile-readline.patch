@@ -1,0 +1,11 @@
+--- Makefile
++++ Makefile
+@@ -25,7 +25,7 @@
+ bindir = $(prefix)/bin
+ 
+ INC =
+-LIBS = -lreadline -ltermcap -lz
++LIBS = -lreadline -lncurses -lz
+ GCC_PREFIX = $(shell dirname `which gcc`)
+ GCC_SUFFIX =
+ CC ?= $(GCC_PREFIX)/gcc$(GCC_SUFFIX)

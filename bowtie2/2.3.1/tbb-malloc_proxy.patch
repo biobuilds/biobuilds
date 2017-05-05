@@ -1,0 +1,27 @@
+#-------------------------------------------------------------------------------
+# Use "libtbbmalloc.so" instead of "libltbbmalloc_proxy.so" to work around an
+# issue where the combination of GCC 6.x and TBB 4.4 provided by IBM Advance
+# Toolchain (AT) 10.0 causes the resulting binaries to segfault when calling
+# `tbb::internal::allocate_root_with_context_proxy::allocate`.
+#
+# Strongly suspect it's related to the previously reported "GCC 6.x dead store
+# elimination optimises away memset in allocate_scheduler" issue (details at
+# <https://software.intel.com/en-us/forums/intel-threading-building-blocks/topic/641654>),
+# but the suggested compiler flags for working around the issue (see build.sh)
+# don't seem to be working for us when using AT 10.0.
+#
+# Note we could also fix this problem by using "-ltbb_debug" instead of "-ltbb"
+# (and leaving "-ltbbmalloc_proxy" as is), but that seems like a less 'ideal',
+# poorer performance solution than using "-ltbbmalloc".
+#-------------------------------------------------------------------------------
+--- Makefile
++++ Makefile
+@@ -94,7 +94,7 @@
+ 
+ #default is to use Intel TBB
+ ifneq (1,$(NO_TBB))
+-	LIBS += $(PTHREAD_LIB) -ltbb -ltbbmalloc_proxy
++	LIBS += $(PTHREAD_LIB) -ltbb -ltbbmalloc
+ 	override EXTRA_FLAGS += -DWITH_TBB
+ else
+ 	LIBS += $(PTHREAD_LIB)
