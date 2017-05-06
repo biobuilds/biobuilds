@@ -4,13 +4,22 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     - autoconf-update
     - zlib
-    - boost 1.62.0
+    # AT (which we use to build ppc64le packages with the "opt" feature) comes
+    # with its own set of pre-built Boost runtime libraries, so use those
+    # rather than the ones provided by the BioBuilds "boost" package. Avoids
+    # potential runtime problems, since AT-generated binaries include the AT
+    # "lib64" directory in their RPATH, and we're not 100% sure the libraries
+    # from the two Boost packages are compatible.
+    - boost 1.62.0      # [not (opt and ppc64le)]
     - python
   run:
+    - biobuilds-opt     # [opt]
     - zlib
-    - boost 1.62.0
+    # See the "build" section for why this selector for Boost is here.
+    - boost 1.62.0      # [not (opt and ppc64le)]
     - bowtie2
     - python
 
@@ -25,11 +34,9 @@ source:
     - samtools-build.patch
 
 build:
-  number: 3
-  script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+  number: 4
+  features:
+    - opt     # [opt]
   no_link:
     # This script relies on readlink(1) to set PATH to the "tophat" binary;
     # force a copy into the install environment to prevent symlinks from

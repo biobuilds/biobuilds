@@ -12,8 +12,9 @@
 --- src/samtools-0.1.18/Makefile
 +++ src/samtools-0.1.18/Makefile
 @@ -1,5 +1,5 @@
- CC=			gcc
+-CC=			gcc
 -CFLAGS=		-g -Wall -O2 #-m64 #-arch ppc
++CC?=			gcc
 +CFLAGS+=		-Wall
  DFLAGS=		-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D_USE_KNETFILE -D_CURSES_LIB=0
  KNETFILE_O=	knetfile.o
