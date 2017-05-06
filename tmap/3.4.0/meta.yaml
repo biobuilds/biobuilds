@@ -4,20 +4,25 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     - autoconf-update
     - veclib-headers    # [ppc64le]
     - bzip2
     - zlib
   run:
+    - biobuilds-opt     # [opt]
     - zlib
 
 source:
   fn: tmap-3.4.0.tar.gz
-  url: http://download.lab7.io/sources/tmap-3.4.0.tar.gz
+  url:
+    # Basically the GitHub version with autoconf already run
+    - "http://download.lab7.io/sources/tmap-3.4.0.tar.gz"
   md5: 9023d7d400f75e0f3455b718e33a3c7a
   patches:
     - configure.patch
     - ppc64le-support.patch   # [ppc64le]
+    - icc-support.patch       # [opt and linux64]
     - osx-clang.patch         # [osx]
 
 test:
@@ -25,11 +30,11 @@ test:
     - test-data.tar.bz2
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 about:
   home: "https://github.com/iontorrent/TMAP"
