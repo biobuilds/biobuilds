@@ -270,16 +270,17 @@
  }
 --- gmapper/mapping.c
 +++ gmapper/mapping.c
-@@ -4,7 +4,7 @@
+@@ -4,7 +4,8 @@
  
  #include <omp.h>
  #ifdef USE_PREFETCH
 -#include <xmmintrin.h>
++#include <vec128int.h>  /* fixes undeclared 'vec_splat16sb' in vec_crc321ud */
 +#include <vecmisc.h>
  #endif
  
  #include <limits.h>
-@@ -499,7 +499,7 @@ read_get_region_counts(struct read_entry * re, int st, struct regions_options *
+@@ -499,7 +500,7 @@ read_get_region_counts(struct read_entry * re, int st, struct regions_options *
  #ifdef USE_PREFETCH
  	if (j + 4 < genomemap_len[sn][re->mapidx[st][offset]]) {
  	  int region_ahead = (int)(genomemap[sn][re->mapidx[st][offset]][j + 4] >> region_bits);
@@ -288,7 +289,7 @@
  	}
  #endif
  
-@@ -558,8 +558,8 @@ read_get_mp_region_counts(struct read_entry * re, int st)
+@@ -558,8 +559,8 @@ read_get_mp_region_counts(struct read_entry * re, int st)
  #ifdef USE_PREFETCH
  	if (j + 4 < genomemap_len[sn][re->mapidx[st][offset]]) {
  	  int region_ahead = (int)(genomemap[sn][re->mapidx[st][offset]][j + 4] >> region_bits);
@@ -299,7 +300,7 @@
  	}
  #endif
  
-@@ -648,7 +648,7 @@ advance_index_in_genomemap(struct read_entry * re, int st,
+@@ -648,7 +649,7 @@ advance_index_in_genomemap(struct read_entry * re, int st,
  #ifdef USE_PREFETCH
      if (*idx + 2 < max_idx) {
        int region_ahead = (int)(map[*idx + 2] >> region_bits);

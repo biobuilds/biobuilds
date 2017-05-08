@@ -1,19 +1,25 @@
 #!/bin/bash
 
-command -v pkg-config >/dev/null || \
-    { echo "Could not find 'pkg-config' command" >&2; exit 1; }
+## Configure
 
-# Configure
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CXXFLAGS="${CXXFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
+
 CXXFLAGS="${CXXFLAGS} -DNDEBUG -fopenmp -Wall -Wno-deprecated"
-CXXFLAGS="${CXXFLAGS} $(pkg-config --cflags zlib)"
-LDFLAGS="${LDFLAGS} $(pkg-config --libs zlib)"
 
-CPU_ARCH=$(uname -m)
-if [ "$CPU_ARCH" == "ppc64le" ]; then
+if [[ "${CXX}" == */bin/icpc ]]; then
+    # Require IEEE-compliant division so results match the GCC-built version.
+    # (With our test case, "-no-prec-div" yields the same alignments as the GCC
+    # version, but the mapping quality scores differ.)
+    CXXFLAGS="${CXXFLAGS/-no-prec-div/}"
+fi
+
+if [ "$BUILD_ARCH" == "ppc64le" ]; then
     # Should be provided by the "veclib-headers" package
     [ -d "${PREFIX}/include/veclib" ] || \
         { echo "ERROR: could not find veclib headers" >&2; exit 1; }
@@ -21,9 +27,10 @@ if [ "$CPU_ARCH" == "ppc64le" ]; then
 fi
 
 
-# Build
-env CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
-    make -j${BB_MAKE_JOBS}
+## Build
+env CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
+    LD="${CXX}" LDFLAGS="${LDFLAGS}" \
+    make -j${MAKE_JOBS}
 
 
 ## Install
