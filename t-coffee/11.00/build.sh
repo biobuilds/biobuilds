@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# Configure
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CFLAGS="-Wall ${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
 
-if [ `uname -m` == 'ppc64le' ]; then
+if [ "$BUILD_ARCH" == 'ppc64le' ]; then
     CFLAGS="${CFLAGS} -fsigned-char"
 fi
 
@@ -20,7 +22,9 @@ find . -name '*.pl' | xargs chmod 0755
 
 # Build
 cd compile
-make VERSION="${PKG_VERSION}" OPENMP=1 CFLAGS="${CFLAGS}" t_coffee
+make VERSION="${PKG_VERSION}" OPENMP=1 \
+    CC="${CXX}" CFLAGS="${CFLAGS}" \
+    t_coffee
 
 # Install
 install -d "${PREFIX}/bin"
