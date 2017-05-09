@@ -10,7 +10,7 @@ source:
   md5: "b5a572bfd1d5d0ecc2314b61f53596f5"
 
 build:
-  number: 0
+  number: 1
 
 about:
   home: "https://www.gnu.org/software/libidn/#libidn2"
