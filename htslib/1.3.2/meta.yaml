@@ -4,9 +4,11 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     - zlib
     - curl 7.51.0
   run:
+    - biobuilds-opt     # [opt]
     - zlib
     - curl 7.51.0
 
@@ -18,11 +20,11 @@ source:
   md5: "64742a2a812da1bb6eb4417128be6944"
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 test:
   files:
