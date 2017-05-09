@@ -1,8 +1,9 @@
 --- Makefile.orig	2015-09-23 13:13:47.000000000 -0500
 +++ Makefile	2015-09-23 14:00:12.000000000 -0500
 @@ -1,5 +1,5 @@
- CC = gcc
+-CC = gcc
 -CFLAGS = -Wall
++CC ?= gcc
 +CFLAGS := -Wall $(CFLAGS)
  DEBUG = -g
  LIBS = -lm
