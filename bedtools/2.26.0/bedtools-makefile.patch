@@ -1,8 +1,11 @@
 --- Makefile
 +++ Makefile
-@@ -18,9 +18,9 @@
+@@ -16,11 +16,11 @@
+ export BIN_DIR	= bin
+ export SRC_DIR	= src
  export UTIL_DIR	= src/utils
- export CXX		= g++
+-export CXX		= g++
++export CXX		?= g++
  ifeq ($(DEBUG),1)
 -export CXXFLAGS = -Wall -O0 -g -fno-inline -fkeep-inline-functions -D_FILE_OFFSET_BITS=64 -fPIC -DDEBUG -D_DEBUG
 +export CXXFLAGS += -Wall -O0 -g -fno-inline -fkeep-inline-functions -D_FILE_OFFSET_BITS=64 -fPIC -DDEBUG -D_DEBUG
@@ -559,7 +562,13 @@
  	@echo "Cleaning up."
 --- src/utils/BamTools/Makefile
 +++ src/utils/BamTools/Makefile
-@@ -61,7 +61,7 @@
+@@ -56,12 +56,12 @@
+ 
+ $(LIBRARY): $(OBJECTS)
+ 	@echo " * linking $(LIBRARY)"
+-	ar cr $@ $^
++	$(AR) cr $@ $^
+ 	-ranlib $@
  
  $(OBJECTS): $(SOURCES)
  	@echo " * compiling" $(*F).cpp
