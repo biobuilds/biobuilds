@@ -6,12 +6,16 @@ requirements:
   # NOTE: Use conda-provided gcc on x86_64 Linux to work around a fastx36
   #       "double free or corruption" glibc error when building using "-O2"
   #       or higher with our default compiler (gcc 4.4.7 on CentOS 6).
+  # NOTE: We don't the updated GCC when building the "opt" version since ICC
+  #       doesn't seem to have the same problem.
   build:
+    - biobuilds-build
     - veclib-headers  # [ppc64le]
-    - gcc >=4.8       # [linux64]
+    - gcc >=4.8       # [linux64 and not opt]
     - zlib
   run:
-    - libgcc >=4.8    # [linux64]
+    - biobuilds-opt   # [opt]
+    - libgcc >=4.8    # [linux64 and not opt]
     - zlib
 
 source:
@@ -25,11 +29,11 @@ source:
     - ppc64le-support.patch   # [ppc64le]
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 test:
   files:
