@@ -548,11 +548,12 @@
  
 --- MemManager.c
 +++ MemManager.c
-@@ -26,7 +26,7 @@
+@@ -26,7 +26,8 @@
  #include <stdlib.h>
  #include <string.h>
  #ifndef _WIN32
 -#include <mm_malloc.h>
++#include <vec128int.h>
 +#include <vecmisc.h>
  #endif
  #include "MiscUtilities.h"
