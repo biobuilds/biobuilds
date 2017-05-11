@@ -3,7 +3,7 @@
 @@ -12,11 +12,11 @@
  
  # Compilation variables
- CXX = g++
+ CXX ?= g++
 -CXXFLAGS = -std=gnu++98 -Wall -I. -I$(BOOST) -I$(SAMTOOLS)/$(HTSLIB)
 +CXXFLAGS += -std=gnu++98 -Wall -I.
  CPPFLAGS =
@@ -162,7 +162,7 @@
 --- pRSEM/Makefile
 +++ pRSEM/Makefile
 @@ -1,8 +1,11 @@
- CXX = g++
+ CXX ?= g++
  
 -SAMTOOLS = ../samtools-1.3
 -HTSLIB = htslib-1.3
