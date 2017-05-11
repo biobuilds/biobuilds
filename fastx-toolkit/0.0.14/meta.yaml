@@ -4,9 +4,12 @@ package:
 
 source:
   fn: fastx_toolkit-0.0.14.tar.bz2
-  url: https://github.com/agordon/fastx_toolkit/releases/download/0.0.14/fastx_toolkit-0.0.14.tar.bz2
+  url:
+    - "https://github.com/agordon/fastx_toolkit/releases/download/0.0.14/fastx_toolkit-0.0.14.tar.bz2"
+    - "http://download.lab7.io/sources/fastx_toolkit-0.0.14.tar.bz2"
   md5: bf1993c898626bb147de3d6695c20b40
   patches:
+    - enum-cast.patch
     - header-paths.patch
     - usage-exit-0.patch
 
@@ -16,11 +19,13 @@ requirements:
   # requires libstdc++ for symbols like "std::basic_stringbuf" at link time,
   # while fastx-toolkit requires libc++ for the "unordered_map" header.
   build:
+    - biobuilds-build
     - autoconf-update
-    - gcc     # [osx]
+    - gcc               # [osx]
     - libgtextutils
   run:
-    - libgcc  # [osx]
+    - biobuilds-opt     # [opt]
+    - libgcc            # [osx]
     - libgtextutils
     - perl
     - perl-perlio-gzip
@@ -28,11 +33,11 @@ requirements:
     - gnuplot
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 test:
   commands:
