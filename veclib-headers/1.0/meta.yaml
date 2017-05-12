@@ -13,7 +13,7 @@ source:
     - unaligned-load-store.patch
 
 build:
-  number: 1
+  number: 2
   track_features:
     - veclib
 

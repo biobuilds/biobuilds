@@ -21,3 +21,23 @@
      #elif (defined __GNUC__) && (__GCC_VERSION__ < 492)
        __m128_all_union from_union; from_union.as_m128i = from;
  
+--- include/vec128sp.h
++++ include/vec128sp.h
+@@ -187,7 +187,7 @@
+     #ifdef __ibmxl__
+       result = vec_xl (0, (float *) from);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ >= 492)
+-      result = vec_xl (0, (float *) from);
++      result = vec_vsx_ld (0, (float *) from);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ < 492)
+       __m128 temp_ld0 = vec_ld (0, from);
+       __m128 temp_ld16 = vec_ld (16, from);
+@@ -413,7 +413,7 @@
+       vec_xst (from, 0, to);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ >= 492)
+       __m128_all_union from_union; from_union.as_m128 = from;
+-      vec_xst (from_union.as_vector_unsigned_char, 0, (unsigned char *) to);
++      vec_vsx_st (from_union.as_vector_unsigned_char, 0, (unsigned char *) to);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ < 492)
+       __m128_all_union from_union; from_union.as_m128 = from;
+ 
