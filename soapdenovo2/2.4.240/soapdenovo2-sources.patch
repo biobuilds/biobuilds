@@ -64,9 +64,9 @@
  #include <aio.h>
  #include <errno.h>
 +#include "unistd.h"
---- standardPregraph/orderContig.c.orig
+--- standardPregraph/orderContig.c
 +++ standardPregraph/orderContig.c
-@@ -3202,7 +3202,7 @@ void ScafStat ( int len_cut, char * graphfile )
+@@ -3202,7 +3202,7 @@
  	Singleton_Seq[Scaffold_Number] = 0;
  	Nucleotide = fgetc ( fp );
  
@@ -75,7 +75,41 @@
  	{
  		if ( Nucleotide == '>' )
  		{
-@@ -3529,7 +3529,7 @@ void ScafStat ( int len_cut, char * graphfile )
+@@ -3369,20 +3369,20 @@
+ 		}
+ 	}
+ 
+-	fprintf ( fo, "scaffolds>100 \t%ld\t%.2f%\n", n100 , 100 * ( 1.0 * n100 / Scaffold_Number ) );
+-	fprintf ( fo, "scaffolds>500 \t%ld\t%.2f%\n", n500 , 100 * ( 1.0 * n500 / Scaffold_Number ) );
+-	fprintf ( fo, "scaffolds>1K  \t%ld\t%.2f%\n", n1k   , 100 * ( 1.0 * n1k / Scaffold_Number ) );
+-	fprintf ( fo, "scaffolds>10K \t%ld\t%.2f%\n", n10k , 100 * ( 1.0 * n10k / Scaffold_Number ) );
+-	fprintf ( fo, "scaffolds>100K\t%ld\t%.2f%\n", n100k, 100 * ( 1.0 * n100k / Scaffold_Number ) );
+-	fprintf ( fo, "scaffolds>1M  \t%ld\t%.2f%\n", n1m   , 100 * ( 1.0 * n1m / Scaffold_Number ) );
++	fprintf ( fo, "scaffolds>100 \t%ld\t%.2f%%\n", n100 , 100 * ( 1.0 * n100 / Scaffold_Number ) );
++	fprintf ( fo, "scaffolds>500 \t%ld\t%.2f%%\n", n500 , 100 * ( 1.0 * n500 / Scaffold_Number ) );
++	fprintf ( fo, "scaffolds>1K  \t%ld\t%.2f%%\n", n1k   , 100 * ( 1.0 * n1k / Scaffold_Number ) );
++	fprintf ( fo, "scaffolds>10K \t%ld\t%.2f%%\n", n10k , 100 * ( 1.0 * n10k / Scaffold_Number ) );
++	fprintf ( fo, "scaffolds>100K\t%ld\t%.2f%%\n", n100k, 100 * ( 1.0 * n100k / Scaffold_Number ) );
++	fprintf ( fo, "scaffolds>1M  \t%ld\t%.2f%%\n", n1m   , 100 * ( 1.0 * n1m / Scaffold_Number ) );
+ 	fprintf ( fo, "\n" );
+-	fprintf ( fo, "Nucleotide_A\t%lld\t%.2f%\n", A_num_all, 100 * ( 1.0 * A_num_all / Size_includeN ) );
+-	fprintf ( fo, "Nucleotide_C\t%lld\t%.2f%\n", C_num_all, 100 * ( 1.0 * C_num_all / Size_includeN ) );
+-	fprintf ( fo, "Nucleotide_G\t%lld\t%.2f%\n", G_num_all, 100 * ( 1.0 * G_num_all / Size_includeN ) );
+-	fprintf ( fo, "Nucleotide_T\t%lld\t%.2f%\n", T_num_all, 100 * ( 1.0 * T_num_all / Size_includeN ) );
+-	fprintf ( fo, "GapContent_N\t%lld\t%.2f%\n", N_num_all, 100 * ( 1.0 * N_num_all / Size_includeN ) );
+-	fprintf ( fo, "Non_ACGTN\t%lld\t%.2f%\n", Non_ACGTN_all, 100 * ( 1.0 * Non_ACGTN_all / Size_includeN ) );
+-	fprintf ( fo, "GC_Content\t%.2f%\t\t(G+C)/(A+C+G+T)\n", 100 * ( 1.0 * ( G_num_all + C_num_all ) / ( A_num_all + C_num_all + G_num_all + T_num_all ) ) );
++	fprintf ( fo, "Nucleotide_A\t%lld\t%.2f%%\n", A_num_all, 100 * ( 1.0 * A_num_all / Size_includeN ) );
++	fprintf ( fo, "Nucleotide_C\t%lld\t%.2f%%\n", C_num_all, 100 * ( 1.0 * C_num_all / Size_includeN ) );
++	fprintf ( fo, "Nucleotide_G\t%lld\t%.2f%%\n", G_num_all, 100 * ( 1.0 * G_num_all / Size_includeN ) );
++	fprintf ( fo, "Nucleotide_T\t%lld\t%.2f%%\n", T_num_all, 100 * ( 1.0 * T_num_all / Size_includeN ) );
++	fprintf ( fo, "GapContent_N\t%lld\t%.2f%%\n", N_num_all, 100 * ( 1.0 * N_num_all / Size_includeN ) );
++	fprintf ( fo, "Non_ACGTN\t%lld\t%.2f%%\n", Non_ACGTN_all, 100 * ( 1.0 * Non_ACGTN_all / Size_includeN ) );
++	fprintf ( fo, "GC_Content\t%.2f%%\t\t(G+C)/(A+C+G+T)\n", 100 * ( 1.0 * ( G_num_all + C_num_all ) / ( A_num_all + C_num_all + G_num_all + T_num_all ) ) );
+ 	fprintf ( fo, "\n" );
+ 
+ 	for ( k = 0; k < 10; k++ )
+@@ -3529,7 +3529,7 @@
  	Singleton_Seq[Scaffold_Number] = 0;
  	Nucleotide = fgetc ( fp2 );
  
@@ -84,9 +118,43 @@
  	{
  		if ( Nucleotide == '>' )
  		{
---- standardPregraph/prlReadFillGap.c.orig
+@@ -3681,20 +3681,20 @@
+ 		}
+ 	}
+ 
+-	fprintf ( fo, "Contig>100 \t%ld\t%.2f%\n", n100 , 100 * ( 1.0 * n100 / Scaffold_Number ) );
+-	fprintf ( fo, "Contig>500 \t%ld\t%.2f%\n", n500 , 100 * ( 1.0 * n500 / Scaffold_Number ) );
+-	fprintf ( fo, "Contig>1K  \t%ld\t%.2f%\n", n1k      , 100 * ( 1.0 * n1k / Scaffold_Number ) );
+-	fprintf ( fo, "Contig>10K \t%ld\t%.2f%\n", n10k , 100 * ( 1.0 * n10k / Scaffold_Number ) );
+-	fprintf ( fo, "Contig>100K\t%ld\t%.2f%\n", n100k, 100 * ( 1.0 * n100k / Scaffold_Number ) );
+-	fprintf ( fo, "Contig>1M  \t%ld\t%.2f%\n", n1m      , 100 * ( 1.0 * n1m / Scaffold_Number ) );
++	fprintf ( fo, "Contig>100 \t%ld\t%.2f%%\n", n100 , 100 * ( 1.0 * n100 / Scaffold_Number ) );
++	fprintf ( fo, "Contig>500 \t%ld\t%.2f%%\n", n500 , 100 * ( 1.0 * n500 / Scaffold_Number ) );
++	fprintf ( fo, "Contig>1K  \t%ld\t%.2f%%\n", n1k      , 100 * ( 1.0 * n1k / Scaffold_Number ) );
++	fprintf ( fo, "Contig>10K \t%ld\t%.2f%%\n", n10k , 100 * ( 1.0 * n10k / Scaffold_Number ) );
++	fprintf ( fo, "Contig>100K\t%ld\t%.2f%%\n", n100k, 100 * ( 1.0 * n100k / Scaffold_Number ) );
++	fprintf ( fo, "Contig>1M  \t%ld\t%.2f%%\n", n1m      , 100 * ( 1.0 * n1m / Scaffold_Number ) );
+ 	fprintf ( fo, "\n" );
+-	fprintf ( fo, "Nucleotide_A\t%lld\t%.2f%\n", A_num_all, 100 * ( 1.0 * A_num_all / Size_includeN ) );
+-	fprintf ( fo, "Nucleotide_C\t%lld\t%.2f%\n", C_num_all, 100 * ( 1.0 * C_num_all / Size_includeN ) );
+-	fprintf ( fo, "Nucleotide_G\t%lld\t%.2f%\n", G_num_all, 100 * ( 1.0 * G_num_all / Size_includeN ) );
+-	fprintf ( fo, "Nucleotide_T\t%lld\t%.2f%\n", T_num_all, 100 * ( 1.0 * T_num_all / Size_includeN ) );
+-	fprintf ( fo, "GapContent_N\t%lld\t%.2f%\n", N_num_all, 100 * ( 1.0 * N_num_all / Size_includeN ) );
+-	fprintf ( fo, "Non_ACGTN\t%lld\t%.2f%\n", Non_ACGTN_all, 100 * ( 1.0 * Non_ACGTN_all / Size_includeN ) );
+-	fprintf ( fo, "GC_Content\t%.2f%\t\t(G+C)/(A+C+G+T)\n", 100 * ( 1.0 * ( G_num_all + C_num_all ) / ( A_num_all + C_num_all + G_num_all + T_num_all ) ) );
++	fprintf ( fo, "Nucleotide_A\t%lld\t%.2f%%\n", A_num_all, 100 * ( 1.0 * A_num_all / Size_includeN ) );
++	fprintf ( fo, "Nucleotide_C\t%lld\t%.2f%%\n", C_num_all, 100 * ( 1.0 * C_num_all / Size_includeN ) );
++	fprintf ( fo, "Nucleotide_G\t%lld\t%.2f%%\n", G_num_all, 100 * ( 1.0 * G_num_all / Size_includeN ) );
++	fprintf ( fo, "Nucleotide_T\t%lld\t%.2f%%\n", T_num_all, 100 * ( 1.0 * T_num_all / Size_includeN ) );
++	fprintf ( fo, "GapContent_N\t%lld\t%.2f%%\n", N_num_all, 100 * ( 1.0 * N_num_all / Size_includeN ) );
++	fprintf ( fo, "Non_ACGTN\t%lld\t%.2f%%\n", Non_ACGTN_all, 100 * ( 1.0 * Non_ACGTN_all / Size_includeN ) );
++	fprintf ( fo, "GC_Content\t%.2f%%\t\t(G+C)/(A+C+G+T)\n", 100 * ( 1.0 * ( G_num_all + C_num_all ) / ( A_num_all + C_num_all + G_num_all + T_num_all ) ) );
+ 	fprintf ( fo, "\n" );
+ 
+ 	for ( k = 0; k < 10; k++ )
+--- standardPregraph/prlReadFillGap.c
 +++ standardPregraph/prlReadFillGap.c
-@@ -827,6 +827,7 @@ static void outputScafSeq ( FILE * fo, FILE * foc, FILE * foc2, FILE * fo3, int
+@@ -827,6 +827,7 @@
  	int i, t, lu_len = 0, lu_end = 0;
  	unsigned int ctg_start_pos = 0;
  	char strand;
@@ -94,7 +162,7 @@
  	unsigned int * pos_start = ( unsigned int * ) ckalloc ( 1000000 * sizeof ( unsigned int ) );
  	unsigned int * pos_end = ( unsigned int * ) ckalloc ( 1000000 * sizeof ( unsigned int ) );
  	//  char index_contig[num_ctg][20];
-@@ -838,6 +839,7 @@ static void outputScafSeq ( FILE * fo, FILE * foc, FILE * foc2, FILE * fo3, int
+@@ -838,6 +839,7 @@
  	char * orien_array;
  	orien_array = ( char * ) ckalloc ( 1000000 * sizeof ( char ) );
  	//  scaffBuffer = (char *) ckalloc (300000000 * sizeof (char));
@@ -102,7 +170,7 @@
  	stackRecover ( ctgsStack );
  
  	while ( ( actg = stackPop ( ctgsStack ) ) != NULL )
-@@ -929,6 +931,18 @@ static void outputScafSeq ( FILE * fo, FILE * foc, FILE * foc2, FILE * fo3, int
+@@ -929,6 +931,18 @@
  
  	if ( visual )
  	{
@@ -121,7 +189,7 @@
  		scaffBuffer = ( char * ) ckalloc ( ( ctg_start_pos + 5 ) * sizeof ( char ) );
  		prevCtg = NULL;
  		column = 0;
-@@ -1086,18 +1100,20 @@ static void outputScafSeq ( FILE * fo, FILE * foc, FILE * foc2, FILE * fo3, int
+@@ -1086,18 +1100,20 @@
  
  		fprintf ( fo3, "}\n" );
  		free ( ( void * ) scaffBuffer );

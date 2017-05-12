@@ -1,7 +1,9 @@
---- Makefile.orig
+--- Makefile
 +++ Makefile
-@@ -1,15 +1,15 @@
- CC = g++
+@@ -1,15 +1,16 @@
+-CC = g++
++CC  ?= gcc
++CXX ?= g++
  ifdef debug
 -CFLAGS=         -O0 -g -fomit-frame-pointer
 +CFLAGS ?= -O0 -g -fomit-frame-pointer
@@ -19,7 +21,7 @@
  LIBS=       -pthread -lz -lm
  EXTRA_FLAGS= 
  
-@@ -29,7 +29,7 @@ LIBS += -lbam -lrt
+@@ -29,7 +30,7 @@
  endif
  
  ifneq (,$(findstring Darwin,$(shell uname)))
@@ -28,23 +30,23 @@
  endif
  
  ifneq (,$(findstring $(shell uname -m), x86_64))
-@@ -49,26 +49,26 @@ all: SOAPdenovo-63mer SOAPdenovo-127mer
+@@ -49,26 +50,26 @@
  
  ifdef debug
  SOAPdenovo-63mer:
 -	@cd sparsePregraph;make 63mer=1 debug=1;cd ..;
 -	@cd standardPregraph;make 63mer=1 debug=1;cd ..;
 -	@$(CC) sparsePregraph/*.o standardPregraph/*.o $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-63mer
-+	make -C sparsePregraph CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 63mer=1 debug=0 && \
-+	make -C standardPregraph CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 63mer=1 debug=1 && \
-+	$(CC) sparsePregraph/*.o standardPregraph/*.o $(LDFLAGS) $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-63mer
++	make -C sparsePregraph CC="$(CXX)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 63mer=1 debug=0 && \
++	make -C standardPregraph CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 63mer=1 debug=1 && \
++	$(CXX) sparsePregraph/*.o standardPregraph/*.o $(LDFLAGS) $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-63mer
  SOAPdenovo-127mer:
 -	@cd sparsePregraph;make 127mer=1 debug=1;cd ..;
 -	@cd standardPregraph;make 127mer=1 debug=1;cd ..;
 -	@$(CC) sparsePregraph/*.o standardPregraph/*.o $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-127mer
-+	make -C sparsePregraph CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 127mer=1 debug=1 && \
-+	make -C standardPregraph CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 127mer=1 debug=1 && \
-+	$(CC) sparsePregraph/*.o standardPregraph/*.o $(LDFLAGS) $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-127mer
++	make -C sparsePregraph CC="$(CXX)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 127mer=1 debug=1 && \
++	make -C standardPregraph CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 127mer=1 debug=1 && \
++	$(CXX) sparsePregraph/*.o standardPregraph/*.o $(LDFLAGS) $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-127mer
  clean:
  	@cd sparsePregraph;make clean;cd ..;
  	@cd standardPregraph;make clean;cd ..;
@@ -54,22 +56,22 @@
 -	@cd sparsePregraph;make 63mer=1;cd ..;
 -	@cd standardPregraph;make 63mer=1;cd ..;
 -	@$(CC) sparsePregraph/*.o standardPregraph/*.o $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-63mer
-+	make -C sparsePregraph CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 63mer=1 && \
-+	make -C standardPregraph CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 63mer=1 && \
-+	$(CC) sparsePregraph/*.o standardPregraph/*.o $(LDFLAGS) $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-63mer
++	make -C sparsePregraph CC="$(CXX)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 63mer=1 && \
++	make -C standardPregraph CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 63mer=1 && \
++	$(CXX) sparsePregraph/*.o standardPregraph/*.o $(LDFLAGS) $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-63mer
  SOAPdenovo-127mer:
 -	@cd sparsePregraph;make 127mer=1;cd ..;
 -	@cd standardPregraph;make 127mer=1;cd ..;
 -	@$(CC) sparsePregraph/*.o standardPregraph/*.o $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-127mer
-+	make -C sparsePregraph CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 127mer=1 && \
-+	make -C standardPregraph CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 127mer=1 && \
-+	$(CC) sparsePregraph/*.o standardPregraph/*.o $(LDFLAGS) $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-127mer
++	make -C sparsePregraph CC="$(CXX)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 127mer=1 && \
++	make -C standardPregraph CC="$(CC)" CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" 127mer=1 && \
++	$(CXX) sparsePregraph/*.o standardPregraph/*.o $(LDFLAGS) $(LIBPATH) $(LIBS) $(EXTRA_FLAGS) -o SOAPdenovo-127mer
  clean:
  	@cd sparsePregraph;make clean;cd ..;
  	@cd standardPregraph;make clean;cd ..;
---- sparsePregraph/Makefile.orig
+--- sparsePregraph/Makefile
 +++ sparsePregraph/Makefile
-@@ -12,17 +12,17 @@ OBJS=		build_graph.o build_edge.o multi_threads.o \
+@@ -12,17 +12,17 @@
  PROG=           
  INCLUDES=	-I./inc
  SUBDIRS=    . 
@@ -91,7 +93,7 @@
  PROG = pregraph_sparse_63mer.v$(VERSION)
  endif
  
-@@ -43,7 +43,7 @@ LIBS += -lbam -lrt
+@@ -43,7 +43,7 @@
  endif
  
  ifneq (,$(findstring Darwin,$(shell uname)))
@@ -100,7 +102,7 @@
  endif
  
  ifneq (,$(findstring $(shell uname -m), x86_64))
-@@ -61,8 +61,7 @@ endif
+@@ -61,8 +61,7 @@
  .SUFFIXES:.cpp .o
  
  .cpp.o:
@@ -110,7 +112,7 @@
  
  all:		clean $(OBJS) 
  #pregraph_sparse
-@@ -74,7 +73,7 @@ envTest:
+@@ -74,7 +73,7 @@
  
  pregraph_sparse: clean	envTest $(OBJS)
  		@printf "Linking...                                                       \r"
@@ -119,9 +121,9 @@
  		@printf "$(PROG) compilation done.\n";
  
  clean:
---- standardPregraph/Makefile.orig
+--- standardPregraph/Makefile
 +++ standardPregraph/Makefile
-@@ -27,7 +27,7 @@ OBJS=		arc.o attachPEinfo.o bubble.o check.o compactEdge.o \
+@@ -27,7 +27,7 @@
  PROG=       SOAPdenovo-63mer
  INCLUDES=   -Iinc
  SUBDIRS=    .
@@ -130,7 +132,7 @@
  LIBS=       -pthread -lz -lm 
  EXTRA_FLAGS=
  
-@@ -37,10 +37,10 @@ BIT_ERR = 1
+@@ -37,10 +37,10 @@
  endif
  
  ifdef 127mer
@@ -143,7 +145,7 @@
  PROG = SOAPdenovo-63mer
  endif
  
-@@ -55,7 +55,7 @@ LIBS += -lbam -lrt
+@@ -55,7 +55,7 @@
  endif
  
  ifneq (,$(findstring Darwin,$(shell uname)))
@@ -152,7 +154,7 @@
  endif
  
  ifneq (,$(findstring $(shell uname -m), x86_64))
-@@ -73,8 +73,7 @@ endif
+@@ -73,8 +73,7 @@
  .SUFFIXES:.c .o
  
  .c.o:
@@ -162,7 +164,7 @@
  
  all:		clean $(OBJS)
  
-@@ -88,8 +87,7 @@ envTest:
+@@ -88,8 +87,7 @@
  		@test $(GCCVERSIONMINOR) == 1 || sh -c 'echo "GCC version lower than 4.4.0";false;'
  
  SOAPdenovo:	envTest $(OBJS)

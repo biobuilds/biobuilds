@@ -1,6 +1,6 @@
---- Makefile.orig
+--- Makefile
 +++ Makefile
-@@ -14,7 +14,7 @@ LIBS=       -pthread -lz -lm
+@@ -15,7 +15,7 @@
  EXTRA_FLAGS= 
  
  BIT_ERR = 0
@@ -9,7 +9,7 @@
  BIT_ERR = 1
  endif
  
-@@ -40,8 +40,8 @@ ifneq (,$(findstring $(shell uname -m), ia64))
+@@ -41,8 +41,8 @@
  CFLAGS +=
  endif
  
@@ -20,9 +20,9 @@
  endif
  
  
---- sparsePregraph/Makefile.orig
+--- sparsePregraph/Makefile
 +++ sparsePregraph/Makefile
-@@ -28,7 +28,7 @@ endif
+@@ -28,7 +28,7 @@
  
  
  BIT_ERR = 0
@@ -31,7 +31,7 @@
  BIT_ERR = 1
  endif
  
-@@ -54,8 +54,8 @@ ifneq (,$(findstring $(shell uname -m), ia64))
+@@ -54,8 +54,8 @@
  CFLAGS += 
  endif
  
@@ -42,9 +42,9 @@
  endif
  
  .SUFFIXES:.cpp .o
---- standardPregraph/Makefile.orig
+--- standardPregraph/Makefile
 +++ standardPregraph/Makefile
-@@ -32,7 +32,7 @@ LIBS=       -pthread -lz -lm
+@@ -32,7 +32,7 @@
  EXTRA_FLAGS=
  
  BIT_ERR = 0
@@ -53,7 +53,7 @@
  BIT_ERR = 1
  endif
  
-@@ -66,8 +66,8 @@ ifneq (,$(findstring $(shell uname -m), ia64))
+@@ -66,8 +66,8 @@
  CFLAGS += 
  endif
  
@@ -64,17 +64,17 @@
  endif
  
  .SUFFIXES:.c .o
---- standardPregraph/hashFunction.c.orig
+--- standardPregraph/hashFunction.c
 +++ standardPregraph/hashFunction.c
-@@ -84,6 +84,7 @@ static int crc_table[256] =
+@@ -84,6 +84,7 @@
  typedef int ( *CRC32CFunctionPtr ) ( uint32_t, const char *, size_t );
- static CRC32CFunctionPtr crc32;
+ static CRC32CFunctionPtr crc32_local;
  
 +#ifndef __PPC__    /* FYL, this chunk of code is not used, but it makes trouble on PPC */
  static uint32_t cpuid ( uint32_t functionInput )
  {
  	uint32_t eax;
-@@ -114,6 +115,7 @@ static inline int crc32cHardware64 ( uint32_t crc, const char * data, size_t len
+@@ -114,6 +115,7 @@
  
  	return ( int ) crc;
  }
@@ -82,7 +82,7 @@
  
  static inline int crc32cTable ( uint32_t crc, const char * buf, size_t len )
  {
-@@ -127,6 +129,7 @@ static inline int crc32cTable ( uint32_t crc, const char * buf, size_t len )
+@@ -127,6 +129,7 @@
  
  CRC32CFunctionPtr detectBestCRC32C()
  {
@@ -90,7 +90,7 @@
  	static const int SSE42_BIT = 20;
  	uint32_t ecx = cpuid ( 1 );
  	bool hasSSE42 = ecx & ( 1 << SSE42_BIT );
-@@ -141,6 +144,9 @@ CRC32CFunctionPtr detectBestCRC32C()
+@@ -141,6 +144,9 @@
  		//fprintf(stderr, "SSE4.2 disabled\n");
  		return crc32cTable;
  	}

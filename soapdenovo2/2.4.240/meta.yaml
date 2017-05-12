@@ -4,9 +4,11 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     - samtools ==0.1.19
     - zlib
   run:
+    - biobuilds-opt     # [opt]
     - zlib
 
 source:
@@ -20,14 +22,21 @@ source:
     - soapdenovo2-power.patch       # [ppc64le]
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
+
+test:
+  requires:
+    # For reference genome FASTA
+    - mapper-test-data
+    # For wgsim
+    - samtools
 
 about:
   home: http://soap.genomics.org.cn/soapdenovo.html
   license: GPLv3
-  license_file: True
+  license_file: LICENSE
   summary: "Short read assembler specially designed for Illumina GA short reads"

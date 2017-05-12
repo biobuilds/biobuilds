@@ -1,10 +1,14 @@
 #!/bin/bash
+set -o pipefail
 
 ## Configure
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
 
 [ -d "${PREFIX}/include/samtools" ] || \
     { echo "ERROR: could not find samtools headers" >&2; exit 1; }
@@ -20,10 +24,13 @@ find . -type f -name '*curses*' -exec rm -f {} \;
 find . \( -name '*.a' -o -name '*.so' -o -name '*.dylib' \) \
     -exec rm -f {} \;
 
+# Force 
+CC="${CC} -std=gnu89"
+CXX="${CXX} -std=gnu++98"
+
+
 ## Build
-env CFLAGS="${CFLAGS} $(pkg-config --cflags zlib)" \
-    LDFLAGS="${LDFLAGS} $(pkg-config --libs-only-L zlib)" \
-    make
+make CC="${CC}" CXX="${CXX}" 2>&1 | tee build.log
 
 
 ## Install
