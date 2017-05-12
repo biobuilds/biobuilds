@@ -1,0 +1,37 @@
+{% set version = "1.2.4" %}
+
+package:
+  name: clustalomega
+  version: {{ version }}
+
+requirements:
+  build:
+    - biobuilds-build
+    - autoconf-update
+    - gcc               # [not ppc64le]
+    - argtable2
+  run:
+    - libgcc            # [not ppc64le]
+    - argtable2
+
+source:
+  fn: clustal-omega-{{ version }}.tar.gz
+  url: http://www.clustal.org/omega/clustal-omega-{{ version }}.tar.gz
+  md5: 6c0459f4c463a30e942ce7e0efc91422
+
+build:
+  number: 0
+  script_env:
+    - MAKE_JOBS
+
+test:
+  files:
+    - kras.fa
+  commands:
+    - "clustalo -i kras.fa -o kras.aln"
+
+about:
+  home: http://www.clustal.org/omega/
+  license: GPLv2
+  license_file: COPYING
+  summary: "Multiple alignment of nucleic acid and protein sequences"
