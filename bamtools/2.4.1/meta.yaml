@@ -1,0 +1,39 @@
+{% set version = "2.4.1" %}
+package:
+  name: bamtools
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - cmake
+    - zlib
+  run:
+    - biobuilds-opt     # [opt]
+    - zlib
+
+source:
+  fn: "bamtools-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/pezmaster31/bamtools/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/bamtools-{{ version }}.tar.gz"
+  sha1: "a55a9408eb6e63b507ce0cf9644784053e26a4b1"
+  patches:
+    - lib-install-path.patch
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - bamtools --help
+
+about:
+  home: https://github.com/pezmaster31/bamtools
+  license: MIT
+  license_file: LICENSE
+  summary: "C++ API & command-line toolkit for working with BAM data"
