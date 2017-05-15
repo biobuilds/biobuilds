@@ -1,0 +1,50 @@
+{% set version = "2.0.2" %}
+
+package:
+  name: abyss
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - autoconf-update
+    # Use the AT-provided Boost libraries
+    - boost             # [not (ppc64le and opt)]
+    # Needed for OpenMP support
+    - gcc               # [osx]
+    - sparsehash
+    - sqlite
+  run:
+    - biobuilds-opt     # [opt]
+    - boost             # [not (ppc64le and opt)]
+    # Needed for OpenMP support
+    - libgcc            # [osx]
+    - sqlite
+    - perl
+
+source:
+  fn: "abyss-{{ version }}.tar.gz"
+  url:
+    - "http://www.bcgsc.ca/platform/bioinfo/software/abyss/releases/{{ version }}/abyss-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/abyss-{{ version }}.tar.gz"
+  sha1: "18c11d9d9b296a7e87e8526f8da8a0931dea25f7"
+  patches:
+    - squash-isystem-flag.patch
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  files:
+    # Source: http://www.bcgsc.ca/platform/bioinfo/software/abyss/releases/1.3.4/test-data.tar.gz
+    - test-data.tar.gz
+
+about:
+  home: "http://www.bcgsc.ca/platform/bioinfo/software/abyss"
+  license: "GPLv3"
+  license_file: "LICENSE"
+  summary: "De-novo, parallel, paired-end sequence assembler designed for short reads"
