@@ -9,6 +9,16 @@ build_opts=
 make_jobs=
 FEATURE_OPT=0
 
+# Default versions for various scripting language runtimes and libraries.
+# Generally, these should match the latest versions available (or soon to be
+# available) in BioBuilds. Used below with the corresponding "conda build"
+# options to reduce build headaches (since the "conda build" defaults don't
+# always match the defaults we want for BioBuilds).
+NUMPY_VER="1.12"
+PERL_VER="5.22.0"
+PYTHON_VER="2.7"
+R_VER="3.3.2"
+
 # Always allocate a pseudo-TTY in (-t) and attach STDIN to (-i) the container;
 # if we don't, conda build messages (particularly in the test phase) can
 # disappear into the void, which making debugging recipes difficult.
@@ -61,11 +71,20 @@ while [ "$1" != "" ]; do
         "-o" | "--opt")
             FEATURE_OPT=1
             ;;
-        "-c" | "--channel" | "--python" | "--numpy" | "--perl" | "--R")
-            # conda options that take an additional argument
-            build_opts="$build_opts $1"
-            shift
-            build_opts="$build_opts $1"
+        "--numpy")
+            shift; NUMPY_VER="$1"
+            ;;
+        "--perl")
+            shift; PERL_VER="$1"
+            ;;
+        "--python")
+            shift; PYTHON_VER="$1"
+            ;;
+        "--R")
+            shift; R_VER="$1"
+            ;;
+        "-c" | "--channel")
+            shift; build_opts="$build_opts --channel $1"
             ;;
         "-"*)
             build_opts="$build_opts $1"
@@ -76,6 +95,15 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+# Always tell "conda build" what versions of various languages and libraries to
+# use. When coupled with the defaults above, helps ensure the packages we build
+# correctly target the latest BioBuilds release.
+build_opts="$build_opts --numpy ${NUMPY_VER}"
+build_opts="$build_opts --perl ${PERL_VER}"
+build_opts="$build_opts --python ${PYTHON_VER}"
+build_opts="$build_opts --R ${R_VER}"
+
 
 # Check for cache directory containing packages from "defaults" and other
 # channels that may be needed for the build process. This saves us the trouble
