@@ -1,0 +1,30 @@
+{% set version = "2.0.3" %}
+
+package:
+  name: sparsehash
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - autoconf-update
+  # Header-only library
+  run: []
+
+source:
+  fn: "sparsehash-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/sparsehash/sparsehash/archive/sparsehash-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/sparsehash-{{ version }}.tar.gz"
+  sha1: "94a9aad9167275af41b13122c60754ad1a5adb34"
+
+build:
+  number: 0
+  script_env:
+    - MAKE_JOBS
+
+about:
+  home: "https://github.com/sparsehash/sparsehash"
+  license: "BSD"
+  license_file: "COPYING"
+  summary: "C++ associative containers"
