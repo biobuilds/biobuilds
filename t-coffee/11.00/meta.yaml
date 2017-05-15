@@ -4,24 +4,28 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     - perl
     - gcc     # [osx]
   run:
+    - biobuilds-opt     # [opt]
     - libgcc  # [osx]
 
 source:
   fn: "t-coffee-11.00.00_8cbe486.zip"
-  url: "https://github.com/cbcrg/tcoffee/archive/8cbe486.zip"
+  url:
+    - "https://github.com/cbcrg/tcoffee/archive/8cbe486.zip"
+    - "http://download.lab7.io/sources/t-coffee-11.00.00_8cbe486.zip"
   md5: 8514d7520f041c772c58eea66db0e194
   patches:
     - use-env-perl.patch
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 test:
   commands:

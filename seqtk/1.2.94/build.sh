@@ -2,18 +2,17 @@
 set -o pipefail
 
 # Configure
-build_os=$(uname -s)
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
 
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
 CFLAGS="${CFLAGS} -fsigned-char"
 
-CFLAGS="${CFLAGS} -I${PREFIX}/include"
-LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
-
-make CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
+make CC="${CC}" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     2>&1 | tee build.log
 
 mkdir -p "${PREFIX}/bin"

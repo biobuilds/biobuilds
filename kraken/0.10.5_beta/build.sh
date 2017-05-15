@@ -2,10 +2,15 @@
 set -o pipefail
 
 # Configure
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CXXFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
+
 CXXFLAGS="${CXXFLAGS} -fsigned-char"
 
 # Restore the flags we squash by passing CXXFLAGS directly to make
@@ -15,9 +20,10 @@ KRAKEN_DIR="${PREFIX}/libexec/kraken-${PKG_VERSION}"
 install -d "${KRAKEN_DIR}"
 install -d "${PREFIX}/bin"
 
-make -C src -j${BB_MAKE_JOBS} \
+make -C src -j${MAKE_JOBS} \
     KRAKEN_DIR="${KRAKEN_DIR}" \
-    CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
+    CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
+    LD="${CXX}" LDFLAGS="${LDFLAGS}" \
     install 2>&1 | tee build.log
 
 # Copy the scripts to the destination directory, munging certain variables

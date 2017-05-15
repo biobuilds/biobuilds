@@ -1,0 +1,71 @@
+# Fix argument type differences between ICC's and GCC's _mm_prefetch(...)
+--- src/sw/lib/Solution9.cpp
++++ src/sw/lib/Solution9.cpp
+@@ -923,10 +923,10 @@
+     TargetSizeInSIMDBlocks = targetSizeRoundedUpForSIMD / SIMDMULTIPLE8;
+ 
+     for(int jBlock = 0; jBlock < TargetSizeInSIMDBlocks + 1; jBlock += 8) {
+-        _mm_prefetch(TargetLookup[0] + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(TargetLookup[1] + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(TargetLookup[2] + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(TargetLookup[3] + jBlock, _MM_HINT_T0);
++        _mm_prefetch((char*)TargetLookup[0] + jBlock, _MM_HINT_T0);
++        _mm_prefetch((char*)TargetLookup[1] + jBlock, _MM_HINT_T0);
++        _mm_prefetch((char*)TargetLookup[2] + jBlock, _MM_HINT_T0);
++        _mm_prefetch((char*)TargetLookup[3] + jBlock, _MM_HINT_T0);
+     }
+ 
+     // Mismatch in this table will equal zero, match will be the match score plus the magnitude of the mismatch, so all values are offset by mismtch and postitive
+@@ -944,12 +944,12 @@
+ 
+ 
+     for(int jBlock = 0; jBlock < TargetSizeInSIMDBlocks + 1; jBlock += 8) {
+-        _mm_prefetch(((__m128i*)MData[0]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)HData[0]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)VData[0]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)MData[1]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)HData[1]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)VData[1]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)MData[0]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)HData[0]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)VData[0]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)MData[1]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)HData[1]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)VData[1]) + jBlock, _MM_HINT_T0);
+     }
+ 
+     Opt = MINIMUMASSUMEDOPT;
+@@ -964,10 +964,10 @@
+     TargetSizeInSIMDBlocks = targetSizeRoundedUpForSIMD / SIMDMULTIPLE16;
+ 
+     for(int jBlock = 0; jBlock < TargetSizeInSIMDBlocks + 1; jBlock += 4) {
+-        _mm_prefetch(TargetLookup[0] + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(TargetLookup[1] + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(TargetLookup[2] + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(TargetLookup[3] + jBlock, _MM_HINT_T0);
++        _mm_prefetch((char*)TargetLookup[0] + jBlock, _MM_HINT_T0);
++        _mm_prefetch((char*)TargetLookup[1] + jBlock, _MM_HINT_T0);
++        _mm_prefetch((char*)TargetLookup[2] + jBlock, _MM_HINT_T0);
++        _mm_prefetch((char*)TargetLookup[3] + jBlock, _MM_HINT_T0);
+     }
+ 
+     for(int i = 0; i < QuerySize; i++) QueryLookup[i] = CharMap[int(query[i])];
+@@ -982,12 +982,12 @@
+     for(int j = 0; j < TargetSize; j++) ((short int*)(TargetLookup[CharMap[int(target[j])]]))[j] = MatchScore;
+ 
+     for(int jBlock = 0; jBlock < TargetSizeInSIMDBlocks + 1; jBlock += 4) {
+-        _mm_prefetch(((__m128i*)MData[0]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)HData[0]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)VData[0]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)MData[1]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)HData[1]) + jBlock, _MM_HINT_T0);
+-        _mm_prefetch(((__m128i*)VData[1]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)MData[0]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)HData[0]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)VData[0]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)MData[1]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)HData[1]) + jBlock, _MM_HINT_T0);
++        _mm_prefetch(((char*)(__m128i*)VData[1]) + jBlock, _MM_HINT_T0);
+     }
+ 
+     Opt = MINIMUMASSUMEDOPT;

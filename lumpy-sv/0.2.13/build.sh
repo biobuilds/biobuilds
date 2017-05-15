@@ -5,15 +5,18 @@ set -e
 set -o pipefail
 
 ## Configure
-build_os=$(uname -s)
 
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CXXFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
+
 CXXFLAGS="${CXXFLAGS} -fsigned-char"
 
-if [ "$build_os" == 'Darwin' ]; then
+if [ "$BUILD_OS" == 'darwin' ]; then
     MACOSX_VERSION_MIN=10.8
     CXXFLAGS="${CXXFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
     LDFLAGS="${LDFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
@@ -24,9 +27,7 @@ if [ "$build_os" == 'Darwin' ]; then
     LDFLAGS="${LDFLAGS} -stdlib=libc++"
 fi
 
-CXXFLAGS="${CXXFLAGS} -I${PREFIX}/include"
 CXXFLAGS="${CXXFLAGS} -I${PREFIX}/include/bamtools"
-LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
 
 # Additional flags in upstream Makefile that we squash when passing the
 # "CXXFLAGS" argument to "make"
@@ -44,7 +45,8 @@ rm -rf src/utils/BamTools src/utils/sqlite3
 rm -rf bin obj
 find . -name '*.o' | xargs rm -f
 
-make -j${BB_MAKE_JOBS} \
+make -j${MAKE_JOBS} \
+    CXX="${CXX}" \
     CXXFLAGS="${CXXFLAGS}" \
     LDFLAGS="${LDFLAGS}" \
     2>&1 | tee build.log

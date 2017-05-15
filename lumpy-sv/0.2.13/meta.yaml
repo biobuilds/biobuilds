@@ -4,9 +4,11 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     - bamtools
     - zlib
   run:
+    - biobuilds-opt     # [opt]
     - bamtools
     - python
     - numpy x.x
@@ -28,11 +30,11 @@ source:
     - help-exit-codes.patch
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 test:
   commands:

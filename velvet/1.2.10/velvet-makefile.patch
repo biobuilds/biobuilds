@@ -1,8 +1,9 @@
 --- Makefile.orig
 +++ Makefile
 @@ -1,5 +1,5 @@
- CC = gcc
+-CC = gcc
 -CFLAGS = -Wall
++CC ?= gcc
 +CFLAGS := -Wall $(CFLAGS)
  DEBUG = -g
  LIBS = -lm

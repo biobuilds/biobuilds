@@ -10,9 +10,10 @@ source:
   md5: b51bd5d7215d2edb833848f611e6fd82
   patches:
     - missing-includes.patch
+    - unaligned-load-store.patch
 
 build:
-  number: 0
+  number: 2
   track_features:
     - veclib
 

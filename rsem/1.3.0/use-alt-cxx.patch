@@ -1,0 +1,27 @@
+--- EBSeq/Makefile
++++ EBSeq/Makefile
+@@ -1,4 +1,4 @@
+-CXX = g++
++CXX ?= g++
+ PROGRAMS = EBSeq rsem-for-ebseq-calculate-clustering-info
+ DEPENDENCIES = blockmodeling gplots gtools gdata caTools bitops KernSmooth
+ 
+--- Makefile
++++ Makefile
+@@ -11,7 +11,7 @@
+ BOOST = .
+ 
+ # Compilation variables
+-CXX = g++
++CXX ?= g++
+ CXXFLAGS = -std=gnu++98 -Wall -I. -I$(BOOST) -I$(SAMTOOLS)/$(HTSLIB)
+ CPPFLAGS =
+ 
+--- pRSEM/Makefile
++++ pRSEM/Makefile
+@@ -1,4 +1,4 @@
+-CXX = g++
++CXX ?= g++
+ 
+ SAMTOOLS = ../samtools-1.3
+ HTSLIB = htslib-1.3

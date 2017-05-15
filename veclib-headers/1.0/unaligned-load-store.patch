@@ -1,0 +1,43 @@
+# Fixes unaligned load and store (vec_loadu1q and vec_storeu1q, respectively)
+# for newer versions of gcc (>= 6) and IBM Advance Toolchain (>= 10.0).
+# Originally suggested by Bill Schmidt (wschmidt <at> us.ibm.com).
+--- include/vec128int.h
++++ include/vec128int.h
+@@ -40,7 +40,7 @@
+   #if (defined(__ibmxl__) && (defined(__LITTLE_ENDIAN__) || defined(__BIG_ENDIAN__)))
+   return (__m128i) vec_perm (src1, src2, vec_lvsl(0,(unsigned char*)address));
+   #elif ((defined __GNUC__) && (__GCC_VERSION__ >= 492))
+-    return vec_xl (0, (unsigned char *) address);
++    return vec_vsx_ld (0, (unsigned char *) address);
+   #elif (defined __GNUC__) && (__GCC_VERSION__ < 492)
+     static const vector unsigned char permMask = { 0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00 };
+     return (__m128i) vec_perm (src1, src2, vec_perm( vec_lvsl(0, ( unsigned char*)address), src1, permMask));
+@@ -249,7 +249,7 @@
+     #ifdef __ibmxl__
+       vec_xst (from, 0, (unsigned char*) to);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ >= 492)
+-      vec_xst (from, 0, (unsigned char*) to);
++      vec_vsx_st (from, 0, (unsigned char*) to);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ < 492)
+       __m128_all_union from_union; from_union.as_m128i = from;
+ 
+--- include/vec128sp.h
++++ include/vec128sp.h
+@@ -187,7 +187,7 @@
+     #ifdef __ibmxl__
+       result = vec_xl (0, (float *) from);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ >= 492)
+-      result = vec_xl (0, (float *) from);
++      result = vec_vsx_ld (0, (float *) from);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ < 492)
+       __m128 temp_ld0 = vec_ld (0, from);
+       __m128 temp_ld16 = vec_ld (16, from);
+@@ -413,7 +413,7 @@
+       vec_xst (from, 0, to);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ >= 492)
+       __m128_all_union from_union; from_union.as_m128 = from;
+-      vec_xst (from_union.as_vector_unsigned_char, 0, (unsigned char *) to);
++      vec_vsx_st (from_union.as_vector_unsigned_char, 0, (unsigned char *) to);
+     #elif (defined __GNUC__) && (__GCC_VERSION__ < 492)
+       __m128_all_union from_union; from_union.as_m128 = from;
+ 

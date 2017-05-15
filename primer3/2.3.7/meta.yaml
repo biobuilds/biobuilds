@@ -4,7 +4,10 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     - perl    # needed for tests
+  run:
+    - biobuilds-opt     # [opt]
 
 source:
   fn: primer3-2.3.7.tar.gz
@@ -16,11 +19,11 @@ source:
     - make-install.patch
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 # No tests needed as those are done in the build script.
 

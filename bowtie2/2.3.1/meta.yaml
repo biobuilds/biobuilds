@@ -1,0 +1,54 @@
+{% set version = "2.3.1" %}
+
+package:
+  name: bowtie2
+  version: {{ version }}
+
+requirements:
+  build:
+    - biobuilds-build
+    - veclib-headers    # [ppc64le]
+    - tbb               # [not opt]
+    - readline
+    - ncurses
+    - zlib
+  run:
+    - biobuilds-opt     # [opt]
+    - intel-tbb-libs    # [opt and linux64]
+    - tbb               # [not opt]
+    - readline
+    - ncurses
+    - zlib
+    - python
+    - perl
+
+source:
+  fn: "bowtie2-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/BenLangmead/bowtie2/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/bowtie2-{{ version }}.tar.gz"
+  sha1: "5f0fdb9031ab2ba5793058142ba791042fdfd3f1"
+  patches:
+    - makefile-flags.patch
+    - makefile-readline.patch
+    - ppc64le-support.patch   # [ppc64le]
+    - tbb-malloc_proxy.patch  # [ppc64le and opt]
+
+build:
+  number: 0
+  features:
+    - opt   # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+   # NOTE: this use of "source_files" requires conda-build >= 2.0.9
+  source_files:
+    - example/reads/*.fq
+    - example/reference/lambda_virus.fa
+
+about:
+  home: http://bowtie-bio.sourceforge.net/bowtie2/
+  license: GPLv3
+  license_file: LICENSE
+  summary: "Ultrafast, memory-efficient tool for aligning sequencing reads to long reference sequences"

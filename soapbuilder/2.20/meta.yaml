@@ -4,7 +4,10 @@ package:
 
 requirements:
   build:
-    - veclib-headers  # [ppc64le]
+    - biobuilds-build
+    - veclib-headers    # [ppc64le]
+  run:
+    - biobuilds-opt     # [opt]
 
 source:
   fn: SOAPaligner-v2.20-src_builder.tar.gz
@@ -15,11 +18,15 @@ source:
     - ppc64le-support.patch  # [ppc64le]
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
+
+test:
+  requires:
+    - mapper-test-data
 
 about:
   home: http://soap.genomics.org.cn/soapaligner.html

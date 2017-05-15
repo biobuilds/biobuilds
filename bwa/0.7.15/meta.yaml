@@ -1,30 +1,32 @@
+{% set version = "0.7.15" %}
+
 package:
   name: bwa
-  version: "0.7.15"
+  version: {{ version }}
 
 requirements:
   build:
+    - biobuilds-build
+    - veclib-headers    # [ppc64le]
     - zlib
-    - veclib-headers  # [ppc64le]
   run:
     - zlib
+    - biobuilds-opt     # [opt]
 
 source:
-  fn: "bwa-0.7.15.tar.bz2"
+  fn: "bwa-{{ version }}.tar.bz2"
   url:
-    - "https://github.com/lh3/bwa/releases/download/v0.7.15/bwa-0.7.15.tar.bz2"
-    - "http://download.lab7.io/sources/bwa-0.7.15.tar.bz2"
+    - "https://github.com/lh3/bwa/releases/download/v{{ version }}/bwa-{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/bwa-{{ version }}.tar.bz2"
   md5: "fcf470a46a1dbe2f96a1c5b87c530554"
   patches:
     - makefile-flags.patch
     - ppc64le-support.patch   # [ppc64le]
 
 build:
-  number: 0
-  script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+  number: 1
+  features:
+    - opt     # [opt]
 
 test:
   requires:

@@ -6,23 +6,49 @@ set -o pipefail
 ## Configure
 ##-------------------------------------------------------------------------
 
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-#CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
 
-# Make sure the compiler and linker can find zlib and htslib
-CFLAGS="${CFLAGS} -I${PREFIX}/include"
-LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
+# Tell the dynamic linker (ld.so) where to find various libraries so
+# "./configure" and "make test" below don't get confused and break.
+case "$BUILD_OS" in
+    "linux")
+        export LD_LIBRARY_PATH="${PREFIX}/lib"
+        ;;
+    "darwin")
+        export DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib"
+        ;;
+esac
 
-# Platform-specific tweaks
+# Architecture-specific tweaks
 if [ `uname -m` == 'ppc64le' ]; then
     # Force the ppc64le compiler to make the same assumptions about "plain"
     # char declarations (i.e., those w/o explicit sign) as the x86_64 compiler
     CFLAGS="${CFLAGS} -fsigned-char"
 fi
 
-env CPPFLAGS="-I${PREFIX}/include" CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
+# Additional tweaks for the Intel compiler
+if [[ "${CC}" == *"/bin/icc" ]]; then
+    # Tell the dynamic linker where to find libraries like libiomp.so
+    icc_root=$(cd `dirname "${CXX}"`/.. && pwd)
+    export LD_LIBRARY_PATH="${icc_root}/lib/intel64_lin:${LD_LIBRARY_PATH}"
+
+    # Require IEEE-compliant division so results match GCC-built version.
+    # Without this, mpileup regression tests 48 through 51 fail due to _very_
+    # slight differences in the quality score (basically the last digit).
+    CFLAGS="${CFLAGS/-no-prec-div/}"
+fi
+
+# Actual "./configure" step
+env CPPFLAGS="-I${PREFIX}/include" \
+    CC="${CC}" CFLAGS="${CFLAGS}" \
+    AR="$AR" ARFLAGS="$ARFLAGS" \
+    LD="$LD" LDFLAGS="$LDFLAGS" \
     ./configure --prefix="${PREFIX}" --with-htslib=system \
     --without-curses --without-ncursesw \
     2>&1 | tee configure.log
@@ -43,10 +69,8 @@ done
 popd
 
 # Build and test C components
-make -j${BB_MAKE_JOBS} 2>&1 | tee build.log
-env LD_LIBRARY_PATH="${PREFIX}/lib" \
-    DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib" \
-    make test 2>&1 | tee test.log
+make -j${MAKE_JOBS} V=1 2>&1 | tee build.log
+make test 2>&1 | tee test.log
 
 
 ##-------------------------------------------------------------------------

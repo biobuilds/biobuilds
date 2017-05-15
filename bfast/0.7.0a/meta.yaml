@@ -4,23 +4,31 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     - zlib
   run:
+    - biobuilds-opt     # [opt]
     - zlib
 
 source:
   fn: bfast-0.7.0a.tar.gz
-  url: http://download.lab7.io/sources/bfast-0.7.0a.tar.gz
+  url:
+    - "https://downloads.sourceforge.net/project/bfast/bfast/0.7.0/bfast-0.7.0a.tar.gz"
+    - "http://download.lab7.io/sources/bfast-0.7.0a.tar.gz"
   md5: 9b0574dce903ab83e39e371b0a3bbbc6
   patches:
     - bfast-build.patch
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt               # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
+
+test:
+  requires:
+    - mapper-test-data
 
 about:
   home: http://sourceforge.net/projects/bfast/

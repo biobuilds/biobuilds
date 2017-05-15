@@ -552,11 +552,12 @@
  	unsigned long long l_packedPattern = 0;
 --- MemManager.c
 +++ MemManager.c
-@@ -24,7 +24,7 @@
+@@ -24,7 +24,8 @@
  
  #include <string.h>
  #ifndef _WIN32
 -#include <mm_malloc.h>
++#include <vec128int.h>
 +#include <vecmisc.h>
  #endif
  #include "MiscUtilities.h"

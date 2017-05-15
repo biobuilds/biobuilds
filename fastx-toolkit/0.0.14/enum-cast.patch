@@ -1,0 +1,12 @@
+# Prevents "enumerated type mixed with another type" errors when using ICC
+--- src/fasta_nucleotide_changer/fasta_nucleotide_changer.c
++++ src/fasta_nucleotide_changer/fasta_nucleotide_changer.c
+@@ -93,7 +93,7 @@
+ 	}
+ 
+ 	fastx_init_reader(&fastx, get_input_filename(), 
+-		FASTA_OR_FASTQ, ALLOW_N | ALLOW_U, REQUIRE_UPPERCASE,
++		FASTA_OR_FASTQ, (ALLOWED_INPUT_BASES)(ALLOW_N | ALLOW_U), REQUIRE_UPPERCASE,
+ 		get_fastq_ascii_quality_offset() );
+ 
+ 	fastx_init_writer(&fastx, get_output_filename(), OUTPUT_FASTA, compress_output_flag());

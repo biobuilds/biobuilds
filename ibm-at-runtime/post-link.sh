@@ -10,3 +10,5 @@ ARCH=`uname -m`
     abort "AT runtime is not supported on $ARCH systems."
 [ -f "/opt/at${PKG_VERSION}/lib64/ld64.so.2" ] || \
     abort "Could not find the AT ${PKG_VERSION} runtime."
+[ -f "/opt/at${PKG_VERSION}/lib64/libtbb.so.2" ] || \
+    abort "Could not find the AT ${PKG_VERSION} mcore-libs package."

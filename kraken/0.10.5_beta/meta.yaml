@@ -4,12 +4,14 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     # Needed for OpenMP support
-    - gcc 4.8.*     # [osx]
+    - gcc 4.8.*       # [osx]
     - perl
   run:
+    - biobuilds-opt   # [opt]
     # Needed for OpenMP support
-    - libgcc 4.8.*  # [osx]
+    - libgcc 4.8.*    # [osx]
     - perl
 
 source:
@@ -22,11 +24,11 @@ source:
     - install-exit-code.patch
 
 build:
-  number: 0
+  number: 1
+  features:
+    - opt     # [opt]
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 test:
   commands:

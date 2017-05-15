@@ -19,11 +19,13 @@ requirements:
 
 source:
   fn: glib-2.43.0.tar.xz
-  url: http://ftp.gnome.org/pub/gnome/sources/glib/2.43/glib-2.43.0.tar.xz
+  url:
+    - "http://ftp.gnome.org/pub/gnome/sources/glib/2.43/glib-2.43.0.tar.xz"
+    - "http://download.lab7.io/sources/glib-2.43.0.tar.xz"
   md5: c93f4364a2bc82807a5ea7ae220a9e35
 
 build:
-  number: 3
+  number: 4
   detect_binary_files_with_prefix: true
 
 about:

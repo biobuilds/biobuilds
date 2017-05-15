@@ -3,15 +3,16 @@ set -e -x -o pipefail
 
 
 ## Configure
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
-CFLAGS="${CFLAGS} -I${PREFIX}/include"
-CXXFLAGS="${CFLAGS}"
-LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
 
-if [ "$build_os" == 'Darwin' ]; then
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
+
+if [ "$BUILD_OS" == 'darwin' ]; then
     MACOSX_VERSION_MIN="10.8"
     CFLAGS="${CFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
     CXXFLAGS="${CXXFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
@@ -33,8 +34,10 @@ R_VER=$(R --version | head -n1 | awk '{print $3;}' | cut -d. -f1-2)
 
 
 ## Build and install
-env CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
-    make -j${BB_MAKE_JOBS} install \
+env CC="${CC}" CFLAGS="${CFLAGS}" \
+    CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
+    LDFLAGS="${LDFLAGS}" \
+    make -j${MAKE_JOBS} install \
     prefix="${PREFIX}" \
     HTSLIB="-lhts" \
     2>&1 | tee build.log
@@ -42,14 +45,18 @@ env CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
 # Various scripts missed by the top-level Makefile "install" target
 install -m 0755 rsem-* ${PREFIX}/bin
 
-env CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
+env CC="${CC}" CFLAGS="${CFLAGS}" \
+    CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
+    LDFLAGS="${LDFLAGS}" \
     make -C pRSEM filterSam2Bed \
     prefix="${PREFIX}" \
     BAMLIB_CPPFLAGS="-I${PREFIX}/include/samtools" BAMLIB="-lbam" \
     HTSLIB_CPPFLAGS="-I${PREFIX}/include/htslib" HTSLIB="-lhts" \
     2>&1 | tee build-prsem.log
 
-env CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" \
+env CC="${CC}" CFLAGS="${CFLAGS}" \
+    CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
+    LDFLAGS="${LDFLAGS}" \
     make -C EBSeq install \
     prefix="${PREFIX}" \
     2>&1 | tee build-ebseq.log

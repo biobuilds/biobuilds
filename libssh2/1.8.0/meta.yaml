@@ -19,7 +19,7 @@ requirements:
     - zlib
 
 build:
-  number: 0
+  number: 1
 
 about:
   home: "https://www.libssh2.org/"
