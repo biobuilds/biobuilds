@@ -1,0 +1,36 @@
+{% set version = '0.6.6' %}
+
+package:
+  name: sambamba
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - libconfig
+    - zlib
+  run:
+    - samtools    # required for mpileup
+    - bcftools    # required for mpileup
+
+source:
+  # Upstream release with submodule code (htslib, lz4, undeaD) included
+  fn: "sambamba-{{ version }}-full.tar.gz"
+  url:
+    - "http://download.lab7.io/sources/sambamba-{{ version }}-full.tar.gz"
+  sha1: "bf8983b808e3979b79517f0a3a7fd633f84d895c"
+  patches:
+    - makefile.patch
+
+build:
+  number: 0
+
+test:
+  commands:
+    - sambamba view
+
+about:
+  home: "https://github.com/lomereiter/sambamba"
+  license: GPLv2
+  license_file: LICENSE
+  summary: "Tools for working with SAM/BAM data"
