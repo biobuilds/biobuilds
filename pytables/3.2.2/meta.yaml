@@ -1,0 +1,79 @@
+{% set version = "3.2.2" %}
+
+# Based on the conda-forge/pytables-feedstock recipe (commit d3309c6)
+
+package:
+  name: pytables
+  version: "{{ version }}"
+
+source:
+  fn: "pytables-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/PyTables/PyTables/archive/v.{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/pytables-{{ version }}.tar.gz"
+  sha1: "5553a383fe46692da763df3d5d3409de18899971"
+  patches:
+    - blosc_macro.patch
+    - no-march-native.patch
+
+build:
+  number: 5
+  detect_binary_files_with_prefix: False
+  entry_points:
+    - pt2to3 = tables.scripts.pt2to3:main
+    - ptdump = tables.scripts.ptdump:main
+    - ptrepack = tables.scripts.ptrepack:main
+    - pttree = tables.scripts.pttree:main
+
+requirements:
+  build:
+    - python
+    - setuptools
+    - cython
+    - numpy x.x
+    - zlib 1.2.*
+    - lzo 2.06        # [linux]
+    - bzip2
+    - hdf5 1.8.17
+    - numexpr
+    # Building blosc is done internally.
+    # This is an old version, though.
+    # Would be better to link against new version externally.
+    # See https://github.com/PyTables/PyTables/issues/451
+    # - blosc
+  run:
+    - python
+    - numpy x.x
+    - numexpr
+    - hdf5 1.8.17
+    - zlib 1.2.*
+    - bzip2           # [win]
+    # building blosc is done internally.
+    # this is an old version, though.
+    # would be better to link against new version externally.
+    # See https://github.com/PyTables/PyTables/issues/451
+    # - blosc         # [win]
+
+test:
+  requires:
+    - setuptools
+  imports:
+    - tables
+  commands:
+    - pt2to3 -h
+    - ptdump -h
+    - ptrepack -h
+    - pttree -h
+
+about:
+  home: http://www.pytables.org
+  license: BSD
+  license_file: LICENSE.txt
+  summary: 'Brings together Python, HDF5 and NumPy to easily handle large amounts of data.'
+  description: |
+    PyTables is a package for managing hierarchical datasets and designed to
+    efficiently and easily cope with extremely large amounts of data. PyTables
+    is built on top of the HDF5 library, using the Python language and the
+    NumPy package.
+  doc_url: http://www.pytables.org/
+  dev_url: https://github.com/PyTables
