@@ -1,0 +1,76 @@
+--- src/Makefile
++++ src/Makefile
+@@ -193,7 +193,7 @@
+         TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
+         $${TGT}_INCDIRS   := $${TGT_INCDIRS}
+         $${TGT}_LDFLAGS   := $${TGT_LDFLAGS}
+-        $${TGT}_LDLIBS    := $${TGT_LDLIBS}
++        $${TGT}_LDLIBS    := $${TGT_LDLIBS} -lm
+         $${TGT}_LINKER    := $${TGT_LINKER}
+         $${TGT}_OBJS      :=
+         $${TGT}_POSTCLEAN := $${TGT_POSTCLEAN}
+@@ -211,7 +211,7 @@
+         TGT_INCDIRS       := $$(call CANONICAL_PATH,$${TGT_INCDIRS})
+         $${TGT}_INCDIRS   += $${TGT_INCDIRS}
+         $${TGT}_LDFLAGS   += $${TGT_LDFLAGS}
+-        $${TGT}_LDLIBS    += $${TGT_LDLIBS}
++        $${TGT}_LDLIBS    += $${TGT_LDLIBS} -lm
+         $${TGT}_POSTCLEAN += $${TGT_POSTCLEAN}
+         $${TGT}_POSTMAKE  += $${TGT_POSTMAKE}
+         $${TGT}_PREREQS   += $${TGT_PREREQS}
+@@ -385,7 +385,7 @@
+   CXX       ?= g++
+ 
+   CXXFLAGS  += -D_GLIBCXX_PARALLEL -pthread -fopenmp -fPIC
+-  LDFLAGS   += -D_GLIBCXX_PARALLEL -pthread -fopenmp -lm
++  LDFLAGS   += -D_GLIBCXX_PARALLEL -pthread -fopenmp
+ 
+   CXXFLAGS  += -Wall -Wextra -Wno-write-strings -Wno-unused -Wno-char-subscripts -Wno-sign-compare -Wformat
+ 
+@@ -418,7 +418,7 @@
+   endif
+ 
+   CXXFLAGS += -pthread -fPIC -m64 -Wall -Wextra -Wno-write-strings -Wno-unused -Wno-char-subscripts -Wno-sign-compare -Wformat
+-  LDFLAGS  += -pthread -lm
++  LDFLAGS  += -pthread
+ 
+   ifeq ($(BUILDOPTIMIZED), 1)
+   else
+@@ -438,7 +438,7 @@
+   CXX      ?= g++48
+ 
+   CXXFLAGS  += -I/usr/local/include -D_GLIBCXX_PARALLEL -pthread -fopenmp -fPIC
+-  LDFLAGS   += -L/usr/local/lib     -D_GLIBCXX_PARALLEL -pthread -fopenmp -rpath /usr/local/lib/gcc48 -lm -lexecinfo
++  LDFLAGS   += -L/usr/local/lib     -D_GLIBCXX_PARALLEL -pthread -fopenmp -rpath /usr/local/lib/gcc48 -lexecinfo
+ 
+   CXXFLAGS  += -Wall -Wextra -Wno-write-strings -Wno-unused -Wno-char-subscripts -Wno-sign-compare -Wformat -Wno-parentheses
+ 
+@@ -472,7 +472,7 @@
+   CXX      ?= g++48
+ 
+   CXXFLAGS  += -I/usr/local/include -D_GLIBCXX_PARALLEL -pthread -fopenmp -fPIC
+-  LDFLAGS   += -L/usr/local/lib     -D_GLIBCXX_PARALLEL -pthread -fopenmp -rpath /usr/local/lib/gcc48 -lm
++  LDFLAGS   += -L/usr/local/lib     -D_GLIBCXX_PARALLEL -pthread -fopenmp -rpath /usr/local/lib/gcc48
+ 
+   CXXFLAGS  += -Wall -Wextra -Wno-write-strings -Wno-unused -Wno-char-subscripts -Wno-sign-compare -Wformat -Wno-parentheses
+   CXXFLAGS  += -funroll-loops -fomit-frame-pointer
+@@ -496,7 +496,7 @@
+   CXX       ?= g++
+ 
+   CXXFLAGS  := -fopenmp -pthread
+-  LDFLAGS   := -fopenmp -pthread -lm
++  LDFLAGS   := -fopenmp -pthread
+ 
+   CXXFLAGS  += -Wall -Wextra -Wno-write-strings -Wno-unused -Wno-char-subscripts -Wno-sign-compare -Wformat
+ 
+--- src/utgcns/utgcns.mk
++++ src/utgcns/utgcns.mk
+@@ -10,7 +10,7 @@
+ TARGET   := utgcns
+ SOURCES  := utgcns.C stashContains.C
+ 
+-SRC_INCDIRS  := .. ../AS_UTL ../stores libcns libpbutgcns libNDFalcon libboost
++SRC_INCDIRS  := .. ../AS_UTL ../stores libcns libpbutgcns libNDFalcon
+ 
+ TGT_LDFLAGS := -L${TARGET_DIR}
+ TGT_LDLIBS  := -lcanu

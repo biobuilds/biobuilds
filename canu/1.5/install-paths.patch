@@ -1,0 +1,159 @@
+--- src/pipelines/canu.pl
++++ src/pipelines/canu.pl
+@@ -41,9 +41,7 @@
+ use FindBin;
+ use Cwd qw(getcwd abs_path);
+ 
+-use lib "$FindBin::RealBin/lib";
+-use lib "$FindBin::RealBin/lib/canu/lib/perl5";
+-use lib "$FindBin::RealBin/lib/canu/lib64/perl5";
++use lib "@@base_lib_dir@@";
+ 
+ use File::Path 2.08 qw(make_path remove_tree);
+ 
+--- src/pipelines/canu/ErrorEstimate.pm
++++ src/pipelines/canu/ErrorEstimate.pm
+@@ -126,12 +126,13 @@
+     my $merSize         = getGlobal("${tag}MhapMerSize");
+     my $javaPath        = getGlobal("java");
+     my $bin             = getBinDirectory();
++    my $lib             = getInstallDirectory() . "/lib/canu";
+ 
+     print STDERR "--\n";
+     print STDERR "-- PARAMETERS: hashes=$numHashes, minMatches=$minNumMatches, threshold=$threshold\n";
+     print STDERR "--\n";
+ 
+-    my $cmd  = "$javaPath -d64 -server -Xmx4g -jar $bin/mhap-" . getGlobal("${tag}MhapVersion") . ".jar ";
++    my $cmd  = "$javaPath -d64 -server -Xmx4g -jar $lib/mhap-" . getGlobal("${tag}MhapVersion") . ".jar ";
+     $cmd .= "  --no-self --repeat-weight 0.9 -k $merSize --num-hashes $numHashes --num-min-matches $minNumMatches --ordered-sketch-size $ordSketch --ordered-kmer-size $ordSketchMer  --threshold $threshold --filter-threshold $filterThreshold --num-threads " . getGlobal("${tag}mhapThreads");
+     $cmd .= " -s $hash -q $query  2> /dev/null | awk '{if (\$1 != \$2+$sampleSize) { print \$0}}' | $bin/errorEstimate -d 2 -m 0.95 -S - > $out 2> $err";
+     runCommand($path, $cmd);
+--- src/pipelines/canu/Execution.pm
++++ src/pipelines/canu/Execution.pm
+@@ -291,13 +291,9 @@
+ #  To make it more trouble, shell scripts need to do all this by themselves.
+ #
+ sub getInstallDirectory () {
+-    my $installDir = $FindBin::RealBin;
+-
+-    if ($installDir =~ m!^(.*)/\w+-\w+/bin$!) {
+-        $installDir = $1;
+-    }
+-
+-    return($installDir);
++    # Removed upstream code because we currently can't support multiple
++    # architectures within a single conda environment.
++    return("@@conda_prefix@@");
+ }
+ 
+ 
+@@ -391,32 +387,10 @@
+ #  used to hardcode a path to a system name.
+ #
+ sub getBinDirectory () {
++    # Removed upstream code because we currently can't support multiple
++    # architectures within a single conda environment.
+     my $installDir = getInstallDirectory();
+-
+-    my $syst = `uname -s`;    chomp $syst;  #  OS implementation
+-    my $arch = `uname -m`;    chomp $arch;  #  Hardware platform
+-    my $name = `uname -n`;    chomp $name;  #  Name of the system
+-
+-    $arch = "amd64"  if ($arch eq "x86_64");
+-    $arch = "ppc"    if ($arch eq "Power Macintosh");
+-
+-    my $path = "$installDir/$syst-$arch/bin";
+-
+-    my $pathMap = getGlobal("pathMap");
+-    if (defined($pathMap)) {
+-        open(F, "< $pathMap") or caFailure("failed to open pathMap '$pathMap'", undef);
+-        while (<F>) {
+-            my ($n, $b) = split '\s+', $_;
+-            $path = $b if ($name eq $n);
+-        }
+-        close(F);
+-    }
+-
+-    if (! -d "$path") {
+-        $path = $installDir;
+-    }
+-
+-    return($path);
++    return("$installDir/bin");
+ }
+ 
+ 
+@@ -424,42 +398,10 @@
+ #  getBinDirectory.
+ #
+ sub getBinDirectoryShellCode () {
++    # Removed upstream code because we currently can't support multiple
++    # architectures within a single conda environment.
+     my $installDir = getInstallDirectory();
+-    my $string;
+-
+-    $string .= "syst=`uname -s`\n";
+-    $string .= "arch=`uname -m`\n";
+-    $string .= "name=`uname -n`\n";
+-    $string .= "\n";
+-    $string .= "if [ \"\$arch\" = \"x86_64\" ] ; then\n";
+-    $string .= "  arch=\"amd64\"\n";
+-    $string .= "fi\n";
+-    $string .= "if [ \"\$arch\" = \"Power Macintosh\" ] ; then\n";
+-    $string .= "  arch=\"ppc\"\n";
+-    $string .= "fi\n";
+-    $string .= "\n";
+-    $string .= "bin=\"$installDir/\$syst-\$arch/bin\"\n";
+-    $string .= "\n";
+-
+-    my $pathMap = getGlobal("pathMap");
+-    if (defined($pathMap)) {
+-        open(PM, "< $pathMap") or caFailure("failed to open pathMap '$pathMap'", undef);
+-        while (<PM>) {
+-            my ($n, $b) = split '\s+', $_;
+-            $string .= "if [ \"\$name\" = \"$n\" ] ; then\n";
+-            $string .= "  bin=\"$b\"\n";
+-            $string .= "fi\n";
+-        }
+-        close(PM);
+-        $string .= "\n";
+-    }
+-
+-    $string .= "if [ ! -d \"\$bin\" ] ; then\n";
+-    $string .= "  bin=\"$installDir\"\n";
+-    $string .= "fi\n";
+-    $string .= "\n";
+-
+-    return($string);
++    return("bin=\"$installDir/bin\"\n");
+ }
+ 
+ 
+--- src/pipelines/canu/OverlapMhap.pm
++++ src/pipelines/canu/OverlapMhap.pm
+@@ -66,6 +66,7 @@
+     my $tag     = shift @_;
+     my $typ     = shift @_;
+     my $bin     = getBinDirectory();
++    my $lib     = getInstallDirectory() . "/lib/canu";
+ 
+     my $base;                #  e.g., $base/1-overlapper/mhap.sh
+     my $path;                #  e.g., $path/mhap.sh
+@@ -378,7 +379,7 @@
+     print F "cd ./blocks\n";
+     print F "\n";
+     print F "$javaPath -d64 -server -Xmx", $javaMemory, "m \\\n";
+-    print F "  -jar $cygA \$bin/mhap-" . getGlobal("${tag}MhapVersion") . ".jar $cygB \\\n";
++    print F "  -jar $cygA '$lib/mhap-" . getGlobal("${tag}MhapVersion") . ".jar' $cygB \\\n";
+     print F "  --repeat-weight 0.9 --repeat-idf-scale 10 -k $merSize \\\n";
+     print F "  --supress-noise 2 \\\n"  if (defined(getGlobal("${tag}MhapFilterUnique")) && getGlobal("${tag}MhapFilterUnique") == 1);
+     print F "  --no-tf \\\n"            if (defined(getGlobal("${tag}MhapNoTf")) && getGlobal("${tag}MhapNoTf") == 1);
+@@ -477,7 +478,7 @@
+     print F "\n";
+     print F "if [ ! -e ./results/\$qry.mhap ] ; then\n";
+     print F "  $javaPath -d64 -server -Xmx", $javaMemory, "m \\\n";
+-    print F "    -jar $cygA \$bin/mhap-" . getGlobal("${tag}MhapVersion") . ".jar $cygB \\\n";
++    print F "    -jar $cygA '$lib/mhap-" . getGlobal("${tag}MhapVersion") . ".jar' $cygB \\\n";
+     print F "    --repeat-weight 0.9 --repeat-idf-scale 10 -k $merSize \\\n";
+     print F "    --supress-noise 2 \\\n"  if (defined(getGlobal("${tag}MhapFilterUnique")) && getGlobal("${tag}MhapFilterUnique") == 1);
+     print F "    --no-tf \\\n"            if (defined(getGlobal("${tag}MhapNoTf")) && getGlobal("${tag}MhapNoTf") == 1);

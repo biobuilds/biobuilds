@@ -1,0 +1,43 @@
+{% set version = "1.5" %}
+
+package:
+  name: canu
+  version: "{{ version }}"
+
+source:
+  fn: "canu-{{ version }}-src.tar.gz"
+  url:
+    - "https://github.com/marbl/canu/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/canu-{{ version }}-src.tar.gz"
+  sha1: "9007628ffeadf456ba0d1270272f53c95cfa8f11"
+  patches:
+    - makefiles.patch
+    - install-paths.patch
+
+requirements:
+  build:
+    - biobuilds-build
+    - boost             # [not (ppc64le and opt)]
+    # Needed for __atomic intrinsics
+    - gcc 4.8.*         # [not ppc64le]
+  run:
+    - biobuilds-opt     # [opt]
+    - libgcc 4.8.*      # [not ppc64le]
+    - perl
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - canu -version
+
+about:
+  home: "https://github.com/marbl/canu"
+  license: "GPLv2"
+  license_file: "README.license.GPL"
+  summary: "Assembler for high-noise single-molecule sequencing"
