@@ -1,0 +1,157 @@
+--- buildSpacedDB.sh
++++ buildSpacedDB.sh
+@@ -42,7 +42,7 @@
+ echo "Database for the first spaced seed (code name:T295) already exists."
+ else
+ 
+-./exe/converter $DIR/db_central_k31*m0.tsk.sz 22 31 T295
++CLARK-converter $DIR/db_central_k31*m0.tsk.sz 22 31 T295
+ if [ ! -d $DIR/T295 ]; then 
+ 	mkdir $DIR/T295/
+ fi
+@@ -53,7 +53,7 @@
+ if [ -s $DIR/T58570/db_central_k31_t*_s1610612741_m0_w22.tsk.sz ]; then
+ echo "Database for the second spaced seed (code name:T58570) already exists."
+ else
+-./exe/converter $DIR/db_central_k31*m0.tsk.sz 22 31 T58570
++CLARK-converter $DIR/db_central_k31*m0.tsk.sz 22 31 T58570
+ if [ ! -d $DIR/T58570 ]; then
+         mkdir $DIR/T58570/
+ fi
+@@ -63,7 +63,7 @@
+ if [ -s $DIR/T38570/db_central_k31_t*_s1610612741_m0_w22.tsk.sz ]; then
+ echo "Database for the third spaced seed (code name:T38570) already exists."
+ else
+-./exe/converter $DIR/db_central_k31*m0.tsk.sz 22 31 T38570
++CLARK-converter $DIR/db_central_k31*m0.tsk.sz 22 31 T38570
+ if [ ! -d $DIR/T38570 ]; then
+         mkdir $DIR/T38570/
+ fi
+--- classify_metagenome.sh
++++ classify_metagenome.sh
+@@ -164,11 +164,11 @@
+ fi
+ 
+ if [ "$VARIANT" = "LIGHT" ]; then
+-./exe/CLARK-l $PARAMS
++CLARK-l $PARAMS
+ elif  [ "$VARIANT" = "SPACED" ]; then
+-./exe/CLARK-S $PARAMS
++CLARK-S $PARAMS
+ else
+-./exe/CLARK $PARAMS
++CLARK $PARAMS
+ fi
+ 
+ if [ "$UNRQTD" = "--gzipped" ]; then
+--- estimate_abundance.sh
++++ estimate_abundance.sh
+@@ -31,8 +31,8 @@
+ 
+ if [ $# -lt 1 ]; then
+ echo -n "Usage: $0 " 
+-./exe/getAbundance
++CLARK-getAbundance
+ exit
+ fi
+-./exe/getAbundance $@
++CLARK-getAbundance $@
+ 
+--- evaluate_density_confidence.sh
++++ evaluate_density_confidence.sh
+@@ -28,5 +28,5 @@
+ exit
+ fi
+ 
+-./exe/getConfidenceDensity $@
++CLARK-getConfidenceDensity $@
+ 
+--- evaluate_density_gamma.sh
++++ evaluate_density_gamma.sh
+@@ -28,5 +28,5 @@
+ exit
+ fi
+ 
+-./exe/getGammaDensity $@
++CLARK-getGammaDensity $@
+ 
+--- makeSummaryTable.sh
++++ makeSummaryTable.sh
+@@ -30,7 +30,7 @@
+ 
+ if [ $# -lt 1 ]; then
+ echo -n "Usage: "
+-./exe/makeSummaryTable 
++CLARK-makeSummaryTable 
+ exit
+ fi
+-./exe/makeSummaryTable $@
++CLARK-makeSummaryTable $@
+--- make_metadata.sh
++++ make_metadata.sh
+@@ -51,11 +51,11 @@
+ if [ ! -d $DBDR/$TAXDR ]; then
+ 	echo "Taxonomy data missing. The program will download data to $DBDR/$TAXDR."
+ 	mkdir -m 775 $DBDR/$TAXDR
+-	./download_taxondata.sh $DBDR/$TAXDR
++	CLARK-download_taxondata.sh $DBDR/$TAXDR
+ fi
+ if [ ! -f $DBDR/.taxondata ]; then
+         echo "Failed to find taxonomy files. The program will try to download them..."
+-        ./download_taxondata.sh $DBDR/$TAXDR
++        CLARK-download_taxondata.sh $DBDR/$TAXDR
+         if [ ! -f $DBDR/.taxondata ]; then
+                 echo "Failed to find taxonomy files."
+                 echo "The program must abort."
+@@ -84,7 +84,7 @@
+ if [ ! -s $DBDR/.$DB ]; then
+ 	if [ "$DB" != "custom" ]; then
+ 		echo "Sequences for $DB not found. The program will download them."
+-		./download_data.sh $DBDR $DB
++		CLARK-download_data.sh $DBDR $DB
+ 	else
+ 		ls $DBDR/Custom/ > $DBDR/.$DB
+ 		if [ ! -s $DBDR/.$DB ]; then
+@@ -98,7 +98,7 @@
+ 	fi
+ fi
+ 
+-if [ ! -f ./exe/getfilesToTaxNodes ] || [ ! -f ./exe/getAccssnTaxID ]; then
++if [ ! -f CLARK-getfilesToTaxNodes ] || [ ! -f CLARK-getAccssnTaxID ]; then
+ 	echo "Something wrong occurred (source code may be missing or unusable. Did the installation finish properly?). The program must abort."
+ 	exit
+ fi
+@@ -125,11 +125,11 @@
+ 
+ if [ ! -s $DBDR/.$DB.fileToAccssnTaxID ] ; then
+ 	echo "Re-building $DB.fileToAccssnTaxID"
+-	./exe/getAccssnTaxID $DBDR/.$DB $DBDR/$TAXDR/nucl_accss $DBDR/$TAXDR/merged.dmp > $DBDR/.$DB.fileToAccssnTaxID
++	CLARK-getAccssnTaxID $DBDR/.$DB $DBDR/$TAXDR/nucl_accss $DBDR/$TAXDR/merged.dmp > $DBDR/.$DB.fileToAccssnTaxID
+ fi
+ if [ ! -s $DBDR/.$DB.fileToTaxIDs ]; then
+ 	echo "$DB: Retrieving taxonomy nodes for each sequence based on taxon ID..."
+-	./exe/getfilesToTaxNodes $DBDR/$TAXDR/nodes.dmp $DBDR/.$DB.fileToAccssnTaxID > $DBDR/.$DB.fileToTaxIDs
++	CLARK-getfilesToTaxNodes $DBDR/$TAXDR/nodes.dmp $DBDR/.$DB.fileToAccssnTaxID > $DBDR/.$DB.fileToTaxIDs
+ fi
+ exit
+ 
+--- set_targets.sh
++++ set_targets.sh
+@@ -88,7 +88,7 @@
+ 		if [ "$PRE" != "--" ]; then
+ 
+ 			echo -n "Collecting metadata of $db... "
+-			./make_metadata.sh $db $DBDR
++			CLARK-make_metadata.sh $db $DBDR
+ 			if [ ! -s $DBDR/.$db ]; then
+ 				exit
+ 			fi
+@@ -97,7 +97,7 @@
+ 			fi
+ 			echo "done."
+ 			if [ -s $DBDR/.$db.fileToTaxIDs ]; then 
+-				./exe/getTargetsDef $DBDR/.$db.fileToTaxIDs $RANK >> $DBDR/targets.txt 
++				CLARK-getTargetsDef $DBDR/.$db.fileToTaxIDs $RANK >> $DBDR/targets.txt 
+ 				subDB="$subDB$db$us"
+ 				cat files_excluded.txt >> $DBDR/.tmp
+ 				rm files_excluded.txt

@@ -1,0 +1,72 @@
+--- install.sh
++++ install.sh
+@@ -32,18 +32,19 @@
+ echo |cpp -fopenmp -dM |grep -i open > .tmp
+ NB=`wc -l < .tmp`
+ 
+-if [ ! -d ./exe/ ]; then
+-	mkdir ./exe/
+-fi
++: ${PREFIX:="./exe"}
++: ${CXX:="g++"}
++: ${CXXFLAGS:="-O3"}
+ 
+-g++ -o ./exe/getTargetsDef ./src/getTargetsDef.cc ./src/file.cc -O3
+-g++ -o ./exe/getAccssnTaxID ./src/getAccssnTaxID.cc ./src/file.cc -O3
+-g++ -o ./exe/getfilesToTaxNodes ./src/getfilesToTaxNodes.cc ./src/file.cc -O3
+-g++ -o ./exe/getAbundance ./src/getAbundance.cc ./src/file.cc -O3
+-g++ -o ./exe/getConfidenceDensity src/getConfidencedensity.cc src/file.cc -O3
+-g++ -o ./exe/getGammaDensity src/getGammadensity.cc src/file.cc -O3
+-g++ -o ./exe/makeSummaryTable ./src/file.cc ./src/makeSamplesSummaryTable.cc -O3
+-g++ -o ./exe/converter src/main_spaced.cc src/kmersConversion.cc -O3
++mkdir -p "$PREFIX"
++${CXX} -o ${PREFIX}/CLARK-getTargetsDef ./src/getTargetsDef.cc ./src/file.cc ${CXXFLAGS}
++${CXX} -o ${PREFIX}/CLARK-getAccssnTaxID ./src/getAccssnTaxID.cc ./src/file.cc ${CXXFLAGS}
++${CXX} -o ${PREFIX}/CLARK-getfilesToTaxNodes ./src/getfilesToTaxNodes.cc ./src/file.cc ${CXXFLAGS}
++${CXX} -o ${PREFIX}/CLARK-getAbundance ./src/getAbundance.cc ./src/file.cc ${CXXFLAGS}
++${CXX} -o ${PREFIX}/CLARK-getConfidenceDensity src/getConfidencedensity.cc src/file.cc ${CXXFLAGS}
++${CXX} -o ${PREFIX}/CLARK-getGammaDensity src/getGammadensity.cc src/file.cc ${CXXFLAGS}
++${CXX} -o ${PREFIX}/CLARK-makeSummaryTable ./src/file.cc ./src/makeSamplesSummaryTable.cc ${CXXFLAGS}
++${CXX} -o ${PREFIX}/CLARK-converter src/main_spaced.cc src/kmersConversion.cc ${CXXFLAGS}
+ 
+ rm -Rf ./.dCLARK/
+ mkdir ./.dCLARK/
+@@ -54,29 +55,29 @@
+ if [ $NB -eq 1 ]; then
+ 	# OPENMP is likely supported
+ 	# Building CLARK
+-       	g++ -fopenmp -o ./.dCLARK/CLARK -O3 ./.dCLARK/*.cc
++       	${CXX} -fopenmp -o ./.dCLARK/CLARK ${CXXFLAGS} ./.dCLARK/*.cc
+ 
+        	cp ./src/parameters_hh ./.dCLARK/parameters.hh
+ 	# Building CLARK-l (light version)       
+-	g++ -fopenmp -o ./.dCLARK/CLARK-l -O3 ./.dCLARK/*.cc
++	${CXX} -fopenmp -o ./.dCLARK/CLARK-l ${CXXFLAGS} ./.dCLARK/*.cc
+ 
+ 	cp ./src/parameters_shh ./.dCLARK/parameters.hh
+         # Building CLARK-S (Spaced version)       
+-        g++ -fopenmp -o ./.dCLARK/CLARK-S -O3 ./.dCLARK/*.cc
++        ${CXX} -fopenmp -o ./.dCLARK/CLARK-S ${CXXFLAGS} ./.dCLARK/*.cc
+ else
+ 	# Building CLARK
+-        g++ -o ./.dCLARK/CLARK -O3 ./.dCLARK/*.cc 
++        ${CXX} -o ./.dCLARK/CLARK ${CXXFLAGS} ./.dCLARK/*.cc 
+ 
+         cp ./src/parameters_hh ./.dCLARK/parameters.hh
+         # Building CLARK-l (light version)
+-	g++ -o ./.dCLARK/CLARK-l -O3 ./.dCLARK/*.cc 
++	${CXX} -o ./.dCLARK/CLARK-l ${CXXFLAGS} ./.dCLARK/*.cc 
+ 
+ 	cp ./src/parameters_shh ./.dCLARK/parameters.hh
+         # Building CLARK-S (Spaced version)       
+-        g++ -o ./.dCLARK/CLARK-S -O3 ./.dCLARK/*.cc
++        ${CXX} -o ./.dCLARK/CLARK-S ${CXXFLAGS} ./.dCLARK/*.cc
+ fi
+-mv ./.dCLARK/CLARK ./exe/
+-mv ./.dCLARK/CLARK-l ./exe/
+-mv ./.dCLARK/CLARK-S ./exe/
++mv ./.dCLARK/CLARK ${PREFIX}/
++mv ./.dCLARK/CLARK-l ${PREFIX}/
++mv ./.dCLARK/CLARK-S ${PREFIX}/
+ 
+ rm -Rf ./.dCLARK .tmp

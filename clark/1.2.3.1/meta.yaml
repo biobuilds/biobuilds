@@ -1,0 +1,44 @@
+{% set version = "1.2.3.1" %}
+
+package:
+  name: clark
+  version: "{{ version }}"
+
+source:
+  fn: "clark-{{ version }}-src.tar.gz"
+  url:
+    - "http://clark.cs.ucr.edu/Download/CLARKV{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/clark-{{ version }}-src.tar.gz"
+  sha1: "9f7b71481c686cbffd248701d94c0fe51a2d6139"
+  patches:
+    - install.patch
+    - filenames-and-paths.patch
+
+requirements:
+  build:
+    - biobuilds-build
+    # For OpenMP support
+    - gcc 4.8.*         # [osx]
+  run:
+    - biobuilds-opt     # [opt]
+    # For OpenMP support
+    - libgcc 4.8.*      # [osx]
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - CLARK --version
+    - CLARK-l --version
+    - CLARK-S --version
+
+about:
+  home: "http://clark.cs.ucr.edu/Tool/"
+  license: "GPLv3"
+  license_file: "LICENSE_GNU_GPL.txt"
+  summary: "Fast, accurate and versatile sequence classification system"
