@@ -1,0 +1,25 @@
+{% set version = '1.5' %}
+
+package:
+  name: libconfig
+  version: {{ version }}
+
+source:
+  fn: "libconfig-{{ version }}.tar.gz"
+  url:
+    - "http://www.hyperrealm.com/libconfig/libconfig-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/libconfig-{{ version }}.tar.gz"
+  sha1: "24306c7efce07669a4053d0977a45e2f3a3add79"
+
+requirements:
+  build:
+    - biobuilds-build
+  run: []
+
+build:
+  number: 0
+
+about:
+  home: "http://www.hyperrealm.com/libconfig/"
+  license: "LGPL"
+  summary: "Library for processing structured configuration files"
