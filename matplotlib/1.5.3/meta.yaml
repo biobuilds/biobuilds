@@ -21,6 +21,7 @@ requirements:
   # Disabling 'tk' on ppc64le since the upstream Python lacks tk support (i.e.,
   # the recipe's tests fail with an "ImportError: No module named _tkinter").
   build:
+    - pkg-config
     - python
     - setuptools
     - numpy x.x
@@ -32,7 +33,7 @@ requirements:
     - tornado
     - libpng
     - tk                  [not osx and not ppc64le]
-    - pyqt                [not osx and not ppc64le]
+    - pyqt 4.*            [not osx and not ppc64le]
     - cycler
     - nose
   run:
@@ -45,11 +46,11 @@ requirements:
     - py2cairo            [linux and py2k]
     - libpng
     - tk                  [not osx and not ppc64le]
-    - pyqt                [not osx and not ppc64le]
+    - pyqt 4.*            [not osx and not ppc64le]
     - cycler
 
 build:
-  number: 1
+  number: 2
 
 test:
   requires:
