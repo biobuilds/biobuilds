@@ -1,0 +1,35 @@
+{% set version = "0.2.2" %}
+
+package:
+  name: conifer
+  version: "{{ version }}"
+
+source:
+  fn: "conifer-{{ version }}-src.tar.gz"
+  url:
+    - "https://downloads.sourceforge.net/project/conifer/CoNIFER%20{{ version }}/conifer_v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/conifer-{{ version }}-src.tar.gz"
+  sha1: "52dcb394cd19210da4c96270d1dd65ffa611a7be"
+
+requirements:
+  run:
+    - python
+    - numpy x.x
+    # Require pytables 3.2 because 3.3+ has an API change that causes Conifer
+    # to fail with "NameError: global name 'openFile' is not defined".
+    - pytables 3.2.2
+    - matplotlib 1.5.*
+    - pysam 0.8.*
+
+build:
+  number: 0
+
+test:
+  commands:
+    - conifer.py --version
+
+about:
+  home: "http://conifer.sourceforge.net/"
+  license: "GPLv2"
+  license_file: "LICENSE"
+  summary: "Copy Number Inference From Exome Reads"
