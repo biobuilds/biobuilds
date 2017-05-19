@@ -1,0 +1,39 @@
+{% set version = "1.0.0.0" %}
+
+package:
+  name: drfast
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - zlib
+  run:
+    - biobuilds-opt     # [opt]
+    - zlib
+
+source:
+  fn: "drfast-{{ version }}.zip"
+  url:
+    - "https://downloads.sourceforge.net/project/drfast/drFAST.{{ version }}/drFAST-{{ version }}.zip"
+    - "http://download.lab7.io/sources/drfast-{{ version }}.zip"
+  sha1: "5cfdf815084fc02e6c3a6f13cc897a40f9d326b6"
+  patches:
+    - makefile.patch
+    - exit-codes.patch
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - drfast --version
+
+about:
+  home: "http://drfast.sourceforge.net/"
+  license: "BSD"
+  summary: "Fast mapper for di-base reads (SOLiD color space reads) to reference genomes"

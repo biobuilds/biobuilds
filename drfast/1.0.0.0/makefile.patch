@@ -1,0 +1,22 @@
+--- Makefile.org	2017-05-19 11:12:31.000000000 -0500
++++ Makefile	2017-05-19 11:13:06.000000000 -0500
+@@ -1,6 +1,7 @@
+ CC=gcc
+-CFLAGS = -c -O3 -g
+-LDFLAGS = -static -lz -lm
++CFLAGS = -O3 -g
++LDFLAGS = -static
++LDLIBS = -lz -lm
+ SOURCES = baseFAST.c CommandLineParser.c Common.c HashTable.c DrFAST.c Output.c Reads.c RefGenome.c 
+ OBJECTS = $(SOURCES:.c=.o)
+ EXECUTABLE = drfast
+@@ -18,7 +19,7 @@
+ 	rm -rf *.o
+ 		
+ $(EXECUTABLE): $(OBJECTS) 
+-	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
++	$(CC) $(OBJECTS) -o $@ $(LDFLAGS) $(LDLIBS)
+ 
+ .c.o:
+-	$(CC) $(CFLAGS) $< -o $@
++	$(CC) $(CFLAGS) $< -c -o $@

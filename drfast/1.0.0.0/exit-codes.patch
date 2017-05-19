@@ -1,0 +1,18 @@
+diff --git a/CommandLineParser.c b/CommandLineParser.c
+index 4ff739b..ea864e3 100644
+--- a/CommandLineParser.c
++++ b/CommandLineParser.c
+@@ -164,11 +164,11 @@ int parseCommandLine (int argc, char *argv[])
+ 				break;					
+ 			case 'h':
+ 				printHelp();
+-				return 0;
++				exit(0);
+ 				break;
+ 			case 'v':
+ 				fprintf(stdout, "%s.%s\n", versionNumber, versionNumberF);
+-				return 0;
++				exit(0);
+ 				break;
+ 		}
+ 
