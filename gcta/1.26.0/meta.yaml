@@ -1,0 +1,45 @@
+{% set version = "1.26.0" %}
+
+package:
+  name: gcta
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - eigen
+    - openblas          # [not (linux64 and opt)]
+    # Use the same compiler suite as OpenBLAS
+    - gcc 4.8.*         # [not ppc64le and not (linux64 and opt)]
+    - zlib
+  run:
+    - biobuilds-opt     # [opt]
+    - mkl >=2017.0      # [linux64 and opt]
+    - openblas          # [not (linux64 and opt)]
+    - zlib
+
+source:
+  fn: "gcta-{{ version }}-src.zip"
+  url:
+    - "http://cnsgenomics.com/software/gcta/gcta_{{ version }}_src.zip"
+    - "http://download.lab7.io/sources/gcta-{{ version }}-src.zip"
+  sha1: "83f526573feae96506f84a24885d3dc5b40f0ee8"
+  patches:
+    - no-mkl.patch
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - gcta64
+
+about:
+  home: "http://cnsgenomics.com/software/gcta/"
+  license: "GPLv3"
+  license_file: "GNU_General_Public_License_v3.txt"
+  summary: "Tools for Genome-wide Complex Trait Analysis"

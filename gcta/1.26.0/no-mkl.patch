@@ -1,0 +1,134 @@
+--- Makefile
++++ Makefile
+@@ -19,7 +19,8 @@
+ 
+ # Compiler flags
+ CXXFLAGS = -w -O3 -m64 -static -fopenmp -I $(EIGEN_PATH) -DEIGEN_NO_DEBUG -I $(MKL_PATH)/include
+-LIB += -static -lz -Wl,--start-group  $(MKL_PATH)/lib/intel64/libmkl_intel_lp64.a $(MKL_PATH)/lib/intel64/libmkl_gnu_thread.a $(MKL_PATH)/lib/intel64/libmkl_core.a -Wl,--end-group -lpthread -lm -ldl
++LINALG_LIBS =
++LIBS = -lpthread -lz -lm -ldl
+ 
+ HDR += CommFunc.h \
+            cdflib.h \
+@@ -58,7 +59,7 @@
+ all : $(OUTPUT) 
+ 
+ $(OUTPUT) :
+-	$(CXX) $(CXXFLAGS) -o $(OUTPUT) $(OBJ) $(LIB) 
++	$(CXX) $(CXXFLAGS) -o $(OUTPUT) $(OBJ) $(LDFLAGS) $(LINALG_LIBS) $(LIBS) 
+ 
+ $(OBJ) : $(HDR)
+ 
+--- eigen_func.h
++++ eigen_func.h
+@@ -12,7 +12,7 @@
+ #ifndef _EIGENFUNC_H
+ #define _EIGENFUNC_H
+ 
+-#ifndef EIGEN_USE_MKL_ALL
++#ifdef USE_MKL
+ #define EIGEN_USE_MKL_ALL
+ #endif
+ 
+--- gcta.h
++++ gcta.h
+@@ -17,9 +17,6 @@
+ #define EIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET
+ #endif
+ 
+-#ifndef EIGEN_USE_MKL_ALL
+-#define EIGEN_USE_MKL_ALL
+-#endif
+ 
+ #include "CommFunc.h"
+ #include "StrFunc.h"
+@@ -36,8 +33,15 @@
+ #include <unsupported/Eigen/SparseExtra>
+ #include <unsupported/Eigen/IterativeSolvers>
+ #include <omp.h>
++
++#ifdef USE_MKL
++#define EIGEN_USE_MKL_ALL
+ #include <mkl_cblas.h>
+ #include <mkl_lapack.h>
++#else
++#include <cblas.h>
++#include <lapacke.h>
++#endif
+ 
+ using namespace Eigen;
+ using namespace std;
+--- mkl.cpp
++++ mkl.cpp
+@@ -357,7 +357,11 @@
+     // MKL's Cholesky decomposition
+     int info = 0, int_n = (int) n;
+     char uplo = 'L';
++#ifdef USE_MKL
+     dpotrf(&uplo, &int_n, Vi_mkl, &int_n, &info);
++#else
++    LAPACK_dpotrf(&uplo, &int_n, Vi_mkl, &int_n, &info);
++#endif
+     //spotrf( &uplo, &n, Vi_mkl, &n, &info );
+     if (info < 0) throw ("Error: Cholesky decomposition failed. Invalid values found in the matrix.\n");
+     else if (info > 0) return false;
+@@ -369,7 +373,11 @@
+         }
+ 
+         // Calcualte V inverse
++#ifdef USE_MKL
+         dpotri(&uplo, &int_n, Vi_mkl, &int_n, &info);
++#else
++        LAPACK_dpotri(&uplo, &int_n, Vi_mkl, &int_n, &info);
++#endif
+         //spotri( &uplo, &n, Vi_mkl, &n, &info );
+         if (info < 0) throw ("Error: invalid values found in the varaince-covaraince (V) matrix.\n");
+         else if (info > 0) return false;
+@@ -405,7 +413,11 @@
+     int LWORK = N*N;
+     double *WORK = new double[n * n];
+     int INFO;
++#ifdef USE_MKL
+     dgetrf(&N, &N, Vi_mkl, &N, IPIV, &INFO);
++#else
++    LAPACK_dgetrf(&N, &N, Vi_mkl, &N, IPIV, &INFO);
++#endif
+     if (INFO < 0) throw ("Error: LU decomposition failed. Invalid values found in the matrix.\n");
+     else if (INFO > 0) {
+         delete[] Vi_mkl;
+@@ -418,7 +430,11 @@
+         }
+ 
+         // Calcualte V inverse
++#ifdef USE_MKL
+         dgetri(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
++#else
++        LAPACK_dgetri(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
++#endif
+         if (INFO < 0) throw ("Error: invalid values found in the varaince-covaraince (V) matrix.\n");
+         else if (INFO > 0) return false;
+         else {
+@@ -453,7 +469,11 @@
+     int LWORK = N*N;
+     double *WORK = new double[n * n];
+     int INFO;
++#ifdef USE_MKL
+     dgetrf(&N, &N, Vi_mkl, &N, IPIV, &INFO);
++#else
++    LAPACK_dgetrf(&N, &N, Vi_mkl, &N, IPIV, &INFO);
++#endif
+     if (INFO < 0) throw ("Error: LU decomposition failed. Invalid values found in the matrix.\n");
+     else if (INFO > 0) {
+         delete[] Vi_mkl;
+@@ -467,7 +487,11 @@
+         }
+ 
+         // Calcualte V inverse
++#ifdef USE_MKL
+         dgetri(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
++#else
++        LAPACK_dgetri(&N, Vi_mkl, &N, IPIV, WORK, &LWORK, &INFO);
++#endif
+         if (INFO < 0) throw ("Error: invalid values found in the varaince-covaraince (V) matrix.\n");
+         else if (INFO > 0) return (false); // Vi.diagonal()=Vi.diagonal().array()+Vi.diagonal().mean()*1e-3;
+         else {
