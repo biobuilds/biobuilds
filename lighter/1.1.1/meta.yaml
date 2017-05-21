@@ -1,0 +1,40 @@
+{% set version = "1.1.1" %}
+
+package:
+  name: lighter
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - zlib
+  run:
+    - biobuilds-opt     # [opt]
+    - zlib
+
+source:
+  fn: "lighter-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/mourisl/Lighter/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/lighter-{{ version }}.tar.gz"
+  sha1: "4998a0c9224270731d0dd582c23a08c86a92eb92"
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  requires:
+    # For reference genome FASTA
+    - mapper-test-data
+    # For wgsim
+    - samtools
+
+about:
+  home: "https://github.com/mourisl/Lighter"
+  license: "GPLv3"
+  license_file: "LICENSE"
+  summary: "Fast and memory-efficient sequencing error corrector"
