@@ -1,0 +1,16 @@
+--- CommandLineParser.c
++++ CommandLineParser.c
+@@ -208,11 +208,11 @@
+ 				break;					
+ 			case 'h':
+ 				printHelp();
+-				return 0;
++				exit(0);
+ 				break;
+ 			case 'v':
+ 				fprintf(stdout, "Version: %s\nBuild Date: %s\n", MRSFAST_VERSION, BUILD_DATE);
+-				return 0;
++				exit(0);
+ 				break;
+ 			case 't':
+ 				THREAD_COUNT = atoi(optarg);

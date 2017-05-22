@@ -1,0 +1,43 @@
+{% set version = "3.4.0" %}
+
+package:
+  name: mrsfast
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - veclib-headers    # [ppc64le]
+    - zlib
+  run:
+    - biobuilds-opt     # [opt]
+    - zlib
+
+source:
+  fn: "mrsfast-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/sfu-compbio/mrsfast/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/mrsfast-{{ version }}.tar.gz"
+  sha1: "2d786440a4b287a11d1650c982f5934717f3904b"
+  patches:
+    - makefile.patch
+    - exit-codes.patch
+    - simd-support.patch
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - mrsfast --version
+    - snp_indexer --version
+
+about:
+  home: "http://sfu-compbio.github.io/mrsfast/"
+  license: "BSD"
+  license_file: "LICENSE"
+  summary: "Micro-Read Substitution-only Fast Alignment Search Tool"

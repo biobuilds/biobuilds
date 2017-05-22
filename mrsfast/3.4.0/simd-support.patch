@@ -1,0 +1,86 @@
+--- CommandLineParser.c
++++ CommandLineParser.c
+@@ -233,9 +233,9 @@
+ 
+ 	}
+ 
+-#ifndef MRSFAST_SSE4
++#ifndef MRSFAST_SIMD
+ 	if (searchingMode)
+-		fprintf(stdout, "==> This version is compiled without any SSE4 optimization <==\n");
++		fprintf(stdout, "==> This version is compiled without any vector (SSE4 or VSX) optimizations <==\n");
+ #endif
+ 	if (bestMappingMode)
+ 	{
+--- Common.h
++++ Common.h
+@@ -36,10 +36,18 @@
+ #ifndef __COMMON__
+ #define __COMMON__
+ 
+-#if SSE4==1 
++#if SIMD==1
++#ifdef __x86_64__
+ #define MRSFAST_SSE4
++#elif __PPC64__
++#define MRSFAST_VSX
++#else
++#error "Unsupported architecture for SIMD optimizations"
+ #endif
+ 
++#pragma message("*** Enabling SIMD build ***")
++#define MRSFAST_SIMD
++#endif  // SIMD==1
+ 
+ #include <zlib.h>
+ #include <stdint.h>
+--- MrsFAST.c
++++ MrsFAST.c
+@@ -51,6 +51,11 @@
+ #include <nmmintrin.h>
+ #endif
+ 
++#ifdef MRSFAST_VSX
++#include <vec128int.h>
++#include <vecmisc.h>
++#endif
++
+ #define min(a,b) (a<b)?a:b;
+ long long			verificationCnt = 0;
+ long long 			mappingCnt = 0;
+@@ -454,6 +459,8 @@
+ 
+ #ifdef MRSFAST_SSE4
+ 		err += _mm_popcnt_u64(((diff >> 1) | (diff >> 2) | diff ) &  0x9249249249249249);
++#elif defined MRSFAST_VSX
++		err += vec_popcount1uw(((diff >> 1) | (diff >> 2) | diff ) &  0x9249249249249249);
+ #else
+ 		err += _msf_errCnt[diff & 0xffffff] + _msf_errCnt[(diff>>24)&0xffffff] + _msf_errCnt[(diff>>48)&0xfffff];
+ #endif
+@@ -478,6 +485,8 @@
+ 
+ #ifdef MRSFAST_SSE4
+ 		err += _mm_popcnt_u64(((diff >> 1) | (diff >> 2) | diff ) &  0x9249249249249249);
++#elif defined MRSFAST_VSX
++		err += vec_popcount1uw(((diff >> 1) | (diff >> 2) | diff ) &  0x9249249249249249);
+ #else
+ 		err += _msf_errCnt[diff & 0xffffff] + _msf_errCnt[(diff>>24)&0xffffff] + _msf_errCnt[(diff>>48)&0xfffff];
+ #endif
+@@ -518,6 +527,8 @@
+ 
+ #ifdef MRSFAST_SSE4
+ 		err += _mm_popcnt_u64(((diff >> 1) | (diff >> 2) | diff ) &  0x9249249249249249);
++#elif defined MRSFAST_VSX
++		err += vec_popcount1uw(((diff >> 1) | (diff >> 2) | diff ) &  0x9249249249249249);
+ #else
+ 		err += _msf_errCnt[diff & 0xffffff] + _msf_errCnt[(diff>>24)&0xffffff] + _msf_errCnt[(diff>>48)&0xfffff];
+ #endif
+@@ -547,6 +558,8 @@
+ 
+ #ifdef MRSFAST_SSE4
+ 		err += _mm_popcnt_u64(((diff >> 1) | (diff >> 2) | diff ) &  0x9249249249249249);
++#elif defined MRSFAST_VSX
++		err += vec_popcount1uw(((diff >> 1) | (diff >> 2) | diff ) &  0x9249249249249249);
+ #else
+ 		err += _msf_errCnt[diff & 0xffffff] + _msf_errCnt[(diff>>24)&0xffffff] + _msf_errCnt[(diff>>48)&0xfffff];
+ #endif

@@ -1,0 +1,45 @@
+--- Makefile
++++ Makefile
+@@ -6,21 +6,17 @@
+ profile: PROFILE_FLAGS build
+ build: clean_executables SSE_FLAGS mrsfast snp_indexer clean_objects
+ 
+-LDFLAGS=#-static
++LDFLAGS ?=
+ LIBS=-lz -lm -pthread -lpthread
+-CFLAGS=-fno-pic -DMRSFAST_VERSION=\"$(MRSFAST_VERSION)\" -DBUILD_DATE=\"$(BUILD_DATE)\"
++CFLAGS += -DMRSFAST_VERSION=\"$(MRSFAST_VERSION)\" -DBUILD_DATE=\"$(BUILD_DATE)\"
+ 
+ objects=baseFAST.o Sort.o MrsFAST.o Common.o CommandLineParser.o RefGenome.o HashTable.o Reads.o Output.o SNPReader.o  HELP.o
+ 
+-mrsfast: clean_executables $(objects)
+-ifeq ($(shell uname -s),Linux)
+-	gcc -w $(objects) -o $@ ${LDFLAGS} ${LIBS}
+-else
+-	gcc -Wl,-no_pie -fno-pic -w $(objects) -o $@ ${LDFLAGS} ${LIBS}
+-endif
++mrsfast: $(objects)
++	$(CC) $(CFLAGS) $(objects) -o $@ $(LDFLAGS) $(LIBS)
+ 
+-snp_indexer: clean_executables SNPIndexer.o
+-	gcc SNPIndexer.o -o $@ ${LDFLAGS} ${LIBS}
++snp_indexer: SNPIndexer.o
++	$(CC) $(CFLAGS) SNPIndexer.o -o $@ $(LDFLAGS) $(LIBS)
+ 
+ clean_objects: mrsfast snp_indexer
+ 	@rm -f $(objects)
+@@ -41,11 +37,11 @@
+ HELP.o:
+ 	@groff -Tascii -man ./HELP.man > HELP
+ ifeq ($(shell uname -s),Linux)
+-	@ld -r -b binary -o HELP.o HELP
++	$(LD) -r -b binary -o HELP.o HELP
+ else
+ 	@touch HELPstub.c
+-	gcc -o HELPstub.o -c HELPstub.c
+-	ld -r -o HELP.o -sectcreate binary HELP HELP HELPstub.o
++	$(CC) -o HELPstub.o -c HELPstub.c
++	$(LD) -r -o HELP.o -sectcreate binary HELP HELP HELPstub.o
+ endif
+ 
+ DEBUG_FLAGS:
