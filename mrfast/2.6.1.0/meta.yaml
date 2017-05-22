@@ -1,0 +1,42 @@
+{% set version = "2.6.1.0" %}
+
+package:
+  name: mrfast
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - veclib-headers    # [ppc64le]
+    - zlib
+  run:
+    - biobuilds-opt     # [opt]
+    - zlib
+
+source:
+  fn: "mrfast-{{ version }}.tar.gz"
+  url:
+    - "https://downloads.sourceforge.net/project/mrfast/mrfast/mrfast-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/mrfast-{{ version }}.tar.gz"
+  sha1: "c7ed2e3b1d7799dc0066a569ba252d5d41a8ca2f"
+  patches:
+    - makefile.patch
+    - exit-codes.patch
+    - ppc64le-support.patch   # [ppc64le]
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - mrfast --version
+
+about:
+  home: "http://mrfast.sourceforge.net/"
+  license: "BSD"
+  summary: "Micro-Read Fast Alignment Search Tool"
+

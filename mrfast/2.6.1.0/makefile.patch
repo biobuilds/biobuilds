@@ -1,0 +1,23 @@
+--- Makefile
++++ Makefile
+@@ -1,6 +1,6 @@
+ CC=gcc
+-CFLAGS = -c -O3 -Wall -msse -msse2 
+-LDFLAGS = -lz -lm 
++CFLAGS = -O3 -Wall -msse -msse2 
++LIBS = -lz -lm 
+ SOURCES = baseFAST.c CommandLineParser.c Common.c HashTable.c MrFAST.c Output.c Reads.c RefGenome.c 
+ OBJECTS = $(SOURCES:.c=.o)
+ EXECUTABLE = mrfast
+@@ -10,9 +10,9 @@
+ 	rm -rf *.o
+ 
+ $(EXECUTABLE): $(OBJECTS) 
+-	$(CC) $(OBJECTS) -o $@ $(LDFLAGS) 
++	$(CC) $(OBJECTS) -o $@ $(LDFLAGS) $(LIBS)
+ 
+ .c.o:
+-	$(CC) $(CFLAGS) $< -o $@ 
++	$(CC) $(CFLAGS) $< -c -o $@ 
+ clean:
+ 	rm -f *.o *~ \#* mrfast
