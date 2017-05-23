@@ -1,0 +1,35 @@
+{% set version = "1.0.2" %}
+
+package:
+  name: novelseq
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+  run:
+    - biobuilds-opt     # [opt]
+
+source:
+  fn: "novelseq-{{ version }}.tar.gz"
+  url:
+    - "https://downloads.sourceforge.net/project/novelseq/novelseq-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/novelseq-{{ version }}.tar.gz"
+  sha1: "917c240375392baebbab1afa12d86c246912fee1"
+  patches:
+    - exec-paths.patch
+    - prog-name.patch
+    - misc-fixes.patch
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+about:
+  home: "http://novelseq.sourceforge.net/Home"
+  # According to its SourceForce page...
+  license: "BSD"
+  summary: "Framework for detecting novel indels using high-throughput paired-end whole-genome sequencing data"

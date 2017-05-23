@@ -1,0 +1,11 @@
+--- fs-fa.c
++++ fs-fa.c
+@@ -236,7 +236,7 @@
+   if (ofname[0]!=0)
+     out = myfopen(ofname,"w");
+   if (out == NULL)
+-    return;
++    return 1;
+   
+ 	remcnt = 0;
+   while(fscanf(rin, "%s", removethis) > 0){

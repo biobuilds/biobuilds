@@ -1,0 +1,124 @@
+--- VariationHunter_SC.cpp
++++ VariationHunter_SC.cpp
+@@ -24,26 +24,26 @@
+   system(command);
+   sprintf(command, "sort -u ReadName > ReadName.U");
+   system(command);
+-  sprintf(command,"./sortString ReadName.U > ReadName.sort");
++  sprintf(command, "sortString ReadName.U > ReadName.sort");
+   system(command);
+   sprintf(command, "cut -f1,10,12 %s > %s.Name.Edit.Prob", fileName, fileName);
+   system(command);
+-  sprintf(command, "./calProbMinEditRead ReadName.sort %s.Name.Edit.Prob > %s.Name.MinEdit.TotalProb", fileName, fileName, fileName);
++  sprintf(command, "calProbMinEditRead ReadName.sort %s.Name.Edit.Prob > %s.Name.MinEdit.TotalProb", fileName, fileName, fileName);
+   system(command);
+-  sprintf(command, "./convertToInvLRProbMinEditDist %s %s.Name.MinEdit.TotalProb %i > %s.Prob.Full",fileName, fileName,preProsPrune, fileName);
++  sprintf(command, "convertToInvLRProbMinEditDist %s %s.Name.MinEdit.TotalProb %i > %s.Prob.Full",fileName, fileName,preProsPrune, fileName);
+   system(command);
+   sprintf(command, "cut -f1,2,3,4,5,6,7,10 %s.Prob.Full > %s.Prob.Clean", fileName, fileName);
+   system(command);
+   for (int count=1; count<25; count++)
+     {
+-      sprintf(command,"./createSetsDelAsInsNoGapInvRLProb.alpha chroName%i %s.Prob.Clean %s.Chr%i %i %i",count, fileName, fileName, count, maxDelta, minDelta);
++      sprintf(command, "createSetsDelAsInsNoGapInvRLProb.alpha chroName%i %s.Prob.Clean %s.Chr%i %i %i",count, fileName, fileName, count, maxDelta, minDelta);
+       system(command);
+-      sprintf(command,"./combineRR_FF.Prob ReadName.sort %s.Chr%i %i > %s.Chr%i.RR_FF",fileName, count,  maxDelta, fileName, count);
++      sprintf(command, "combineRR_FF.Prob ReadName.sort %s.Chr%i %i > %s.Chr%i.RR_FF",fileName, count,  maxDelta, fileName, count);
+       system(command);
+     }
+-  sprintf(command,"cat %s.Chr*RR_FF >> %s.FullChr.RR_FF", fileName, fileName);
++  sprintf(command, "cat %s.Chr*RR_FF >> %s.FullChr.RR_FF", fileName, fileName);
+   system(command);
+-  sprintf(command,"./setCoverProbWeighted ReadName.sort %s.FullChr.RR_FF %f > %s.SV",fileName, minSVSup, fileName);
++  sprintf(command, "setCoverProbWeighted ReadName.sort %s.FullChr.RR_FF %f > %s.SV",fileName, minSVSup, fileName);
+   system(command);
+   sprintf(command, "grep SVtype:1 %s.SV > %s.SV.Insertion", fileName, fileName);
+   system(command);
+--- novel_cluster.cpp
++++ novel_cluster.cpp
+@@ -20,7 +20,7 @@
+ 
+ 	char command[1024];
+ 
+-	sprintf(command, "./parserQualWReadPrunWSatellite %s/%s %s/%s > %s.parsed", dir, dataset, dir, satRemChrs, dataset);
++	sprintf(command, "parserQualWReadPrunWSatellite %s/%s %s/%s > %s.parsed", dir, dataset, dir, satRemChrs, dataset);
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+@@ -28,11 +28,11 @@
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+-	sprintf(command, "./unique %s.Name > %s.Name.Unique", dataset, dataset);
++	sprintf(command, "unique %s.Name > %s.Name.Unique", dataset, dataset);
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+-	sprintf(command, "./sortString %s.Name.Unique > %s.Name.Unique.sort", dataset, dataset);
++	sprintf(command, "sortString %s.Name.Unique > %s.Name.Unique.sort", dataset, dataset);
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+@@ -40,26 +40,26 @@
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+-	sprintf(command, "./calProbMinEditRead %s.Name.Unique.sort %s.Name.Edit.Prob > %s.Name.MinEdit.TotalProb", dataset, dataset, dataset);
++	sprintf(command, "calProbMinEditRead %s.Name.Unique.sort %s.Name.Edit.Prob > %s.Name.MinEdit.TotalProb", dataset, dataset, dataset);
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+-	sprintf(command, "./convertToInvLRProbMinEditDist %s.parsed $dataset.Name.MinEdit.TotalProb > %s.parsed.LR", dataset, dataset);
++	sprintf(command, "convertToInvLRProbMinEditDist %s.parsed $dataset.Name.MinEdit.TotalProb > %s.parsed.LR", dataset, dataset);
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+ 	for (int chr = 1; chr < 24; chr++)
+ 	{
+-		sprintf(command, "./OEASetsProb %s/chroName%d %s.parsed.LR %s.parsed.chr%d", chroDir, chr, dataset, dataset, chr);
++		sprintf(command, "OEASetsProb %s/chroName%d %s.parsed.LR %s.parsed.chr%d", chroDir, chr, dataset, dataset, chr);
+ 		printf("%s\r\n", command);
+ 		system(command);
+ 	}
+ 
+-	sprintf(command, "./OEASetsProb %s/chroNameX %s.parsed.LR %s.parsed.chrX", chroDir, dataset, dataset);
++	sprintf(command, "OEASetsProb %s/chroNameX %s.parsed.LR %s.parsed.chrX", chroDir, dataset, dataset);
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+-	sprintf(command, "./OEASetsProb %s/chroNameY %s.parsed.LR %s.parsed.chrY", chroDir, dataset, dataset);
++	sprintf(command, "OEASetsProb %s/chroNameY %s.parsed.LR %s.parsed.chrY", chroDir, dataset, dataset);
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+@@ -71,16 +71,16 @@
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 	
+-	sprintf(command, "./setCoverProbWeighted %s.Name.Unique.sort %s.parsed.AllChr", dataset, dataset);
++	sprintf(command, "setCoverProbWeighted %s.Name.Unique.sort %s.parsed.AllChr", dataset, dataset);
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+ 
+-   sprintf(command, "./type1to2convertor %s.parsed.AllChr %s", dataset, allFile);
++   sprintf(command, "type1to2convertor %s.parsed.AllChr %s", dataset, allFile);
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+-   sprintf(command, "./oea.LocalAssembly %s %s.parsed.AllChr.type2 %s ", histogramFile, dataset, maxNumOfReads); //if you want to parrallel this, change here and add min and max cluster ids to this line
++   sprintf(command, "oea.LocalAssembly %s %s.parsed.AllChr.type2 %s ", histogramFile, dataset, maxNumOfReads); //if you want to parrallel this, change here and add min and max cluster ids to this line
+ 	printf("%s\r\n", command);
+ 	system(command);
+ 
+--- type1to2convertor.cpp
++++ type1to2convertor.cpp
+@@ -144,7 +144,7 @@
+    strcpy(type2Name, type1Name);
+    strcat(type2Name, ".cluster2");
+ 
+-   sprintf(command, "./fs-fa.out -r %s -i %s -o %s", queryFileName, allFileName, fsOutName);
++   sprintf(command, "fs-fa.out -r %s -i %s -o %s", queryFileName, allFileName, fsOutName);
+    system(command);
+ 
+    mergeToType2(fsOutName, type1Name, type2Name);

@@ -1,0 +1,11 @@
+--- novel_cluster.cpp
++++ novel_cluster.cpp
+@@ -6,7 +6,7 @@
+ {
+ 	if (argc != 8)
+ 	{
+-		printf("Not enough arguments passed. Usage: novsql_reza <dir> <dataset> <satRemChrs> <chroDir> <AllReadsSeq> <histogram> <maxNumOfReadsEachCluster> \r\n");
++		printf("Not enough arguments passed. Usage: novel_cluster <dir> <dataset> <satRemChrs> <chroDir> <AllReadsSeq> <histogram> <maxNumOfReadsEachCluster> \r\n");
+ 		return -1;
+ 	}
+ 
