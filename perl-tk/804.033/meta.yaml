@@ -1,0 +1,43 @@
+{% set version = "804.033" %}
+
+package:
+  name: perl-tk
+  version: "{{ version }}"
+
+source:
+  fn: "Perl-Tk-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/S/SR/SREZIC/Tk-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/Perl-Tk-{{ version }}.tar.gz"
+  sha1: "3a6c9eaab585218d01c06d12d4ea1b89a2ad1ffe"
+
+build:
+  # Skipping OS X build for now because Perl::Tk seem insistent on using its
+  # own Tk sources, rather than using the "system" Tk libraries. Said Tk
+  # sources require X11 support to build correctly, but we currently haven't
+  # come up with a great way of distributing X11 runtime libraries on OS X at
+  # the moment (trying to avoid having users install XQuartz).
+  skip: True    # [osx]
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - pkg-config
+    - freetype
+    - libpng
+    - zlib
+
+  run:
+    - perl
+    - freetype
+    - libpng
+    - zlib
+
+# Use "run_test.sh" to work around bugs in conda-build 2.1.x that cause it to
+# use Python to perform Perl 'use' tests, with predictably bad results.
+
+about:
+  home: "http://metacpan.org/pod/Tk"
+  license: unrestricted
+  summary: 'Graphical user interface toolkit for Perl'
