@@ -1,0 +1,31 @@
+{% set version = "7.6" %}
+
+package:
+  name: parasight
+  version: "{{ version }}"
+
+requirements:
+  run:
+    - perl
+    - perl-tk
+
+source:
+  fn: "parasight-{{ version }}.zip"
+  url:
+    - "http://eichlerlab.gs.washington.edu/jeff/parasight/data/parasight_v{{ version }}.zip"
+    - "http://download.lab7.io/sources/parasight-{{ version }}.zip"
+  sha1: "4f470196fdd091ea6c0ae267e7063e7ef9cc3b84"
+
+build:
+  # Can't build on OS X right now due to missing Perl::Tk support
+  skip: True    # [osx]
+  number: 0
+
+test:
+  commands:
+    - parasight.pl
+
+about:
+  home: "http://eichlerlab.gs.washington.edu/jeff/parasight/index.html"
+  license: "'Freely available'"
+  summary: "Program for visualizing and analyzing biological pairwise alignments"
