@@ -1,0 +1,34 @@
+{% set version = "1.2.38" %}
+
+package:
+  name: aragorn
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+  run:
+    - biobuilds-opt     # [opt]
+
+source:
+  fn: "aragorn-{{ version }}.tar.gz"
+  url:
+    - "http://mbio-serv2.mbioekol.lu.se/ARAGORN/Downloads/aragorn{{ version }}.tgz"
+    - "http://download.lab7.io/sources/aragorn-{{ version }}.tar.gz"
+  sha1: "f5a8306fa080851370df7bc4a83e020ac72a133c"
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - aragorn -h
+
+about:
+  home: "http://mbio-serv2.mbioekol.lu.se/ARAGORN/"
+  license: "GPLv2"
+  summary: "Program for detecting tRNA and tmRNA genes in nucleotide sequence"
