@@ -1,0 +1,35 @@
+{% set version = "2.6.3" %}
+
+package:
+  name: prodigal
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+  run:
+    - biobuilds-opt     # [opt]
+
+source:
+  fn: "prodigal-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/hyattpd/Prodigal/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/prodigal-{{ version }}.tar.gz"
+  sha1: "1259e999193cd0c095935baebfb8bcb0233e850f"
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - prodigal -h
+
+about:
+  home: "http://prodigal.ornl.gov/"
+  license: "GPLv3"
+  license_file: "LICENSE"
+  summary: "Fast, reliable protein-coding gene prediction for prokaryotic genomes"
