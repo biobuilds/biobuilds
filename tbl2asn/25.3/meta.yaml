@@ -1,0 +1,30 @@
+{% set version = "25.3" %}
+
+package:
+  name: tbl2asn
+  version: "{{ version }}"
+
+requirements:
+  build:
+    # Use updated gcc because 4.4.x used in our CentOS 6 container barfs on
+    # "jumper.h" with multiple "redefinition of typedef" errors.
+    - gcc 4.8.*     # [linux64]
+
+source:
+  # Upstream URL is <ftp://ftp.ncbi.nih.gov/toolbox/ncbi_tools/ncbi.tar.gz>,
+  # but use the Lab7 URL to make sure we have a "versioned" source tarball.
+  fn: "ncbi_tools-20170106.tar.gz"
+  url:
+    - "http://download.lab7.io/sources/ncbi_tools-20170106.tar.gz"
+  sha1: "76048748e2d6e890216e032d120724877b90c6b3"
+  patches:
+    - makedis-paths.patch
+    - makedis-targets.patch
+
+build:
+  number: 0
+
+about:
+  home: "https://www.ncbi.nlm.nih.gov/genbank/tbl2asn2/"
+  license: "Public domain"
+  summary: "Program that automates the creation of sequence records for submission to GenBank"

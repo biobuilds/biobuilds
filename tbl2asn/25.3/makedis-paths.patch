@@ -1,0 +1,40 @@
+--- make/makedis.csh
++++ make/makedis.csh
+@@ -57,8 +57,8 @@
+ 	tar xf $tar_file
+ else
+ 	# make sure that ncbi/build directory exists
+-	if ( ! -d "ncbi/build" ) then
+-		echo 'ncbi/build directory should exist. Did you extract ncbi.tar.Z?'
++	if ( ! -d "build" ) then
++		echo 'build directory should exist. Did you extract ncbi.tar.Z?'
+ 		exit 2
+ 	endif
+ endif
+@@ -314,7 +314,7 @@
+ echo platform is $platform
+ uname -a
+ 
+-set NCBI_DOT_MK = ncbi/platform/${platform}.ncbi.mk
++set NCBI_DOT_MK = platform/${platform}.ncbi.mk
+ 
+ if (! -r "$NCBI_DOT_MK") then
+   goto BADPLATFORM
+@@ -354,7 +354,7 @@
+     echo "Enabling assert()."
+ endif
+ 
+-cd ncbi/build
++cd build
+ ln -s ../make/*.unx .
+ ln -s ../make/ln-if-absent .
+ mv makeall.unx makefile
+@@ -584,7 +584,7 @@
+ cat << EoF
+ Your platform is not supported.
+ To port ncbi toolkit to your platform consult
+-the files ./ncbi/platform/*.ncbi.mk
++the files ./platform/*.ncbi.mk
+ The NCBI toolkit FAQ at ftp://ftp.ncbi.nih.gov/toolbox/FAQ.html may be useful.
+ EoF
+ exit 0

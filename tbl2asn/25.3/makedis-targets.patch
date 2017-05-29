@@ -1,0 +1,25 @@
+--- make/makedis.csh
++++ make/makedis.csh
+@@ -373,8 +373,11 @@
+ #
+ 
+ #uncomment two following lines to don't build X11 apps
+-#set HAVE_OGL=0
+-#set HAVE_MOTIF=0
++set HAVE_OGL=0
++set HAVE_MOTIF=0
++
++#force CLI utils only when building on OS X/macOS
++set HAVE_MAC=0
+ 
+ # if $OPENGL_TARGETS (in <platform>.ncbi.mk) is defined, 
+ # then add the appropriate flags, libraries, and binaries for OpenGL apps
+@@ -457,7 +460,7 @@
+ 
+ 	set ALL_VIB=()
+ 	set DEMO_VIB=()
+-	set NET_VIB=(VIB=\"blastcl3 idfetch asn2gb tbl2asn gene2xml \")
++	set NET_VIB=(VIB=\"tbl2asn \")
+ 	# bl2seq taxblast $NONVIBWWWBLAST
+ endif
+ 
