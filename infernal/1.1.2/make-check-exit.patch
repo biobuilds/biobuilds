@@ -1,0 +1,11 @@
+--- easel/devkit/sqc
++++ easel/devkit/sqc
+@@ -507,6 +507,8 @@
+ unlink $tmp if -e $tmp;
+ unlink "$tmp.stderr" if -e "$tmp.stderr";
+ 
++# Set exit code based on how many tests failed
++exit ($badtest > 0);
+ 
+ sub check_status
+ {

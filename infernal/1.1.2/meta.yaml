@@ -1,0 +1,39 @@
+{% set version = "1.1.2" %}
+
+package:
+  name: infernal
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - autoconf-update
+    - autoconf
+    - automake
+    - veclib-headers    # [ppc64le]
+  run:
+    - biobuilds-opt     # [opt]
+
+source:
+  fn: "infernal-{{ version }}.tar.gz"
+  url:
+    - "http://eddylab.org/infernal/infernal-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/infernal-{{ version }}.tar.gz"
+  sha1: "1c3a6b260315a51a8118d501947825e249faee6e"
+  patches:
+    - make-check-exit.patch
+    - uint8_t-casts.patch
+    - ppc64le-support.patch   # [ppc64le]
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+about:
+  home: "http://eddylab.org/infernal/"
+  license: "BSD"
+  license_file: "LICENSE"
+  summary: "Inference of RNA alignments"
