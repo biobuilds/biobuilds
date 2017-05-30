@@ -1,0 +1,28 @@
+{% set version = "1.73" %}
+
+package:
+  name: perl-swiss-knife
+  version: "{{ version }}"
+
+source:
+  fn: "perl-swiss-knife-{{ version }}.tar.gz"
+  url:
+    - "https://downloads.sourceforge.net/project/swissknife/swissknife/1.73/Swissknife_1.73.tar.gz"
+    - "http:/download.lab7.io/sources/perl-swiss-knife-{{ version }}.tar.gz"
+  sha1: "cb60803a3f8b7ba4956d97b354cbc78aba3bc19d"
+
+requirements:
+  build:
+    - perl
+    - perl-module-build
+  run:
+    - perl
+
+build:
+  number: 0
+
+about:
+  home: "https://sourceforge.net/projects/swissknife/"
+  license: "GPLv2"
+  license_file: "COPYING"
+  summary: "Perl module for reading and writing UniProtKB data in plain text format"

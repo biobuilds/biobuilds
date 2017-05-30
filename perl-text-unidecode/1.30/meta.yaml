@@ -1,0 +1,34 @@
+{% set version = "1.30" %}
+
+package:
+  name: perl-text-unidecode
+  version: "{{ version }}"
+
+source:
+  fn: "Perl-Text-Unidecode-{{ version }}.tar.gz"
+  url: 
+    - "https://cpan.metacpan.org/authors/id/S/SB/SBURKE/Text-Unidecode-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/Perl-Text-Unidecode-{{ version }}.tar.gz"
+  sha1: "13c28520896a0073e0ea9333a2b6b770dcf17d6e"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+  run:
+    - perl
+
+# Use "run_test.sh" instead of test.imports section to work around bugs in
+# conda-build 2.1.x that cause it to use Python to perform Perl 'use' tests,
+# with predictably bad results.
+#test:
+#  # Perl 'use' tests
+#  imports:
+#    - Text::Unidecode
+
+about:
+  home: http://metacpan.org/pod/Text::Unidecode
+  license: perl_5
+  summary: 'Provide plain ASCII transliterations of Unicode text'

@@ -1,0 +1,45 @@
+{% set version = "1.12" %}
+
+package:
+  name: prokka
+  version: "{{ version }}"
+
+requirements:
+  run:
+    - perl
+    - perl-bioperl >=1.6.2
+    - perl-swiss-knife
+    - perl-text-unidecode
+    - parallel  # >=20130422
+    - aragorn   # >=1.2
+    - blast     # >=2.2
+    - hmmer     # >=3.1
+    - infernal  # >=1.1
+    - prodigal  # >=2.0,<=2.7
+    - tbl2asn   # >=23.0
+    # Recommended packages (to be added in next release)
+    #- barrnap >=0.4
+    #- minced =>0.1.6
+
+source:
+  fn: "prokka-{{ version }}.tar.gz"
+  url:
+    - "http://www.vicbioinformatics.com/prokka-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/prokka-{{ version }}.tar.gz"
+  sha1: "9c03af3f72848703ec7789054affbb197939c11b"
+  patches:
+    - paths.patch
+
+build:
+  number: 0
+
+test:
+  commands:
+    - prokka --version
+    - prokka --depends
+
+about:
+  home: "http://www.vicbioinformatics.com/software.prokka.shtml"
+  license: "GPLv2"
+  license_file: "doc/LICENSE.Prokka"
+  summary: "Tool for the rapid annotation of prokaryotic genomes"

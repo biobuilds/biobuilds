@@ -1,0 +1,133 @@
+--- bin/prokka
++++ bin/prokka
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN_DIR@@/perl
+ 
+ #    prokka - Rapid bacterial genome annotation
+ #
+@@ -35,21 +35,20 @@
+ use Bio::Tools::GFF;
+ use Bio::Tools::GuessSeqFormat;
+ use FindBin;
+-use lib "$FindBin::RealBin/../perl5"; # for bundled Perl modules
+ 
+ # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+ # global variables
+ 
+ my @CMDLINE = ($0, @ARGV);
+ my $OPSYS = $^O;
+-my $BINDIR = "$FindBin::RealBin/../binaries/$OPSYS";
++my $BINDIR = "@@PREFIX_BIN_DIR@@";
+ my $EXE = $FindBin::RealScript;
+ my $VERSION = "1.12";
+ my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
+ my $URL = 'https://github.com/tseemann/prokka';
+ my $PROKKA_PMID = '24642063';
+ my $PROKKA_DOI = '10.1093/bioinformatics/btu153';
+-my $DBDIR = "$FindBin::RealBin/../db";
++my $DBDIR = "@@PREFIX_DB_DIR@@";
+ my $HYPO = 'hypothetical protein';
+ my $UNANN = 'unannotated protein';
+ my $MAXCONTIGIDLEN = 37;  # Genbank rule
+@@ -1479,7 +1478,7 @@
+ #----------------------------------------------------------------------
+ 
+ sub showdoc {
+-  system("less $FindBin::Bin/../doc/$EXE-manual.txt");
++  system("less @@PREFIX_DOC_DIR@@/$EXE-manual.txt");
+   exit;
+ }
+ 
+@@ -1507,6 +1506,7 @@
+ #----------------------------------------------------------------------
+ 
+ sub add_bundle_to_path {
++  return;  # Path munging should be handled by conda, so make this to a no-op
+   for my $dir ($BINDIR, "$BINDIR/../common", $FindBin::RealBin) {
+     if (-d $dir) {
+       msg("Appending to PATH: $dir");
+--- bin/prokka-biocyc_to_fasta_db
++++ bin/prokka-biocyc_to_fasta_db
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN_DIR@@/perl
+ use strict;
+ use warnings;
+ use Bio::SeqIO;
+--- bin/prokka-build_kingdom_dbs
++++ bin/prokka-build_kingdom_dbs
+@@ -4,7 +4,7 @@
+ URL="ftp://ftp.ebi.edu.au/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/"
+ 
+ # where to put formatted database: /path/to/prokka/db/
+-ROOTDIR=$(dirname $0)
++ROOTDIR="@@PREFIX_BIN_DIR@@"
+ 
+ echo "*** NOTICE ***"
+ echo "This script is about to download data from the Internet and overwrite your existing Prokka BLAST databases."
+@@ -19,7 +19,7 @@
+   DAT="$URL/uniprot_sprot_$KL.dat.gz"
+ 
+ 
+-  DIR="$ROOTDIR/../db/kingdom/$K"
++  DIR="@@PREFIX_DB_DIR@@/kingdom/$K"
+   mkdir -pv "$DIR"
+   echo "Downloading $DAT and installing in $DIR"
+ 
+--- bin/prokka-cdd_to_hmm
++++ bin/prokka-cdd_to_hmm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN_DIR@@/perl
+ use strict;
+ use warnings;
+ use Data::Dumper;
+--- bin/prokka-clusters_to_hmm
++++ bin/prokka-clusters_to_hmm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN_DIR@@/perl
+ use strict;
+ use warnings;
+ use Data::Dumper;
+--- bin/prokka-genbank_to_fasta_db
++++ bin/prokka-genbank_to_fasta_db
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN_DIR@@/perl
+ use strict;
+ use warnings;
+ use Bio::SeqIO;
+--- bin/prokka-genpept_to_fasta_db
++++ bin/prokka-genpept_to_fasta_db
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN_DIR@@/perl
+ use strict;
+ use warnings;
+ use Bio::SeqIO;
+--- bin/prokka-hamap_to_hmm
++++ bin/prokka-hamap_to_hmm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN_DIR@@/perl
+ use strict;
+ use warnings;
+ use Bio::SeqIO;
+--- bin/prokka-tigrfams_to_hmm
++++ bin/prokka-tigrfams_to_hmm
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN_DIR@@/perl
+ 
+ use strict;
+ use warnings;
+--- bin/prokka-uniprot_to_fasta_db
++++ bin/prokka-uniprot_to_fasta_db
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN_DIR@@/perl
+ use strict;
+ use warnings;
+ use SWISS::Entry;
