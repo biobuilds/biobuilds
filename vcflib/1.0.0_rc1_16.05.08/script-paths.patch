@@ -1,0 +1,200 @@
+--- scripts/bed2region
++++ scripts/bed2region
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ 
+ while (<STDIN>) {
+     $_ =~ /^(.+?)\s(.+?)\s(.+)\s*/;
+--- scripts/bgziptabix
++++ scripts/bgziptabix
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env bash
++#!/bin/bash
+ 
+ if [ $# -ne 1 ];
+ then  
+--- scripts/plot_roc.r
++++ scripts/plot_roc.r
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env Rscript
++#!@@PREFIX_BIN@@/Rscript
+ 
+ 
+ 
+--- scripts/vcf2bed.py
++++ scripts/vcf2bed.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@PREFIX_BIN@@/python
+ 
+ import sys
+ 
+--- scripts/vcf2sqlite.py
++++ scripts/vcf2sqlite.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@PREFIX_BIN@@/python
+ 
+ import sys
+ import re
+--- scripts/vcf_strip_extra_headers
++++ scripts/vcf_strip_extra_headers
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ 
+ my $seen_non_header = 0;
+ 
+--- scripts/vcfbiallelic
++++ scripts/vcfbiallelic
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ while (<STDIN>) {
+--- scripts/vcfclearid
++++ scripts/vcfclearid
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@PREFIX_BIN@@/python
+ #
+ 
+ import sys
+--- scripts/vcfclearinfo
++++ scripts/vcfclearinfo
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@PREFIX_BIN@@/python
+ #
+ 
+ import sys
+--- scripts/vcfcomplex
++++ scripts/vcfcomplex
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ while (<STDIN>) {
+--- scripts/vcffirstheader
++++ scripts/vcffirstheader
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@PREFIX_BIN@@/python
+ 
+ import sys
+ 
+--- scripts/vcfindelproximity
++++ scripts/vcfindelproximity
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ 
+--- scripts/vcfindels
++++ scripts/vcfindels
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ while (<STDIN>) {
+--- scripts/vcfmultiallelic
++++ scripts/vcfmultiallelic
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ while (<STDIN>) {
+--- scripts/vcfnobiallelicsnps
++++ scripts/vcfnobiallelicsnps
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ while (<STDIN>) {
+--- scripts/vcfnoindels
++++ scripts/vcfnoindels
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ while (<STDIN>) {
+--- scripts/vcfnosnps
++++ scripts/vcfnosnps
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ while (<STDIN>) {
+--- scripts/vcfnulldotslashdot
++++ scripts/vcfnulldotslashdot
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@PREFIX_BIN@@/python
+ 
+ import sys
+ import math
+--- scripts/vcfplotaltdiscrepancy.r
++++ scripts/vcfplotaltdiscrepancy.r
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env Rscript
++#!@@PREFIX_BIN@@/Rscript
+ 
+ # helper functions
+ 
+--- scripts/vcfplotsitediscrepancy.r
++++ scripts/vcfplotsitediscrepancy.r
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env Rscript --vanilla --slave
++#!@@PREFIX_BIN@@/Rscript --vanilla --slave
+ 
+ # get the input VCF tabular format, assert that sites must have AC > 0
+ vcf <- subset(read.table(pipe('cat /dev/stdin'), header=T), AC > 0)
+--- scripts/vcfprintaltdiscrepancy.r
++++ scripts/vcfprintaltdiscrepancy.r
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env Rscript --vanilla --slave
++#!@@PREFIX_BIN@@/Rscript --vanilla --slave
+ 
+ # get the input VCF tabular format, assert that sites must have AC > 0
+ vcf <- subset(read.table(pipe('cat /dev/stdin'), header=T), AC > 0)
+--- scripts/vcfqualfilter
++++ scripts/vcfqualfilter
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ #
+ 
+--- scripts/vcfremovenonATGC
++++ scripts/vcfremovenonATGC
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ while (<STDIN>) {
+--- scripts/vcfsnps
++++ scripts/vcfsnps
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ while (<STDIN>) {
+--- scripts/vcfvarstats
++++ scripts/vcfvarstats
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ use IPC::Open2;

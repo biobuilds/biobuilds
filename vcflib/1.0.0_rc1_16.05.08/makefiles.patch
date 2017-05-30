@@ -1,0 +1,200 @@
+--- Makefile
++++ Makefile
+@@ -128,7 +128,8 @@
+ FILEVERCMP = filevercmp/filevercmp.o
+ 
+ INCLUDES = -Itabixpp/htslib -I$(INC_DIR) -L. -Ltabixpp/htslib
+-LDFLAGS = -L$(LIB_DIR) -lvcflib -lhts -lpthread -lz -lm
++LDFLAGS += -L$(LIB_DIR)
++LIBS     = -lvcflib -lhts -lpthread -lz -lm
+ 
+ 
+ all: $(OBJECTS) $(BINS)
+@@ -136,8 +137,8 @@
+ 
+ GIT_VERSION := $(shell git describe --abbrev=4 --dirty --always)
+ 
+-CXX = g++
+-CXXFLAGS = -O3 -D_FILE_OFFSET_BITS=64 -std=c++0x 
++CXX ?= g++
++CXXFLAGS += -D_FILE_OFFSET_BITS=64 -std=c++0x
+ #CXXFLAGS = -O2
+ #CXXFLAGS = -pedantic -Wall -Wshadow -Wpointer-arith -Wcast-qual
+ 
+@@ -156,7 +157,7 @@
+ 	$(MAKE) CXXFLAGS="$(CXXFLAGS) -pg" all
+ 
+ $(OBJECTS): $(SOURCES) $(HEADERS) $(TABIX) multichoose pre $(SMITHWATERMAN) $(FILEVERCMP)
+-	$(CXX) -c -o $@ src/$(*F).cpp $(INCLUDES) $(LDFLAGS) $(CXXFLAGS) && cp src/*.h* $(VCF_LIB_LOCAL)/$(INC_DIR)/
++	$(CXX) -c -o $@ src/$(*F).cpp $(INCLUDES) $(LDFLAGS) $(LIBS) $(CXXFLAGS) && cp src/*.h* $(VCF_LIB_LOCAL)/$(INC_DIR)/
+ 
+ multichoose: pre
+ 	cd multichoose && $(MAKE) && cp *.h* $(VCF_LIB_LOCAL)/$(INC_DIR)/
+@@ -191,10 +192,10 @@
+ 	$(MAKE) bin/$@
+ 
+ $(BINS): $(BIN_SOURCES) libvcflib.a $(OBJECTS) $(SMITHWATERMAN) $(FASTAHACK) $(DISORDER) $(LEFTALIGN) $(INDELALLELE) $(SSW) $(FILEVERCMP) pre intervaltree
+-	$(CXX) src/$(notdir $@).cpp -o $@ $(INCLUDES) $(LDFLAGS) $(CXXFLAGS) -DVERSION=\"$(GIT_VERSION)\"
++	$(CXX) src/$(notdir $@).cpp -o $@ $(INCLUDES) $(LDFLAGS) $(LIBS) $(CXXFLAGS) -DVERSION=\"$(GIT_VERSION)\"
+ 
+ libvcflib.a: $(OBJECTS) $(SMITHWATERMAN) $(REPEATS) $(FASTAHACK) $(DISORDER) $(LEFTALIGN) $(INDELALLELE) $(SSW) $(FILEVERCMP) $(TABIX) pre
+-	ar rs libvcflib.a $(OBJECTS) smithwaterman/sw.o $(FASTAHACK) $(SSW) $(FILEVERCMP) $(TABIX)
++	$(AR) rs libvcflib.a $(OBJECTS) smithwaterman/sw.o $(FASTAHACK) $(SSW) $(FILEVERCMP) $(TABIX)
+ 	cp libvcflib.a $(LIB_DIR)
+ 
+ 
+--- fastahack/Makefile
++++ fastahack/Makefile
+@@ -1,8 +1,9 @@
+-CXX=g++
+-CFLAGS=-O3 -D_FILE_OFFSET_BITS=64
++CXX     ?= g++
++CFLAGS  += -D_FILE_OFFSET_BITS=64
++LDFLAGS ?=
+ 
+ fastahack: Fasta.o FastaHack.cpp split.o disorder.o
+-	$(CXX) $(CFLAGS) Fasta.o FastaHack.cpp split.o disorder.o -o fastahack
++	$(CXX) $(CFLAGS) Fasta.o FastaHack.cpp split.o disorder.o $(LDFLAGS) -o fastahack
+ 
+ Fasta.o: Fasta.h Fasta.cpp
+ 	$(CXX) $(CFLAGS) -c Fasta.cpp
+--- filevercmp/Makefile
++++ filevercmp/Makefile
+@@ -7,7 +7,7 @@
+ .PHONY: all clean
+ 
+ filevercmp.o: filevercmp.c main.c filevercmp.h
+-	gcc -c filevercmp.c
++	$(CC) $(CFLAGS) -c filevercmp.c
+ 
+ filevercmp: filevercmp.o
+-	gcc -o filevercmp main.c filevercmp.o
++	$(CC) $(CFLAGS) $(LDFLAGS) -o filevercmp main.c filevercmp.o
+--- fsom/Makefile
++++ fsom/Makefile
+@@ -1,5 +1,5 @@
+ all:
+-	g++ -w -O3 -pipe -fomit-frame-pointer -ffast-math fsom.c split.cpp main.cpp -o fsom -lm
++	$(CXX) -w $(CXXFLAGS) -pipe -fomit-frame-pointer -ffast-math fsom.c split.cpp main.cpp $(LDFLAGS) -o fsom -lm
+ clean:
+ 	rm -f *.o fsom
+ 
+--- intervaltree/Makefile
++++ intervaltree/Makefile
+@@ -1,5 +1,5 @@
+ interval_tree_test: interval_tree_test.cpp IntervalTree.h
+-	g++ -Wall interval_tree_test.cpp -o interval_tree_test -std=c++0x
++	$(CXX) -Wall $(CXXFLAGS) interval_tree_test.cpp $(LDFLAGS) -o interval_tree_test -std=c++0x
+ 
+ .PHONY: clean
+ 
+--- multichoose/Makefile
++++ multichoose/Makefile
+@@ -4,13 +4,13 @@
+ #	g++ multichoose_recursive.cpp -o multichoose_recursive
+ 
+ multichoose: multichoose.cpp multichoose.h
+-	g++ multichoose.cpp -o multichoose
++	$(CXX) $(CXXFLAGS) multichoose.cpp $(LDFLAGS) -o multichoose
+ 
+ multipermute: multipermute.cpp multipermute.h
+-	g++ multipermute.cpp -o multipermute
++	$(CXX) $(CXXFLAGS) multipermute.cpp $(LDFLAGS) -o multipermute
+ 
+ cmultichoose: multichoose.c
+-	gcc multichoose.c -o cmultichoose
++	$(CC) $(CFLAGS) multichoose.c $(LDFLAGS) -o cmultichoose
+ 
+ clean:
+ 	rm cmultichoose
+--- smithwaterman/Makefile
++++ smithwaterman/Makefile
+@@ -14,8 +14,8 @@
+ # compiler options
+ # ----------------
+ 
+-CFLAGS:= -O3
+-LDFLAGS:=-Wl,-s
++CFLAGS?= -O3
++LDFLAGS?=-Wl,-s
+ #CFLAGS=-g
+ EXE:=smithwaterman
+ LIBS=
+@@ -25,15 +25,15 @@
+ .PHONY: all
+ 
+ libsw.a: smithwaterman.o BandedSmithWaterman.o SmithWatermanGotoh.o LeftAlign.o Repeats.o IndelAllele.o disorder.o
+-	ar rs $@ smithwaterman.o d SmithWatermanGotoh.o disorder.o BandedSmithWaterman.o LeftAlign.o Repeats.o IndelAllele.o
++	$(AR) rs $@ smithwaterman.o d SmithWatermanGotoh.o disorder.o BandedSmithWaterman.o LeftAlign.o Repeats.o IndelAllele.o
+ 
+ sw.o:  BandedSmithWaterman.o SmithWatermanGotoh.o LeftAlign.o Repeats.o IndelAllele.o disorder.o
+-	ld -r $^ -o sw.o -L.
++	$(LD) -r $^ -o sw.o -L.
+ 	#$(CXX) $(CFLAGS) -c -o smithwaterman.cpp $(OBJECTS_NO_MAIN) -I.
+ 
+ ### @$(CXX) $(LDFLAGS) $(CFLAGS) -o $@ $^ -I.
+ $(EXE): smithwaterman.o BandedSmithWaterman.o SmithWatermanGotoh.o disorder.o LeftAlign.o Repeats.o IndelAllele.o
+-	$(CXX) $(CFLAGS) $^ -I. -o $@
++	$(CXX) $(CFLAGS) $^ -I. $(LDFLAGS) -o $@
+ 
+ #smithwaterman: $(OBJECTS)
+ #	$(CXX) $(CFLAGS) -o $@ $< -I.
+--- tabixpp/Makefile
++++ tabixpp/Makefile
+@@ -3,7 +3,7 @@
+ 
+ CC?=		gcc
+ CXX?= 		g++
+-CXXFLAGS?=	-g -Wall -O2 -fPIC #-m64 #-arch ppc
++CXXFLAGS+=	-Wall -fPIC #-m64 #-arch ppc
+ INCLUDES?=	-Ihtslib
+ HTS_HEADERS?=	htslib/htslib/bgzf.h htslib/htslib/tbx.h
+ HTS_LIB?=	htslib/libhts.a
+@@ -31,15 +31,15 @@
+ 
+ all:	$(PROG)
+ 
+-tabix.o: $(HTS_HEADERS) tabix.cpp tabix.hpp
++tabix.o: tabix.cpp tabix.hpp
+ 	$(CXX) $(CXXFLAGS) -c tabix.cpp $(INCLUDES)
+ 
+ htslib/libhts.a:
+ 	cd htslib && $(MAKE) lib-static
+ 
+-tabix++: tabix.o main.cpp $(HTS_LIB)
++tabix++: tabix.o main.cpp
+ 	$(CXX) $(CXXFLAGS) -o $@ main.cpp tabix.o $(INCLUDES) $(LIBPATH) \
+-		-lhts -lpthread -lm -lz
++		$(LDFLAGS) $(HTS_LIB) $(HTS_LIB_LDFLAGS) -lpthread -lm -lz
+ 
+ cleanlocal:
+ 	rm -fr gmon.out *.o a.out *.dSYM $(PROG) *~ *.a tabix.aux tabix.log \
+--- test/Makefile
++++ test/Makefile
+@@ -3,9 +3,14 @@
+ #     zev.kronenberg@gmail.com       #
+ ######################################
+ 
+-CC=gcc
+-CXX=g++
+-CFLAGS=-Wall -std=c++0x 
++CC        ?= gcc
++CXX       ?= g++
++CXXFLAGS  += -Wall -std=c++0x
++LDFLAGS   ?=
++
++HTS_LIB         ?= ../tabixpp/htslib/libhts.a
++HTS_LIB_LDFLAGS ?=
++
+ LINKERS=-lm -lpthread -lhts -lvcflib -lz 
+ INCLUDE=-I../src -I../googletest/googletest/include/ -I../tabixpp/ -I../tabixpp/htslib/ -I ../smithwaterman/ -I ../multichoose/ -I ../filevercmp/ -I ../googletest/googletest/make/
+ LIB=-L../ -L../tabixpp/htslib -L../tabixpp/htslib/ -L../googletest/googletest/make/
+@@ -16,7 +21,7 @@
+ ../googletest/googletest/make/gtest_main.a:
+ 	cd ../googletest/googletest/make/ && make
+ tests/main: ../googletest/googletest/make/gtest_main.a
+-	$(CXX) $(CFLAGS) $(INCLUDE) $(LIB) $(LINKERS) tests/mainTest.cpp ../tabixpp/tabix.cpp ../tabixpp/htslib/libhts.a $(LIBVCF) $(LIBGTEST) -o tests/main 
++	$(CXX) $(CXXFLAGS) $(INCLUDE) $(LDFLAGS) $(LIB) $(LINKERS) tests/mainTest.cpp ../tabixpp/tabix.cpp $(HTS_LIB) $(HTS_LIB_LDFLAGS) $(LIBVCF) $(LIBGTEST) -o tests/main 
+ run: tests/main
+ 	./tests/main
+ clean:
