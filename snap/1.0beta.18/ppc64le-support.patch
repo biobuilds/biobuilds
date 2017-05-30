@@ -1,0 +1,105 @@
+--- SNAPLib/BaseAligner.cpp
++++ SNAPLib/BaseAligner.cpp
+@@ -797,7 +797,7 @@
+             //
+             // Our prefetch pipeline is one loop out we get the genome data for the next loop, and two loops out we get the element to score.
+             //
+-            _mm_prefetch((const char *)(elementToScore->weightNext->weightNext), _MM_HINT_T2);   // prefetch the next element, it's likely to be the next thing we score.
++            vec_prefetch((const char *)(elementToScore->weightNext->weightNext), vec_HINT_T2);   // prefetch the next element, it's likely to be the next thing we score.
+             genome->prefetchData(elementToScore->weightNext->baseGenomeLocation);
+         }
+ 
+@@ -1127,7 +1127,7 @@
+ 
+     _uint64 hashTableIndex = hash(highOrderGenomeLocation) % candidateHashTablesSize;
+ 
+-    _mm_prefetch((const char *)&hashTable[hashTableIndex], _MM_HINT_T2);
++    vec_prefetch((const char *)&hashTable[hashTableIndex], vec_HINT_T2);
+ }
+ 
+     bool
+@@ -1232,7 +1232,7 @@
+ 
+     HashTableAnchor *anchor = &hashTable[hashTableIndex];
+     if (doAlignerPrefetch) {
+-        _mm_prefetch((const char *)anchor, _MM_HINT_T2);    // Prefetch our anchor.  We don't have enough computation to completely hide the prefetch, but at least we get some for free here.
++        vec_prefetch((const char *)anchor, vec_HINT_T2);    // Prefetch our anchor.  We don't have enough computation to completely hide the prefetch, but at least we get some for free here.
+     }
+     HashTableElement *element;
+ 
+@@ -1253,7 +1253,7 @@
+         //
+         // Fetch the next candidate so we don't cache miss next time around.
+         //
+-        _mm_prefetch((const char *)&hashTableElementPool[nUsedHashTableElements], _MM_HINT_T2);
++        vec_prefetch((const char *)&hashTableElementPool[nUsedHashTableElements], vec_HINT_T2);
+     }
+ 
+     element->candidatesUsed = (_uint64)1 << lowOrderGenomeLocation;
+--- SNAPLib/Compat.h
++++ SNAPLib/Compat.h
+@@ -82,11 +82,8 @@
+ #include <sched.h>  // For sched_setaffinity
+ #endif
+ 
+-#ifndef __APPLE__
+-#include <xmmintrin.h>  // This is currently (in Dec 2013) broken on Mac OS X 10.9 (Apple clang-500.2.79)
+-#else
+-#define _mm_prefetch(...) {}
+-#endif
++#include <vec128int.h>
++#include <vecmisc.h>
+ 
+ typedef int64_t _int64;
+ typedef uint64_t _uint64;
+--- SNAPLib/FixedSizeMap.h
++++ SNAPLib/FixedSizeMap.h
+@@ -95,7 +95,7 @@
+         // Bloom Filter, then this will bring the cache line in for the add that's doubtless coming
+         // soon after.
+         //
+-        _mm_prefetch((const char *)(&entries[pos]),_MM_HINT_T2);
++        vec_prefetch((const char *)(&entries[pos]),vec_HINT_T2);
+ 
+         if (!checkBloomFilter(key)) {
+             //
+--- SNAPLib/Genome.h
++++ SNAPLib/Genome.h
+@@ -240,8 +240,8 @@
+         bool getLocationOfContig(const char *contigName, GenomeLocation *location, int* index = NULL) const;
+ 
+         inline void prefetchData(GenomeLocation genomeLocation) const {
+-            _mm_prefetch(bases + GenomeLocationAsInt64(genomeLocation), _MM_HINT_T2);
+-            _mm_prefetch(bases + GenomeLocationAsInt64(genomeLocation) + 64, _MM_HINT_T2);
++            vec_prefetch(bases + GenomeLocationAsInt64(genomeLocation), vec_HINT_T2);
++            vec_prefetch(bases + GenomeLocationAsInt64(genomeLocation) + 64, vec_HINT_T2);
+         }
+ 
+         struct Contig {
+--- SNAPLib/IntersectingPairedEndAligner.cpp
++++ SNAPLib/IntersectingPairedEndAligner.cpp
+@@ -1123,7 +1123,7 @@
+             lookups[nLookupsUsed].nextLookupWithRemainingMembers->prevLookupWithRemainingMembers = &lookups[nLookupsUsed];                                  \
+                                                                                                                                                             \
+         if (doAlignerPrefetch) {                                                                                                                            \
+-            _mm_prefetch((const char *)&lookups[nLookupsUsed].hits[lookups[nLookupsUsed].nHits / 2], _MM_HINT_T2);                                          \
++            vec_prefetch((const char *)&lookups[nLookupsUsed].hits[lookups[nLookupsUsed].nHits / 2], vec_HINT_T2);                                          \
+         }                                                                                                                                                   \
+                                                                                                                                                             \
+         nLookupsUsed++;                                                                                                                                     \
+@@ -1206,11 +1206,11 @@
+             _int64 probe = (limit[0] + limit[1]) / 2;
+             if (doAlignerPrefetch) { // not clear this helps.  We're probably not far enough ahead.
+                 if (doesGenomeIndexHave64BitLocations) {
+-                    _mm_prefetch((const char *)&lookups64[i].hits[(limit[0] + probe) / 2 - 1], _MM_HINT_T2);
+-                    _mm_prefetch((const char *)&lookups64[i].hits[(limit[1] + probe) / 2 + 1], _MM_HINT_T2);
++                    vec_prefetch((const char *)&lookups64[i].hits[(limit[0] + probe) / 2 - 1], vec_HINT_T2);
++                    vec_prefetch((const char *)&lookups64[i].hits[(limit[1] + probe) / 2 + 1], vec_HINT_T2);
+                 } else {
+-                    _mm_prefetch((const char *)&lookups32[i].hits[(limit[0] + probe) / 2 - 1], _MM_HINT_T2);
+-                    _mm_prefetch((const char *)&lookups32[i].hits[(limit[1] + probe) / 2 + 1], _MM_HINT_T2);
++                    vec_prefetch((const char *)&lookups32[i].hits[(limit[0] + probe) / 2 - 1], vec_HINT_T2);
++                    vec_prefetch((const char *)&lookups32[i].hits[(limit[1] + probe) / 2 + 1], vec_HINT_T2);
+                 }
+             }
+             //

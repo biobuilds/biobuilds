@@ -1,0 +1,45 @@
+{% set version = "1.0beta.18" %}
+
+package:
+  name: snap
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    # Use g++ on OS X/macOS because clang++ does not like the "unsigned _int64"
+    # (which typedefs to "unsigned int64_t") construct used in the code.
+    - gcc 4.8.*         # [osx]
+    - veclib-headers    # [ppc64le]
+    - zlib
+  run:
+    - biobuilds-opt     # [opt]
+    - libgcc 4.8.*      # [osx]
+    - zlib
+
+source:
+  fn: "snap-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/amplab/snap/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/snap-{{ version }}.tar.gz"
+  sha1: "9bca1999a62bf081f34afc2e0026026170291520"
+  patches:
+    - long-types.patch        # [osx]
+    - ppc64le-support.patch   # [ppc64le]
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  requires:
+    - mapper-test-data
+
+about:
+  home: "http://snap.cs.berkeley.edu"
+  license: "Apache 2.0"
+  license_file: "LICENSE"
+  summary: "Scalable Nucleotide Alignment Program (fast, accurate short-read aligner)"
