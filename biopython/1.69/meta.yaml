@@ -1,0 +1,29 @@
+{% set version = "1.69" %}
+
+package:
+  name: biopython
+  version: "{{ version }}"
+
+source:
+  fn: "biopython-{{ version }}.tar.gz"
+  url:
+    - "http://biopython.org/DIST/biopython-{{ version }}.tar.gz"
+    - "http://download.lab7.io/biopython-{{ version }}.tar.gz"
+  sha1: "e7ebae4d32ebe26570f6e4fcadb02ef15e835c84"
+
+requirements:
+  build:
+    - python
+    - numpy x.x
+  run:
+    - python
+    - numpy x.x
+
+build:
+  # High number to prevent conflicts with package in the "defaults" channel
+  number: 700
+
+about:
+  home: http://biopython.org/
+  license: BSD-like
+  summary: Python tools for computational molecular biology
