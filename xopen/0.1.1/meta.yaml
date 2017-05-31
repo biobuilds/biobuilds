@@ -1,0 +1,33 @@
+{% set version = "0.1.1" %}
+
+package:
+  name: xopen
+  version: "{{ version }}"
+
+source:
+  fn: xopen-{{ version }}.tar.gz
+  url:
+    - "https://pypi.python.org/packages/9a/b7/8906d6b2c4f874c0aacc676709a3d533362ac93bebc4a656c9df19421c9b/xopen-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/xopen-{{ version }}.tar.gz"
+  md5: "4e0e955546ee6bee4ea736b54623a671"
+  sha1: "f9fc6a945d484a4389582056ece7a9fdef63ce81"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - python
+    - setuptools
+  run:
+    - python
+
+test:
+  # Python imports
+  imports:
+    - xopen
+
+about:
+  home: "https://github.com/marcelm/xopen/"
+  license: MIT
+  summary: 'Open compressed files transparently'

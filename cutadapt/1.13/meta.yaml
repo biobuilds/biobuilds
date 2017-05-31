@@ -1,0 +1,36 @@
+{% set version = "1.13" %}
+
+package:
+  name: cutadapt
+  version: {{ version }}
+
+source:
+  fn: "cutadapt-{{ version }}.tar.gz"
+  url:
+    - "https://pypi.python.org/packages/4b/a0/caf0a418d64a69da12c0f5ede20830f0b7dba2d29efa3f667f1ce69e78da/cutadapt-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/cutadapt-{{ version }}.tar.gz"
+  md5: "2d2d14e0c20ad53d7d84b57bc3e63b4c"
+  sha1: "08b3985f61ee7202234f154097451a97e2a388f5"
+
+requirements:
+  build:
+    - biobuilds-build
+    - python
+    - xopen
+    - nose
+  run:
+    - python
+    - xopen
+
+build:
+  number: 0
+
+test:
+  commands:
+    - cutadapt --version >/dev/null
+
+about:
+  home: "https://cutadapt.readthedocs.io/"
+  license: MIT
+  license_file: LICENSE
+  summary: "Remove adapters, primers, and other types of unwanted sequence from sequencing reads"
