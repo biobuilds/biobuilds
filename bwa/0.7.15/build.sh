@@ -29,5 +29,7 @@ env CC="${CC}" CFLAGS="${CFLAGS}" \
     make -j${MAKE_JOBS} all
 
 # Install
-[ -d "${PREFIX}/bin" ] || mkdir "${PREFIX}/bin"
-cp -p -f "${SRC_DIR}/bwa" "${PREFIX}/bin"
+mkdir -p "${PREFIX}/bin" "${PREFIX}/lib" "${PREFIX}/include/${PKG_NAME}"
+install -m 755 ${PKG_NAME} "${PREFIX}/bin"
+install -m 644 lib${PKG_NAME}.a "${PREFIX}/lib"
+install -m 644 *.h "${PREFIX}/include/${PKG_NAME}"
