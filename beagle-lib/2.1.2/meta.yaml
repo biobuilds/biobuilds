@@ -20,25 +20,24 @@ requirements:
   #   Xcode version doesn't play nice with the configure.ac provided.
   # * Linux on x86_64: autoconf/automake needed since CentOS 6 packages are too
   #   old to process the provided configure.ac. (GNU) libtool needed since the
-  #   CentOS 6 version doesn't play nice with these autoconf/automake releases;
-  #   note that we don't need the libtool runtime on Linux as the resuling
-  #   shared libraries (.so files) link to libdl.so instead of libtldl.so.
+  #   CentOS 6 version doesn't play nice with these autoconf/automake releases.
+  #   We use them on ppc64le simply to be consistent across architectures.
+  # * libtool also needed at runtime to provide libtldl.{so,dylib}.
   build:
-    - autoconf >=2.69       # [not ppc64le]
-    - automake >=1.14       # [not ppc64le]
-    - libtool               # [not ppc64le]
+    - biobuilds-build
+    - autoconf >=2.69
+    - automake >=1.14
+    - libtool
     - gcc                   # [osx]
     - veclib-headers        # [ppc64le]
   run:
-    - libtool               # [osx]
+    - libtool
     - libgcc                # [osx]
 
 build:
-  number: 0
+  number: 1
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 about:
   home: "https://github.com/beagle-dev/beagle-lib"
