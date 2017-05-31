@@ -1,0 +1,32 @@
+{% set version = "4.3o" %}
+
+package:
+  name: snpeff
+  version: "{{ version }}"
+
+source:
+  fn: snpEff-{{ version }}.zip
+  url:
+    - "http://downloads.sourceforge.net/project/snpeff/snpEff_v4_3o_core.zip"
+    - "http://download.lab7.io/sources/snpEff-{{ version }}.zip"
+  sha1: "31553805fa684ae58c297855668a0048623b0a9c"
+
+build:
+  number: 0
+  no_link:
+    # Don't link config files to avoid conflicts among environments
+    - share/snpeff-{{ version }}/snpEff.config
+  has_prefix_files:
+    # Make sure conda knows to munge the path so the SnpEff data directory ends
+    # up in the "share" subdirectory of the appropriate environment.
+    - share/snpeff-{{ version }}/snpEff.config
+
+# Disabling tests for now since not all our build VMs/containers have a JRE
+#test:
+#  commands:
+#    - snpEff -Xmx512m databases >/dev/null
+
+about:
+  home: "http://snpeff.sourceforge.net/"
+  license: LGPL
+  summary: "Genetic variant annotation and effect prediction toolbox"

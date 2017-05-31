@@ -1,0 +1,20 @@
+{% set version = "4.3o" %}
+
+package:
+  name: snpsift
+  version: "{{ version }}"
+
+source:
+  fn: snpEff-{{ version }}.zip
+  url:
+    - "http://downloads.sourceforge.net/project/snpeff/snpEff_v4_3o_core.zip"
+    - "http://download.lab7.io/sources/snpEff-{{ version }}.zip"
+  sha1: "31553805fa684ae58c297855668a0048623b0a9c"
+
+build:
+  number: 0
+
+about:
+  home: "http://snpeff.sourceforge.net/SnpSift.html"
+  license: LGPL
+  summary: "Toolbox for filtering and manipulating annotated VCF files"
