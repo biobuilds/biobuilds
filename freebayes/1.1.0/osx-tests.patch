@@ -1,0 +1,126 @@
+--- test/t/00_region_and_target_handling.t
++++ test/t/00_region_and_target_handling.t
+@@ -73,7 +73,7 @@
+         --min-alternate-fraction 0 --pooled-continuous --report-monomorphic \
+         --ploidy 1 \
+         -f $ref $bam \
+-        | grep -vE "^#" | cut -f1-5)
++        | ggrep -vE "^#" | cut -f1-5)
+ }
+ 
+ if [[ -n $TEST_DEBUG ]]; then
+--- test/t/01_call_variants.t
++++ test/t/01_call_variants.t
+@@ -9,7 +9,7 @@
+ 
+ plan tests 19
+ 
+-is $(echo "$(comm -12 <(cat tiny/NA12878.chr22.tiny.giab.vcf | grep -v "^#" | cut -f 2 | sort) <(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | cut -f 2 | sort) | wc -l) >= 13" | bc) 1 "variant calling recovers most of the GiAB variants in a test region"
++is $(echo "$(comm -12 <(cat tiny/NA12878.chr22.tiny.giab.vcf | ggrep -v "^#" | cut -f 2 | sort) <(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | cut -f 2 | sort) | wc -l) >= 13" | bc) 1 "variant calling recovers most of the GiAB variants in a test region"
+ 
+ by_region=$((for region in \
+     q:180-191 \
+@@ -32,10 +32,10 @@
+     q:11530-11541 \
+     q:12119-12130;
+ do
+-    freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam -r $region | grep -v "^#"
++    freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam -r $region | ggrep -v "^#"
+ done) |wc -l)
+ 
+-at_once=$(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l)
++at_once=$(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | wc -l)
+ 
+ is $by_region $at_once "freebayes produces the same number of calls if targeted per site or called without targets"
+ 
+@@ -61,36 +61,36 @@
+ q	12119	12130
+ EOF
+ 
+-is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam -t targets.bed | grep -v "^#" | wc -l) $by_region "a targets bed file can be used with the same effect as running by region"
++is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam -t targets.bed | ggrep -v "^#" | wc -l) $by_region "a targets bed file can be used with the same effect as running by region"
+ rm targets.bed
+ 
+ 
+-is $(samtools view -u tiny/NA12878.chr22.tiny.bam | freebayes -f tiny/q.fa --stdin | grep -v "^#" | wc -l) \
+-    $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) "reading from stdin or not makes no difference"
++is $(samtools view -u tiny/NA12878.chr22.tiny.bam | freebayes -f tiny/q.fa --stdin | ggrep -v "^#" | wc -l) \
++    $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | wc -l) "reading from stdin or not makes no difference"
+ 
+-is $(samtools view tiny/NA12878.chr22.tiny.bam | wc -l) $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam -d 2>&1 | grep ^alignment: | wc -l) "freebayes processes all alignments in input"
++is $(samtools view tiny/NA12878.chr22.tiny.bam | wc -l) $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam -d 2>&1 | ggrep ^alignment: | wc -l) "freebayes processes all alignments in input"
+ 
+ # ensure targeting works even when there are no reads
+-is $(freebayes -f tiny/q.fa -@ tiny/q.vcf.gz tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) 19 "freebayes correctly handles variant input"
++is $(freebayes -f tiny/q.fa -@ tiny/q.vcf.gz tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | wc -l) 19 "freebayes correctly handles variant input"
+ 
+ # ensure that positions at which no variants exist get put in the out vcf
+-is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz tiny/NA12878.chr22.tiny.bam | grep -v "^#" | cut -f1,2 | grep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 3 "freebayes puts required variants in output"
++is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | cut -f1,2 | ggrep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 3 "freebayes puts required variants in output"
+ 
+-is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz tiny/NA12878.chr22.tiny.bam -l | grep -v "^#" | cut -f1,2 | grep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 3 "freebayes limits calls to input variants correctly"
++is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz tiny/NA12878.chr22.tiny.bam -l | ggrep -v "^#" | cut -f1,2 | ggrep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 3 "freebayes limits calls to input variants correctly"
+ 
+-is $(freebayes -f tiny/q.fa -@ tiny/q.vcf.gz -l tiny/1read.bam | grep -v "^#" | wc -l) 20 "freebayes reports all input variants even when there is no input data"
++is $(freebayes -f tiny/q.fa -@ tiny/q.vcf.gz -l tiny/1read.bam | ggrep -v "^#" | wc -l) 20 "freebayes reports all input variants even when there is no input data"
+ 
+ # check variant input with region specified
+-is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz -r q:1-10000 tiny/NA12878.chr22.tiny.bam | grep -v "^#" | cut -f1,2 | grep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 2 "freebayes handles region and variant input"
++is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz -r q:1-10000 tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | cut -f1,2 | ggrep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 2 "freebayes handles region and variant input"
+ 
+-is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz -r q:1-10000 tiny/NA12878.chr22.tiny.bam -l | grep -v "^#" | cut -f1,2 | grep -P "(\t500$|\t1000$)" | wc -l) 2 "freebayes limits to variant input correctly when region is given"
++is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz -r q:1-10000 tiny/NA12878.chr22.tiny.bam -l | ggrep -v "^#" | cut -f1,2 | ggrep -P "(\t500$|\t1000$)" | wc -l) 2 "freebayes limits to variant input correctly when region is given"
+ 
+ # check variant input when reading from stdin
+-is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz --stdin < tiny/NA12878.chr22.tiny.bam | grep -v "^#" | cut -f1,2 | grep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 3 "freebayes handles variant input and reading from stdin"
++is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz --stdin < tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | cut -f1,2 | ggrep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 3 "freebayes handles variant input and reading from stdin"
+ 
+-is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz -l --stdin < tiny/NA12878.chr22.tiny.bam | grep -v "^#" | cut -f1,2 | grep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 3 "freebayes limits to variant input when reading from stdin"
++is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz -l --stdin < tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | cut -f1,2 | ggrep -P "(\t500$|\t11000$|\t1000$)" | wc -l) 3 "freebayes limits to variant input when reading from stdin"
+ 
+-is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz -r q:1-10000 -l --stdin < tiny/NA12878.chr22.tiny.bam | grep -v "^#" | cut -f1,2 | grep -P "(\t500$|\t1000$)" | wc -l) 2 "freebayes handles region, stdin, and variant input"
++is $(freebayes -f tiny/q.fa -@ tiny/q_spiked.vcf.gz -r q:1-10000 -l --stdin < tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | cut -f1,2 | ggrep -P "(\t500$|\t1000$)" | wc -l) 2 "freebayes handles region, stdin, and variant input"
+ 
+ gzip -c tiny/q.fa >tiny/q.fa.gz
+ cp tiny/q.fa.fai tiny/q.fa.gz.fai
+@@ -98,13 +98,13 @@
+ is $? 1 "freebayes bails out when given a gzipped or corrupted reference"
+ rm tiny/q.fa.gz*
+ 
+-is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) $(freebayes-parallel tiny/q.regions 2 -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) "running in parallel makes no difference"
++is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | wc -l) $(freebayes-parallel tiny/q.regions 2 -f tiny/q.fa tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | wc -l) "running in parallel makes no difference"
+ 
+-#is $(freebayes -f 'tiny/q with spaces.fa' tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) $(freebayes-parallel 'tiny/q with spaces.regions' 2 -f 'tiny/q with spaces.fa' tiny/NA12878.chr22.tiny.bam | grep -v "^#" | wc -l) "freebayes handles spaces in file names"
++#is $(freebayes -f 'tiny/q with spaces.fa' tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | wc -l) $(freebayes-parallel 'tiny/q with spaces.regions' 2 -f 'tiny/q with spaces.fa' tiny/NA12878.chr22.tiny.bam | ggrep -v "^#" | wc -l) "freebayes handles spaces in file names"
+ 
+ 
+-is $(freebayes -f splice/1:883884-887618.fa splice/1:883884-887618.bam | grep ^1 | wc -l) 1 "freebayes can handle spliced reads"
++is $(freebayes -f splice/1:883884-887618.fa splice/1:883884-887618.bam | ggrep ^1 | wc -l) 1 "freebayes can handle spliced reads"
+ 
+-is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam --gvcf | grep '<\*>' | wc -l) 20 "freebayes produces the expected number of lines of gVCF output"
++is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam --gvcf | ggrep '<\*>' | wc -l) 20 "freebayes produces the expected number of lines of gVCF output"
+ 
+-is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam --gvcf --gvcf-chunk 50 | grep '<\*>' | wc -l) 245 "freebayes produces the expected number of lines of gVCF output"
++is $(freebayes -f tiny/q.fa tiny/NA12878.chr22.tiny.bam --gvcf --gvcf-chunk 50 | ggrep '<\*>' | wc -l) 245 "freebayes produces the expected number of lines of gVCF output"
+--- test/t/02_multi_bam.t
++++ test/t/02_multi_bam.t
+@@ -24,7 +24,7 @@
+               --ploidy 1 \
+               -f $ref $bam \
+               2>&1 \
+-        | grep -vE "^#" | cut -f1-5
++        | ggrep -vE "^#" | cut -f1-5
+ }
+ 
+ function make_bam() {
+--- test/t/03_reference_bases.t
++++ test/t/03_reference_bases.t
+@@ -34,7 +34,7 @@
+               --ploidy 1 \
+               -f $ref $bam \
+               2>&1 \
+-        | grep -vE "^#" | cut -f1-5
++        | ggrep -vE "^#" | cut -f1-5
+ }
+ 
+ 

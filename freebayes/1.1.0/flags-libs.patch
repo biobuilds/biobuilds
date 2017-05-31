@@ -1,0 +1,340 @@
+# Makefile and source patches to:
+# * Ensure build flags get passed throughout the system
+# * Make use of BioBuilds-supplied libraries instead of rebuilding them
+--- Makefile
++++ Makefile
+@@ -1,4 +1,4 @@
+-all: vcflib/Makefile log
++all: log
+ 	cd src && $(MAKE)
+ 
+ log: src/version_git.h
+--- SeqLib/Makefile.in
++++ SeqLib/Makefile.in
+@@ -191,7 +191,7 @@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ AUTOMAKE_OPTIONS = foreign
+-SUBDIRS = bwa htslib fermi-lite src
++SUBDIRS = fermi-lite src
+ all: config.h
+ 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
+ 
+@@ -676,7 +676,7 @@
+ 
+ 
+ install:  
+-	mkdir -p bin && cp src/libseqlib.a fermi-lite/libfml.a bwa/libbwa.a htslib/libhts.a bin
++	mkdir -p bin && cp src/libseqlib.a fermi-lite/libfml.a bin
+ 
+ seqtools:
+ 	cd src && make seqtools && mv seqtools ../bin
+--- SeqLib/SeqLib/BamHeader.h
++++ SeqLib/SeqLib/BamHeader.h
+@@ -1,10 +1,10 @@
+ #ifndef SEQLIB_BAM_HEADER_H__
+ #define SEQLIB_BAM_HEADER_H__
+ 
+-#include "htslib/htslib/hts.h"
+-#include "htslib/htslib/sam.h"
+-#include "htslib/htslib/bgzf.h"
+-#include "htslib/htslib/kstring.h"
++#include "htslib/hts.h"
++#include "htslib/sam.h"
++#include "htslib/bgzf.h"
++#include "htslib/kstring.h"
+ 
+ #include "SeqLib/SeqLibUtils.h"
+ #include <string>
+--- SeqLib/SeqLib/BamRecord.h
++++ SeqLib/SeqLib/BamRecord.h
+@@ -10,11 +10,11 @@
+ #include <algorithm>
+ 
+ extern "C" {
+-#include "htslib/htslib/hts.h"
+-#include "htslib/htslib/sam.h"
+-#include "htslib/htslib/bgzf.h"
+-#include "htslib/htslib/kstring.h"
+-#include "htslib/htslib/faidx.h"
++#include "htslib/hts.h"
++#include "htslib/sam.h"
++#include "htslib/bgzf.h"
++#include "htslib/kstring.h"
++#include "htslib/faidx.h"
+ 
+ }
+ 
+--- SeqLib/SeqLib/BamWalker.h
++++ SeqLib/SeqLib/BamWalker.h
+@@ -12,8 +12,15 @@
+ #endif
+ 
+ extern "C" {
+-#include "htslib/cram/cram.h"
+-#include "htslib/cram/cram_io.h"
++#include "htslib/cram.h"
++
++// This function is declared in "cram/cram_io.h" of the htslib sources, but for
++// some reason, that header is _not_ included in the htslib package by its
++// `make install` step. Strangely, it _is_ a defined symbol within the libhts
++// shared and dynamic libraries, so we'll declare it an "extern" here and just
++// let the linker deal with it (rather than having to include and build _yet
++// another copy_ of the htslib sources).
++extern int cram_load_reference(cram_fd *fd, char *fn);
+ }
+ 
+ struct idx_delete {
+--- SeqLib/SeqLib/RefGenome.h
++++ SeqLib/SeqLib/RefGenome.h
+@@ -5,7 +5,7 @@
+ #include <cstdlib>
+ #include <iostream>
+ 
+-#include "htslib/htslib/faidx.h"
++#include "htslib/faidx.h"
+ 
+ namespace SeqLib {
+   
+--- SeqLib/fermi-lite/Makefile
++++ SeqLib/fermi-lite/Makefile
+@@ -1,5 +1,5 @@
+-CC=			gcc
+-CFLAGS=		-g -Wall -O2 -Wno-unused-function #-fno-inline-functions -fno-inline-functions-called-once
++CC?=			gcc
++CFLAGS?=		-g -Wall -O2 -Wno-unused-function #-fno-inline-functions -fno-inline-functions-called-once
+ CPPFLAGS=
+ INCLUDES=	
+ OBJS=		kthread.o misc.o \
+@@ -17,7 +17,7 @@
+ all:$(PROG)
+ 
+ fml-asm:libfml.a example.o
+-		$(CC) $(CFLAGS) $^ -o $@ -L. -lfml $(LIBS)
++		$(CC) $(CFLAGS) $^ -o $@ -L. -lfml $(LDFLAGS) $(LIBS)
+ 
+ libfml.a:$(OBJS)
+ 		$(AR) -csru $@ $(OBJS)
+--- SeqLib/seq_test/Makefile.in
++++ SeqLib/seq_test/Makefile.in
+@@ -59,7 +59,7 @@
+ 	seq_test-FermiAssembler.$(OBJEXT) seq_test-ssw_cpp.$(OBJEXT) \
+ 	seq_test-ssw.$(OBJEXT) seq_test-jsoncpp.$(OBJEXT)
+ seq_test_OBJECTS = $(am_seq_test_OBJECTS)
+-seq_test_DEPENDENCIES = ../fermi-lite/libfml.a ../bwa/libbwa.a \
++seq_test_DEPENDENCIES = ../fermi-lite/libfml.a \
+ 	../htslib/libhts.a
+ seq_test_LINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+ 	$(seq_test_LDFLAGS) $(LDFLAGS) -o $@
+@@ -192,7 +192,6 @@
+ 
+ seq_test_LDADD = \
+ 	../fermi-lite/libfml.a \
+-	../bwa/libbwa.a \
+ 	../htslib/libhts.a \
+ 	-lboost_unit_test_framework -lboost_system -lboost_timer -lboost_chrono
+ 
+--- SeqLib/src/Makefile.in
++++ SeqLib/src/Makefile.in
+@@ -108,7 +108,7 @@
+ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ LDFLAGS = @LDFLAGS@
+ LIBOBJS = @LIBOBJS@
+-LIBS = libseqlib.a ../htslib/libhts.a ../bwa/libbwa.a ../fermi-lite/libfml.a
++LIBS = libseqlib.a ../fermi-lite/libfml.a
+ LTLIBOBJS = @LTLIBOBJS@
+ MAINT = @MAINT@
+ MAKEINFO = @MAKEINFO@
+@@ -171,12 +171,12 @@
+ top_builddir = @top_builddir@
+ top_srcdir = @top_srcdir@
+ noinst_LIBRARIES = libseqlib.a
+-libseqlib_a_CPPFLAGS = -I../ -I../htslib
++libseqlib_a_CPPFLAGS = -I../
+ libseqlib_a_SOURCES = FastqReader.cpp BFC.cpp ReadFilter.cpp SeqPlot.cpp jsoncpp.cpp ssw_cpp.cpp ssw.c \
+ 			GenomicRegion.cpp RefGenome.cpp BamWriter.cpp BamReader.cpp \
+ 			BWAWrapper.cpp BamRecord.cpp FermiAssembler.cpp BamHeader.cpp
+ 
+-INCLUDES = -I../htslib -I..
++INCLUDES = -I..
+ all: all-am
+ 
+ .SUFFIXES:
+--- SeqLib/src/ReadFilter.cpp
++++ SeqLib/src/ReadFilter.cpp
+@@ -1,7 +1,7 @@
+ #include "SeqLib/ReadFilter.h"
+ 
+ #include <cassert>
+-#include "htslib/htslib/khash.h"
++#include "htslib/khash.h"
+ 
+ //#define QNAME "D0EN0ACXX111207:7:2306:6903:136511"
+ //#define QFLAG -1
+--- src/Makefile
++++ src/Makefile
+@@ -5,11 +5,11 @@
+ ################################################################################
+ 
+ # Compiler
+-CXX=g++
+-C=gcc
++CXX ?= g++
++CC  ?= gcc
+ 
+ # Compiler flags
+-CFLAGS=-O3 -D_FILE_OFFSET_BITS=64 -g
++CFLAGS += -D_FILE_OFFSET_BITS=64
+ #CFLAGS=-O3 -static -D VERBOSE_DEBUG  # enables verbose debugging via --debug2
+ 
+ BAMTOOLS_ROOT=../bamtools
+@@ -18,8 +18,10 @@
+ TABIX_ROOT=$(VCFLIB_ROOT)/tabixpp
+ HTSLIB_ROOT=$(TABIX_ROOT)/htslib
+ 
+-LIBS = -lz -lm -lpthread
+-INCLUDE = -I../ttmath -I$(BAMTOOLS_ROOT)/src/ -I$(VCFLIB_ROOT)/src/ -I$(TABIX_ROOT)/ -I$(VCFLIB_ROOT)/smithwaterman/ -I$(VCFLIB_ROOT)/multichoose/ -I$(VCFLIB_ROOT)/filevercmp/ -I$(HTSLIB_ROOT) -I$(SEQLIB_ROOT) -I$(SEQLIB_ROOT)/htslib
++# WARNING: order is important here -- vcflib must come _before_ htslib!
++LIBS  = $(BAMTOOLS_LIB) $(VCFLIB_LIB) $(HTSLIB_LIB)
++LIBS += -lz -lm -lpthread $(LIBS_EXTRA)
++INCLUDE = -I../ttmath -I$(SEQLIB_ROOT)
+ 
+ all: autoversion ../bin/freebayes ../bin/bamleftalign
+ 
+@@ -38,13 +40,14 @@
+ .PHONY: all static debug profiling gprof
+ 
+ # builds bamtools static lib, and copies into root
+-$(BAMTOOLS_ROOT)/lib/libbamtools.a:
+-	cd $(BAMTOOLS_ROOT) && mkdir -p build && cd build && cmake .. && $(MAKE)
+-$(HTSLIB_ROOT)/libhts.a:
+-	cd $(HTSLIB_ROOT) && make
+ 
+ $(SEQLIB_ROOT)/src/libseqlib.a:
+-	cd $(SEQLIB_ROOT) && ./configure && make 
++	cd $(SEQLIB_ROOT) \
++		&& ./configure \
++			CC=$(CC) CFLAGS="$(CFLAGS)" \
++			CXX=$(CXX) CXXFLAGS="$(CXXFLAGS)" \
++			LDFLAGS="$(LDFLAGS)" \
++		&& $(MAKE) V=1
+ 
+ OBJECTS=BedReader.o \
+ 		CNV.o \
+@@ -70,38 +73,26 @@
+ 		Contamination.o \
+ 		NonCall.o \
+ 		SegfaultHandler.o \
+-		../vcflib/tabixpp/tabix.o \
+-		../vcflib/tabixpp/htslib/bgzf.o \
+-		../vcflib/smithwaterman/SmithWatermanGotoh.o \
+-		../vcflib/smithwaterman/disorder.cpp \
+-		../vcflib/smithwaterman/LeftAlign.o \
+-		../vcflib/smithwaterman/Repeats.o \
+-		../vcflib/smithwaterman/IndelAllele.o \
+-		Variant.o \
+-		$(BAMTOOLS_ROOT)/lib/libbamtools.a \
+-			$(SEQLIB_ROOT)/src/libseqlib.a	\
+-			$(SEQLIB_ROOT)/bwa/libbwa.a	\
+-			$(SEQLIB_ROOT)/fermi-lite/libfml.a	\
+-			$(SEQLIB_ROOT)/htslib/libhts.a
++			$(SEQLIB_ROOT)/src/libseqlib.a
+ 
+ HEADERS=multichoose.h version_git.h
+ 
+ # executables
+ 
+ freebayes ../bin/freebayes: freebayes.o $(OBJECTS) $(HEADERS)
+-	$(CXX) $(CFLAGS) $(INCLUDE) freebayes.o $(OBJECTS) -o ../bin/freebayes $(LIBS)
++	$(CXX) $(CFLAGS) $(INCLUDE) freebayes.o $(OBJECTS) -o ../bin/freebayes $(LDFLAGS) $(LIBS)
+ 
+ alleles ../bin/alleles: alleles.o $(OBJECTS) $(HEADERS)
+-	$(CXX) $(CFLAGS) $(INCLUDE) alleles.o $(OBJECTS) -o ../bin/alleles $(LIBS)
++	$(CXX) $(CFLAGS) $(INCLUDE) alleles.o $(OBJECTS) -o ../bin/alleles $(LDFLAGS) $(LIBS)
+ 
+ dummy ../bin/dummy: dummy.o $(OBJECTS) $(HEADERS)
+-	$(CXX) $(CFLAGS) $(INCLUDE) dummy.o $(OBJECTS) -o ../bin/dummy $(LIBS)
++	$(CXX) $(CFLAGS) $(INCLUDE) dummy.o $(OBJECTS) -o ../bin/dummy $(LDFLAGS) $(LIBS)
+ 
+-bamleftalign ../bin/bamleftalign: $(BAMTOOLS_ROOT)/lib/libbamtools.a $(SEQLIB_ROOT)/src/libseqlib.a $(SEQLIB_ROOT)/htslib/libhts.a bamleftalign.o Fasta.o LeftAlign.o IndelAllele.o split.o
+-	$(CXX) $(CFLAGS) $(INCLUDE) bamleftalign.o Fasta.o Utility.o LeftAlign.o IndelAllele.o split.o $(BAMTOOLS_ROOT)/lib/libbamtools.a $(SEQLIB_ROOT)/src/libseqlib.a $(SEQLIB_ROOT)/htslib/libhts.a -o ../bin/bamleftalign $(LIBS)
++bamleftalign ../bin/bamleftalign: $(SEQLIB_ROOT)/src/libseqlib.a bamleftalign.o Fasta.o LeftAlign.o IndelAllele.o split.o
++	$(CXX) $(CFLAGS) $(INCLUDE) bamleftalign.o Fasta.o Utility.o LeftAlign.o IndelAllele.o split.o $(LIBBAMTOOLS) $(SEQLIB_ROOT)/src/libseqlib.a $(HTSLIB) -o ../bin/bamleftalign $(LDFLAGS) $(LIBS)
+ 
+-bamfiltertech ../bin/bamfiltertech: $(BAMTOOLS_ROOT)/lib/libbamtools.a $(SEQLIB_ROOT)/src/libseqlib.a $(SEQLIB_ROOT)/htslib/libhts.a bamfiltertech.o $(OBJECTS) $(HEADERS)
+-	$(CXX) $(CFLAGS) $(INCLUDE) bamfiltertech.o $(OBJECTS) -o ../bin/bamfiltertech $(LIBS)
++bamfiltertech ../bin/bamfiltertech: $(SEQLIB_ROOT)/src/libseqlib.a bamfiltertech.o $(OBJECTS) $(HEADERS)
++	$(CXX) $(CFLAGS) $(INCLUDE) bamfiltertech.o $(OBJECTS) -o ../bin/bamfiltertech $(LDFLAGS) $(LIBS)
+ 
+ 
+ # objects
+@@ -115,11 +106,11 @@
+ dummy.o: dummy.cpp AlleleParser.o Allele.o
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c dummy.cpp
+ 
+-freebayes.o: freebayes.cpp TryCatch.h $(HTSLIB_ROOT)/libhts.a $(BAMTOOLS_ROOT)/lib/libbamtools.a
++freebayes.o: freebayes.cpp TryCatch.h
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c freebayes.cpp
+ 
+ fastlz.o: fastlz.c fastlz.h
+-	$(C) $(CFLAGS) $(INCLUDE) -c fastlz.c	
++	$(CC) $(CFLAGS) $(INCLUDE) -c fastlz.c	
+ 
+ Parameters.o: Parameters.cpp Parameters.h Version.h
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c Parameters.cpp
+@@ -136,7 +127,7 @@
+ Ewens.o: Ewens.cpp Ewens.h
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c Ewens.cpp
+ 
+-AlleleParser.o: AlleleParser.cpp AlleleParser.h multichoose.h Parameters.h $(BAMTOOLS_ROOT)/lib/libbamtools.a $(HTSLIB_ROOT)/libhts.a
++AlleleParser.o: AlleleParser.cpp AlleleParser.h multichoose.h Parameters.h
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c AlleleParser.cpp
+ 
+ Utility.o: Utility.cpp Utility.h Sum.h Product.h
+@@ -184,23 +175,12 @@
+ bamfiltertech.o: bamfiltertech.cpp
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c bamfiltertech.cpp
+ 
+-LeftAlign.o: LeftAlign.h LeftAlign.cpp $(BAMTOOLS_ROOT)/lib/libbamtools.a $(HTSLIB_ROOT)/libhts.a
++LeftAlign.o: LeftAlign.h LeftAlign.cpp
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c LeftAlign.cpp
+ 
+ IndelAllele.o: IndelAllele.cpp IndelAllele.h
+ 	$(CXX) $(CFLAGS) $(INCLUDE) -c IndelAllele.cpp
+ 
+-Variant.o: $(VCFLIB_ROOT)/src/Variant.h $(VCFLIB_ROOT)/src/Variant.cpp
+-	$(CXX) $(CFLAGS) $(INCLUDE) -c $(VCFLIB_ROOT)/src/Variant.cpp
+-
+-../vcflib/tabixpp/tabix.o:
+-	cd $(TABIX_ROOT)/ && make
+-../vcflib/tabixpp/htslib/bgzf.o: ../vcflib/tabixpp/htslib/bgzf.c ../vcflib/tabixpp/htslib/htslib/bgzf.h
+-	cd ../vcflib/tabixpp && $(MAKE)
+-
+-../vcflib/smithwaterman/SmithWatermanGotoh.o: ../vcflib/smithwaterman/SmithWatermanGotoh.h ../vcflib/smithwaterman/SmithWatermanGotoh.cpp
+-	cd ../vcflib/smithwaterman && $(MAKE)
+-
+ 
+ VERSION_FILE=./version_git.h
+ RELEASED_VERSION_FILE=./version_release.txt
+@@ -275,6 +255,3 @@
+ 
+ clean:
+ 	rm -rf *.o *.cgh *~ freebayes alleles ../bin/freebayes ../bin/alleles ../vcflib/*.o ../vcflib/tabixpp/*.{o,a}
+-	cd $(BAMTOOLS_ROOT)/build && make clean
+-	cd ../vcflib/smithwaterman && make clean
+-
+--- test/Makefile
++++ test/Makefile
+@@ -1,11 +1,10 @@
+ .PHONY: all clean
+ 
+ freebayes=../bin/freebayes
+-vcfuniq=../vcflib/bin/vcfuniq
+ 
+ all: test
+ 
+-test: $(freebayes) $(vcfuniq)
++test: $(freebayes)
+ 	prove -v t
+ 
+ $(freebayes):

@@ -1,0 +1,34 @@
+--- scripts/coverage_to_regions.py
++++ scripts/coverage_to_regions.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@PREFIX_BIN@@/python
+ 
+ import sys
+ 
+--- scripts/fasta_generate_regions.py
++++ scripts/fasta_generate_regions.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!@@PREFIX_BIN@@/python
+ 
+ import sys
+ 
+--- scripts/freebayes-parallel
++++ scripts/freebayes-parallel
+@@ -36,5 +36,5 @@
+ #$command | head -100 | grep "^#" # generate header
+ # iterate over regions using gnu parallel to dispatch jobs
+ cat "$regionsfile" | parallel -k -j "$ncpus" "${command[@]}" --region {}
+-) | ../vcflib/scripts/vcffirstheader \
+-    | ../vcflib/bin/vcfstreamsort -w 1000 | vcfuniq # remove duplicates at region edges
++) | vcffirstheader \
++    | vcfstreamsort -w 1000 | vcfuniq # remove duplicates at region edges
+--- scripts/sam_add_rg.pl
++++ scripts/sam_add_rg.pl
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ #
+ 
+ 
