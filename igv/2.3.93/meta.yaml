@@ -1,0 +1,20 @@
+{% set version = "2.3.93" %}
+
+package:
+  name: igv
+  version: "{{ version }}"
+
+source:
+  fn: IGV_{{ version }}.zip
+  url:
+    - "http://data.broadinstitute.org/igv/projects/downloads/IGV_{{ version }}.zip"
+    - "http://download.lab7.io/sources/IGV_{{ version }}.zip"
+  sha1: "c9b4e98db8d0b3475554dc83c6fad34dd66c3fd5"
+
+build:
+  number: 0
+
+about:
+  home: "http://www.broadinstitute.org/software/igv/home"
+  license: MIT
+  summary: "Java visualization tool for interactive exploration of large, integrated genomic datasets."
