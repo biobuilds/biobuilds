@@ -1,0 +1,20 @@
+{% set version = "2.9.2" %}
+
+package:
+  name: picard
+  version: "{{ version }}"
+
+source:
+  fn: "picard-{{ version }}.jar"
+  url:
+    - "https://github.com/broadinstitute/picard/releases/download/{{ version }}/picard.jar"
+    - "http://download.lab7.io/sources/picard-{{ version }}.jar"
+  sha1: "4347811be03152e6f1a505cada45c76190246f0c"
+
+build:
+  number: 0
+
+about:
+  home: "http://broadinstitute.github.io/picard/"
+  license: MIT
+  summary: "Java tools for working with NGS data in the BAM format"
