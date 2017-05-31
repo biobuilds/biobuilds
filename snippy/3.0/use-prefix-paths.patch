@@ -1,0 +1,82 @@
+--- bin/snippy
++++ bin/snippy
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ use strict;
+ use warnings;
+ use FindBin;
+@@ -15,7 +15,7 @@
+ # global variables
+ 
+ my $EXE = $FindBin::RealScript;
+-my $BINDIR = $FindBin::RealBin;
++my $BINDIR = "@@PREFIX_BIN@@";
+ my $VERSION = "3.0";
+ my $SYNOPSIS = "fast bacterial variant calling from NGS reads";
+ my $AUTHOR = 'Torsten Seemann <torsten.seemann@gmail.com>';
+@@ -46,11 +46,12 @@
+ # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+ # give access to bundled tools (at end of PATH)
+ 
+-msg("Enabling bundled $OPSYS tools.");
+-$ENV{PATH} = "$BINDIR:"
+-             .$ENV{PATH}
+-             .":$BINDIR/../binaries/$OPSYS"
+-             .":$BINDIR/../binaries/noarch";
++### PATH munging should be handled by conda, so comment this out ###
++#msg("Enabling bundled $OPSYS tools.");
++#$ENV{PATH} = "$BINDIR:"
++#             .$ENV{PATH}
++#             .":$BINDIR/../binaries/$OPSYS"
++#             .":$BINDIR/../binaries/noarch";
+ 
+ # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+ # check for needed exes
+@@ -184,7 +185,7 @@
+ if ($nfeat > 0) {
+   my $cfg_fn = "$refdir/snpeff.config";
+   msg("Creating $cfg_fn");
+-  copy("$BINDIR/../etc/snpeff.config", $cfg_fn);
++  copy("@@PREFIX_ETC@@/snpeff.config", $cfg_fn);
+   open my $cfg, '>>', $cfg_fn;
+   print $cfg "ref.genome : Snippy Reference\n";
+   my @id = keys %refseq;
+--- bin/snippy-core
++++ bin/snippy-core
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ use warnings;
+ use strict;
+ use Time::Piece;
+--- bin/snippy-vcf_filter
++++ bin/snippy-vcf_filter
+@@ -1,9 +1,9 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ use warnings;
+ use strict;
+ use Data::Dumper;
+ use FindBin;
+-use lib "$FindBin::RealBin/../perl5";
++use lib '@@PREFIX_PERL5@@';
+ use Vcf;
+ 
+ # . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+--- bin/snippy-vcf_report
++++ bin/snippy-vcf_report
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ use warnings;
+ use strict;
+ use List::Util qw(max);
+--- bin/snippy-vcf_to_tab
++++ bin/snippy-vcf_to_tab
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env perl
++#!@@PREFIX_BIN@@/perl
+ use warnings;
+ use strict;
+ use Data::Dumper;

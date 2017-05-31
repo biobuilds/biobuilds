@@ -1,0 +1,40 @@
+{% set version = "3.0" %}
+
+package:
+  name: snippy
+  version: "{{ version }}"
+
+requirements:
+  run:
+    - perl
+    - perl-bioperl >=1.6
+    - bwa >=0.7.12
+    - freebayes >=0.9.20
+    - htslib >=1.0
+    - parallel >=20130101
+    - samtools >=1.0
+    - snpeff >=4.1
+    - vcflib
+    - vcftools
+
+source:
+  fn: "snippy-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/tseemann/snippy/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/snippy-{{ version }}.tar.gz"
+  sha1: "85618f14ee8e9bd29d5ca891b84e914ef2a5de5a"
+  patches:
+    - use-prefix-paths.patch
+
+build:
+  number: 0
+
+test:
+  source_files:
+    - test
+
+about:
+  home: "https://github.com/tseemann/snippy"
+  license: "GPLv2"
+  license_file: "LICENSE"
+  summary: "Rapid bacterial SNP calling and core genome alignments"
