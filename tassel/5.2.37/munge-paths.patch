@@ -1,0 +1,30 @@
+--- run_pipeline.pl
++++ run_pipeline.pl
+@@ -1,10 +1,10 @@
+-#!/usr/bin/perl -w
++#!@@prefix@@/bin/perl -w
+ 
+ use strict;
+ use File::Basename;
+ 
+ my $dirname = dirname(__FILE__);
+-my $top = defined($dirname) ? $dirname : '.';
++my $top = "@@sharedir@@";
+ 
+ my $libdir = "$top/lib";
+ opendir (DIR, "$libdir") || die "Could not open $libdir\n";
+--- start_tassel.pl
++++ start_tassel.pl
+@@ -1,10 +1,10 @@
+-#!/usr/bin/perl -w
++#!@@prefix@@/bin/perl -w
+ 
+ use strict;
+ use File::Basename;
+ 
+ my $dirname = dirname(__FILE__);
+-my $top = defined($dirname) ? $dirname : '.';
++my $top = "@@sharedir@@";
+ 
+ my $libdir = "$top/lib";
+ opendir (DIR, "$libdir") || die "Could not open $libdir\n";

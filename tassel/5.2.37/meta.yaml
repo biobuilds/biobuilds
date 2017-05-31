@@ -1,0 +1,27 @@
+{% set version = "5.2.37" %}
+
+package:
+  name: tassel
+  version: "{{ version }}"
+
+source:
+  fn: "tassel-{{ version }}.tar.bz2"
+  url:
+    - "https://bitbucket.org/tasseladmin/tassel-5-standalone/get/V{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/tassel-{{ version }}.tar.bz2"
+  sha1: "967a15247a4ae7e62fceca88586926fd8e7d4788"
+  patches:
+    - munge-paths.patch
+    - check-java-version.patch
+
+requirements:
+  run:
+    - perl    # needed by launch scripts
+
+build:
+  number: 0
+
+about:
+  home: "http://www.maizegenetics.net/#!tassel/c17q9"
+  license: LGPL
+  summary: "Java platform for analysis of crop genomic diversity"
