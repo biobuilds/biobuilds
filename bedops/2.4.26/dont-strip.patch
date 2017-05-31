@@ -1,0 +1,68 @@
+# Since we're linking dynamically to external, "system"-provided libraries,
+# don't strip symbols from the binaries to make debugging easier.
+--- applications/bed/bedextract/src/Makefile
++++ applications/bed/bedextract/src/Makefile
+@@ -18,7 +18,7 @@
+ 
+ dependency_names        = NaN starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding
+ dependencies            = $(addprefix $(OBJDIR)/, $(addsuffix .o, $(dependency_names)))
+-FLAGS                   = $(SFLAGS) -s $(BLDFLAGS) $(dependencies) ${LIBLOCATION} ${INCLUDES}
++FLAGS                   = $(SFLAGS) $(BLDFLAGS) $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ DFLAGS                  = $(SFLAGS) -g -O0 -std=c++11 -Wall -fno-inline -pedantic $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ GPROFFLAGS              = $(SFLAGS) -O -std=c++11 -Wall -pedantic -pg $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ 
+--- applications/bed/bedmap/src/Makefile
++++ applications/bed/bedmap/src/Makefile
+@@ -17,7 +17,7 @@
+ 
+ dependency_names    = NaN starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding
+ dependencies        = $(addprefix $(OBJDIR)/, $(addsuffix .o, $(dependency_names)))
+-FLAGS               = ${SFLAGS} -s ${BLDFLAGS} $(dependencies) ${LIBLOCATION} ${INCLUDES}
++FLAGS               = ${SFLAGS} ${BLDFLAGS} $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ DFLAGS              = ${SFLAGS} -g -O0 -std=c++11 -DDEBUG=1 -fno-inline -Wall -pedantic $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ GPROFFLAGS          = ${SFLAGS} -pg -O -std=c++11 -Wall -pedantic $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ 
+--- applications/bed/bedops/src/Makefile
++++ applications/bed/bedops/src/Makefile
+@@ -19,7 +19,7 @@
+ 
+ dependency_names    = NaN starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding
+ dependencies        = $(addprefix $(OBJDIR)/, $(addsuffix .o, $(dependency_names)))
+-FLAGS               = $(SFLAGS) -s $(BLDFLAGS) $(dependencies) ${LIBLOCATION} ${INCLUDES}
++FLAGS               = $(SFLAGS) $(BLDFLAGS) $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ DFLAGS              = $(SFLAGS) -g -O0 -DDEBUG_VERBOSE=1 -std=c++11 -Wall -fno-inline -pedantic -DDEBUG=1 $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ GPROFFLAGS          = $(SFLAGS) -O -std=c++11 -Wall -pedantic -pg $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ SOURCE1             = Bedops.cpp
+--- applications/bed/closestfeats/src/Makefile
++++ applications/bed/closestfeats/src/Makefile
+@@ -17,7 +17,7 @@
+ 
+ dependency_names    = NaN starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding
+ dependencies        = $(addprefix $(OBJDIR)/, $(addsuffix .o, $(dependency_names)))
+-FLAGS               = $(SFLAGS) -s $(BLDFLAGS) $(dependencies) ${LIBLOCATION} ${INCLUDES}
++FLAGS               = $(SFLAGS) $(BLDFLAGS) $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ DFLAGS              = $(SFLAGS) -g -O0 -std=c++11 -Wall -fno-inline -pedantic $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ GPROFFLAGS          = $(SFLAGS) -O -std=c++11 -Wall -pedantic -pg $(dependencies) ${LIBLOCATION} ${INCLUDES}
+ SOURCE1             = ClosestFeature.cpp
+--- applications/bed/sort-bed/src/Makefile
++++ applications/bed/sort-bed/src/Makefile
+@@ -24,7 +24,7 @@
+ dependency_names    = starchConstants starchFileHelpers starchHelpers starchMetadataHelpers unstarchHelpers starchSha1Digest starchBase64Coding SortDetails Sort CheckSort
+ dependencies        = $(addprefix $(OBJDIR)/, $(addsuffix .o, $(dependency_names)))
+ 
+-FLAGS               = $(SFLAGS) -s ${BLDFLAGS} ${LIBLOCATION} ${INCLUDES}
++FLAGS               = $(SFLAGS) ${BLDFLAGS} ${LIBLOCATION} ${INCLUDES}
+ DFLAGS              = $(SFLAGS) -g -O0 -std=c++11 -Wall -fno-inline -pedantic ${LIBLOCATION} ${INCLUDES}
+ GPROFFLAGS          = $(SFLAGS) -O -std=c++11 -Wall -pedantic -pg ${LIBLOCATION} ${INCLUDES}
+ 
+--- applications/bed/starch/src/Makefile
++++ applications/bed/starch/src/Makefile
+@@ -26,7 +26,7 @@
+ TEST_OSX_BINDIR           = ${TEST}/binaries/osx/${ARCH_VERSION}/bin
+ AR                        = ar
+ SFLAGS                    = -static
+-CXXFLAGS                  = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O2 -Wformat -Wall -Wextra -Wswitch-enum -std=c++11 ${SFLAGS} -s
++CXXFLAGS                  = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O2 -Wformat -Wall -Wextra -Wswitch-enum -std=c++11 ${SFLAGS}
+ CXXDFLAGS                 = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O0 -g -Wformat -Wall -Wextra -Wswitch-enum -std=c++11 -DDEBUG_VERBOSE=1 ${SFLAGS}
+ CXXGFLAGS                 = -D__STDC_CONSTANT_MACROS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE=1 -DUSE_ZLIB -DUSE_BZLIB -O -Wformat -Wall -Wextra -Wswitch-enum -std=c++11 -DDEBUG_VERBOSE=1 ${SFLAGS} -pg
+ 

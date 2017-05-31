@@ -1,0 +1,61 @@
+{% set version = "2.4.26" %}
+
+package:
+  name: bedops
+  version: {{ version }}
+
+source:
+  fn: "bedops-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/bedops/bedops/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/bedops-{{ version }}.tar.gz"
+  sha1: "7bbc53d794a71edd85edeede84e7511ebb75e6aa"
+  patches:
+    - use-system-libs.patch
+    - dont-strip.patch
+    - bedmap-version-exit.patch
+    - misc-flags.patch
+    - osx-64bit-only.patch        # [osx]
+
+requirements:
+  build:
+    - biobuilds-build
+    # Need newer gcc for proper C++11 support, even when using Intel Parallel
+    # Studio (icpc) the linux-64 "opt" package; see "build.sh" for details.
+    - gcc 4.8.*         # [linux64]
+    - bzip2
+    - jansson
+    - zlib
+  run:
+    - biobuilds-opt     # [opt]
+    - libgcc 4.8.*      # [linux64]
+    - python
+    # bzip2 statically linked, so not needed at runtime
+    - jansson
+    - zlib
+    - parallel
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - bedextract --version
+    - bedmap --version
+    - bedops --version
+    - closest-features --version
+    - convert2bed --version
+    - sort-bed --version
+    - starch --version
+    - starchcat --version
+    - unstarch --version
+
+about:
+  home: "https://github.com/bedops/bedops"
+  license: GPLv2
+  license_file: LICENSE
+  summary: "High-performance genomic feature operations"
