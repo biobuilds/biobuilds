@@ -1,0 +1,37 @@
+{% set version = "0.1.24" %}
+
+package:
+  name: samblaster
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+  run:
+    - biobuilds-opt     # [opt]
+
+source:
+  fn: "samblaster-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/GregoryFaust/samblaster/archive/v.{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/samblaster-{{ version }}.tar.gz"
+  sha1: "982dbfc40bb14edce440c33a6c6e4332f9a7ba8c"
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  files:
+    - test.bam
+  requires:
+    - samtools
+
+about:
+  home: "https://github.com/GregoryFaust/samblaster"
+  license: MIT
+  license_file: LICENSE.txt
+  summary: "Program for marking duplicates in read-id grouped1 paired-end SAM files"
