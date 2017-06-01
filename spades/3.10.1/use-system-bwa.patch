@@ -1,0 +1,133 @@
+--- ext/tools/CMakeLists.txt
++++ ext/tools/CMakeLists.txt
+@@ -5,4 +5,5 @@
+ # See file LICENSE for details.
+ ############################################################################
+ 
+-add_subdirectory(bwa-0.7.12)
++# Using system 'bwa' instead of custom built one
++#add_subdirectory(bwa-0.7.12)
+--- metaspades.py
++++ metaspades.py
+@@ -470,7 +470,7 @@
+     if (not options_storage.only_error_correction) and options_storage.mismatch_corrector:
+         cfg["mismatch_corrector"] = empty_config()
+         cfg["mismatch_corrector"].__dict__["skip-masked"] = None
+-        cfg["mismatch_corrector"].__dict__["bwa"] = os.path.join(bin_home, "bwa-spades")
++        cfg["mismatch_corrector"].__dict__["bwa"] = os.path.join(bin_home, "bwa")
+         cfg["mismatch_corrector"].__dict__["threads"] = options_storage.threads
+         cfg["mismatch_corrector"].__dict__["output-dir"] = options_storage.output_dir
+     cfg["run_truseq_postprocessing"] = options_storage.run_truseq_postprocessing
+@@ -814,7 +814,7 @@
+                     if os.path.isfile(result_scaffolds_filename):
+                         shutil.move(result_scaffolds_filename, assembled_scaffolds_filename)
+                     reads_library = dataset_data[0]
+-                    alignment_bin = os.path.join(bin_home, "bwa-spades")
++                    alignment_bin = os.path.join(bin_home, "bwa")
+                     alignment_dir = os.path.join(cfg["common"].output_dir, "alignment")
+                     sam_files = alignment.align_bwa(alignment_bin, assembled_scaffolds_filename, dataset_data, alignment_dir, log, options_storage.threads)
+                     moleculo_postprocessing.moleculo_postprocessing(assembled_scaffolds_filename, truseq_long_reads_file_base, sam_files, log)
+--- plasmidspades.py
++++ plasmidspades.py
+@@ -470,7 +470,7 @@
+     if (not options_storage.only_error_correction) and options_storage.mismatch_corrector:
+         cfg["mismatch_corrector"] = empty_config()
+         cfg["mismatch_corrector"].__dict__["skip-masked"] = None
+-        cfg["mismatch_corrector"].__dict__["bwa"] = os.path.join(bin_home, "bwa-spades")
++        cfg["mismatch_corrector"].__dict__["bwa"] = os.path.join(bin_home, "bwa")
+         cfg["mismatch_corrector"].__dict__["threads"] = options_storage.threads
+         cfg["mismatch_corrector"].__dict__["output-dir"] = options_storage.output_dir
+     cfg["run_truseq_postprocessing"] = options_storage.run_truseq_postprocessing
+@@ -814,7 +814,7 @@
+                     if os.path.isfile(result_scaffolds_filename):
+                         shutil.move(result_scaffolds_filename, assembled_scaffolds_filename)
+                     reads_library = dataset_data[0]
+-                    alignment_bin = os.path.join(bin_home, "bwa-spades")
++                    alignment_bin = os.path.join(bin_home, "bwa")
+                     alignment_dir = os.path.join(cfg["common"].output_dir, "alignment")
+                     sam_files = alignment.align_bwa(alignment_bin, assembled_scaffolds_filename, dataset_data, alignment_dir, log, options_storage.threads)
+                     moleculo_postprocessing.moleculo_postprocessing(assembled_scaffolds_filename, truseq_long_reads_file_base, sam_files, log)
+--- rnaspades.py
++++ rnaspades.py
+@@ -470,7 +470,7 @@
+     if (not options_storage.only_error_correction) and options_storage.mismatch_corrector:
+         cfg["mismatch_corrector"] = empty_config()
+         cfg["mismatch_corrector"].__dict__["skip-masked"] = None
+-        cfg["mismatch_corrector"].__dict__["bwa"] = os.path.join(bin_home, "bwa-spades")
++        cfg["mismatch_corrector"].__dict__["bwa"] = os.path.join(bin_home, "bwa")
+         cfg["mismatch_corrector"].__dict__["threads"] = options_storage.threads
+         cfg["mismatch_corrector"].__dict__["output-dir"] = options_storage.output_dir
+     cfg["run_truseq_postprocessing"] = options_storage.run_truseq_postprocessing
+@@ -814,7 +814,7 @@
+                     if os.path.isfile(result_scaffolds_filename):
+                         shutil.move(result_scaffolds_filename, assembled_scaffolds_filename)
+                     reads_library = dataset_data[0]
+-                    alignment_bin = os.path.join(bin_home, "bwa-spades")
++                    alignment_bin = os.path.join(bin_home, "bwa")
+                     alignment_dir = os.path.join(cfg["common"].output_dir, "alignment")
+                     sam_files = alignment.align_bwa(alignment_bin, assembled_scaffolds_filename, dataset_data, alignment_dir, log, options_storage.threads)
+                     moleculo_postprocessing.moleculo_postprocessing(assembled_scaffolds_filename, truseq_long_reads_file_base, sam_files, log)
+--- spades.py
++++ spades.py
+@@ -470,7 +470,7 @@
+     if (not options_storage.only_error_correction) and options_storage.mismatch_corrector:
+         cfg["mismatch_corrector"] = empty_config()
+         cfg["mismatch_corrector"].__dict__["skip-masked"] = None
+-        cfg["mismatch_corrector"].__dict__["bwa"] = os.path.join(bin_home, "bwa-spades")
++        cfg["mismatch_corrector"].__dict__["bwa"] = os.path.join(bin_home, "bwa")
+         cfg["mismatch_corrector"].__dict__["threads"] = options_storage.threads
+         cfg["mismatch_corrector"].__dict__["output-dir"] = options_storage.output_dir
+     cfg["run_truseq_postprocessing"] = options_storage.run_truseq_postprocessing
+@@ -814,7 +814,7 @@
+                     if os.path.isfile(result_scaffolds_filename):
+                         shutil.move(result_scaffolds_filename, assembled_scaffolds_filename)
+                     reads_library = dataset_data[0]
+-                    alignment_bin = os.path.join(bin_home, "bwa-spades")
++                    alignment_bin = os.path.join(bin_home, "bwa")
+                     alignment_dir = os.path.join(cfg["common"].output_dir, "alignment")
+                     sam_files = alignment.align_bwa(alignment_bin, assembled_scaffolds_filename, dataset_data, alignment_dir, log, options_storage.threads)
+                     moleculo_postprocessing.moleculo_postprocessing(assembled_scaffolds_filename, truseq_long_reads_file_base, sam_files, log)
+--- src/spades_pipeline/easy_align.py
++++ src/spades_pipeline/easy_align.py
+@@ -23,7 +23,7 @@
+     log.addHandler(console)
+     #logging
+ 
+-    bwa_command='bin/bwa-spades'
++    bwa_command='bin/bwa'
+     index = alignment.index_bwa(bwa_command, log, contigs_file, os.path.join(out_dir, "bwa_index"), "bwtsw")
+     index = os.path.join(out_dir, "bwa_index", "index")
+     sam = alignment.align_bwa_pe_lib(bwa_command, index, left, right, os.path.join(out_dir, "align"), log, threads)
+--- src/spades_pipeline/spades_logic.py
++++ src/spades_pipeline/spades_logic.py
+@@ -62,7 +62,7 @@
+     #TODO: make something about spades.py and config param substitution 
+     if "bwa_paired" in cfg.__dict__:
+         subst_dict["bwa_enable"] = bool_to_str(True)
+-    subst_dict["path_to_bwa"] =  os.path.join(execution_home, "bwa-spades")
++    subst_dict["path_to_bwa"] =  os.path.join(execution_home, "bwa")
+     if "series_analysis" in cfg.__dict__:
+         subst_dict["series_analysis"] = cfg.series_analysis
+     process_cfg.substitute_params(filename, subst_dict, log)
+--- src/spades_pipeline/support.py
++++ src/spades_pipeline/support.py
+@@ -72,7 +72,7 @@
+ 
+ 
+ def check_binaries(binary_dir, log):
+-    for binary in ["hammer", "ionhammer", "spades", "bwa-spades", "dipspades"]:
++    for binary in ["hammer", "ionhammer", "spades", "bwa", "dipspades"]:
+         binary_path = os.path.join(binary_dir, binary)
+         if not os.path.isfile(binary_path):
+             error("SPAdes binaries not found: " + binary_path + "\n" + get_spades_binaries_info_message(), log)
+--- src/spades_pipeline/truspades/reference_construction.py
++++ src/spades_pipeline/truspades/reference_construction.py
+@@ -136,7 +136,7 @@
+     return datasets
+ 
+ def ConstructSubreferences(datasets, reference_file, output_dir, index = None, threads = 1, log = None):
+-    bwa_command = "bin/bwa-spades"
++    bwa_command = "bin/bwa"
+     if log == None:
+         log = logging.getLogger('reference_construction')
+         log.setLevel(logging.INFO)

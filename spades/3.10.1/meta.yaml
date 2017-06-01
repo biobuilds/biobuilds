@@ -1,0 +1,55 @@
+{% set version = "3.10.1" %}
+
+package:
+  name: spades
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - cmake
+    - veclib-headers  # [ppc64le]
+    - gcc 4.8.*       # [linux64]
+    - python
+    - bzip2
+    - zlib
+    # Ideally, we would use the BioBuilds version of these libraries instead of
+    # the ones shipped with the source tarball. However, the resulting binaries
+    # fail in strange ways, so we'll avoid using them for now.
+    #- bamtools
+    #- boost 1.62.0
+    #- jemalloc
+  run:
+    - biobuilds-opt   # [opt]
+    - libgcc 4.8.*    # [linux64]
+    - bwa
+    - python
+    - zlib
+
+source:
+  fn: "spades-{{ version }}.tar.bz2"
+  url:
+    - "http://spades.bioinf.spbau.ru/release{{ version }}/SPAdes-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/spades-{{ version }}.tar.bz2"
+  sha1: "7acb05ec1faf0dca303d99a69cbcd2e0c247ecbf"
+  patches:
+    - use-system-bwa.patch
+    - ppc64le-folly.patch
+    - ppc64le-intrinsics.patch  # [ppc64le]
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - spades.py --test
+
+about:
+  home: "http://cab.spbu.ru/software/spades/"
+  license: GPLv2
+  license_file: LICENSE
+  summary: "Genome assembler intended for both standard isolates and single-cell MDA bacteria assemblies"
