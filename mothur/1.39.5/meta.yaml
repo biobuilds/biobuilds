@@ -1,0 +1,49 @@
+{% set version = "1.39.5" %}
+
+package:
+  name: mothur
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    # gcc 4.8 needed for various C++11 features (e.g., the "mt19937_64" type)
+    - gcc 4.8.*         # [linux64]
+    - boost 1.62.0      # [not (opt and ppc64le)]
+    - zlib
+    - readline
+    - ncurses
+  run:
+    - biobuilds-opt     # [opt]
+    - libgcc 4.8.*      # [linux64]
+    - boost 1.62.0      # [not (opt and ppc64le)]
+    - zlib
+    - readline
+    - ncurses
+
+source:
+  fn: "mothur-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/mothur/mothur/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/mothur-{{ version }}.tar.gz"
+  sha1: "80ee15eee64843dc8132270ac8b831aa6d7fd445"
+  patches:
+    - makefiles.patch
+
+build:
+  number: 0
+  features:
+    - opt     # [opt]
+  script_env:
+    - MAKE_JOBS
+
+test:
+  commands:
+    - mothur --help >/dev/null
+    - uchime --help >/dev/null
+
+about:
+  home: "http://www.mothur.org/"
+  license: GPLv3
+  license_file: LICENSE.md
+  summary: "Bioinformatics tools for microbial ecology"
