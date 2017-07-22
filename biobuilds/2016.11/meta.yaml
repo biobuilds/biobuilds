@@ -3,7 +3,7 @@ package:
   version: 2016.11
 
 build:
-  number: 2
+  number: 3
 
 requirements:
   run:
@@ -69,7 +69,7 @@ requirements:
     - igv 2.3.88 0
     - jemalloc 4.2.1 0
     - kraken 0.10.5_beta pl5.22.0_0
-    - libgd 2.2.3 0
+    - libgd 2.2.3 1
     - lofreq_star 2.1.2 py27_0
     - lumpy-sv 0.2.13 np111py27_0
     - matplotlib 1.5.3
