@@ -87,7 +87,6 @@ perl-array-compare 2.11 pl5.22.0_0
 perl-bio-asn1-entrezgene 1.70 pl5.22.0_0
 perl-bio-featureio 1.6.905 pl5.22.0_0
 perl-bio-phylo 0.58 pl5.22.0_0
-pandas 0.18.0 np110py27_0
 perl-bioperl 1.6.924 pl5.22.0_0
 perl-bioperl-core 1.6.924 pl5.22.0_0
 perl-bioperl-run 1.006900 pl5.22.0_0

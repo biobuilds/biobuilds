@@ -3,7 +3,7 @@ package:
   version: 2016.11
 
 build:
-  number: 0
+  number: 3
 
 requirements:
   run:
@@ -43,7 +43,7 @@ requirements:
     - bioconductor-xvector 0.14.0 r3.3.2_0
     - bioconductor-zlibbioc 1.20.0 r3.3.2_0
     - biopython 1.68 bb0
-    - blast 2.5.0 py27pl5.22.0_0
+    - blast 2.5.0 py27pl5.22.0_1
     - bowtie 1.1.2 py27_0
     - bowtie2 2.2.9 py27pl5.22.0_0
     - breakdancer 1.4.5 pl5.22.0_2
@@ -69,7 +69,7 @@ requirements:
     - igv 2.3.88 0
     - jemalloc 4.2.1 0
     - kraken 0.10.5_beta pl5.22.0_0
-    - libgd 2.2.3 0
+    - libgd 2.2.3 1
     - lofreq_star 2.1.2 py27_0
     - lumpy-sv 0.2.13 np111py27_0
     - matplotlib 1.5.3

@@ -6,7 +6,11 @@ package:
 requirements:
   build:
     - autoconf-update
-    - gcc >=4.8.5     # [not ppc64le]
+    # Require this specific gcc build, as OS X binaries built using older gcc
+    # packages (in particular, 4.8.5_3) fail when run in macOS 10.12 (Sierra).
+    # NOTE: Newer gcc packages may work, but "conda build" currently does not
+    # support package match specifications on build numbers/identifiers.
+    - gcc 4.8.5 7     # [not ppc64le]
     - bzip2
     - lzo
     - openssl
@@ -29,7 +33,7 @@ source:
     - prefix-paths.patch
 
 build:
-  number: 0
+  number: 1
   script_env:
     - BB_ARCH_FLAGS
     - BB_OPT_FLAGS
