@@ -13,17 +13,16 @@ requirements:
   # requires libstdc++ for symbols like "std::basic_stringbuf" at link time,
   # while fastx-toolkit requires libc++ for the "unordered_map" header.
   build:
+    - biobuilds-build
     - autoconf-update
-    - gcc     # [osx]
+    - gcc 4.8.*         # [osx or (linux64 and not opt)]
   run:
-    - libgcc  # [osx]
+    - libgcc 4.8.*      # [osx or (linux64 and not opt)]
 
 build:
-  number: 0
+  number: 1
   script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+    - MAKE_JOBS
 
 about:
   home: https://github.com/agordon/libgtextutils

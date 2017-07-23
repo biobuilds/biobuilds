@@ -21,11 +21,11 @@ requirements:
   build:
     - biobuilds-build
     - autoconf-update
-    - gcc               # [osx]
+    - gcc 4.8.*         # [osx or (linux64 and not opt)]
     - libgtextutils
   run:
     - biobuilds-opt     # [opt]
-    - libgcc            # [osx]
+    - libgcc 4.8.*      # [osx or (linux64 and not opt)]
     - libgtextutils
     - perl
     - perl-perlio-gzip
@@ -33,34 +33,16 @@ requirements:
     - gnuplot
 
 build:
-  number: 1
+  number: 2
   features:
     - opt     # [opt]
   script_env:
     - MAKE_JOBS
 
 test:
-  commands:
-    - fasta_formatter -h
-    - fasta_nucleotide_changer -h
-    - fastq_masker -h
-    - fastq_quality_converter -h
-    - fastq_quality_filter -h
-    - fastq_quality_trimmer -h
-    - fastq_to_fasta -h
-    - fastx_artifacts_filter -h
-    - fastx_clipper -h
-    - fastx_collapser -h
-    - fastx_quality_stats -h
-    - fastx_renamer -h
-    - fastx_reverse_complement -h
-    - fastx_trimmer -h
-    - fastx_uncollapser -h
-    - fastq_quality_boxplot_graph.sh -h
-    - fastx_nucleotide_distribution_graph.sh -h
-    - fastx_nucleotide_distribution_line_graph.sh -h
-    - fasta_clipping_histogram.pl
-    - fastx_barcode_splitter.pl --help
+  # Test data from <http://hannonlab.cshl.edu/fastx_toolkit/fastx_toolkit_0.0.13_galaxy_files.tar.bz2>
+  files:
+    - test-data.tar.bz2
 
 about:
   home: http://hannonlab.cshl.edu/fastx_toolkit/index.html
