@@ -2,6 +2,8 @@
 
 basedir=$(cd "`dirname ${BASH_SOURCE[0]}`" && pwd)
 
+HOST_ARCH=`uname -m`
+
 shell=0
 img=
 build_pkgs=
@@ -31,9 +33,9 @@ abort() {
 }
 
 if [[ -z "$BB_BUILD_IMAGE" ]]; then
-    case `uname -m` in
-        x86_64)  img="lab7io/build:biobuilds" ;;
-        ppc64le) img="lab7io/build:biobuilds-ppc64le" ;;
+    case "$HOST_ARCH" in
+        x86_64)  img="biobuilds/build-x86_64" ;;
+        ppc64le) img="biobuilds/build-ppc64le" ;;
         *) abort 'No default build image for this architecture' ;;
     esac
 else
@@ -108,7 +110,6 @@ build_opts="$build_opts --R ${R_VER}"
 # Check for cache directory containing packages from "defaults" and other
 # channels that may be needed for the build process. This saves us the trouble
 # of having to repeatedly download packages when using the build container.
-HOST_ARCH=`uname -m`
 PKG_CACHE_BASE="conda-bld/pkg_cache"
 if [ "$HOST_ARCH" == 'x86_64' ]; then
     PKG_CACHE_DIR="${basedir}/${PKG_CACHE_BASE}/linux-64"

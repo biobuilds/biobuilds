@@ -95,7 +95,7 @@ RUN echo 'channels: ["biobuilds", "defaults"]' > /tmp/.condarc && \
     chmod 444 /tmp/.condarc
 
 # Entrypoint script so BioBuilds packages can be built by running:
-# "docker run -v /path/to/repo:/src lab7io/build:biobuilds <pkg>"
+# "docker run -v /path/to/repo:/src biobuilds/build-x86_64 <pkg>"
 COPY conda-build.sh /
 ENTRYPOINT ["/conda-build.sh"]
 

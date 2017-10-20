@@ -22,7 +22,7 @@ cd "/src"
 # the method for supplying/managing common build flags. Done to:
 #
 #   1. Improve the consistency of "conda build", especially when building from
-#      from outside a "lab7io/biobuilds" Docker container; and
+#      from outside a "biobuilds/build-x86_64" Docker container; and
 #   2. Make it easier to configure build flags when building packages with the
 #      "opt" feature enabled.
 #
