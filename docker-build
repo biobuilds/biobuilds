@@ -73,6 +73,12 @@ while [ "$1" != "" ]; do
         "-o" | "--opt")
             FEATURE_OPT=1
             ;;
+        "--psxe")
+            shift; psxe_root="$1"
+            ;;
+        "--psxe="*)
+            psxe_root="${1#*=}"
+            ;;
         "--numpy")
             shift; NUMPY_VER="$1"
             ;;
@@ -105,6 +111,27 @@ build_opts="$build_opts --numpy ${NUMPY_VER}"
 build_opts="$build_opts --perl ${PERL_VER}"
 build_opts="$build_opts --python ${PYTHON_VER}"
 build_opts="$build_opts --R ${R_VER}"
+
+
+# Mount the host's Intel Parallel Studio XE install directory as a volume in
+# the build container. This simplifies license management and allows us to use
+# the "standard" (i.e., publicly-distributed) x86_64 build image for building
+# "linux-64" packages with the "opt" feature enabled. (The alternative would be
+# to install Parallel Studio inside a Docker image, but that approach would
+# make the image [1] several gigabytes larger and [2] not re-distributable due
+# to license management issues.)
+if [[ "$HOST_ARCH" == 'x86_64' && "$FEATURE_OPT" -eq 1 ]]; then
+    # Standard install location if the "--psxe" argument was not provided
+    : ${psxe_root:=/opt/intel}
+
+    # Make sure there's at least something resembling a Parallel Studio install
+    # in the directory
+    test -e "${psxe_root}/bin/compilervars.sh" || \
+        abort "No Intel Parallel Studio installation found in '$psxe_root'!"
+
+    docker_opts="$docker_opts -v ${psxe_root}:/opt/intel:ro"
+    docker_opts="$docker_opts -e PSXE_ROOT=/opt/intel"
+fi
 
 
 # Check for cache directory containing packages from "defaults" and other
