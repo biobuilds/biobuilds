@@ -229,7 +229,7 @@ plink-ng 1.90b3.42 0
 primer3 2.3.7 0
 pysam 0.8.4 py27_1
 r-assertthat 0.1 r3.3.2_0
-r-base 3.3.2 2
+r-base 3.3.2 3
 r-bh 1.60.0_2 r3.3.2_0
 r-bitops 1.0_6 r3.3.2_0
 r-blockmodeling 0.1.8 r3.3.2_0
