@@ -35,7 +35,7 @@ if [[ "$build_os" == "Linux" ]]; then
 
     GUI_OPTS="${GUI_OPTS} --with-x --with-cairo"
     GUI_OPTS="${GUI_OPTS} --with-tk-config='$TK_CONFIG'"
-    GUI_OPTS="${GUI_OPTS} --with-tcl-config='$TK_CONFIG'"
+    GUI_OPTS="${GUI_OPTS} --with-tcl-config='$TCL_CONFIG'"
     BLAS_OPTS=
     MISC_OPTS='LIBnn=lib'
 elif [ `uname` == Darwin ]; then
