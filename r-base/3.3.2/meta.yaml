@@ -19,7 +19,7 @@ source:
 build:
   # Window users should use the "r" anaconda channel instead
   skip: True  # [win]
-  number: 2
+  number: 3
   rpaths:
     - lib/R/lib/
     - lib/
@@ -51,7 +51,10 @@ requirements:
     - readline
     - tk
     - xz
-    - zlib
+    # Work around ./configure's slightly broken zlib version detection scheme
+    # (using strnlen(3) to get the first 5 characters), which causes it to
+    # mistake zlib versions 1.2.10 and above for version 1.2.1.
+    - zlib >1.2.5,<1.2.10
 
   run:
     - libgcc    # [not ppc64le]
@@ -80,6 +83,8 @@ test:
     - R --version
     - Rscript --version
     - Rscript -e 'cat("ok\\n")'
+    # Verify tcltk.so linking so bug #14 (BIOBUILDS-335) does not reoccur.
+    - Rscript -e 'library("tcltk")'
 
 about:
   home: http://www.r-project.org/

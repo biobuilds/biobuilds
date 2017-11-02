@@ -7,6 +7,10 @@ source:
   url: http://download.lab7.io/sources/tcltk-8.5.18.tar
   md5: 1fd7013c2a0dd47a55aad376d42f2e69
 
+build:
+  number: 2
+  detect_binary_files_with_prefix: true
+
 about:
   home: http://www.tcl.tk/
   license: BSD-like
