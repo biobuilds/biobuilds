@@ -1,6 +1,6 @@
 package:
   name: biobuilds-build
-  version: "2017.05"
+  version: "2017.11"
 
 requirements:
   build: []
@@ -8,6 +8,7 @@ requirements:
 
 build:
   number: 0
+  noarch: generic
 
 about:
   home: "https://www.biobuilds.org/"
