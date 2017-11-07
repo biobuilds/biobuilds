@@ -11,6 +11,8 @@ build_opts=
 make_jobs=
 FEATURE_OPT=0
 
+use_pkg_cache=1
+
 # Default versions for various scripting language runtimes and libraries.
 # Generally, these should match the latest versions available (or soon to be
 # available) in BioBuilds. Used below with the corresponding "conda build"
@@ -69,6 +71,9 @@ while [ "$1" != "" ]; do
         "--jobs="*)
             make_jobs="${1#*=}"
             [[ -z "$make_jobs" ]] && abort "'--jobs' must have non-empty value"
+            ;;
+        "--no-pkg-cache")
+            use_pkg_cache=0
             ;;
         "-o" | "--opt")
             FEATURE_OPT=1
@@ -143,7 +148,8 @@ if [ "$HOST_ARCH" == 'x86_64' ]; then
 elif [ "$HOST_ARCH" == 'ppc64le' ]; then
     PKG_CACHE_DIR="${basedir}/${PKG_CACHE_BASE}/linux-ppc64le"
 fi
-if [[ -f "${PKG_CACHE_DIR}/.index.json" && \
+if [[ "$use_pkg_cache" -eq 1 && \
+        -f "${PKG_CACHE_DIR}/.index.json" && \
         -f "${PKG_CACHE_DIR}/repodata.json" ]]; then
     build_opts="$build_opts -c file:///src/${PKG_CACHE_BASE}"
 fi
