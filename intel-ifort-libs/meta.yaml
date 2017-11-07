@@ -1,4 +1,4 @@
-{% set version = "2017.2.174" %}
+{% set version = "2018.0.128" %}
 
 package:
   name: intel-ifort-libs
@@ -7,20 +7,20 @@ package:
 source:
   fn: "intel-ifort-libs-{{ version }}.tgz"
   url:
-    - "https://software.intel.com/sites/default/files/managed/4b/33/l_comp_lib_{{ version }}_comp.for_redist.tgz"
+    - "https://software.intel.com/sites/default/files/managed/96/59/l_comp_lib_{{ version }}_comp.for_redist.tgz"
     - "http://download.lab7.io/sources/intel-ifort-libs-{{ version }}.tgz"
-  sha1: "3792e8b9ab8483daab22b1fa309c89b8e7619695"
+  sha256: "602c9ceb6934a3eadce5a834b066bf326ab12b9d7b448ae405c7bca09be485f0"
 
 requirements:
   build: []
   run:
-    - intel-icc-libs  {{ version }}
+    - intel-icc-libs =={{ version }}
 
 build:
-  skip: True  # [not linux64]
+  skip: True  # [not x86_64 or not linux]
   number: 0
 
 about:
   summary: "Redistributable runtime libraries for the Intel Fortran Compiler"
-  license: "EULA for Intel(R) Software Development Products (Version March 2016)"
+  license: "EULA for the Intel(R) Compiler Runtime Libraries"
   license_file: "license.txt"

@@ -1,4 +1,4 @@
-{% set version = "2017.2.174" %}
+{% set version = "2018.0.128" %}
 
 package:
   name: intel-icc-libs
@@ -7,19 +7,19 @@ package:
 source:
   fn: "intel-icc-libs-{{ version }}.tgz"
   url:
-    - "https://software.intel.com/sites/default/files/managed/4b/33/l_comp_lib_{{ version }}_comp.cpp_redist.tgz"
+    - "https://software.intel.com/sites/default/files/managed/f9/f4/l_comp_lib_{{ version }}_comp.cpp_redist.tgz"
     - "http://download.lab7.io/sources/intel-icc-libs-{{ version }}.tgz"
-  sha1: "3745a7bc6bbdd6f66480b052970c30f7bd3dd53c"
+  sha256: "8e2abef5021f4f7e2d93056ce5945e897f8ea131ce7e2b22db3aa8d9d0625d7c"
 
 requirements:
   build: []
   run: []
 
 build:
-  skip: True  # [not linux64]
+  skip: True  # [not x86_64 or not linux]
   number: 0
 
 about:
   summary: "Redistributable runtime libraries for the Intel C/C++ Compiler"
-  license: "EULA for Intel(R) Software Development Products (Version March 2016)"
+  license: "EULA for the Intel(R) Compiler Runtime Libraries"
   license_file: "license.txt"

@@ -7,8 +7,11 @@ set -o pipefail
 BASE_DIR="opt/intel/compilers_and_libraries_${PKG_VERSION}"
 LIB_DIR="${BASE_DIR}/linux/tbb/lib/intel64/gcc${GCC_VER}"
 
-rpm2cpio rpm/intel-tbb-common-*.rpm | cpio -idm
-rpm2cpio rpm/intel-tbb-libs-*.rpm | cpio -idm
+
+for fn in rpm/*.rpm; do
+    echo "Extracting `basename "$fn"`"
+    rpm2cpio "$fn" | cpio -idm
+done
 if [ ! -d "${LIB_DIR}" ]; then
     echo "Could not find expected library directory!" >&2
     exit 1
