@@ -1,0 +1,23 @@
+{% set version = "2018.0.128" %}
+
+package:
+  name: intel-psxe2018-runtime
+  version: {{ version }}
+
+requirements:
+  build: []
+  run:
+    - intel-icc-libs =={{ version }}
+    - intel-ifort-libs =={{ version }}
+
+build:
+  skip: True    # [not linux or not x86_64]
+  number: 0
+
+test:
+  commands:
+    - test -f "${PREFIX}/lib/libiomp5.so"
+    - test -f "${PREFIX}/lib/libifcore.so.5"
+
+about:
+  summary: "Meta-package for libraries needed to run binaries built using Intel Parallel Studio"

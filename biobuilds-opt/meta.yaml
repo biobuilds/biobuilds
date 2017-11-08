@@ -1,17 +1,17 @@
 package:
   name: biobuilds-opt
-  version: 2017.05
+  version: 2017.11
 
 build:
+  skip: True  # [not linux]
+  number: 0
+  noarch: generic
   track_features:
     - opt
 
 requirements:
   build: []
-  run:
-    - intel-icc-libs    # [linux64]
-    - intel-ifort-libs  # [linux64]
-    - ibm-at-runtime    # [ppc64le]
+  run: []
 
 about:
   summary: "Meta-package for tracking the 'opt' feature on BioBuilds packages"
