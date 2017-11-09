@@ -10,7 +10,7 @@ requirements:
 
 build:
   skip: True    # [not linux or not ppc64le]
-  number: 0
+  number: 1
 
 about:
   home: "https://www.biobuilds.org/"
