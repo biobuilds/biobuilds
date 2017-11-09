@@ -1,0 +1,20 @@
+{% set version = "18.0.0" %}
+
+package:
+  name: intel-psxe2018-build
+  version: "{{ version }}"
+
+requirements:
+  build: []
+  run: []
+
+build:
+  skip: True    # [not linux or not x86_64]
+  number: 1
+  track_feature:
+    - opt
+
+about:
+  home: "https://www.biobuilds.org/"
+  license: BSD
+  summary: "Support scripts for building packages using Intel Parallel Studio 2018"

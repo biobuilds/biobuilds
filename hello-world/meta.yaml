@@ -1,0 +1,28 @@
+{% set version = "0.1.0" %}
+
+package:
+  name: hello-world
+  version: {{ version }}
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ toolchain }}-build     # [toolchain != 'default']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  commands:
+    - hello-world
+
+about:
+  home: https://biobuilds.org/
+  license: Public Domain
+  summary: "Dummy package for testing conda build"

@@ -1,7 +1,7 @@
 {% set version = "10.0" %}
 
 package:
-  name: ibm-at-runtime
+  name: ibm-at{{ version }}-runtime
   version: {{ version }}
 
 requirements:
@@ -11,6 +11,8 @@ requirements:
 build:
   skip: True  # [not ppc64le]
   number: 1
+  track_feature:
+    - opt
 
 about:
-  summary: "Package that checks for the presence of the IBM AT runtime"
+  summary: "Package that checks for the presence of the IBM AT {{ version }} runtime"

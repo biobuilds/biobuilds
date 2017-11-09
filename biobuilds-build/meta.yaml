@@ -7,7 +7,7 @@ requirements:
   run: []
 
 build:
-  number: 0
+  number: 2
   noarch: generic
 
 about:
