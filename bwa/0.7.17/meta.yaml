@@ -1,0 +1,42 @@
+{% set version = "0.7.17" %}
+
+package:
+  name: bwa
+  version: {{ version }}
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default' and not ppc64le]
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - veclib-headers            # [ppc64le]
+    - zlib {{ zlib }}           # [toolchain != 'ibm-at10.0']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - zlib {{ zlib }}           # [toolchain != 'ibm-at10.0']
+
+source:
+  fn: "bwa-{{ version }}.tar.bz2"
+  url:
+    - "https://github.com/lh3/bwa/releases/download/v{{ version }}/bwa-{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/bwa-{{ version }}.tar.bz2"
+  sha256: "de1b4d4e745c0b7fc3e107b5155a51ac063011d33a5d82696331ecf4bed8d0fd"
+  patches:
+    - makefile-flags.patch
+    - ppc64le-support.patch     # [ppc64le]
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+    - mapper-test-data
+
+about:
+  home: "https://github.com/lh3/bwa"
+  license: GPLv3
+  license_file: COPYING
+  summary: "Package for mapping low-divergent sequences against a large reference genome"
