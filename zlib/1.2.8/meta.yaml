@@ -1,0 +1,46 @@
+{% set version = "1.2.8" %}
+
+package:
+  name: zlib
+  version: "{{ version }}"
+
+source:
+  fn: "zlib-{{ version }}.tar.gz"
+  url:
+    - "https://zlib.net/fossils/zlib-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/zlib-{{ version }}.tar.gz"
+  sha256: "36658cb768a54c1d4dec43c3116c27ed893e88b02ecfcb44f2166f9c0b7f2a0d"
+  patches:
+    - intel-ipp.patch
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default' and not ppc64le]
+    - {{ toolchain }}-build     # [toolchain != 'default']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  commands:
+    - test -f "${PREFIX}/include/zlib.h"
+    - test -f "${PREFIX}/lib/libz.a"
+    - test -f "${PREFIX}/lib/libz.so"
+
+about:
+  home: http://zlib.net/
+  license: zlib (http://zlib.net/zlib_license.html)
+  license_family: Other
+  summary: Unobtrusive compression library
+  description: |
+    zlib is designed to be a free, general-purpose, lossless data-compression
+    library for use on virtually any computer hardware and operating system.
+  doc_url: http://zlib.net/manual.html
+  dev_url: https://github.com/madler/zlib
