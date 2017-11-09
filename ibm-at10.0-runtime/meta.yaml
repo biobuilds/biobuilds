@@ -10,7 +10,9 @@ requirements:
 
 build:
   skip: True  # [not ppc64le]
-  number: 0
+  number: 1
+  track_feature:
+    - opt
 
 about:
   summary: "Package that checks for the presence of the IBM AT {{ version }} runtime"

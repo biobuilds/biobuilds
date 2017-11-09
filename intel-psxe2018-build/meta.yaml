@@ -10,7 +10,9 @@ requirements:
 
 build:
   skip: True    # [not linux or not x86_64]
-  number: 0
+  number: 1
+  track_feature:
+    - opt
 
 about:
   home: "https://www.biobuilds.org/"
