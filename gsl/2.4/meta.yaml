@@ -1,0 +1,41 @@
+{% set version = "2.4" %}
+
+package:
+  name: gsl
+  version: {{ version }}
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default' and not ppc64le]
+    - {{ toolchain }}-build     # [toolchain != 'default']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+
+source:
+  fn: "gsl-{{ version }}.tar.gz"
+  url:
+    - "https://ftpmirror.gnu.org/gsl/gsl-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/gsl-{{ version }}.tar.gz"
+  sha256: "4d46d07b946e7b31c19bbf33dda6204d7bedc2f5462a1bae1d4013426cd1ce9b"
+  patches:
+    - x86_64-skip-tests.patch
+    - ppc64le-skip-tests.patch
+    - ppc64le-rstat-test.patch
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  commands:
+    - gsl-config --prefix
+
+about:
+  home: "https://www.gnu.org/software/gsl/"
+  license: GPLv3
+  license_file: COPYING
+  summary: "Numerical library for C and C++"
