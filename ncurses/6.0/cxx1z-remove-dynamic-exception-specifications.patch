@@ -1,0 +1,14 @@
+diff -urN ncurses-6.0.orig/c++/etip.h.in ncurses-6.0/c++/etip.h.in
+--- ncurses-6.0.orig/c++/etip.h.in	2017-06-03 09:57:31.433885551 +0100
++++ ncurses-6.0/c++/etip.h.in	2017-06-03 09:58:29.735566364 +0100
+@@ -372,8 +372,8 @@
+   throw *e;
+ #define NCURSES_CPP_TRY		try
+ #define NCURSES_CPP_CATCH(e)	catch(e)
+-#define THROWS(s)		throw(s)
+-#define THROW2(s,t)		throw(s,t)
++#define THROWS(s)		noexcept(false)
++#define THROW2(s,t)		noexcept(false)
+ #endif
+ }
+ 
