@@ -22,7 +22,10 @@ requirements:
 
 build:
   skip: True  # [not unix]
-  number: 0
+  number: 1
+  # See https://abi-laboratory.pro/tracker/timeline/icu4c/
+  run_exports:
+    - {{ pin_subpackage('icu') }}
   features:
     - opt                       # [toolchain != 'default']
 
