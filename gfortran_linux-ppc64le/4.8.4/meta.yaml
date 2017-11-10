@@ -1,0 +1,26 @@
+package:
+  name: gfortran_linux-ppc64le
+  version: "4.8.4"
+
+source:
+  path: .
+
+requirements:
+  build: []
+  run: []
+
+build:
+  skip: true    # [not ppc64le]
+  noarch: false
+  number: 0
+
+about:
+  home: https://www.biobuilds.org
+  license: BSD
+  summary: GNU Fortran compiler (activation scripts)
+  description: |
+    Shim that enables the `compiler('fortran')` Jinja function in conda recipes
+    on the Linux on POWER (linux-ppc64le) platform. Note that unlike its x86_64
+    equivalent, this package does _not_ actually install the GNU Fortran
+    compiler (gfortran); instead, it just ensures `gfortran` and its associated
+    symlinks are installed in `/usr/bin`.

@@ -1,0 +1,26 @@
+package:
+  name: gcc_linux-ppc64le
+  version: "4.8.4"
+
+source:
+  path: .
+
+requirements:
+  build: []
+  run: []
+
+build:
+  skip: true    # [not ppc64le]
+  noarch: false
+  number: 0
+
+about:
+  home: https://www.biobuilds.org
+  license: BSD
+  summary: GNU C compiler (activation scripts)
+  description: |
+    Shim that enables the `compiler('c')` Jinja function in conda recipes on
+    the Linux on POWER (linux-ppc64le) platform. Note that unlike its x86_64
+    equivalent, this package does _not_ actually install the GNU C compiler
+    (gcc); instead, it just ensures `gcc` and its associated binaries/links are
+    installed in `/usr/bin`.
