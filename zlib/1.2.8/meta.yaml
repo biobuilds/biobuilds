@@ -16,13 +16,17 @@ source:
 requirements:
   build:
     - biobuilds-build
-    - {{ compiler('c') }}       # [toolchain == 'default' and not ppc64le]
+    - {{ compiler('c') }}       # [toolchain == 'default']
     - {{ toolchain }}-build     # [toolchain != 'default']
   run:
     - {{ toolchain }}-runtime   # [toolchain != 'default']
 
 build:
-  number: 0
+  number: 1
+  run_exports:
+    # mostly OK, but some scary symbol removal. Let's try for trusting them.
+    #   https://abi-laboratory.pro/tracker/timeline/zlib/
+    - {{ pin_subpackage('zlib', max_pin='x.x') }}
   features:
     - opt                       # [toolchain != 'default']
 
@@ -32,7 +36,8 @@ test:
   commands:
     - test -f "${PREFIX}/include/zlib.h"
     - test -f "${PREFIX}/lib/libz.a"
-    - test -f "${PREFIX}/lib/libz.so"
+    - test -f "${PREFIX}/lib/libz.so"     # [linux]
+    - test -f "${PREFIX}/lib/libz.dylib"  # [osx]
 
 about:
   home: http://zlib.net/
