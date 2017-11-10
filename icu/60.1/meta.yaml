@@ -1,0 +1,33 @@
+{% set version = "60.1" %}
+
+package:
+  name: icu
+  version: "{{ version }}"
+
+source:
+  fn: "icu4c-{{ version }}-src.tgz"
+  url:
+    - "http://download.icu-project.org/files/icu4c/{{ version }}/icu4c-{{ version|replace('.', '_') }}-src.tgz"
+    - "http://download.lab7.io/sources/icu4c-{{ version }}-src.tgz"
+  sha256: "f8f5a6c8fbf32c015a467972bdb1477dc5f5d5dfea908b6ed218715eeb5ee225"
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ compiler('cxx') }}     # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+
+build:
+  skip: True  # [not unix]
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+about:
+  home: "http://site.icu-project.org/"
+  license: Unicode Consotrium License
+  license_file: LICENSE
+  summary: "Library for software internationalization"
