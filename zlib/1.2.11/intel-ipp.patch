@@ -1,0 +1,1532 @@
+diff -ruN zlib-1.2.11.orig/adler32.c zlib-1.2.11/adler32.c
+--- zlib-1.2.11.orig/adler32.c	2017-05-29 16:04:04.415172000 +0300
++++ zlib-1.2.11/adler32.c	2017-05-29 16:09:30.768238000 +0300
+@@ -5,6 +5,14 @@
+ 
+ /* @(#) $Id$ */
+ 
++#if defined(WITH_IPP)
++/*
++ * This source code file was modified with Intel(R) Integrated Performance Primitives library content
++ */
++
++#include "ippdc.h"
++#endif
++
+ #include "zutil.h"
+ 
+ local uLong adler32_combine_ OF((uLong adler1, uLong adler2, z_off64_t len2));
+@@ -65,6 +73,15 @@
+     const Bytef *buf;
+     z_size_t len;
+ {
++#if defined(WITH_IPP)
++    if( len > 32 ) {
++      Ipp32u resAdler32 = (Ipp32u)adler;
++      if( Z_NULL == buf ) return 1L;
++      ippsAdler32_8u(buf, len, &resAdler32);
++      return ((uLong)resAdler32 & 0xffffffff);
++    } /* if */
++    else {
++#endif
+     unsigned long sum2;
+     unsigned n;
+ 
+@@ -128,6 +145,9 @@
+ 
+     /* return recombined sums */
+     return adler | (sum2 << 16);
++#if defined(WITH_IPP)
++  }
++#endif
+ }
+ 
+ /* ========================================================================= */
+diff -ruN zlib-1.2.11.orig/crc32.c zlib-1.2.11/crc32.c
+--- zlib-1.2.11.orig/crc32.c	2017-05-29 16:04:05.412164000 +0300
++++ zlib-1.2.11/crc32.c	2017-05-29 16:09:30.778240000 +0300
+@@ -21,6 +21,13 @@
+   DYNAMIC_CRC_TABLE and MAKECRCH can be #defined to write out crc32.h.
+  */
+ 
++#if defined(WITH_IPP)
++/*
++ * This file is modified with Intel(R) Integrated Performance Primitives library content
++ */
++#include "ippdc.h"
++#endif
++
+ #ifdef MAKECRCH
+ #  include <stdio.h>
+ #  ifndef DYNAMIC_CRC_TABLE
+@@ -222,6 +229,14 @@
+             return crc32_big(crc, buf, len);
+     }
+ #endif /* BYFOUR */
++#if defined(WITH_IPP)
++    {
++        Ipp32u resCRC32 = (Ipp32u)crc;
++
++        ippsCRC32_8u(buf, len, &resCRC32);
++        return ((unsigned long)resCRC32 & 0xffffffff);
++    }
++#else
+     crc = crc ^ 0xffffffffUL;
+     while (len >= 8) {
+         DO8;
+@@ -231,6 +246,7 @@
+         DO1;
+     } while (--len);
+     return crc ^ 0xffffffffUL;
++#endif
+ }
+ 
+ /* ========================================================================= */
+diff -ruN zlib-1.2.11.orig/deflate.c zlib-1.2.11/deflate.c
+--- zlib-1.2.11.orig/deflate.c	2017-05-29 16:04:05.422167000 +0300
++++ zlib-1.2.11/deflate.c	2017-05-29 16:16:24.952873500 +0300
+@@ -49,6 +49,15 @@
+ 
+ /* @(#) $Id$ */
+ 
++#if defined(WITH_IPP)
++/*
++ * This file is modified with Intel(R) Integrated Performance Primitives library content
++ */
++#include "ippcore.h"
++#include "ipps.h"
++#include "ippdc.h"
++#endif
++
+ #include "deflate.h"
+ 
+ const char deflate_copyright[] =
+@@ -77,16 +86,26 @@
+ local void slide_hash     OF((deflate_state *s));
+ local void fill_window    OF((deflate_state *s));
+ local block_state deflate_stored OF((deflate_state *s, int flush));
++#if !defined(WITH_IPP)
+ local block_state deflate_fast   OF((deflate_state *s, int flush));
++#endif
++
++#if defined(WITH_IPP)
++local block_state deflate_common OF((deflate_state *s, int flush));
++#endif
++
++#if !defined(WITH_IPP)
+ #ifndef FASTEST
+ local block_state deflate_slow   OF((deflate_state *s, int flush));
+ #endif
++#endif /* WITH_IPP */
+ local block_state deflate_rle    OF((deflate_state *s, int flush));
+ local block_state deflate_huff   OF((deflate_state *s, int flush));
+ local void lm_init        OF((deflate_state *s));
+ local void putShortMSB    OF((deflate_state *s, uInt b));
+ local void flush_pending  OF((z_streamp strm));
+ local unsigned read_buf   OF((z_streamp strm, Bytef *buf, unsigned size));
++#if !defined(WITH_IPP)
+ #ifdef ASMV
+ #  pragma message("Assembler code may have bugs -- use at your own risk")
+       void match_init OF((void)); /* asm code initialization */
+@@ -94,6 +113,7 @@
+ #else
+ local uInt longest_match  OF((deflate_state *s, IPos cur_match));
+ #endif
++#endif /* WITH_IPP */
+ 
+ #ifdef ZLIB_DEBUG
+ local  void check_match OF((deflate_state *s, IPos start, IPos match,
+@@ -112,17 +132,30 @@
+ #endif
+ /* Matches of length 3 are discarded if their distance exceeds TOO_FAR */
+ 
++
++#if defined(WITH_IPP)
++#define IPP_MIN_LOOKAHEAD (MAX_MATCH+MIN_MATCH)
++#define IPP_LEVEL ((s->strategy == Z_RLE) ? 0 : s->level)
++#endif
++
+ /* Values for max_lazy_match, good_match and max_chain_length, depending on
+  * the desired pack level (0..9). The values given below have been tuned to
+  * exclude worst case performance for pathological files. Better values may be
+  * found for specific files.
+  */
+ typedef struct config_s {
++#if !defined(WITH_IPP)
+    ush good_length; /* reduce lazy search above this match length */
+    ush max_lazy;    /* do not perform lazy search above this match length */
+    ush nice_length; /* quit search above this match length */
+    ush max_chain;
+    compress_func func;
++#else
++   ush max_chain;
++   ush good_length; /* reduce lazy search above this match length */
++   ush nice_length; /* quit search above this match length */
++   ush max_lazy;    /* do not perform lazy search above this match length */
++#endif
+ } config;
+ 
+ #ifdef FASTEST
+@@ -131,6 +164,7 @@
+ /* 0 */ {0,    0,  0,    0, deflate_stored},  /* store only */
+ /* 1 */ {4,    4,  8,    4, deflate_fast}}; /* max speed, no lazy matches */
+ #else
++#if !defined(WITH_IPP)
+ local const config configuration_table[10] = {
+ /*      good lazy nice chain */
+ /* 0 */ {0,    0,  0,    0, deflate_stored},  /* store only */
+@@ -144,6 +178,43 @@
+ /* 7 */ {8,   32, 128, 256, deflate_slow},
+ /* 8 */ {32, 128, 258, 1024, deflate_slow},
+ /* 9 */ {32, 258, 258, 4096, deflate_slow}}; /* max compression */
++#else
++local const config configuration_table[30] = {
++    /* Substring search parameters for small to medium-sized files (size < 1 MB) */
++    { 0,   0,   0,   0 },   /* levels 0..9 */
++    { 4,   8,   8,   8 },
++    { 4,  16,  16,   9 },
++    { 4,  16,  16,  12 },
++    { 48,  32,  32,  16 },
++    { 32,   8,  32,  16 },
++    { 128,   8, 256,  16 },
++    { 144,   8, 256,  16 },
++    { 192,  32, 258, 128 },
++    { 256,  32, 258, 258 },
++    /* Substring search parameters for large files (size > 1 MB) */
++    { 0,   0,   0,   0 },   /* levels 10..19 */
++    { 3,   7,   8, 258 },
++    { 3,   8,  16, 258 },
++    { 5,   8,  16, 258 },
++    { 16,  32,  32, 258 },
++    { 24,   6,  32,  16 },
++    { 120,   7, 256,  16 },
++    { 140,   7, 256,  16 },
++    { 192,  32, 258, 128 },
++    { 512,  32, 258, 258 },
++    /* Substring search parameters for highly compressible files */
++    { 0,   0,   0,   0 },   /* levels 20..29 */
++    { 4,   8,   8, 258 },
++    { 4,  16,  16, 258 },
++    { 4,  16,  16, 258 },
++    { 16,  32,  32, 258 },
++    { 32,   8,  32,  16 },
++    { 128,   8, 256,  16 },
++    { 144,   8, 256,  16 },
++    { 192,  32, 258, 128 },
++    { 512,  32, 258, 258 }
++}; 
++#endif
+ #endif
+ 
+ /* Note: the deflate() code requires max_lazy >= MIN_MATCH and max_chain >= 4
+@@ -185,14 +256,22 @@
+     s->head[s->ins_h] = (Pos)(str))
+ #endif
+ 
++#if defined(WITH_IPP)
++#define MAX(a,b) ((a)<(b))?(b):(a)
++#endif
++
+ /* ===========================================================================
+  * Initialize the hash table (avoiding 64K overflow for 16 bit systems).
+  * prev[] will be initialized on the fly.
+  */
++#if defined(WITH_IPP)
++#define CLEAR_HASH(s) ippsSet_32s( -((Ipp32s)s->w_size), (Ipp32s*)s->head, s->level < 0? (int)s->hash_size * 2 : (int)s->hash_size)
++
++#else
+ #define CLEAR_HASH(s) \
+     s->head[s->hash_size-1] = NIL; \
+     zmemzero((Bytef *)s->head, (unsigned)(s->hash_size-1)*sizeof(*s->head));
+-
++#endif
+ /* ===========================================================================
+  * Slide the hash table when sliding the window down (could be avoided with 32
+  * bit values at the expense of memory usage). We slide even when level == 0 to
+@@ -236,6 +315,34 @@
+     /* To do: ignore strm->next_in if we use it as window */
+ }
+ 
++#if defined(WITH_IPP)
++local uInt get_common_size( deflate_state *s, int level )
++{
++    if(level >= 0) {
++        return (sizeof(ush) * 2 + sizeof(uch)) * s->lit_bufsize + /* pending_buf */
++            (s->w_size * 2) * sizeof(uch) + /* window */
++            (s->w_size + s->hash_size) * sizeof(int); /* (head + prev) */
++    }
++    else {
++        return (sizeof(ush) * 2 + sizeof(uch)) * s->lit_bufsize + /* pending_buf */
++        (s->w_size * 2) * sizeof(uch) + /* window */
++        (s->w_size * 2 + s->hash_size * 2) * sizeof(int); /* (head + prev) */
++    }
++} /* get_common_size */
++
++local void set_pointers( deflate_state *s, int level )
++{
++    s->d_buf = (ush*)s->pending_buf + s->lit_bufsize;
++    s->l_buf = s->pending_buf + (sizeof(ush) * 2) * s->lit_bufsize;
++    s->window = s->pending_buf + (sizeof(ush) * 2 + sizeof(uch)) * s->lit_bufsize;
++    s->prev = (Posf *)(s->window + s->w_size * 2);
++    if(level >= 0)
++        s->head = (Posf *)((int*)s->prev + s->w_size);
++    else
++        s->head = (Posf *)((int*)s->prev + s->w_size * 2);
++} /* set_pointers */
++#endif
++
+ /* ========================================================================= */
+ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
+                   version, stream_size)
+@@ -252,10 +359,14 @@
+     int wrap = 1;
+     static const char my_version[] = ZLIB_VERSION;
+ 
++#if !defined(WITH_IPP)
+     ushf *overlay;
+     /* We overlay pending_buf and d_buf+l_buf. This works since the average
+      * output size for (length,distance) codes is <= 24 bits.
+      */
++#else
++      uInt common_size;
++#endif
+ 
+     if (version == Z_NULL || version[0] != my_version[0] ||
+         stream_size != sizeof(z_stream)) {
+@@ -282,8 +393,12 @@
+ #ifdef FASTEST
+     if (level != 0) level = 1;
+ #else
++#if defined(WITH_IPP) && defined(IPP_DEFAULT_COMPRESSION)
++    if (level == Z_DEFAULT_COMPRESSION) level = 4;
++#else
+     if (level == Z_DEFAULT_COMPRESSION) level = 6;
+ #endif
++#endif
+ 
+     if (windowBits < 0) { /* suppress zlib wrapper */
+         wrap = 0;
+@@ -296,7 +411,11 @@
+     }
+ #endif
+     if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method != Z_DEFLATED ||
++#if defined(WITH_IPP)
++        windowBits < 8 || windowBits > 15 || level < -10 || level > 29 ||
++#else
+         windowBits < 8 || windowBits > 15 || level < 0 || level > 9 ||
++#endif
+         strategy < 0 || strategy > Z_FIXED || (windowBits == 8 && wrap != 1)) {
+         return Z_STREAM_ERROR;
+     }
+@@ -317,19 +436,34 @@
+     s->hash_size = 1 << s->hash_bits;
+     s->hash_mask = s->hash_size - 1;
+     s->hash_shift =  ((s->hash_bits+MIN_MATCH-1)/MIN_MATCH);
+-
++#if !defined(WITH_IPP)
+     s->window = (Bytef *) ZALLOC(strm, s->w_size, 2*sizeof(Byte));
+     s->prev   = (Posf *)  ZALLOC(strm, s->w_size, sizeof(Pos));
+     s->head   = (Posf *)  ZALLOC(strm, s->hash_size, sizeof(Pos));
+ 
+     s->high_water = 0;      /* nothing written to s->window yet */
+-
++#endif
+     s->lit_bufsize = 1 << (memLevel + 6); /* 16K elements by default */
+ 
++#if !defined(WITH_IPP)
+     overlay = (ushf *) ZALLOC(strm, s->lit_bufsize, sizeof(ush)+2);
+     s->pending_buf = (uchf *) overlay;
++#endif
+     s->pending_buf_size = (ulg)s->lit_bufsize * (sizeof(ush)+2L);
+-
++#if defined(WITH_IPP)
++    common_size = get_common_size(s, level);
++    s->pending_buf = (uchf *)ZALLOC(strm, common_size, sizeof(uch));
++    if (s->pending_buf == Z_NULL) {
++        s->status = FINISH_STATE;
++        strm->msg = (char*)ERR_MSG(Z_MEM_ERROR);
++        deflateEnd (strm);
++        return Z_MEM_ERROR;
++    }
++    set_pointers(s, level);
++    s->deflate_stat = Z_NULL;
++    s->deflate_table = Z_NULL;
++    s->deflate_table_len = 0;
++#endif
+     if (s->window == Z_NULL || s->prev == Z_NULL || s->head == Z_NULL ||
+         s->pending_buf == Z_NULL) {
+         s->status = FINISH_STATE;
+@@ -337,11 +471,21 @@
+         deflateEnd (strm);
+         return Z_MEM_ERROR;
+     }
++#if !defined(WITH_IPP)
+     s->d_buf = overlay + s->lit_bufsize/sizeof(ush);
+     s->l_buf = s->pending_buf + (1+sizeof(ush))*s->lit_bufsize;
++#endif
+ 
+     s->level = level;
++#if defined(WITH_IPP)
++    if(s->level < 0)
++        s->strategy = Z_FIXED;
++    else
++        s->strategy = strategy;
++    s->need_hdr = 1;
++#else
+     s->strategy = strategy;
++#endif
+     s->method = (Byte)method;
+ 
+     return deflateReset(strm);
+@@ -379,10 +523,14 @@
+     uInt  dictLength;
+ {
+     deflate_state *s;
++#if !defined(WITH_IPP)
+     uInt str, n;
++#endif
+     int wrap;
++#if !defined(WITH_IPP)
+     unsigned avail;
+     z_const unsigned char *next;
++#endif
+ 
+     if (deflateStateCheck(strm) || dictionary == Z_NULL)
+         return Z_STREAM_ERROR;
+@@ -409,6 +557,7 @@
+     }
+ 
+     /* insert dictionary into window and hash */
++#if !defined(WITH_IPP)
+     avail = strm->avail_in;
+     next = strm->next_in;
+     strm->avail_in = dictLength;
+@@ -431,12 +580,21 @@
+     }
+     s->strstart += s->lookahead;
+     s->block_start = (long)s->strstart;
++#else
++    if (ippStsNoErr != ippsDeflateDictionarySet_8u(dictionary, dictLength, (Ipp32s*)s->head, s->hash_size, (Ipp32s*)s->prev, s->window, s->w_size, (s->strategy == Z_RLE) ? 0 : s->level))
++        return Z_STREAM_ERROR;
++    s->strstart = s->match_start = dictLength;
++    s->block_start = (long)dictLength;
++    s->lookahead = MIN_MATCH - 1;
++#endif
+     s->insert = s->lookahead;
+     s->lookahead = 0;
+     s->match_length = s->prev_length = MIN_MATCH-1;
+     s->match_available = 0;
++#if !defined(WITH_IPP)
+     strm->next_in = next;
+     strm->avail_in = avail;
++#endif
+     s->wrap = wrap;
+     return Z_OK;
+ }
+@@ -498,6 +656,11 @@
+ 
+     _tr_init(s);
+ 
++#if defined(WITH_IPP)
++    lm_init(s);
++    if(strm->state->deflate_table)
++        ZFREE(strm, strm->state->deflate_table);
++#endif
+     return Z_OK;
+ }
+ 
+@@ -571,7 +734,9 @@
+     int strategy;
+ {
+     deflate_state *s;
++#if !defined(WITH_IPP)
+     compress_func func;
++#endif
+ 
+     if (deflateStateCheck(strm)) return Z_STREAM_ERROR;
+     s = strm->state;
+@@ -579,11 +744,16 @@
+ #ifdef FASTEST
+     if (level != 0) level = 1;
+ #else
++#if defined(WITH_IPP) && defined(IPP_DEFAULT_COMPRESSION)
++    if ((level == Z_DEFAULT_COMPRESSION) || (level == 6)) level = 5;
++#else
+     if (level == Z_DEFAULT_COMPRESSION) level = 6;
+ #endif
++#endif
+     if (level < 0 || level > 9 || strategy < 0 || strategy > Z_FIXED) {
+         return Z_STREAM_ERROR;
+     }
++#if !defined(WITH_IPP)
+     func = configuration_table[s->level].func;
+ 
+     if ((strategy != s->strategy || func != configuration_table[level].func) &&
+@@ -595,7 +765,15 @@
+         if (strm->avail_out == 0)
+             return Z_BUF_ERROR;
+     }
++#endif
+     if (s->level != level) {
++#if defined(WITH_IPP)
++        int err;
++        /* Flush the last buffer: */
++        err = deflate(strm, Z_BLOCK);
++        if(err != Z_OK)
++            return err;
++#endif
+         if (s->level == 0 && s->matches != 0) {
+             if (s->matches == 1)
+                 slide_hash(s);
+@@ -997,10 +1175,17 @@
+         (flush != Z_NO_FLUSH && s->status != FINISH_STATE)) {
+         block_state bstate;
+ 
++#if defined(WITH_IPP)
++        bstate = s->strategy == Z_HUFFMAN_ONLY ? deflate_huff(s, flush) :
++                    (s->strategy == Z_RLE ? deflate_rle(s, flush) :
++                        (s->level == 0)? deflate_stored(s, flush) :
++                            deflate_common(s, flush));
++#else
+         bstate = s->level == 0 ? deflate_stored(s, flush) :
+                  s->strategy == Z_HUFFMAN_ONLY ? deflate_huff(s, flush) :
+                  s->strategy == Z_RLE ? deflate_rle(s, flush) :
+                  (*(configuration_table[s->level].func))(s, flush);
++#endif
+ 
+         if (bstate == finish_started || bstate == finish_done) {
+             s->status = FINISH_STATE;
+@@ -1084,9 +1269,16 @@
+ 
+     /* Deallocate in reverse order of allocations: */
+     TRY_FREE(strm, strm->state->pending_buf);
++#if !defined(WITH_IPP)
+     TRY_FREE(strm, strm->state->head);
+     TRY_FREE(strm, strm->state->prev);
+     TRY_FREE(strm, strm->state->window);
++#else
++    if(strm->state->deflate_stat)
++        TRY_FREE(strm, strm->state->deflate_stat);
++    if(strm->state->deflate_table)
++        TRY_FREE(strm, strm->state->deflate_table);
++#endif
+ 
+     ZFREE(strm, strm->state);
+     strm->state = Z_NULL;
+@@ -1108,7 +1300,11 @@
+ #else
+     deflate_state *ds;
+     deflate_state *ss;
++#if !defined(WITH_IPP)
+     ushf *overlay;
++#else
++    uInt common_size;
++#endif
+ 
+ 
+     if (deflateStateCheck(source) || dest == Z_NULL) {
+@@ -1125,11 +1321,21 @@
+     zmemcpy((voidpf)ds, (voidpf)ss, sizeof(deflate_state));
+     ds->strm = dest;
+ 
++#if defined(WITH_IPP)
++    common_size = get_common_size(ss, ss->level);
++    ds->pending_buf = (uchf *)ZALLOC(dest, common_size, sizeof(uch));
++    if( ds->pending_buf == Z_NULL ) {
++        deflateEnd(dest);
++        return Z_MEM_ERROR;
++    }
++    set_pointers(ds, ss->level);
++#else
+     ds->window = (Bytef *) ZALLOC(dest, ds->w_size, 2*sizeof(Byte));
+     ds->prev   = (Posf *)  ZALLOC(dest, ds->w_size, sizeof(Pos));
+     ds->head   = (Posf *)  ZALLOC(dest, ds->hash_size, sizeof(Pos));
+     overlay = (ushf *) ZALLOC(dest, ds->lit_bufsize, sizeof(ush)+2);
+     ds->pending_buf = (uchf *) overlay;
++#endif
+ 
+     if (ds->window == Z_NULL || ds->prev == Z_NULL || ds->head == Z_NULL ||
+         ds->pending_buf == Z_NULL) {
+@@ -1137,14 +1343,30 @@
+         return Z_MEM_ERROR;
+     }
+     /* following zmemcpy do not work for 16-bit MSDOS */
++#if !defined(WITH_IPP)
+     zmemcpy(ds->window, ss->window, ds->w_size * 2 * sizeof(Byte));
+     zmemcpy((voidpf)ds->prev, (voidpf)ss->prev, ds->w_size * sizeof(Pos));
+     zmemcpy((voidpf)ds->head, (voidpf)ss->head, ds->hash_size * sizeof(Pos));
+     zmemcpy(ds->pending_buf, ss->pending_buf, (uInt)ds->pending_buf_size);
++#else
++    zmemcpy(ds->pending_buf, ss->pending_buf, common_size);
++    if(ss->deflate_stat != Z_NULL)      /* If statistics collection started on source stream */
++    {
++        ds->deflate_stat = ZALLOC(dest, 1, DEFLATE_TAB_SIZE);   /* Allocate space for statistics */
++        if(ds->deflate_stat == Z_NULL)
++        {
++            deflateEnd(dest);
++            return Z_MEM_ERROR;
++        }
++        ippsCopy_8u((const Ipp8u*)ss->deflate_stat, (Ipp8u*)ds->deflate_stat, DEFLATE_TAB_SIZE);
++    }
++#endif
+ 
+     ds->pending_out = ds->pending_buf + (ss->pending_out - ss->pending_buf);
++#if !defined(WITH_IPP)
+     ds->d_buf = overlay + ds->lit_bufsize/sizeof(ush);
+     ds->l_buf = ds->pending_buf + (1+sizeof(ush))*ds->lit_bufsize;
++#endif
+ 
+     ds->l_desc.dyn_tree = ds->dyn_ltree;
+     ds->d_desc.dyn_tree = ds->dyn_dtree;
+@@ -1173,7 +1395,11 @@
+ 
+     strm->avail_in  -= len;
+ 
++#if defined(WITH_IPP)
++    ippsCopy_8u(strm->next_in, buf, len);
++#else
+     zmemcpy(buf, strm->next_in, len);
++#endif
+     if (strm->state->wrap == 1) {
+         strm->adler = adler32(strm->adler, buf, len);
+     }
+@@ -1206,19 +1432,25 @@
+     s->max_chain_length = configuration_table[s->level].max_chain;
+ 
+     s->strstart = 0;
++#if defined(WITH_IPP)
++    s->match_start = 0;
++#endif
+     s->block_start = 0L;
+     s->lookahead = 0;
+     s->insert = 0;
+     s->match_length = s->prev_length = MIN_MATCH-1;
+     s->match_available = 0;
+     s->ins_h = 0;
++#if !defined(WITH_IPP)
+ #ifndef FASTEST
+ #ifdef ASMV
+     match_init(); /* initialize the asm code */
+ #endif
+ #endif
++#endif /* WITH_IPP */
+ }
+ 
++#if !defined(WITH_IPP)
+ #ifndef FASTEST
+ /* ===========================================================================
+  * Set match_start to the longest match starting at the given string and
+@@ -1436,6 +1668,7 @@
+ }
+ 
+ #endif /* FASTEST */
++#endif /* WITH_IPP */
+ 
+ #ifdef ZLIB_DEBUG
+ 
+@@ -1559,7 +1792,7 @@
+          */
+ 
+     } while (s->lookahead < MIN_LOOKAHEAD && s->strm->avail_in != 0);
+-
++#if !defined(WITH_IPP)
+     /* If the WIN_INIT bytes after the end of the current data have never been
+      * written, then zero those bytes in order to avoid memory check reports of
+      * the use of uninitialized (or uninitialised as Julian writes) bytes by
+@@ -1596,6 +1829,7 @@
+ 
+     Assert((ulg)s->strstart <= s->window_size - MIN_LOOKAHEAD,
+            "not enough room for search");
++#endif
+ }
+ 
+ /* ===========================================================================
+@@ -1619,6 +1853,14 @@
+    if (s->strm->avail_out == 0) return (last) ? finish_started : need_more; \
+ }
+ 
++#if defined(WITH_IPP)
++#define FLUSH_BLOCK_FASTEST(s, last) { \
++    _tr_end_block_fastest(s, (last)); \
++   s->block_start = s->strstart; \
++   flush_pending(s->strm); \
++   if (s->strm->avail_out == 0) return (last) ? finish_started : need_more; \
++}
++#endif
+ /* Maximum stored block length in deflate format (not including header). */
+ #define MAX_STORED 65535
+ 
+@@ -1814,6 +2056,7 @@
+     return last ? finish_started : need_more;
+ }
+ 
++#if !defined(WITH_IPP)
+ /* ===========================================================================
+  * Compress as much as possible from the input stream, return the current
+  * block state.
+@@ -1916,7 +2159,9 @@
+         FLUSH_BLOCK(s, 0);
+     return block_done;
+ }
++#endif /* WITH_IPP */
+ 
++#if !defined(WITH_IPP)
+ #ifndef FASTEST
+ /* ===========================================================================
+  * Same as above, but achieves better compression. We use a lazy
+@@ -2048,6 +2293,7 @@
+     return block_done;
+ }
+ #endif /* FASTEST */
++#endif /* WITH_IPP */
+ 
+ /* ===========================================================================
+  * For Z_RLE, simply look for runs of bytes, generate matches only of distance
+@@ -2161,3 +2407,445 @@
+         FLUSH_BLOCK(s, 0);
+     return block_done;
+ }
++
++#if defined(WITH_IPP)
++
++#define CHAIN_LEN  0
++#define GOOD_MATCH 1
++#define NICE_MATCH 2
++#define LAZY_MATCH 3
++
++local int custDeflateUpdateTable OF((deflate_state* s, unsigned char *src_buf, int src_len))
++{
++    int             indexsrc = 0;
++    int             local_lit_stat[LIT_TAB_SIZE];
++    int             local_dist_stat[DIST_TAB_SIZE];
++    const Ipp8u*    input_buffer;
++    uInt            input_len;
++    Ipp32u          input_index;
++    IppStatus       status;
++    int             *p_lit_stat, *p_dist_stat;
++    Ipp8u           *p_table_window;
++    Ipp32s          *p_table_hash;
++    z_streamp       strm;
++
++    IppLZ77Flush flush = IppLZ77FullFlush;
++
++    if(s == Z_NULL || s->strm == Z_NULL) 
++        return Z_STREAM_ERROR;
++    strm = s->strm;
++
++    if (strm->next_out == Z_NULL || (strm->next_in == Z_NULL && strm->avail_in != 0))
++    {
++        ERR_RETURN(strm, Z_STREAM_ERROR);
++    }
++
++    if(s->deflate_stat == Z_NULL)
++        return Z_STREAM_ERROR;
++    /* compute addresses in statistics buffer */
++    p_table_window = (Ipp8u*)s->deflate_stat;
++    p_table_hash = (Ipp32s*)(p_table_window + CUST_TAB_WINSIZE);
++    p_lit_stat = (int*)((Ipp8u*)p_table_hash + sizeof(Ipp32s) * CUST_TAB_HASHSIZE);
++    p_dist_stat = (int*)((Ipp8u*)p_lit_stat + sizeof(int) * LIT_TAB_SIZE);
++
++    ippsZero_8u(p_table_window, CUST_TAB_WINSIZE);
++    ippsSet_32s(-32768, p_table_hash, CUST_TAB_HASHSIZE);
++
++    ippsZero_32s(local_lit_stat, LIT_TAB_SIZE);
++    ippsZero_32s(local_dist_stat, DIST_TAB_SIZE);
++
++    input_buffer = src_buf;
++    input_len = src_len;
++    input_index = 0;
++
++    status = ippsDeflateLZ77FastestGetStat_8u(&input_buffer, &input_len, &input_index, p_table_window, CUST_TAB_WINSIZE, 
++                                                p_table_hash, CUST_TAB_HASHSIZE, local_lit_stat, local_dist_stat, IppLZ77FullFlush);
++    if(status != ippStsNoErr)
++        return Z_STREAM_ERROR;
++
++    ippsAdd_32s_ISfs(local_lit_stat, p_lit_stat, LIT_TAB_SIZE, 0);
++    ippsAdd_32s_ISfs(local_dist_stat, p_dist_stat, DIST_TAB_SIZE, 0);
++
++    return Z_OK;
++}
++
++#define STATIC_HUFF     (1 << 1)
++#define DYNAMIC_HUFF    (2 << 1)
++
++#define put_short(s, w) { \
++    put_byte(s, (uch)((w) & 0xff)); \
++    put_byte(s, (uch)((ush)(w) >> 8)); \
++}
++
++#if !defined(END_BLOCK)
++#define END_BLOCK 256
++#endif
++
++#define send_bits(s, value, length) \
++{ int len = length;\
++  if (s->bi_valid > (int)Buf_size - len) {\
++    int val = value;\
++    s->bi_buf |= (ush)val << s->bi_valid;\
++    put_short(s, s->bi_buf);\
++    s->bi_buf = (ush)val >> (Buf_size - s->bi_valid);\
++    s->bi_valid += len - Buf_size;\
++  } else {\
++    s->bi_buf |= (ush)(value) << s->bi_valid;\
++    s->bi_valid += len;\
++  }\
++}
++
++local void lz77_encode_call( uch** src, uInt* src_len, deflate_state *s, int flush )
++{
++    uInt dst_len = s->lit_bufsize - s->last_lit;
++    IppStatus status;
++    int finish_flag;
++
++    if (s->level < 0) {
++        unsigned int dst_indx;
++        if (s->need_hdr) {
++            finish_flag = (flush == Z_FINISH)? 1 : 0;
++            s->last_flag_set = finish_flag;
++            if(s->deflate_table == NULL)
++            {
++                send_bits(s, (STATIC_HUFF | finish_flag), 3);
++            }
++            else
++            {
++                send_bits(s, (DYNAMIC_HUFF | finish_flag), 3);
++            }
++            s->need_hdr = 0;
++        }
++        dst_indx = 0;
++        if(s->deflate_table == Z_NULL)
++        {
++            /* deflate table is absent, look if statistics is collected */
++            if(s->deflate_stat)
++                custDeflateUpdateTable(s, *src, *src_len);
++            status = ippsDeflateLZ77Fastest_8u( (const Ipp8u**)src, src_len, &s->match_start,
++                                                s->window + s->strstart, s->w_size,
++                                                (int*)s->head, s->hash_size,
++                                                &s->bi_buf, (Ipp32u*)&s->bi_valid,
++                                                s->strm->next_out, s->strm->avail_out, (Ipp32u*)&dst_indx,
++                                                NULL, NULL, ( flush == Z_NO_FLUSH ) ? IppLZ77NoFlush : IppLZ77FullFlush );
++            s->strm->next_out += dst_indx;
++            s->strm->avail_out -= dst_indx;
++            s->strm->total_out += dst_indx;
++        }
++        else
++        {
++            IppDeflateHuffCode *p_lit_codes, *p_dist_codes;
++            int num_bits_header;
++            Ipp8u* p_header_code_lens;
++
++            p_lit_codes = (IppDeflateHuffCode*)s->deflate_table;
++            p_dist_codes = (IppDeflateHuffCode*)((Ipp8u*)s->deflate_table + sizeof(IppDeflateHuffCode) * LIT_TAB_SIZE);
++            num_bits_header = (int)(*(int*)((Ipp8u*)p_dist_codes + sizeof(IppDeflateHuffCode) * DIST_TAB_SIZE));
++            p_header_code_lens = (Ipp8u*)p_dist_codes + sizeof(IppDeflateHuffCode) * DIST_TAB_SIZE + sizeof(int);
++            if(s->match_start == 0 && s->strm->avail_out < (uInt)(((num_bits_header >> 3) + 1)))
++            {
++                status = ippsDeflateLZ77FastestPrecompHeader_8u( (const Ipp8u**)src, src_len, &s->match_start,
++                                             s->window + s->strstart, s->w_size,
++                                             (int*)s->head, s->hash_size,
++                                             &s->bi_buf, (Ipp32u*)&s->bi_valid,
++                                             s->pending_out, s->pending_buf_size - s->pending, (Ipp32u*)&s->pending,
++                                               p_lit_codes, p_dist_codes, p_header_code_lens, num_bits_header, ( flush == Z_NO_FLUSH ) ? IppLZ77NoFlush : IppLZ77FullFlush );
++                Assert( ippStsNoErr == status, "ippsDeflateLZ77FastestPrecompHeader_8u returned a bad status" );
++            } else {
++                flush_pending(s->strm);
++                status = ippsDeflateLZ77FastestPrecompHeader_8u( (const Ipp8u**)src, src_len, &s->match_start,
++                                             s->window + s->strstart, s->w_size,
++                                             (int*)s->head, s->hash_size,
++                                             &s->bi_buf, (Ipp32u*)&s->bi_valid,
++                                             s->strm->next_out, s->strm->avail_out, (Ipp32u*)&dst_indx,
++                                               p_lit_codes, p_dist_codes, p_header_code_lens, num_bits_header, ( flush == Z_NO_FLUSH ) ? IppLZ77NoFlush : IppLZ77FullFlush );
++                Assert( ippStsNoErr == status, "ippsDeflateLZ77FastestPrecompHeader_8u returned a bad status" );
++                s->strm->next_out += dst_indx;
++                s->strm->avail_out -= dst_indx;
++                s->strm->total_out += dst_indx;
++            }
++            if(flush > Z_NO_FLUSH && s->strm->avail_out != 0 && s->pending < s->pending_buf_size)
++            {
++                send_bits(s, (int)p_lit_codes[END_BLOCK].code, (int)p_lit_codes[END_BLOCK].len);
++                s->block_start = 0;
++                s->match_start = 0;
++                s->need_hdr = 1;
++                /* Clear hash next trained table call */
++                CLEAR_HASH(s);
++            }
++        }
++    }
++    else
++    {
++        int       vec_match[4] = {0, 0, 0, 0};
++
++        vec_match[CHAIN_LEN] = s->max_chain_length;
++        vec_match[GOOD_MATCH] = s->good_match;
++        vec_match[NICE_MATCH] = s->nice_match;
++        vec_match[LAZY_MATCH] = s->max_lazy_match;
++
++        if ((s->level % 10) < 5)
++            status = ippsDeflateLZ77Fast_8u((const Ipp8u**)src, src_len, &s->match_start, s->window + s->strstart, s->w_size,
++                                      (int*)s->head, (int*)s->prev, s->hash_size,
++                                      (IppDeflateFreqTable*)s->dyn_ltree, (IppDeflateFreqTable*)s->dyn_dtree,
++                                      s->l_buf + s->last_lit, s->d_buf + s->last_lit, &dst_len,
++                                      vec_match, ( flush == Z_NO_FLUSH ) ? IppLZ77NoFlush : IppLZ77FullFlush );
++        else
++            status = ippsDeflateLZ77Slow_8u((const Ipp8u**)src, src_len, &s->match_start, s->window + s->strstart, s->w_size,
++                                      (int*)s->head, (int*)s->prev, s->hash_size,
++                                      (IppDeflateFreqTable*)s->dyn_ltree, (IppDeflateFreqTable*)s->dyn_dtree,
++                                      s->l_buf + s->last_lit, s->d_buf + s->last_lit, &dst_len,
++                                      vec_match, ( flush == Z_NO_FLUSH ) ? IppLZ77NoFlush : IppLZ77FullFlush );
++        Assert( ippStsNoErr == status, "ippsDeflateLZ77_8u returned a bad status" );
++        s->last_lit = s->lit_bufsize - dst_len;
++    }
++}
++
++local void lz77_encode_window( deflate_state *s, int flush )
++{
++    uch* src_ptr = s->window + s->strstart;
++    uInt src_len = s->lookahead;
++
++    lz77_encode_call(&src_ptr, &s->lookahead, s, flush);
++    src_len     -= s->lookahead;
++    s->strstart += src_len;
++}
++
++local void lz77_encode_in( deflate_state *s, int flush )
++{
++    uInt src_len = s->strm->avail_in;
++
++    lz77_encode_call((uch**)&s->strm->next_in, &s->strm->avail_in, s, flush);
++    src_len           -= s->strm->avail_in;
++    s->strm->total_in += (uLong)src_len;
++    if ( s->wrap == 1 ) {
++        s->strm->adler = adler32(s->strm->adler, s->strm->next_in - src_len, src_len);
++    }
++#ifdef GZIP
++    else if ( s->wrap == 2 ) {
++        s->strm->adler = crc32(s->strm->adler, s->strm->next_in - src_len, src_len);
++    }
++#endif
++    if ( src_len > s->w_size ) {
++        ippsCopy_8u(s->strm->next_in - s->w_size, s->window, s->w_size );
++        s->block_start -= s->strstart + src_len - s->w_size;
++        s->strstart     = s->w_size;
++    } else {
++        if ( (s->window_size - s->strstart) < src_len ) {
++            ippsCopy_8u(s->window + s->strstart - s->w_size + src_len, s->window, s->w_size - src_len );
++            ippsCopy_8u(s->strm->next_in - src_len, s->window + s->w_size - src_len, src_len );
++            s->block_start -= s->strstart + s->w_size - src_len;
++            s->strstart     = s->w_size;
++        } else {
++            ippsCopy_8u(s->strm->next_in - src_len, s->window + s->strstart, src_len );
++            s->strstart += src_len;
++        }
++    }
++}
++
++local void normalize( int norm_level, int* buf, int buf_len )
++{
++    int i;
++
++    for ( i = 0; i < buf_len; i++ ) {
++        buf[i] = MAX(buf[i], 0);
++        buf[i] -= norm_level;
++        buf[i] = MAX(buf[i], 0);
++    }
++}
++
++#define UPDATE_WINDOW(LEN) \
++if( (wsize < s->strstart) && ((s->window_size - s->lookahead - s->strstart) < (LEN)) ) { \
++    ippsMove_8u( s->window + s->strstart - wsize, s->window, wsize + s->lookahead ); \
++    s->block_start -= s->strstart - wsize; \
++    s->strstart = wsize; \
++}
++
++local block_state deflate_common(deflate_state* s, int flush)
++{
++    uInt wsize = s->w_size;
++
++    if ( (s->match_start + s->lookahead + s->strm->avail_in + wsize) >= (uInt)0x7fffffff ) {
++        uInt norm_level = s->match_start - wsize;
++
++        s->match_start -= norm_level;
++        normalize( (int)norm_level, (int*)s->head, (int)s->hash_size );
++        if ( s->level > 0 )
++            normalize( (int)norm_level, (int*)s->prev, (int)wsize );
++    }
++    while ( (s->lookahead > 0) || (s->strm->avail_in > 0) ) {
++        if ( (s->strm->avail_in < wsize) || ((s->window_size - s->strstart - s->lookahead) < IPP_MIN_LOOKAHEAD) ) {
++            UPDATE_WINDOW(s->strm->avail_in);
++            {
++                int read_length = MIN(s->strm->avail_in, s->window_size - s->strstart - s->lookahead);
++                s->lookahead += read_buf( s->strm, s->window + s->strstart + s->lookahead, read_length );
++            }
++            if ( ((s->lookahead < IPP_MIN_LOOKAHEAD) && (flush == Z_NO_FLUSH)) ||
++                 ((s->level < 0) && (s->strm->avail_out < 1)))
++                return need_more;
++            if ( s->lookahead == 0 )
++                break;
++            lz77_encode_window( s, flush );
++        } else {
++            if ( s->lookahead > 0 ) {
++                UPDATE_WINDOW(IPP_MIN_LOOKAHEAD);
++                ippsCopy_8u(s->strm->next_in, s->window + s->strstart + s->lookahead, IPP_MIN_LOOKAHEAD );
++                s->lookahead += IPP_MIN_LOOKAHEAD;
++                lz77_encode_window( s, flush );
++                if ( IPP_MIN_LOOKAHEAD > s->lookahead ) {
++                    read_buf( s->strm, s->window + s->strstart + s->lookahead - IPP_MIN_LOOKAHEAD, IPP_MIN_LOOKAHEAD - s->lookahead);
++                    s->lookahead = 0;
++                } else {
++                    lz77_encode_window( s, flush );
++                    if ( IPP_MIN_LOOKAHEAD > s->lookahead ) {
++                        read_buf( s->strm, s->window + s->strstart + s->lookahead - IPP_MIN_LOOKAHEAD, IPP_MIN_LOOKAHEAD - s->lookahead);
++                        s->lookahead = 0;
++                    } else {
++                        s->lookahead -= IPP_MIN_LOOKAHEAD;
++                    }
++                }
++            }
++            if ( s->level < 0 || s->last_lit < s->lit_bufsize ) {
++                UPDATE_WINDOW(IPP_MIN_LOOKAHEAD);
++                ippsCopy_8u(s->strm->next_in, s->window + s->strstart, IPP_MIN_LOOKAHEAD );
++                lz77_encode_in( s, flush );
++            }
++        }
++        if ( s->level >= 0) {
++            if ( s->last_lit >= s->lit_bufsize ) FLUSH_BLOCK(s, 0);
++        }
++    }
++    if (s->level > 0) {
++        FLUSH_BLOCK(s, flush == Z_FINISH);
++    }
++    else {
++        if(s->strm->avail_out > 0)
++        {
++            FLUSH_BLOCK_FASTEST(s, flush == Z_FINISH);
++        }
++        else
++            return need_more;
++    }
++    if (flush == Z_FINISH) {
++        if(s->level < 0 && s->last_flag_set == 0)       /* Finishing block flag is not yet set */
++            _tr_stored_block(s, NULL, 0, 1);            /* Push finishing stored block of 0 bytes */
++    }
++    return flush == Z_FINISH ? finish_done : block_done;
++}
++ZEXTERN int ZEXPORT zzdeflateCreateStat OF((z_streamp strm))
++{
++    deflate_state* s;
++
++    if(strm == Z_NULL || strm->state == Z_NULL)
++        return Z_STREAM_ERROR;
++    if(strm->state->level != Z_IPP_FAST_COMPRESSION)
++        return Z_STREAM_ERROR;
++    s = strm->state;
++    if(s->deflate_stat == Z_NULL) /* Statistics buffer is not yet initialized */ {
++        Ipp8u       *p_table_window;
++        Ipp32s      *p_table_hash;
++        int         *p_lit_stat, *p_dist_stat;
++
++        s->deflate_stat = ZALLOC(strm, 1, DEFLATE_TAB_SIZE);
++        if(s->deflate_stat == Z_NULL)
++            return Z_MEM_ERROR;
++        p_table_window = (Ipp8u*)s->deflate_stat;
++        p_table_hash = (Ipp32s*)(p_table_window + CUST_TAB_WINSIZE);
++        p_lit_stat = (int*)((Ipp8u*)p_table_hash + sizeof(Ipp32s) * CUST_TAB_HASHSIZE);
++        p_dist_stat = (int*)((Ipp8u*)p_lit_stat + sizeof(int) * LIT_TAB_SIZE);
++
++        ippsZero_8u((Ipp8u*)p_lit_stat, sizeof(int) * LIT_TAB_SIZE);
++        ippsZero_8u((Ipp8u*)p_dist_stat, sizeof(int) * DIST_TAB_SIZE);
++        ippsZero_8u(p_table_window, CUST_TAB_WINSIZE);
++        ippsSet_32s(-32768, p_table_hash, CUST_TAB_HASHSIZE);
++    }
++    return Z_OK;
++}
++
++/* Close statistics collection, generate custom table (internally) and send its length to user for next zzdeflateGetTab call */
++ZEXTERN int ZEXPORT zzdeflateGetTabLen OF((z_streamp strm))
++{
++    /* Pointers within deflate statistics buffer */
++    Ipp8u               *p_table_window;
++    Ipp32s              *p_table_hash;
++    int                 *p_lit_stat, *p_dist_stat;
++    /* Pointers within deflate table */
++    IppDeflateHuffCode  *p_lit_codes, *p_dist_codes;
++    int                 p_num_bits_header;
++    Ipp8u*              p_header_code_lens;
++    IppStatus           status;
++    int                 header_buf_len;
++    int                 table_len;
++    void                *p_local_ptr;
++
++    if(strm == Z_NULL || strm->state == Z_NULL || strm->state->deflate_stat == Z_NULL)
++        return Z_STREAM_ERROR;
++    /* Set up pointer within deflate statistics */
++    p_table_window = (Ipp8u*)strm->state->deflate_stat;
++    p_table_hash = (Ipp32s*)(p_table_window + CUST_TAB_WINSIZE);
++    p_lit_stat = (int*)((Ipp8u*)p_table_hash + sizeof(Ipp32s) * CUST_TAB_HASHSIZE);
++    p_dist_stat = (int*)((Ipp8u*)p_lit_stat + sizeof(int) * LIT_TAB_SIZE);
++    /* Allocate tables for Huffman codes */
++    p_lit_codes = (IppDeflateHuffCode*)ZALLOC(strm, LIT_TAB_SIZE, sizeof(IppDeflateHuffCode));
++    p_dist_codes = (IppDeflateHuffCode*)ZALLOC(strm, DIST_TAB_SIZE, sizeof(IppDeflateHuffCode));
++    p_header_code_lens = (Ipp8u*)ZALLOC(strm, 4000, sizeof(Ipp8u));
++
++    status = ippsDeflateLZ77FastestGenHuffTable_8u(p_lit_stat, p_dist_stat, p_lit_codes, p_dist_codes);
++    if(status != ippStsNoErr)
++    {
++        ZFREE(strm, p_lit_codes);
++        ZFREE(strm, p_dist_codes);
++        ZFREE(strm, p_header_code_lens);
++        return 0;
++    }
++
++    status = ippsDeflateLZ77FastestGenHeader_8u(p_lit_codes, p_dist_codes, p_header_code_lens, &header_buf_len, &p_num_bits_header);
++    if(status != ippStsNoErr)
++    {
++        ZFREE(strm, p_lit_codes);
++        ZFREE(strm, p_dist_codes);
++        ZFREE(strm, p_header_code_lens);
++        return 0;
++    }
++
++    /* Finally allocate buffer for table, copy it tostrm->state->deflate_table and report its size to user */
++    table_len = sizeof(IppDeflateHuffCode) * LIT_TAB_SIZE + sizeof(IppDeflateHuffCode) * DIST_TAB_SIZE + sizeof(int) + header_buf_len;
++    strm->state->deflate_table = ZALLOC(strm, 1, table_len);
++    strm->state->deflate_table_len = table_len;
++    p_local_ptr = strm->state->deflate_table;
++    zmemcpy(p_local_ptr, p_lit_codes, sizeof(IppDeflateHuffCode) * LIT_TAB_SIZE);
++    p_local_ptr = (void*)((Ipp8u*)p_local_ptr + sizeof(IppDeflateHuffCode) * LIT_TAB_SIZE);
++    zmemcpy(p_local_ptr, p_dist_codes, sizeof(IppDeflateHuffCode) * DIST_TAB_SIZE);
++    p_local_ptr = (void*)((Ipp8u*)p_local_ptr + sizeof(IppDeflateHuffCode) * DIST_TAB_SIZE);
++    *((int*)p_local_ptr) = p_num_bits_header;
++    p_local_ptr = (void*)((Ipp8u*)p_local_ptr + sizeof(int));
++    zmemcpy(p_local_ptr, p_header_code_lens, header_buf_len);
++
++    ZFREE(strm, p_lit_codes);
++    ZFREE(strm, p_dist_codes);
++    ZFREE(strm, p_header_code_lens);
++
++    return table_len;
++}
++
++/* Copy generated custom table to user specified address for later use */
++ZEXTERN int ZEXPORT zzdeflateGetTab OF((z_streamp strm , voidpf tab_addr))
++{
++    if(strm == Z_NULL || strm->state == Z_NULL || strm->state->deflate_table == NULL || strm->state->deflate_table_len == 0)
++        return Z_STREAM_ERROR;
++
++    ippsCopy_8u((const Ipp8u*)strm->state->deflate_table, (Ipp8u*)tab_addr, strm->state->deflate_table_len);
++    return Z_OK;
++}
++
++/* Set custom deflate table to be used in the next deflate ops */
++ZEXTERN int zzdeflateUseTab OF((z_streamp strm, voidpf tab_addr, int tab_len))
++{
++    if(strm == Z_NULL || strm->state == Z_NULL || tab_addr == Z_NULL || tab_len == 0)
++        return Z_STREAM_ERROR;
++    strm->state->deflate_table = ZALLOC(strm, tab_len, 1);
++    strm->state->deflate_table_len = tab_len;
++    zmemcpy(strm->state->deflate_table, tab_addr, tab_len);
++    return Z_OK;
++}
++#endif
+diff -ruN zlib-1.2.11.orig/deflate.h zlib-1.2.11/deflate.h
+--- zlib-1.2.11.orig/deflate.h	2017-05-29 16:04:05.427164000 +0300
++++ zlib-1.2.11/deflate.h	2017-05-29 16:09:30.800222000 +0300
+@@ -272,7 +272,13 @@
+      * longest match routines access bytes past the input.  This is then
+      * updated to the new high water mark.
+      */
+-
++#if defined(WITH_IPP)
++    int             last_flag_set;
++    int             need_hdr;
++    void            *deflate_stat;
++    void            *deflate_table;
++    int             deflate_table_len;
++#endif
+ } FAR deflate_state;
+ 
+ /* Output a byte on the stream.
+@@ -300,6 +306,9 @@
+ int ZLIB_INTERNAL _tr_tally OF((deflate_state *s, unsigned dist, unsigned lc));
+ void ZLIB_INTERNAL _tr_flush_block OF((deflate_state *s, charf *buf,
+                         ulg stored_len, int last));
++#if defined(WITH_IPP)
++void ZLIB_INTERNAL _tr_end_block_fastest OF((deflate_state *s, int last));
++#endif
+ void ZLIB_INTERNAL _tr_flush_bits OF((deflate_state *s));
+ void ZLIB_INTERNAL _tr_align OF((deflate_state *s));
+ void ZLIB_INTERNAL _tr_stored_block OF((deflate_state *s, charf *buf,
+@@ -345,5 +354,17 @@
+ # define _tr_tally_dist(s, distance, length, flush) \
+               flush = _tr_tally(s, distance, length)
+ #endif
++#if defined(WITH_IPP)
++#define CUST_TAB_WINSIZE    (0x8000)
++#define CUST_TAB_HASHSIZE   (0x8000)
++#define LIT_TAB_SIZE       (286)
++#define DIST_TAB_SIZE      (30)
++
++#define DEFLATE_TAB_SIZE (sizeof(Ipp8u) * CUST_TAB_WINSIZE + sizeof(Ipp32s) * CUST_TAB_HASHSIZE + sizeof(int) * LIT_TAB_SIZE + sizeof(int) * DIST_TAB_SIZE)
++
++/* functions to work with deflate custom tables at "fastest" level */
++   local int ZEXPORT custDeflateUpdateTable OF((deflate_state*, unsigned char*, int));
++   ZEXTERN int ZEXPORT custDeflateFinishTable OF((z_streamp));
++#endif
+ 
+ #endif /* DEFLATE_H */
+diff -ruN zlib-1.2.11.orig/inflate.c zlib-1.2.11/inflate.c
+--- zlib-1.2.11.orig/inflate.c	2017-05-29 16:04:05.602167000 +0300
++++ zlib-1.2.11/inflate.c	2017-05-29 16:09:30.810245000 +0300
+@@ -79,6 +79,13 @@
+  *
+  * The history for versions after 1.2.0 are in ChangeLog in zlib distribution.
+  */
++#if defined(WITH_IPP)
++/*
++ * This source code file was modified with Intel(R) Integrated Performance Primitives library content
++ */
++#include "ippcore.h"
++#include "ippdc.h"
++#endif
+ 
+ #include "zutil.h"
+ #include "inftrees.h"
+@@ -228,6 +235,10 @@
+     state->strm = strm;
+     state->window = Z_NULL;
+     state->mode = HEAD;     /* to pass state test in inflateReset2() */
++#if defined(WITH_IPP)
++    ((IppInflateState*)state->codes)->pWindow = Z_NULL;
++    ((IppInflateState*)state->codes)->tableBufferSize = ENOUGH * sizeof(code) - sizeof(IppInflateState);
++#endif
+     ret = inflateReset2(strm, windowBits);
+     if (ret != Z_OK) {
+         ZFREE(strm, state);
+@@ -406,9 +417,17 @@
+     /* if it hasn't been done already, allocate space for the window */
+     if (state->window == Z_NULL) {
+         state->window = (unsigned char FAR *)
++#if !defined(WITH_IPP)
+                         ZALLOC(strm, 1U << state->wbits,
+                                sizeof(unsigned char));
++#else
++                        ZALLOC(strm, (1U << state->wbits) + 64,
++                               sizeof(unsigned char));
++#endif
+         if (state->window == Z_NULL) return 1;
++#if defined(WITH_IPP)
++        ((IppInflateState*)state->codes)->pWindow = state->window;
++#endif
+     }
+ 
+     /* if window not in use yet, initialize */
+@@ -416,6 +435,9 @@
+         state->wsize = 1U << state->wbits;
+         state->wnext = 0;
+         state->whave = 0;
++#if defined(WITH_IPP)
++        ((IppInflateState*)state->codes)->winSize = state->wsize;
++#endif
+     }
+ 
+     /* copy state->wsize or less output bytes into the circular window */
+@@ -631,9 +653,13 @@
+     unsigned bits;              /* bits in bit buffer */
+     unsigned in, out;           /* save starting available input and output */
+     unsigned copy;              /* number of stored or match bytes to copy */
++#if !defined(WITH_IPP)
+     unsigned char FAR *from;    /* where to copy match bytes from */
++#endif
+     code here;                  /* current decoding table entry */
++#if !defined(WITH_IPP)
+     code last;                  /* parent table entry */
++#endif
+     unsigned len;               /* length to copy for repeats, bits to drop */
+     int ret;                    /* return code */
+ #ifdef GUNZIP
+@@ -851,6 +877,14 @@
+         case TYPEDO:
+             if (state->last) {
+                 BYTEBITS();
++#if defined(WITH_IPP)
++                if (bits >= 8) {
++                    bits -= 8;
++                    hold &= (1U << bits) - 1;
++                    have++;
++                    next--;
++                    }
++#endif
+                 state->mode = CHECK;
+                 break;
+             }
+@@ -864,7 +898,11 @@
+                 state->mode = STORED;
+                 break;
+             case 1:                             /* fixed block */
++#if defined(WITH_IPP)
++                ((IppInflateState*)state->codes)->tableType = 0;
++#else
+                 fixedtables(state);
++#endif
+                 Tracev((stderr, "inflate:     fixed codes block%s\n",
+                         state->last ? " (last)" : ""));
+                 state->mode = LEN_;             /* decode codes */
+@@ -943,7 +981,11 @@
+             }
+             while (state->have < 19)
+                 state->lens[order[state->have++]] = 0;
++#if defined(WITH_IPP)
++            state->next = state->codes + sizeof(IppInflateState);
++#else
+             state->next = state->codes;
++#endif
+             state->lencode = (const code FAR *)(state->next);
+             state->lenbits = 7;
+             ret = inflate_table(CODES, state->lens, 19, &(state->next),
+@@ -1014,6 +1056,7 @@
+                 break;
+             }
+ 
++#if !defined(WITH_IPP)
+             /* build code tables -- note: do not change the lenbits or distbits
+                values here (9 and 6) without reading the comments in inftrees.h
+                concerning the ENOUGH constants, which depend on those values */
+@@ -1023,10 +1066,15 @@
+             ret = inflate_table(LENS, state->lens, state->nlen, &(state->next),
+                                 &(state->lenbits), state->work);
+             if (ret) {
++#else
++            if( ippStsNoErr != ippsInflateBuildHuffTable( state->lens, state->nlen, state->ndist,
++                                                          (IppInflateState*)state->codes ) ) {
++#endif
+                 strm->msg = (char *)"invalid literal/lengths set";
+                 state->mode = BAD;
+                 break;
+             }
++#if !defined(WITH_IPP)
+             state->distcode = (const code FAR *)(state->next);
+             state->distbits = 6;
+             ret = inflate_table(DISTS, state->lens + state->nlen, state->ndist,
+@@ -1036,12 +1084,14 @@
+                 state->mode = BAD;
+                 break;
+             }
++#endif
+             Tracev((stderr, "inflate:       codes ok\n"));
+             state->mode = LEN_;
+             if (flush == Z_TREES) goto inf_leave;
+         case LEN_:
+             state->mode = LEN;
+         case LEN:
++#if !defined(WITH_IPP)
+             if (have >= 6 && left >= 258) {
+                 RESTORE();
+                 inflate_fast(strm, out);
+@@ -1090,7 +1140,9 @@
+             }
+             state->extra = (unsigned)(here.op) & 15;
+             state->mode = LENEXT;
++#endif
+         case LENEXT:
++#if !defined(WITH_IPP)
+             if (state->extra) {
+                 NEEDBITS(state->extra);
+                 state->length += BITS(state->extra);
+@@ -1194,6 +1246,26 @@
+             left--;
+             state->mode = LEN;
+             break;
++#else
++            {
++                IppInflateMode ippMode;
++                if( LEN == state->mode ) ippMode = ippLEN;
++                else if( LENEXT == state->mode ) ippMode = ippLENEXT;
++                else { state->mode = BAD; break; }
++                if( ippStsNoErr != ippsInflate_8u( &next, &have, (Ipp32u*)&hold, &bits, state->wnext,
++                                                 &put, &left, out - left,
++                                                 &ippMode, (IppInflateState*)state->codes ) ) {
++                    strm->msg   = (char *)"invalid input stream";
++                    state->mode = BAD;
++                    break;
++                }
++                if( ippLEN == ippMode ) state->mode = LEN;
++                else if( ippLENEXT == ippMode ) state->mode = LENEXT;
++                else if( ippTYPE == ippMode ) { state->mode = TYPE; break; }
++                else { state->mode = BAD; break; }
++            }
++            goto inf_leave;
++#endif
+         case CHECK:
+             if (state->wrap) {
+                 NEEDBITS(32);
+@@ -1479,7 +1551,11 @@
+     window = Z_NULL;
+     if (state->window != Z_NULL) {
+         window = (unsigned char FAR *)
++#if !defined(WITH_IPP)
+                  ZALLOC(source, 1U << state->wbits, sizeof(unsigned char));
++#else
++                 ZALLOC(source, (1U << state->wbits) + 64, sizeof(unsigned char));
++#endif
+         if (window == Z_NULL) {
+             ZFREE(source, copy);
+             return Z_MEM_ERROR;
+@@ -1502,6 +1578,9 @@
+     }
+     copy->window = window;
+     dest->state = (struct internal_state FAR *)copy;
++#if defined(WITH_IPP)
++    ((IppInflateState*)copy->codes)->pWindow = window;
++#endif
+     return Z_OK;
+ }
+ 
+diff -ruN zlib-1.2.11.orig/inftrees.h zlib-1.2.11/inftrees.h
+--- zlib-1.2.11.orig/inftrees.h	2017-05-29 16:04:05.616163000 +0300
++++ zlib-1.2.11/inftrees.h	2017-05-29 16:09:30.820227000 +0300
+@@ -48,7 +48,11 @@
+    updated. */
+ #define ENOUGH_LENS 852
+ #define ENOUGH_DISTS 592
++#if defined(WITH_IPP)
++#define ENOUGH 2048
++#else
+ #define ENOUGH (ENOUGH_LENS+ENOUGH_DISTS)
++#endif
+ 
+ /* Type of code to build for inflate_table() */
+ typedef enum {
+diff -ruN zlib-1.2.11.orig/trees.c zlib-1.2.11/trees.c
+--- zlib-1.2.11.orig/trees.c	2017-05-29 16:04:05.807178000 +0300
++++ zlib-1.2.11/trees.c	2017-05-29 16:09:30.830230000 +0300
+@@ -31,6 +31,13 @@
+  */
+ 
+ /* @(#) $Id$ */
++#if defined(WITH_IPP)
++/*
++ * This source code file was modified with Intel(R) Integrated Performance Primitives library content
++ */
++#include "ippdc.h"
++#include "ipps.h"
++#endif
+ 
+ /* #define GEN_TREES_H */
+ 
+@@ -976,8 +983,20 @@
+     } else if (s->strategy == Z_FIXED || static_lenb == opt_lenb) {
+ #endif
+         send_bits(s, (STATIC_TREES<<1)+last, 3);
++#if !defined(WITH_IPP)
+         compress_block(s, (const ct_data *)static_ltree,
+                        (const ct_data *)static_dtree);
++#else
++        {
++            IppStatus status;
++            status = ippsDeflateHuff_8u( (const Ipp8u*)s->l_buf, (const Ipp16u*)s->d_buf, (Ipp32u)s->last_lit,
++                                       (Ipp16u*)&s->bi_buf, (Ipp32u*)&s->bi_valid,
++                                       (IppDeflateHuffCode*)static_ltree, (IppDeflateHuffCode*)static_dtree,
++                                       (Ipp8u*)s->pending_buf, (Ipp32u*)&s->pending );
++            Assert( ippStsNoErr == status, "ippsDeflateHuff_8u returned a bad status" );
++            send_code(s, END_BLOCK, static_ltree);
++        }
++#endif
+ #ifdef ZLIB_DEBUG
+         s->compressed_len += 3 + s->static_len;
+ #endif
+@@ -985,8 +1004,20 @@
+         send_bits(s, (DYN_TREES<<1)+last, 3);
+         send_all_trees(s, s->l_desc.max_code+1, s->d_desc.max_code+1,
+                        max_blindex+1);
++#if !defined(WITH_IPP)
+         compress_block(s, (const ct_data *)s->dyn_ltree,
+                        (const ct_data *)s->dyn_dtree);
++#else
++        {
++            IppStatus status;
++            status = ippsDeflateHuff_8u( (const Ipp8u*)s->l_buf, (const Ipp16u*)s->d_buf, (Ipp32u)s->last_lit,
++                                       (Ipp16u*)&s->bi_buf, (Ipp32u*)&s->bi_valid,
++                                       (IppDeflateHuffCode*)s->dyn_ltree, (IppDeflateHuffCode*)s->dyn_dtree,
++                                       (Ipp8u*)s->pending_buf, (Ipp32u*)&s->pending );
++            Assert( ippStsNoErr == status, "ippsDeflateHuff_8u returned a bad status" );
++        }
++        send_code(s, END_BLOCK, s->dyn_ltree);
++#endif
+ #ifdef ZLIB_DEBUG
+         s->compressed_len += 3 + s->opt_len;
+ #endif
+@@ -1007,6 +1038,41 @@
+            s->compressed_len-7*last));
+ }
+ 
++#if defined(WITH_IPP)
++void ZLIB_INTERNAL _tr_end_block_fastest(deflate_state *s, int last)         /* one if this is the last block for a file */
++{
++    if(s->deflate_table == 0 && s->need_hdr == 0)
++    {
++        send_code(s, END_BLOCK, static_ltree);
++    } else if(s->deflate_table != NULL && s->need_hdr == 0)
++    {
++        IppDeflateHuffCode *p_lit_codes;
++
++        p_lit_codes = (IppDeflateHuffCode*)s->deflate_table;
++        send_bits(s, (int)p_lit_codes[END_BLOCK].code, (int)p_lit_codes[END_BLOCK].len);
++        s->block_start = 0;
++        s->match_start = 0;
++        s->need_hdr = 1;
++        /* Clear hash next trained table call */
++        ippsSet_32s( -((Ipp32s)s->w_size), (Ipp32s*)s->head, s->level < 0? (int)s->hash_size * 2 : (int)s->hash_size);
++    }
++    s->need_hdr = 1;
++    init_block(s);
++    if (last) {
++        if(!s->last_flag_set) {
++            _tr_stored_block(s, NULL, 0, 1);            /* Push finishing stored block of 0 bytes */
++            s->last_flag_set = 1;
++        }
++        bi_windup(s);
++#ifdef DEBUG
++        s->compressed_len += 7;  /* align on byte boundary */
++#endif
++    }
++    Tracev((stderr,"\ncomprlen %lu(%lu) ", s->compressed_len>>3,
++           s->compressed_len-7*last));
++}
++#endif
++
+ /* ===========================================================================
+  * Save the match info and tally the frequency counts. Return true if
+  * the current block must be flushed.
+diff -ruN zlib-1.2.11.orig/zlib.h zlib-1.2.11/zlib.h
+--- zlib-1.2.11.orig/zlib.h	2017-05-29 16:04:05.928176000 +0300
++++ zlib-1.2.11/zlib.h	2017-05-29 16:09:30.840252000 +0300
+@@ -191,6 +191,9 @@
+ #define Z_BEST_SPEED             1
+ #define Z_BEST_COMPRESSION       9
+ #define Z_DEFAULT_COMPRESSION  (-1)
++#if defined(WITH_IPP)
++#define Z_IPP_FAST_COMPRESSION (-2)
++#endif
+ /* compression levels */
+ 
+ #define Z_FILTERED            1
+@@ -1903,6 +1906,19 @@
+                                                   const char *format,
+                                                   va_list va));
+ #  endif
++#if defined(WITH_IPP)
++ZEXTERN int ZEXPORT zzdeflateCreateStat OF((z_streamp));
++ZEXTERN int ZEXPORT zzdeflateGetTabLen OF((z_streamp));
++ZEXTERN int ZEXPORT zzdeflateGetTab OF((z_streamp, voidpf));
++ZEXTERN int ZEXPORT zzdeflateUseTab OF((z_streamp, voidpf, int));
++ZEXTERN int ZEXPORT zzCompressTable OF((Bytef*, uLongf*, const Bytef*, uLong, const voidpf, uInt));
++
++#define deflateCreateStat zzdeflateCreateStat
++#define deflateGetTabLen zzdeflateGetTabLen
++#define deflateGetTab zzdeflateGetTab
++#define deflateUseTab zzdeflateUseTab
++#define compressTable zzCompressTable
++#endif
+ #endif
+ 
+ #ifdef __cplusplus
