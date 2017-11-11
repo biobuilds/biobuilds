@@ -1,0 +1,61 @@
+{% set version = "4.0.8" %}
+
+package:
+  name: libtiff
+  version: "{{ version }}"
+
+source:
+  fn: "libtiff-{{ version }}.tar.gz"
+  url:
+    - "ftp://download.osgeo.org/libtiff/tiff-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/libtiff-{{ version }}.tar.gz"
+  sha256: "59d7a5a8ccd92059913f246877db95a2918e6c04fb9d43fd74e5c3390dac2910"
+  patches:
+    # http://comments.gmane.org/gmane.comp.video.tiff/6889
+    - def_snprintf.patch  # [win]
+
+build:
+  number: 0
+  # Does a very good job of maintaining compatibility.
+  #    https://abi-laboratory.pro/tracker/timeline/libtiff/
+  run_exports:
+    - {{ pin_subpackage('libtiff', max_pin='x') }}
+
+requirements:
+  build:
+    - autoconf-update
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+  host:
+    - jpeg
+    - xz
+    - zlib
+
+test:
+  commands:
+    - test -f ${PREFIX}/lib/libtiff.a
+    - test -f ${PREFIX}/lib/libtiffxx.a
+    - test -f ${PREFIX}/lib/libtiff.so          # [linux]
+    - test -f ${PREFIX}/lib/libtiff.dylib       # [osx]
+    - test -f ${PREFIX}/lib/libtiffxx.so        # [linux]
+    - test -f ${PREFIX}/lib/libtiffxx.dylib     # [osx]
+    - conda inspect linkages -p $PREFIX libtiff
+    - conda inspect objects -p $PREFIX libtiff  # [osx]
+
+about:
+  home: http://www.libtiff.org/
+  license: HPND
+  license_url: http://www.libtiff.org/misc.html
+  summary: 'Support for the Tag Image File Format (TIFF).'
+  description: |
+    This software provides support for the Tag Image File Format (TIFF), a
+    widely used format for storing image data.
+  doc_url: http://www.libtiff.org/document.html
+
+extra:
+   recipe-maintainers:
+    - jakirkham
+    - ocefpaf
+    - stuarteberg
+    - msarahan
+    - chenghlee
