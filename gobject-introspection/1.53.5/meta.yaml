@@ -1,0 +1,70 @@
+{% set name = "gobject-introspection" %}
+{% set major_minor = "1.53" %}
+{% set patch = "5" %}
+{% set version = major_minor ~ "." ~ patch %}
+
+package:
+  name: {{ name|lower }}
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.xz"
+  url:
+    - "http://ftp.gnome.org/pub/GNOME/sources/{{ name }}/{{ major_minor }}/{{ name }}-{{ version }}.tar.xz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.xz"
+  sha256: "b8271d3e3e3044289d06e824605a53b2518593bc2b071db6c90485c837ff437d"
+  patches:
+    - hugepaths.patch
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ cdt('libx11-devel') }}           # [linux and not ppc64le]
+    - {{ cdt('libxrender-devel') }}       # [linux and not ppc64le]
+    - {{ cdt('xorg-x11-proto-devel') }}   # [linux and not ppc64le]
+    - {{ cdt('libxau-devel') }}           # [linux and not ppc64le]
+    - {{ cdt('libxext-devel') }}          # [linux and not ppc64le]
+    - libxcb                              # [linux and not ppc64le]
+    - pkg-config
+    #- bison            # provided in build container
+    #- flex             # provided in build container
+    - cairo 1.14.*
+    - gettext           # [osx or ppc64le]
+    #- pthread-stubs
+    - libffi 3.2.*
+    - glib
+    - python {{ python }}
+  run:
+    - libffi 3.2.*
+    - glib
+    - python {{ python }}
+
+test:
+  commands:
+    - conda inspect linkages -p $PREFIX $PKG_NAME
+    - conda inspect objects -p $PREFIX $PKG_NAME    # [osx]
+
+about:
+  home: https://wiki.gnome.org/action/show/Projects/GObjectIntrospection
+  license: LGPLv2+
+  license_family: LGPL
+  license_file: COPYING
+  summary: 'Middleware for binding GObject-based code to other languages.'
+  description: |
+    GObject introspection is a middleware layer between C libraries (using GObject) 
+    and language bindings. The C library can be scanned at compile time and generate 
+    a metadata file, in addition to the actual native C library. Then at runtime, 
+    language bindings can read this metadata and automatically provide bindings to 
+    call into the C library.
+  doc_url: https://wiki.gnome.org/action/show/Projects/GObjectIntrospection#Documentation
+  dev_url: https://git.gnome.org//browse/gobject-introspection/tree/
+  doc_source_url: https://git.gnome.org/browse/gobject-introspection/tree/docs
+
+extra:
+  recipe-maintainers:
+    - pkgw
+    - chenghlee
