@@ -1,16 +1,20 @@
+{% set version = "0.34.0" %}
+
 package:
   name: pixman
-  version: 0.34.0
+  version: "{{ version }}"
 
 source:
-  fn: "pixman-0.34.0.tar.gz"
+  fn: "pixman-{{ version }}.tar.gz"
   url:
-    - "https://www.cairographics.org/releases/pixman-0.34.0.tar.gz"
-    - "http://download.lab7.io/sources/pixman-0.34.0.tar.gz"
-  md5: "e80ebae4da01e77f68744319f01d52a3"
+    - "https://www.cairographics.org/releases/pixman-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/pixman-{{ version }}.tar.gz"
+  sha256: "21b6b249b51c6800dc9553b65106e1e37d0e25df942c90531d4c3997aa20a88e"
 
 requirements:
   build:
+    - {{ compiler('c') }}
+    - pkg-config
     - libpng
     - zlib
   run:
@@ -20,7 +24,17 @@ requirements:
 build:
   # Give our package a large build number so it's preferred over the
   # corresponding package (if any) in the "defaults" channel.
-  number: 700
+  number: 701
+  run_exports:
+    # excellent: add new symbols sometimes, none removed.
+    #    https://abi-laboratory.pro/tracker/timeline/pixman/
+    - {{ pin_subpackage('pixman') }}
+
+test:
+  commands:
+    - test -f ${PREFIX}/lib/libpixman-1.a
+    - conda inspect linkages -p $PREFIX pixman
+    - conda inspect objects -p $PREFIX pixman   # [osx]
 
 about:
   home: http://www.pixman.org/

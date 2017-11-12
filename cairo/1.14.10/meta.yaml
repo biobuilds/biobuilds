@@ -1,0 +1,82 @@
+{% set version = "1.14.10" %}
+
+package:
+  name: cairo
+  version: "{{ version }}"
+
+source:
+  fn: "cairo-{{ version }}.tar.xz"
+  url:
+    - "https://cairographics.org/releases/cairo-{{ version }}.tar.xz"
+    - "http://download.lab7.io/sources/cairo-{{ version }}.tar.xz"
+  sha256: "7e87878658f2c9951a14fc64114d4958c0e65ac47530b8ac3078b2ce41b66a09"
+
+build:
+  number: 0
+  run_exports:
+    # Excellent behavior.  Only add new symbols.
+    #    https://abi-laboratory.pro/tracker/timeline/cairo/
+    - {{ pin_subpackage('cairo') }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ cdt('libx11-devel') }}          # [linux and x86_64]
+    - {{ cdt('libxau-devel') }}          # [linux and x86_64]
+    - {{ cdt('libxcb') }}                # [linux and x86_64]
+    - {{ cdt('libxext-devel') }}         # [linux and x86_64]
+    - {{ cdt('libxrender-devel') }}      # [linux and x86_64]
+    - {{ cdt('xorg-x11-proto-devel') }}  # [linux and x86_64]
+    - pkg-config
+    - libtool
+  host:
+    - fontconfig
+    - freetype
+    - glib
+    - icu {{ icu }}
+    - libpng
+    - libxml2
+    - pixman
+    - xz
+    - zlib
+    - libxcb          # [linux and x86_64]
+
+test:
+  commands:
+    # Check commands.
+    - cairo-trace --help
+
+    # Verify libraries.
+    {% set cairo_libs = [
+            "libcairo",
+            "libcairo-gobject",
+            "libcairo-script-interpreter",
+    ] %}
+    {% for each_cairo_lib in cairo_libs %}
+    - test -f $PREFIX/lib/{{ each_cairo_lib }}.a
+    - test -f $PREFIX/lib/{{ each_cairo_lib }}.dylib  # [osx]
+    - test -f $PREFIX/lib/{{ each_cairo_lib }}.so     # [linux]
+    {% endfor %}
+    - conda inspect linkages -p $PREFIX cairo
+    - conda inspect objects -p $PREFIX cairo    # [osx]
+
+about:
+  home: http://cairographics.org/
+  license: LGPL 2.1 or MPL 1.1
+  summary: 'Cairo is a 2D graphics library with support for multiple output devices.'
+  
+  description: |
+    Cairo is a 2D graphics library with support for multiple output devices.
+    It is designed to produce consistent output on all output media while
+    taking advantage of display hardware acceleration when available.
+  doc_url: http://cairographics.org/documentation/
+  dev_url: https://cgit.freedesktop.org/cairo/
+  doc_source_url: https://cgit.freedesktop.org/cairo/tree/doc
+
+extra:
+  recipe-maintainers:
+    - ccordoba12
+    - jakirkham
+    - ocefpaf
+    - pkgw

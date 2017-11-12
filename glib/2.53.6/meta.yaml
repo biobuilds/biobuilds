@@ -1,0 +1,80 @@
+{% set major_minor = "2.53" %}
+{% set version = major_minor + ".6" %}
+
+package:
+  name: glib
+  version: "{{ version }}"
+
+source:
+  fn: "glib-{{ version }}.tar.xz"
+  url:
+    - "http://ftp.gnome.org/pub/GNOME/sources/glib/{{ major_minor }}/glib-{{ version }}.tar.xz"
+    - "http://download.lab7.io/sources/glib-{{ version }}.tar.xz"
+  sha256: "e01296a9119c09d2dccb37ad09f5eaa1e0c5570a473d8fed04fc759ace6fb6cc"
+  patches:
+    # Related to this patch https://bugzilla.gnome.org/show_bug.cgi?id=673135
+    # However, it was rejected by upstream. Homebrew decided to keep their own
+    # copy ( https://raw.githubusercontent.com/Homebrew/patches/59e4d32/glib/hardcoded-paths.diff ).
+    # We are essentially using that copy, but with some tweaks. Info at the link below.
+    #
+    # https://github.com/Homebrew/legacy-homebrew/blob/21ce7a56cb3fc40fe93d731cc654c69268796772/Library/Formula/glib.rb#L33-L39
+    #
+    - hardcoded-paths.patch  # [osx]
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+  run_exports:
+    # remove symbols at minor versions.
+    #    https://abi-laboratory.pro/tracker/timeline/glib/
+    - {{ pin_subpackage('glib', max_pin='x.x') }}
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ cdt('gettext-devel') }}  # [linux and not ppc64le]
+    - pkg-config
+    - libffi >=3.0.0
+    - pcre
+    - python {{ python }}
+    - zlib
+    - gettext               # [not linux or ppc64le]
+    - libiconv              # [not linux]
+  run:
+    - libffi >=3.0.0
+    - pcre
+    - python {{ python }}
+    - gettext               # [not linux or ppc64le]
+    - libiconv              # [not linux]
+
+test:
+  commands:
+    - test -f ${PREFIX}/lib/libglib-2.0.so        # [linux]
+    - test -f ${PREFIX}/lib/libglib-2.0.dylib     # [osx]
+    - conda inspect linkages -p $PREFIX $PKG_NAME
+    - conda inspect objects -p $PREFIX $PKG_NAME  # [osx]
+
+about:
+  home: https://developer.gnome.org/glib/
+  license: LGPL-2.1
+  summary: 'Provides core application building blocks for libraries and applications written in C.'
+  description: |
+    GLib provides the core application building blocks for libraries and
+    applications written in C. It provides the core object system used in
+    GNOME, the main loop implementation, and a large set of utility functions
+    functions for strings and common data structures.
+  doc_url: https://developer.gnome.org/glib/unstable/
+  dev_url: https://git.gnome.org/browse/glib/
+  doc_source_url: https://git.gnome.org/browse/glib/tree/docs
+
+extra:
+  recipe-maintainers:
+    - ccordoba12
+    - jakirkham
+    - mingwandroid
+    - scopatz
+    - ocefpaf
+    - pkgw
+    - chenghlee

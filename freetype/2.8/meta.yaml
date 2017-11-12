@@ -1,0 +1,52 @@
+{% set version = "2.8" %}
+
+package:
+  name: freetype
+  version: "{{ version }}"
+
+source:
+  fn: "freetype-{{ version }}.tar.bz2"
+  url: 
+    - "http://download.savannah.gnu.org/releases/freetype/freetype-{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/freetype-{{ version }}.tar.bz2"
+  sha256: "a3c603ed84c3c2495f9c9331fe6bba3bb0ee65e06ec331e0a0fb52158291b40b"
+
+build:
+  number: 0
+  run_exports:
+    # remove symbols at minor versions.
+    #    https://abi-laboratory.pro/tracker/timeline/freetype/
+    - {{ pin_subpackage('freetype', max_pin='x.x') }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+  host:
+    - libpng
+    - zlib
+
+test:
+  commands:
+    - freetype-config --version
+    - conda inspect linkages -p $PREFIX freetype
+    - conda inspect objects -p $PREFIX freetype  # [osx]
+
+about:
+  home: https://www.freetype.org/
+  license: GPL-2.0 and FreeType
+  license_url: http://freetype.sourceforge.net/FTL.TXT
+  summary: A Free, High-Quality, and Portable Font Engine
+  description: |
+    FreeType is designed to be small, efficient, highly customizable
+    and portable while capable of producing high-quality output (glyph images)
+    of most vector and bitmap font formats.
+  doc_url: http://freetype.sourceforge.net/freetype2/documentation.html
+  doc_source_url: https://sourceforge.net/projects/freetype/?source=navbar
+  dev_url: http://git.savannah.gnu.org/cgit/freetype/
+
+extra:
+  recipe-maintainers:
+    - ccordoba12
+    - msarahan
+    - ocefpaf
+    - chenghlee
