@@ -17,7 +17,7 @@ source:
 
 build:
   skip: true  # [win]
-  number: 0
+  number: 1
   run_exports:
     # change soname at major ver: https://abi-laboratory.pro/tracker/timeline/readline/
     - {{ pin_subpackage('readline') }}
@@ -26,8 +26,9 @@ requirements:
   build:
     - pkg-config
     - {{ compiler('c') }}
-  host:
     - ncurses {{ ncurses }}
+  run:
+    - ncurses
 
 test:
   commands:

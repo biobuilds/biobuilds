@@ -20,7 +20,11 @@ source:
 
 build:
   skip: true  # [win]
-  number: 0
+  number: 1
+  run_exports:
+    # Potential breaks with minor number changes; see:
+    #   https://abi-laboratory.pro/tracker/timeline/ncurses/
+    - {{ pin_subpackage('ncurses', max_pin='x.x') }}
 
 requirements:
   build:
