@@ -1,0 +1,37 @@
+MACOSX_DEPLOYMENT_TARGET: '10.8'
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
+toolchain:
+  - default
+  #- intel-psxe2018   # [linux and x86_64]
+  #- ibm-at10.0       # [linux and ppc64le]
+
+readline:
+  - "7.0"
+
+icu:
+  - "60.1"
+
+gsl:
+  - "2.4"
+
+pcre:
+  - "8.41"
+
+pango:
+  - "1.40.11"
+
+tk:
+  - "8.6.7"
+
+pin_run_as_build:
+  # Potential breakage with GSL minor number changes; for details, see:
+  # <https://abi-laboratory.pro/tracker/timeline/gsl/>
+  gsl: {"max_pin": "x.x"}
+
+  # <https://abi-laboratory.pro/tracker/timeline/pcre/>
+  pcre: {"max_pin": "x"}
+
+  # <https://abi-laboratory.pro/tracker/timeline/pango/>
+  pango: {"max_pin": "x"}

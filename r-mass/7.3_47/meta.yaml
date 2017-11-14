@@ -1,0 +1,35 @@
+{% set version = "7.3-47" %}
+
+package:
+  name: r-mass
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-mass_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/MASS_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/MASS/MASS_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-mass_{{ version }}.tar.gz"
+  sha256: "ed44cdabe84fff3553122267ade61d5cc68071c435f7645d36c8f2e4e9f9c6bf"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('MASS')"
+
+about:
+  home: "http://www.stats.ox.ac.uk/pub/MASS4/"
+  license: GPLv2
+  summary: 'Functions and datasets to support Venables and Ripley, "Modern Applied Statistics with S" (4th edition, 2002).'

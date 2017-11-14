@@ -1,0 +1,69 @@
+{% set version = '1.8-22' %}
+
+package:
+  name: r-mgcv
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-mgcv_{{ version }}.tar.gz"
+  url:
+    - "https://cran.r-project.org/src/contrib/mgcv_{{ version }}.tar.gz"
+    - "https://cran.r-project.org/src/contrib/Archive/mgcv/mgcv_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-mgcv_{{ version }}.tar.gz"
+  sha256: "5a3bb235cc798f617392ef4996f2d502233998b041db2a68377f3cea94b98694"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - r-matrix
+    - r-nlme >=3.1_64
+    - {{ compiler('c') }}
+
+  run:
+    - r-base
+    - r-matrix
+    - r-nlme >=3.1_64
+
+test:
+  commands:
+    - $R -e "library('mgcv')"
+
+about:
+  home: "https://cran.r-project.org/package=mgcv"
+  license: GPLv2
+  summary: "GAMs, GAMMs and other generalized ridge regression with multiple smoothing parameter estimation"
+  description: |
+    Generalized additive (mixed) models, some of their extensions and  other
+    generalized ridge regression with multiple smoothing  parameter estimation
+    by (Restricted) Marginal Likelihood,  Generalized Cross Validation and
+    similar. Includes a gam()  function, a wide variety of smoothers, JAGS
+    support and  distributions beyond the exponential family.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: mgcv
+# Version: 1.8-22
+# Author: Simon Wood <simon.wood@r-project.org>
+# Maintainer: Simon Wood <simon.wood@r-project.org>
+# Title: Mixed GAM Computation Vehicle with Automatic Smoothness Estimation
+# Description: Generalized additive (mixed) models, some of their extensions and  other generalized ridge regression with multiple smoothing  parameter estimation by (Restricted) Marginal Likelihood,  Generalized Cross Validation and similar. Includes a gam()  function, a wide variety of smoothers, JAGS support and  distributions beyond the exponential family.
+# Priority: recommended
+# Depends: R (>= 2.14.0), nlme (>= 3.1-64)
+# Imports: methods, stats, graphics, Matrix
+# Suggests: splines, parallel, survival, MASS
+# LazyLoad: yes
+# ByteCompile: yes
+# License: GPL (>= 2)
+# NeedsCompilation: yes
+# Packaged: 2017-09-18 10:38:41 UTC; sw283
+# Repository: CRAN
+# Date/Publication: 2017-09-19 00:27:56 UTC
+#----------------------------------------------------------------------

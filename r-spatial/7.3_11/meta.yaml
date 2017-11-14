@@ -1,14 +1,19 @@
+{% set version = "7.3-11" %}
+
 package:
   name: r-spatial
   version: "7.3_11"
 
 source:
-  fn: spatial_7.3-11.tar.gz
+  fn: "r-spatial_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/spatial_7.3-11.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/spatial/spatial_7.3-11.tar.gz
+    - "https://cran.r-project.org/src/contrib/spatial_{{ version }}.tar.gz"
+    - "https://cran.r-project.org/src/contrib/Archive/spatial/spatial_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-spatial_{{ version }}.tar.gz"
+  sha256: "624448d2ac22e1798097d09fc5dc4605908a33f490b8ec971fc6ea318a445c11"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
@@ -19,17 +24,15 @@ build:
 
 requirements:
   build:
-    - r-base
-    - gcc     # [not ppc64le]
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
 
   run:
-    - r
-    - libgcc  # [not ppc64le]
+    - r-base
 
 test:
   commands:
-    - $R -e "library('spatial')" # [not win]
-    - "\"%R%\" -e \"library('spatial')\"" # [win]
+    - $R -e "library('spatial')"
 
 about:
   home: http://www.stats.ox.ac.uk/pub/MASS4/
@@ -39,7 +42,7 @@ about:
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: spatial
 # Priority: recommended
 # Version: 7.3-11

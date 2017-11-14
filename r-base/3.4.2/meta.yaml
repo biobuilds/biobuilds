@@ -1,0 +1,116 @@
+{% set version = "3.4.2" %}
+
+package:
+  name: r-base
+  version: "{{ version }}"
+
+source:
+  fn: "R-{{ version }}.tar.gz"
+  url:
+    - "https://cran.r-project.org/src/base/R-3/R-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/R-{{ version }}.tar.gz"
+  sha256: "971e30c2436cf645f58552905105d75788bd9733bddbcb7c4fbff4c1a6d80c64"
+  patches:
+    - mac-unicode.patch        # [osx]
+    - 0000-do-not-build-recommended-packages.patch
+    - 0008-Darwin-set-DYLD_FALLBACK_LIBRARY_PATH.patch
+    - 0009-R-3.3.0-Use-AC_SEARCH_LIBS-to-search-for-ncurses.patch
+    - 0011-Linux-Do-not-modify-LD_LIBRARY_PATH.patch
+    - 0012-macOS-include-cairo_h-not-cairo-xlib_h.patch
+    #- 0013-javareconf-do-not-fail-on-compile-fail.patch
+
+build:
+  skip: True  # [win]
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ compiler('cxx') }}     # [toolchain == 'default']
+    - {{ compiler('fortran') }} # [toolchain == 'default']
+
+    # X11 development packages
+    - {{ cdt('xorg-x11-proto-devel') }}  # [linux and not ppc64le]
+    - {{ cdt('libuuid') }}               # [linux and not ppc64le]
+    - {{ cdt('libxrender') }}            # [linux and not ppc64le]
+    - {{ cdt('libxext') }}               # [linux and not ppc64le]
+    - {{ cdt('libsm-devel') }}           # [linux and not ppc64le]
+    - {{ cdt('libice-devel') }}          # [linux and not ppc64le]
+    - {{ cdt('libx11-devel') }}          # [linux and not ppc64le]
+    - {{ cdt('libxt') }}                 # [linux and not ppc64le]
+    - {{ cdt('libxt-devel') }}           # [linux and not ppc64le]
+    - {{ cdt('libxcb') }}                # [linux and not ppc64le]
+    - {{ cdt('libxau') }}                # [linux and not ppc64le]
+
+    #- {{ cdt('java-1.7.0-openjdk') }}    # [linux]
+
+    - autoconf
+    - automake
+    - pkg-config
+
+    - readline {{ readline }}
+    - icu {{ icu }}
+    - curl
+    - gsl {{ gsl }}
+    - pcre {{ pcre }}
+    - libxml2
+
+    # Compression libraries
+    - bzip2
+    - xz
+    - zlib
+
+    # Graphics libraries
+    - jpeg
+    - libpng
+    - libtiff
+    - cairo               # [linux]
+    - pango {{ pango }}   # [linux]
+    - tk {{ tk }}         # [linux]
+
+  run:
+    # Commented-out ones should be handled by the package's 'run_exports'
+    #- readline
+    #- icu
+    - curl
+    - gsl
+    - pcre
+    #- libxml2
+    - bzip2
+    #- xz
+    #- zlib
+    #- jpeg
+    #- libpng
+    #- libtiff
+    #- cairo     # [linux]
+    - pango     # [linux]
+    #- tk        # [linux]
+
+test:
+  commands:
+    - R -h
+    - R --version
+    - Rscript --version
+    - Rscript -e 'cat("ok\\n")'
+    # Verify tcltk.so linking so bug #14 (BIOBUILDS-335) does not reoccur.
+    - Rscript -e 'library("tcltk")'   # [linux]
+
+about:
+  home: http://www.r-project.org/
+  license: GPLv2
+  license_file: COPYING
+  summary: "Base binaries for the R statistical computing environment. You should install the 'r-recommended' package as well."
+
+extra:
+  recipe-maintainers:
+    - bgruening
+    - johanneskoester
+    - mingwandroid
+    - ocefpaf
+    - sodre
+    - chenghlee

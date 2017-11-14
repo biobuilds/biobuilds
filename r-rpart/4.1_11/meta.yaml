@@ -1,0 +1,65 @@
+{% set version = '4.1-11' %}
+
+package:
+  name: r-rpart
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-rpart_{{ version }}.tar.gz"
+  url:
+    - "https://cran.r-project.org/src/contrib/rpart_{{ version }}.tar.gz"
+    - "https://cran.r-project.org/src/contrib/Archive/rpart/rpart_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-rpart_{{ version }}.tar.gz"
+  sha256: "38ab80959f59bcdd2c4c72860e8dd0deab0307668cbbf24f96014d7a2496ad98"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('rpart')"
+
+about:
+  home: "https://cran.r-project.org/package=rpart"
+  license: GPLv2
+  summary: Recursive partitioning for classification, regression and survival trees
+  summary: |
+    Recursive partitioning for classification, regression and survival trees.
+    An implementation of most of the functionality of the 1984 book by
+    Breiman, Friedman, Olshen and Stone.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: rpart
+# Priority: recommended
+# Version: 4.1-11
+# Date: 2017-03-12
+# Authors@R: c(person("Terry", "Therneau", role = "aut", email = "therneau@mayo.edu"), person("Beth", "Atkinson", role = "aut",	 email = "atkinson@mayo.edu"), person("Brian", "Ripley", role = c("aut", "trl", "cre"), email = "ripley@stats.ox.ac.uk", comment = "author of initial R port"))
+# Description: Recursive partitioning for classification,  regression and survival trees.  An implementation of most of the  functionality of the 1984 book by Breiman, Friedman, Olshen and Stone.
+# Title: Recursive Partitioning and Regression Trees
+# Depends: R (>= 2.15.0), graphics, stats, grDevices
+# Suggests: survival
+# License: GPL-2 | GPL-3
+# LazyData: yes
+# ByteCompile: yes
+# Note: Maintainers are not available to give advice on using a package they did not author.
+# NeedsCompilation: yes
+# Packaged: 2017-03-12 21:36:08 UTC; ripley
+# Author: Terry Therneau [aut], Beth Atkinson [aut], Brian Ripley [aut, trl, cre] (author of initial R port)
+# Maintainer: Brian Ripley <ripley@stats.ox.ac.uk>
+# Repository: CRAN
+# Date/Publication: 2017-04-21 13:33:37 UTC
+#----------------------------------------------------------------------

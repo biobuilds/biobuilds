@@ -1,14 +1,18 @@
+{% set version = "7.3-14" %}
 package:
   name: r-class
-  version: "7.3_14"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: class_7.3-14.tar.gz
+  fn: "r-class_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/class_7.3-14.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/class/class_7.3-14.tar.gz
+    - "http://cran.r-project.org/src/contrib/class_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/class/class_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-class_{{ version }}.tar.gz"
+  sha256: "18b876dbc18bebe6a00890eab7d04ef72b903ba0049d5ce50731406a82426b9c"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
@@ -19,14 +23,13 @@ build:
 
 requirements:
   build:
-    - r-base
+    - r-base {{ r_base }}
     - r-mass
-    - gcc     # [not ppc64le]
+    - {{ compiler('c') }}
 
   run:
-    - r
+    - r-base
     - r-mass
-    - libgcc  # [not ppc64le]
 
 test:
   commands:
