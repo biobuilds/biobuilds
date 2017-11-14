@@ -1,0 +1,9 @@
+icu:
+  - 54.1    # [osx or linux64]
+  - 58.1
+  - 60.1
+
+# Need this because the older ICU packages don't have run_exports directives
+# that automatically take care of run-time dependency pinning for us.
+pin_run_as_build:
+  icu: {min_pin: "x.x", max_pin: "x"}

@@ -1,42 +1,37 @@
+{% set version = "1.62.0" %}
+
 package:
   name: boost
-  version: "1.62.0"
+  version: "{{ version }}"
 
 requirements:
   build:
-    - python
-    # Boost's dynamic libraries record the specific version of the ICU
-    # libraries they were linked against, so specify the version here so
-    # things don't get confused and break at runtime.
-    #
-    # Match the ICU version used by the Qt 5 (if one exists for the platform),
-    # so trying to install this along with Qt 5-dependent packages (e.g.,
-    # matplotlib) doesn't end up creating an unresolvable dependency graph.
-    - icu 58.1    # [ppc64le]
-    - icu 54.1    # [osx or linux64]
-    - zlib
-    - bzip2
+    - biobuilds-build
+    - icu {{ icu }}
+    # Use exact build strings to best match dependencies to what was available
+    # when this package was first built. In particular, we do not want newer
+    # builds of these dependencies to inject run-time pinning requirements that
+    # could break existing packages that depend on this version of Boost.
+    - python ==2.7.12 1
+    - zlib ==1.2.8 3
+    - bzip2 ==1.0.6 3
   run:
-    - python
-    # See comments in the "build" section above
-    - icu 58.1    # [ppc64le]
-    - icu 54.1    # [osx or linux64]
-    - zlib
+    - icu
+    - {{ pin_compatible('python',  min_pin='x.x', max_pin='x.x') }}
+    - {{ pin_compatible('zlib',  min_pin='x.x.x', max_pin='x.x') }}
 
 source:
-  fn: "boost-1.62.0.tar.bz2"
+  fn: "boost-{{ version }}.tar.bz2"
   url:
-    - "http://downloads.sourceforge.net/project/boost/boost/1.62.0/boost_1_62_0.tar.bz2"
-    - "http://download.lab7.io/sources/boost-1.62.0.tar.bz2"
-  md5: "5fb94629535c19e48703bdb2b2e9490f"
+    - "http://downloads.sourceforge.net/project/boost/boost/{{ version }}/boost_1_62_0.tar.bz2"
+    - "http://download.lab7.io/sources/boost-{{ version }}.tar.bz2"
   sha256: "36c96b0f6155c98404091d8ceb48319a28279ca0333fba1ad8611eb90afb2ca0"
 
 build:
-  number: 1
-  script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+  number: 2
+  # **NOTE**: Not adding a `pin_subpackage('boost', ...)` run export so
+  # headers-only use of this package does not automatically create a run-time
+  # dependency on the Boost shared libraries.
 
 about:
   home: "http://www.boost.org/"
