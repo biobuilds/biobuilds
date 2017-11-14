@@ -1,0 +1,63 @@
+{% set version = "7.56.1" %}
+
+package:
+  name: curl
+  version: "{{ version }}"
+
+source:
+  fn: "curl-{{ version }}.tar.bz2"
+  url:
+    - "https://curl.haxx.se/download/curl-{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/curl-{{ version }}.tar.bz2"
+  sha256: "2594670367875e7d87b0f129b5e4690150780884d90244ba0fe3e74a778b5f90"
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - pkg-config
+    # perl is required to run the tests on UNIX.
+    - perl {{ perl }}
+    - libidn2
+    - libssh2 1.*
+    - openssl 1.0.*
+  run:
+    - libssh2 1.*
+    - openssl 1.0.*
+
+build:
+  number: 0
+  # Needed to fix path to CA certificate bundle
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - curl -V
+    - curl --help
+    - curl-config --features
+    - curl-config --protocols
+
+    # Try downloading something from https to make sure the certs are used correctly.
+    - curl -D/dev/stderr -s https://www.google.com >/dev/null
+
+    - conda inspect linkages -p "$PREFIX" "$PKG_NAME"
+
+about:
+  home: "https://curl.haxx.se/"
+  license: MIT/X derivate
+  license_family: MIT
+  license_file: COPYING
+  summary: "Multi-protocol file transfer library and CLI utility"
+  description: |
+    Curl is an open source command line tool and library for transferring data
+    with URL syntax. It is used in command lines or scripts to transfer data.
+  doc_url: https://curl.haxx.se/docs/
+  dev_url: https://github.com/curl/curl
+  doc_source_url: https://github.com/curl/curl/tree/master/docs
+
+extra:
+  recipe-maintainers:
+    - msarahan
+    - jakirkham
+    - ocefpaf
+    - mingwandroid
+    - chenghlee

@@ -1,25 +1,44 @@
+{% set version = "1.8.0" %}
+
 package:
   name: libssh2
-  version: "1.8.0"
+  version: "{{ version }}"
 
 source:
-  fn: "libssh2-1.8.0.tar.gz"
+  fn: "libssh2-{{ version }}.tar.gz"
   url:
-    - "https://www.libssh2.org/download/libssh2-1.8.0.tar.gz"
-    - "http://download.lab7.io/sources/libssh2-1.8.0.tar.gz"
+    - "https://www.libssh2.org/download/libssh2-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/libssh2-{{ version }}.tar.gz"
   md5: "3d1147cae66e2959ea5441b183de1b1c"
 
 requirements:
   build:
+    - {{ compiler('c') }}
     - autoconf-update
-    - openssl
+    - openssl 1.0.*
     - zlib
   run:
-    - openssl
+    - openssl 1.0.*
     - zlib
 
 build:
-  number: 1
+  number: 2
+  run_exports:
+    # Fairly good backwards compatibility so pin to major number:
+    #    https://abi-laboratory.pro/tracker/timeline/libssh2/
+    - {{ pin_subpackage('libssh2', min_pin='x', max_pin='x') }}
+
+test:
+  commands:
+    - test -f $PREFIX/include/libssh2.h
+    - test -f $PREFIX/include/libssh2_publickey.h
+    - test -f $PREFIX/include/libssh2_sftp.h
+
+    - test -f $PREFIX/lib/libssh2.a
+    - test -f $PREFIX/lib/libssh2.so      # [linux]
+    - test -f $PREFIX/lib/libssh2.dylib   # [osx]
+
+    - conda inspect linkages -p "$PREFIX" "$PKG_NAME"
 
 about:
   home: "https://www.libssh2.org/"

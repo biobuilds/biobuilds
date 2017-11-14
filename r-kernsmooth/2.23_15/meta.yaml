@@ -1,14 +1,18 @@
+{% set version = "2.23-15" %}
 package:
   name: r-kernsmooth
-  version: "2.23_15"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: KernSmooth_2.23-15.tar.gz
+  fn: "r-kernsmooth_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/KernSmooth_2.23-15.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/KernSmooth/KernSmooth_2.23-15.tar.gz
+    - "https://cran.r-project.org/src/contrib/KernSmooth_{{ version }}.tar.gz"
+    - "https://cran.r-project.org/src/contrib/Archive/KernSmooth/KernSmooth_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-kernsmooth_{{ version }}.tar.gz"
+  sha256: "8b72d23ed121a54af188b2cda4441e3ce2646359309885f6455b82c0275210f6"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
@@ -19,17 +23,15 @@ build:
 
 requirements:
   build:
-    - r-base
-    - gcc     # [not ppc64le]
-
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('fortran') }}
   run:
-    - r
-    - libgcc  # [not ppc64le]
+    - r-base
 
 test:
   commands:
     - $R -e "library('KernSmooth')" # [not win]
-    - "\"%R%\" -e \"library('KernSmooth')\"" # [win]
 
 about:
   license: Unlimited
@@ -38,7 +40,7 @@ about:
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: KernSmooth
 # Priority: recommended
 # Version: 2.23-15

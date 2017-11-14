@@ -1,0 +1,40 @@
+{% set version = "3.1" %}
+
+package:
+  name: gperf
+  version: "{{ version }}"
+
+source:
+  fn: "gperf-{{ version }}.tar.gz"
+  url:
+    - "http://ftp.gnu.org/pub/gnu/gperf/gperf-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/gperf-{{ version }}.tar.gz"
+  sha256: "588546b945bba4b70b6a3a616e80b4ab466e3f33024a352fc2198112cdbb3ae2"
+
+build:
+  number: 0
+  skip: true  # [win]
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+
+test:
+  commands:
+    - test -f "${PREFIX}/bin/gperf"  # [unix]
+
+about:
+  home: https://www.gnu.org/software/gperf/
+  license: GPL-3
+  summary: 'GNU gperf is a perfect hash function generator.'
+  description: |
+  doc_url: https://www.gnu.org/software/gperf/manual/gperf.html
+  dev_url: http://git.savannah.gnu.org/cgit/gperf.git/tree/
+  doc_source_url: http://git.savannah.gnu.org/cgit/gperf.git/tree/doc
+
+extra:
+  recipe-maintainers:
+    - tfors
+    - mingwandroid
+    - chenghlee

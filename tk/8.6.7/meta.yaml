@@ -1,0 +1,93 @@
+{% set version = "8.6.7" %}
+{% set maj_min = ".".join(version.split(".")[:2]) %}
+
+package:
+  name: tk
+  version: "{{ version }}"
+
+source:
+  - url: "https://downloads.sourceforge.net/tcl/tcl{{ version }}-src.tar.gz"
+    folder: "tcl{{ version }}"
+    sha256: "7c6b8f84e37332423cfe5bae503440d88450da8cc1243496249faa5268026ba5"
+  - url: "https://downloads.sourceforge.net/tcl/tk{{ version }}-src.tar.gz"
+    folder: "tk{{ version }}"
+    sha256: "061de2a354f9b7c7d04de3984c90c9bc6dd3a1b8377bb45509f1ad8a8d6337aa"
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ cdt('xorg-x11-proto-devel') }}  # [linux and not ppc64le]
+    - {{ cdt('libx11-devel') }}          # [linux and not ppc64le]
+    - {{ cdt('libxcb') }}                # [linux and not ppc64le]
+    - {{ cdt('libxau') }}                # [linux and not ppc64le]
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+  run_exports:
+    # pin to major.minor because library names have that info in them
+    - {{ pin_subpackage('tk', max_pin='x.x') }}
+
+test:
+  files:
+    - hello.tcl
+
+  commands:
+    # Check for binaries.
+    {% for ver_suffix in ["", maj_min] %}
+    - test -f "${PREFIX}/bin/tclsh{{ ver_suffix }}"
+    - test -f "${PREFIX}/bin/wish{{ ver_suffix }}"
+    {% endfor %}
+
+    # Check for includes.
+    {% set tcl_tk_includes = [
+            "tcl",
+            "tclDecls",
+            "tclPlatDecls",
+            "tclPlatDecls",
+            "tclTomMathDecls",
+            "tclTomMath",
+            "tk",
+            "tkDecls",
+            "tkPlatDecls"
+    ] %}
+    {% for each_tcl_tk_include in tcl_tk_includes %}
+    - test -f "${PREFIX}/include/{{ each_tcl_tk_include }}.h"
+    {% endfor %}
+
+    # Check for libraries.
+    # Library naming note: t means "full thread support" in Windows
+    #    https://sourceforge.net/p/tcl/mailman/tcl-bugs/thread/From_noreply@sourceforge.net_Mon_Jul_23_11:46:16_2012/
+    {% set tcl_tk_libs = [
+            "tcl",
+            "tk"
+    ] %}
+    {% for each_tcl_tk_lib in tcl_tk_libs %}
+    - test -f "${PREFIX}/lib/lib{{ each_tcl_tk_lib }}{{ maj_min }}.dylib"   # [osx]
+    - test -f "${PREFIX}/lib/lib{{ each_tcl_tk_lib }}{{ maj_min }}.so"      # [linux]
+    - test -f "${PREFIX}/lib/lib{{ each_tcl_tk_lib }}stub{{ maj_min }}.a"
+    {% endfor %}
+
+    # Check commands work and run a simple program.
+    - tclsh hello.tcl
+    - tclsh{{ maj_min }} hello.tcl
+    # wish requires X11:
+    # wish: error while loading shared libraries: libX11.so.6: cannot open shared object file: No such file or directory
+    # The time has come to figure out how to handle missing system dependencies. cc @msarahan
+    # - wish hello.tcl
+    # - wish{{ maj_min }} hello.tcl
+
+about:
+  home: http://www.tcl.tk/
+  license: Tcl/Tk
+  license_family: BSD
+  summary: A dynamic programming language with GUI support.  Bundles Tcl and Tk.
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - jjhelmus
+    - msarahan
+    - pelson
+    - mingwandroid
+    - chenghlee

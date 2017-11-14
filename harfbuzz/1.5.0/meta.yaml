@@ -1,0 +1,79 @@
+{% set name = "harfbuzz" %}
+{% set version = "1.5.0" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.bz2"
+  url:
+    - "https://www.freedesktop.org/software/{{ name }}/release/{{ name }}-{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.bz2"
+  sha256: "c088ec363be8d03f7708feb76dd22d5f102678e67d6ce63b02496ca0beb64ac1"
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+  run_exports:
+    # removes symbols rarely (last time in 2014).
+    #    https://abi-laboratory.pro/tracker/timeline/harfbuzz/
+    - {{ pin_subpackage('harfbuzz', max_pin='x') }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ cdt('libxau-devel') }}          # [linux and not ppc64le]
+    - {{ cdt('libxext-devel') }}         # [linux and not ppc64le]
+    - {{ cdt('libx11-devel') }}          # [linux and not ppc64le]
+    - {{ cdt('libxrender-devel') }}      # [linux and not ppc64le]
+    - automake
+    - libtool
+    - pkg-config
+    - python {{ python }}
+    - gobject-introspection >=1.51,<2.0a0
+    - glib
+    - cairo
+    - fontconfig
+    - icu {{ icu }}
+    - graphite2 1.3.*
+    - freetype
+    - libxcb                             # [linux and not ppc64le]
+  run:
+    - graphite2 1.3.*
+    - libxcb                             # [linux and not ppc64le]
+
+test:
+  commands:
+    # Libraries/headers.
+    {% set libs = [
+        "libharfbuzz-icu",
+        "libharfbuzz"
+        ] %}
+    {% for lib in libs %}
+    - test -f $PREFIX/lib/{{ lib }}.dylib   # [osx]
+    - test -f $PREFIX/lib/{{ lib }}.so      # [linux]
+    {% endfor %}
+    - test -f $PREFIX/include/harfbuzz/hb-ft.h
+    # CLI tests.
+    - hb-view --version  # [linux]
+    - conda inspect linkages -p $PREFIX $PKG_NAME
+    - conda inspect objects -p $PREFIX $PKG_NAME    # [osx]
+
+about:
+  home: http://www.freedesktop.org/wiki/Software/HarfBuzz/
+  license: MIT
+  license_file: COPYING
+  summary: 'An OpenType text shaping engine.'
+  description: |
+    HarfBuzz is a text shaping library. New Harbuzz targets various font
+    technologies while Old HarfBuzz targets only OpenType fonts.
+  doc_url: https://www.freedesktop.org/wiki/Software/HarfBuzz/
+  dev_url: https://github.com/behdad/harfbuzz
+
+extra:
+  recipe-maintainers:
+    - ocefpaf
+    - pkgw
+    - chenghlee

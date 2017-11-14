@@ -1,0 +1,81 @@
+{% set version = "2.12.4" %}
+
+package:
+  name: fontconfig
+  version: "{{ version }}"
+
+source:
+  fn: "fontconfig-{{ version }}.tar.bz2"
+  url:
+    - "http://www.freedesktop.org/software/fontconfig/release/fontconfig-{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/fontconfig-{{ version }}.tar.bz2"
+  sha256: "668293fcc4b3c59765cdee5cee05941091c0879edcc24dfec5455ef83912e45c"
+  patches:
+    # This patch won't be submitted upstream. It's use here is to ensure the prefix used
+    # to refer to the `fonts.conf` file.
+    - fcf.patch       # [linux]
+
+build:
+  number: 0
+  skip: True                      # [win]
+  binary_has_prefix_files:
+    - lib/libfontconfig.so.1.*    # [linux]
+    - lib/libfontconfig.*.dylib*  # [osx]
+  run_exports:
+    # remove symbols basically never (once, in 2006).
+    #    https://abi-laboratory.pro/tracker/timeline/fontconfig/
+    - {{ pin_subpackage('fontconfig', max_pin='x') }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - pkg-config
+    - libtool
+    # Needed since 2.12.2 or so (https://github.com/spack/spack/pull/4551)
+    - gperf
+  host:
+    - freetype
+    - icu {{ icu }}
+    - libpng
+    - libxml2
+    - libiconv        # [not linux and not win]
+  run:
+    - libiconv        # [not linux and not win]
+
+test:
+  commands:
+    # Test CLI.
+    - fc-cache --help
+    - fc-cat --help
+    - fc-list --help
+    - fc-match --help
+    - fc-pattern --help
+    - fc-query --help
+    - fc-scan --help
+    - fc-validate --help
+
+    # Test for libraries.
+    - test -f "${PREFIX}/lib/libfontconfig.a"
+    - test -f "${PREFIX}/lib/libfontconfig.dylib"   # [osx]
+    - test -f "${PREFIX}/lib/libfontconfig.so"      # [linux]
+    - conda inspect linkages -p $PREFIX fontconfig
+    - conda inspect objects -p $PREFIX fontconfig   # [osx]
+
+about:
+  home: http://www.freedesktop.org/wiki/Software/fontconfig/
+  license: MIT
+  license_file: COPYING
+  summary: 'A library for configuring and customizing font access.'
+  description: |
+    Fontconfig is a library designed to provide system-wide font configuration,
+    customization and application access.
+  doc_url: https://www.freedesktop.org/software/fontconfig/fontconfig-user.html
+  dev_url: https://cgit.freedesktop.org/fontconfig/
+
+extra:
+  recipe-maintainers:
+    - ccordoba12
+    - jakirkham
+    - ocefpaf
+    - pkgw
+    - chenghlee

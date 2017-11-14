@@ -1,0 +1,10 @@
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
+ncurses:
+  - '6.0'
+
+# Make sure libreadline.so can find the right libtinfow.so
+pin_run_as_build:
+  ncurses: {"min_pin": "x.x", "max_pin": "x.x"}

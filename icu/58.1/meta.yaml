@@ -1,18 +1,33 @@
+{% set version = "58.1" %}
+
 package:
   name: icu
-  version: "58.1"
+  version: "{{ version }}"
 
 source:
-  fn: icu4c-58.1-src.tgz                                                    # [unix]
+  fn: "icu4c-{{ version }}-src.tgz"
   url:
-    - "http://download.icu-project.org/files/icu4c/58.1/icu4c-58_1-src.tgz" # [unix]
-    - "http://download.lab7.io/sources/icu4c-58.1-src.tgz"                  # [unix]
-  md5: "1901302aaff1c1633ef81862663d2917"                                   # [unix]
+    - "http://download.icu-project.org/files/icu4c/{{ version }}/icu4c-{{ version|replace('.', '_') }}-src.tgz"
+    - "http://download.lab7.io/sources/icu4c-{{ version }}-src.tgz"
+  md5: "1901302aaff1c1633ef81862663d2917"
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ compiler('cxx') }}     # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
 
 build:
-  number: 1
-  script_env:
-    - BB_MAKE_JOBS
+  skip: True  # [not unix]
+  number: 2
+  # See https://abi-laboratory.pro/tracker/timeline/icu4c/
+  run_exports:
+    - {{ pin_subpackage('icu') }}
+  features:
+    - opt                       # [toolchain != 'default']
 
 about:
   home: "http://site.icu-project.org/"

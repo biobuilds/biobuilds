@@ -2,16 +2,16 @@
 
 set -o pipefail
 
-CFLAGS="${CFLAGS} -m64 -I${PREFIX}/include"
-LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
+export CFLAGS="${CFLAGS} -m64 -I${PREFIX}/include"
+export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
 
 cp -fv "${PREFIX}/share/autoconf/config.guess" config.guess
 cp -fv "${PREFIX}/share/autoconf/config.sub" config.sub
 
-env CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
-    ./configure --prefix="${PREFIX}" \
+./configure --prefix="${PREFIX}" \
     --disable-debug \
-    --enable-shared --enable-static \
+    --enable-shared \
+    --enable-static \
     --enable-largefile \
     --disable-examples-build \
     --with-openssl \
@@ -21,12 +21,11 @@ env CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" \
     --without-libgcrypt \
     --without-wincng \
     --without-libcrypt32-prefix \
-    --without-mbedtls \
     --without-libmbedtls-prefix \
     --without-libbcrypt-prefix \
     2>&1 | tee configure.log
 
-make
+make -j${CPU_COUNT} ${VERBOSE_AT}
 
 # Skipping "make check" on OS X; something in the "conda build" process causes
 # it to fail, even though we can come back later, "source activate" the conda

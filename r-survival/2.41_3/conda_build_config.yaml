@@ -1,0 +1,5 @@
+r_base:
+  - "3.4.2"
+
+pin_run_as_build:
+  r_base: {"max_pin": "x.x"}

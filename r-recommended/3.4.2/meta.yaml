@@ -1,0 +1,31 @@
+{% set version = "3.4.2" %}
+
+package:
+  name: r-recommended
+  version: "{{ version }}"
+
+build:
+  number: 0
+
+requirements:
+  run:
+    - r-base =={{ version }}
+    # Versions from tarballs in `src/library/Recommended` source directory
+    - r-boot ==1.3_20
+    - r-class ==7.3_14
+    - r-cluster ==2.0.6
+    - r-codetools ==0.2_15
+    - r-foreign ==0.8_69
+    - r-kernsmooth ==2.23_15
+    - r-lattice ==0.20_35
+    - r-mass ==7.3_47
+    - r-matrix ==1.2_11
+    - r-mgcv ==1.8_20
+    - r-nlme ==3.1_131
+    - r-nnet ==7.3_12
+    - r-rpart ==4.1_11
+    - r-spatial ==7.3_11
+    - r-survival ==2.41_3
+
+about:
+  summary: "Set of recommended packages for an R install (meta-package)"

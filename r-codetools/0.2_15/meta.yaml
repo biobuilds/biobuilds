@@ -1,17 +1,19 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set version = "0.2-15" %}
 
 package:
   name: r-codetools
-  version: "0.2_15"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: codetools_0.2-15.tar.gz
+  fn: "r-codetools_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/codetools_0.2-15.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/codetools/codetools_0.2-15.tar.gz
+    - "http://cran.r-project.org/src/contrib/codetools_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/codetools/codetools_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-codetools_{{ version }}.tar.gz"
+  sha256: "4e0798ed79281a614f8cdd199e25f2c1bd8f35ecec902b03016544bd7795fa40"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
@@ -35,7 +37,7 @@ about:
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: codetools
 # Version: 0.2-15
 # Priority: recommended

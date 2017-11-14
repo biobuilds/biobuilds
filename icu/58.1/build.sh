@@ -1,13 +1,14 @@
 #!/bin/bash
 
-CFLAGS="${CFLAGS} -O3"
-CXXFLAGS="${CXXFLAGS} -O3"
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
 
 if [ `uname -s` == 'Darwin' ]; then
-    MACOSX_VERSION_MIN=10.8
-    CXXFLAGS="${CXXFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-    LDFLAGS="${LDFLAGS} -mmacosx-version-min=${MACOSX_VERSION_MIN}"
-
     # WARNING: using "libc++" instead of "libstdc++" as our C++ stdlib breaks
     # compatibility with the "defaults" channel's ICU package. However, to make
     # our OS X boost packages usable with C++11 applications, we need to link
@@ -17,7 +18,9 @@ if [ `uname -s` == 'Darwin' ]; then
 fi
 
 cd source
-env CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" LDFLAGS="$LDFLAGS" \
+env CC="$CC" CFLAGS="$CFLAGS" \
+    CXX="$CXX" CXXFLAGS="$CXXFLAGS" \
+    LD="$LD" LDFLAGS="$LDFLAGS" \
     ./configure --prefix="$PREFIX" \
     --enable-release \
     --disable-debug \
@@ -29,5 +32,5 @@ env CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" LDFLAGS="$LDFLAGS" \
     --disable-samples \
     --disable-tests \
     2>&1 | tee configure.log
-make -j${BB_MAKE_JOBS:-1}
+make -j${MAKE_JOBS} VERBOSE=1
 make install

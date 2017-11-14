@@ -1,17 +1,19 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set version = "7.3-12" %}
 
 package:
   name: r-nnet
-  version: "7.3_12"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: nnet_7.3-12.tar.gz
+  fn: "r-nnet_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/nnet_7.3-12.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/nnet/nnet_7.3-12.tar.gz
+    - "http://cran.r-project.org/src/contrib/nnet_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/nnet/nnet_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-nnet_{{ version }}.tar.gz"
+  sha256: "2723523e8581cc0e2215435ac773033577a16087a3f41d111757dd96b8c5559d"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
@@ -22,29 +24,25 @@ build:
 
 requirements:
   build:
-    - r-base
-    - posix               # [win]
-    - {{native}}toolchain # [win]
-    - gcc                 # [not ppc64le and not win]
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
 
   run:
     - r-base
-    - libgcc              # [not ppc64le and not win]
 
 test:
   commands:
-    - $R -e "library('nnet')" # [not win]
-    - "\"%R%\" -e \"library('nnet')\"" # [win]
+    - $R -e "library('nnet')"
 
 about:
-  home: http://www.stats.ox.ac.uk/pub/MASS4/
+  home: "http://www.stats.ox.ac.uk/pub/MASS4/"
   license: GPLv2
   summary: "Single hidden layer feed-forward neural networks and multinomial log-linear models."
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: nnet
 # Priority: recommended
 # Version: 7.3-12
