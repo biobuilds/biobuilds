@@ -13,7 +13,7 @@ requirements:
     - zlib {{ zlib }}           # [toolchain != 'ibm-at10.0']
   run:
     - {{ toolchain }}-runtime   # [toolchain != 'default']
-    - zlib {{ zlib }}           # [toolchain != 'ibm-at10.0']
+    - zlib                      # [toolchain != 'ibm-at10.0']
 
 source:
   fn: "bwa-{{ version }}.tar.bz2"
@@ -26,7 +26,7 @@ source:
     - ppc64le-support.patch     # [ppc64le]
 
 build:
-  number: 0
+  number: 1
   features:
     - opt                       # [toolchain != 'default']
 
