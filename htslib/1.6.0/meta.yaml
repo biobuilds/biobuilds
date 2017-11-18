@@ -1,0 +1,56 @@
+{% set maj_min = "1.6" %}
+{% set patch = "0" %}
+{% set version = maj_min ~ "." ~ patch %}
+
+package:
+  name: htslib
+  version: "{{ version }}"
+
+source:
+  fn: "htslib-{{ version }}.tar.bz2"
+  url:
+    - "https://github.com/samtools/htslib/releases/download/{{ maj_min }}/htslib-{{ maj_min }}.tar.bz2"
+    - "http://download.lab7.io/sources/htslib-{{ version }}.tar.bz2"
+  sha256: "9588be8be0c2390a87b7952d644e7a88bead2991b3468371347965f2e0504ccb"
+  patches:
+    # Fixes mpileup indel AD test failures on POWER/ARM
+    - PL-sum-calc.patch
+
+requirements:
+  build:
+    - biobuilds-build
+    - pkg-config
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - zlib {{ zlib }}           # [toolchain == 'default' or not ppc64le]
+    - bzip2
+    - xz
+    - curl {{ curl }}
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - zlib                      # [toolchain == 'default' or not ppc64le]
+    - bzip2
+    - xz
+    - curl
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  files:
+    - test.gff
+  commands:
+    - htsfile test.gff
+    - bgzip test.gff
+    - tabix test.gff.gz
+
+about:
+  home: "http://www.htslib.org/"
+  license: MIT
+  license_file: LICENSE
+  summary: "unified library for accessing common file formats used for high-throughput sequencing data"

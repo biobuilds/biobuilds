@@ -1,0 +1,50 @@
+{% set maj_min = "1.6" %}
+{% set patch = "0" %}
+{% set version = maj_min ~ "." ~ patch %}
+
+package:
+  name: bcftools
+  version: "{{ version }}"
+
+source:
+  fn: "bcftools-{{ version }}.tar.bz2"
+  url:
+    - "https://github.com/samtools/bcftools/releases/download/{{ maj_min }}/bcftools-{{ maj_min }}.tar.bz2"
+    - "http://download.lab7.io/sources/bcftools-{{ version }}.tar.bz2"
+  sha256: "293010736b076cf684d2873928924fcc3d2c231a091084c2ac23a8045c7df982"
+  patches:
+    - builtin-tests.patch
+    - fix-osx-plugin-linking.patch
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - htslib {{ htslib }}
+    - zlib {{ zlib }}
+    - perl {{ perl }}
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - htslib
+    - zlib
+    - perl
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  commands:
+    - bcftools -h
+    - bcftools plugin -l
+
+about:
+  home: http://www.htslib.org/
+  license: MIT
+  license_file: LICENSE
+  summary: "Tools for handling BCF2/VCF/gVCF files and analyzing SNPs/small indels"

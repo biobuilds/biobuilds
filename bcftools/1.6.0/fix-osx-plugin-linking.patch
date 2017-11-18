@@ -1,0 +1,19 @@
+commit 2384efbad7f55fcede759db2c7344aa2fd4e4c10
+Author: Petr Danecek <pd3@sanger.ac.uk>
+Date:   Wed, 4 Oct 2017 16:05:28 +0100
+
+    Fix plugin build on Mac, resolves #684
+
+diff --git a/Makefile b/Makefile
+index 8e0f04dd..b1586310 100644
+--- Makefile
++++ Makefile
+@@ -148,7 +148,7 @@ PLATFORM := $(shell uname -s)
+ endif
+ ifeq "$(PLATFORM)" "Darwin"
+ $(PLUGINS): | bcftools
+-PLUGIN_FLAGS = -bundle -bundle_loader bcftools
++PLUGIN_FLAGS = -bundle -bundle_loader bcftools -Wl,-undefined,dynamic_lookup
+ else
+ PLUGIN_FLAGS = -fPIC -shared
+ endif

@@ -1,0 +1,52 @@
+{% set maj_min = "1.6" %}
+{% set patch = "0" %}
+{% set version = maj_min ~ "." ~ patch %}
+
+package:
+  name: samtools
+  version: "{{ version }}"
+
+source:
+  fn: "htslib-{{ version }}.tar.bz2"
+  url:
+    - "https://github.com/samtools/samtools/releases/download/{{ maj_min }}/samtools-{{ maj_min }}.tar.bz2"
+    - "http://download.lab7.io/sources/samtools-{{ version }}.tar.bz2"
+  sha256: "ee5cd2c8d158a5969a6db59195ff90923c662000816cc0c41a190b2964dbe49e"
+
+requirements:
+  # TODO: get curses support working; currently, attempting to build with
+  # ncurses leads to a bunch of undeclared name and unknown type errors.
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - zlib {{ zlib }}           # [toolchain == 'default' or not ppc64le]
+    #- ncurses {{ ncurses }}
+    - htslib {{ htslib }}
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - zlib
+    #- ncurses
+    - htslib
+    - python
+    - perl 5.*
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: true
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  commands:
+    # Bulk of tests are performed in the build process. This basically just
+    # ensures we got our Perl requirement correct.
+    - "samtools --help >/dev/null"
+
+about:
+  home: http://www.htslib.org/
+  license: MIT
+  license_file: LICENSE
+  summary: "Various utilities for manipulating alignments in the SAM/BAM format"

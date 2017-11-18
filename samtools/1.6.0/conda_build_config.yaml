@@ -1,0 +1,23 @@
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+
+toolchain:
+  - default
+  - intel-psxe2018  # [linux and x86_64]
+  - ibm-at10.0      # [linux and ppc64le]
+
+zlib:
+  - 1.2.8
+
+# See meta.yaml for why ncurses support is currently disabled.
+#ncurses:
+#  - 6.0
+
+htslib:
+  - 1.6
+
+pin_build_as_run:
+  htslib: {"min_pin": "x.x.x", "max_pin": "x.x"}
+#  ncurses: {"max_pin": "x.x"}

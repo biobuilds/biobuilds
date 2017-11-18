@@ -1,0 +1,41 @@
+commit 829ddaea433cd55cc5bd9a6d38ec6d9593ad50b4
+Author: Graham Inggs <graham.inggs+github@gmail.com>
+Date:   Wed Nov 8 00:39:07 2017 +0200
+
+    Calculate sum in logarithmic form
+    using the expansion:
+    log(a + c) = log(a) + log(1 + c/a)
+    fixes calculation of PLs on ARM and POWER
+    see: https://github.com/samtools/bcftools/issues/702
+    Switch sum and sum1 to double
+    Use double versions of log1p and exp
+
+diff --git a/errmod.c b/errmod.c
+index bb9fc28..acc8922 100644
+--- a/errmod.c
++++ b/errmod.c
+@@ -64,7 +64,7 @@ static double* logbinomial_table( const int n_size )
+ static void cal_coef(errmod_t *em, double depcorr, double eta)
+ {
+     int k, n, q;
+-    long double sum, sum1;
++    double sum, sum1;
+     double *lC;
+ 
+     // initialize ->fk
+@@ -84,10 +84,11 @@ static void cal_coef(errmod_t *em, double depcorr, double eta)
+         double le1 = log(1.0 - e);
+         for (n = 1; n <= 255; ++n) {
+             double *beta = em->beta + (q<<16|n<<8);
+-            sum1 = sum = 0.0;
+-            for (k = n; k >= 0; --k, sum1 = sum) {
+-                sum = sum1 + expl(lC[n<<8|k] + k*le + (n-k)*le1);
+-                beta[k] = -10. / M_LN10 * logl(sum1 / sum);
++            sum1 = lC[n<<8|n] + n*le;
++            beta[n] = HUGE_VAL;
++            for (k = n - 1; k >= 0; --k, sum1 = sum) {
++                sum = sum1 + log1p(exp(lC[n<<8|k] + k*le + (n-k)*le1 - sum1));
++                beta[k] = -10. / M_LN10 * (sum1 - sum);
+             }
+         }
+     }

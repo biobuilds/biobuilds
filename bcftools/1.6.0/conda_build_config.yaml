@@ -1,0 +1,22 @@
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+
+toolchain:
+  - default
+  - intel-psxe2018  # [linux and x86_64]
+  - ibm-at10.0      # [linux and ppc64le]
+
+htslib:
+  - 1.6
+
+zlib:
+  - 1.2.8
+
+perl:
+  - 5.22.0
+
+pin_build_as_run:
+  htslib: {"min_pin": "x.x.x", "max_pin": "x.x"}
+  perl: {"min_pin": "x", "max_pin": "x"}
