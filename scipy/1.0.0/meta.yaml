@@ -1,0 +1,66 @@
+{% set name = "scipy" %}
+{% set version = "1.0.0" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/scipy/scipy/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "c423a4511684554958dab55f2877df78e765b44f8eef46d5425891d6ac3b49bc"
+
+build:
+  # Other platforms should just use the packages from the "defaults" channel
+  skip: True    # [not ppc64le]
+  number: 0
+  features:
+    - opt       # [toolchain != 'default']
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}         # [toolchain == 'default']
+    - {{ compiler('cxx') }}       # [toolchain == 'default']
+    - {{ compiler('fortran') }}   # [toolchain == 'default']
+    - {{ toolchain }}-build       # [toolchain != 'default']
+    - openblas {{ openblas }}     # [blas_impl == 'openblas']
+    - python {{ python }}
+    - setuptools
+    - cython
+    - numpy {{ numpy }}
+  run:
+    - {{ toolchain }}-runtime     # [toolchain != 'default']
+    - python
+    - numpy
+    # BLAS runtime should be set by the build package's run_exports
+
+test:
+  requires:
+    - biobuilds-opt               # [toolchain != 'default']
+    - pytest
+    - mpmath
+  commands:
+    - conda inspect linkages -p $PREFIX scipy
+    - conda inspect objects -p $PREFIX scipy    # [osx]
+
+about:
+  home: http://www.scipy.org/
+  license: BSD 3-Clause
+  license_file: LICENSE.txt
+  summary: Scientific Library for Python
+  description: |
+    SciPy is a Python-based ecosystem of open-source software for mathematics,
+    science, and engineering.
+  doc_url: http://www.scipy.org/docs.html
+  dev_url: https://github.com/scipy/scipy
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - msarahan
+    - rgommers
+    - ocefpaf
+    - chenghlee
