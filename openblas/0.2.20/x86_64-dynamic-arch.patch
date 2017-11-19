@@ -1,0 +1,205 @@
+--- Makefile.system
++++ Makefile.system
+@@ -451,7 +451,7 @@
+ endif
+ 
+ ifeq ($(ARCH), x86_64)
+-DYNAMIC_CORE = PRESCOTT CORE2 PENRYN DUNNINGTON NEHALEM OPTERON OPTERON_SSE3 BARCELONA BOBCAT ATOM NANO
++DYNAMIC_CORE = CORE2 NEHALEM BARCELONA BOBCAT
+ ifneq ($(NO_AVX), 1)
+ DYNAMIC_CORE += SANDYBRIDGE BULLDOZER PILEDRIVER STEAMROLLER EXCAVATOR
+ endif
+--- driver/others/dynamic.c
++++ driver/others/dynamic.c
+@@ -45,21 +45,14 @@
+ #define EXTERN
+ #endif
+ 
+-EXTERN gotoblas_t  gotoblas_KATMAI;
+-EXTERN gotoblas_t  gotoblas_COPPERMINE;
+-EXTERN gotoblas_t  gotoblas_NORTHWOOD;
+-EXTERN gotoblas_t  gotoblas_BANIAS;
+-EXTERN gotoblas_t  gotoblas_ATHLON;
+-
+-extern gotoblas_t  gotoblas_PRESCOTT;
+-extern gotoblas_t  gotoblas_ATOM;
+-extern gotoblas_t  gotoblas_NANO;
++
++// The Core microarchitecture is effectively obsolete, so make the compiled
++// libraries smaller by using a single kernel to handle all of its variants
++// (Core2, Penryn, and Dunnington).
+ extern gotoblas_t  gotoblas_CORE2;
+-extern gotoblas_t  gotoblas_PENRYN;
+-extern gotoblas_t  gotoblas_DUNNINGTON;
++#define gotoblas_PENRYN     gotoblas_CORE2
++#define gotoblas_DUNNINGTON gotoblas_CORE2
+ extern gotoblas_t  gotoblas_NEHALEM;
+-extern gotoblas_t  gotoblas_OPTERON;
+-extern gotoblas_t  gotoblas_OPTERON_SSE3;
+ extern gotoblas_t  gotoblas_BARCELONA;
+ extern gotoblas_t  gotoblas_BOBCAT;
+ #ifndef NO_AVX
+@@ -122,6 +115,7 @@
+ 
+ extern void openblas_warning(int verbose, const char * msg);
+ #define FALLBACK_VERBOSE 1
++#define CORE2_FALLBACK "OpenBLAS : Falling back to Core2 kernel.\n"
+ #define NEHALEM_FALLBACK "OpenBLAS : Your OS does not support AVX instructions. OpenBLAS is using Nehalem kernels as a fallback, which may give poorer performance.\n"
+ #define BARCELONA_FALLBACK "OpenBLAS : Your OS does not support AVX instructions. OpenBLAS is using Barcelona kernels as a fallback, which may give poorer performance.\n"
+ 
+@@ -170,19 +164,20 @@
+     case 0x6:
+       switch (exmodel) {
+       case 0:
+-	if (model <= 0x7) return &gotoblas_KATMAI;
+-	if ((model == 0x8) || (model == 0xa) || (model == 0xb)) return &gotoblas_COPPERMINE;
+-	if ((model == 0x9) || (model == 0xd)) return &gotoblas_BANIAS;
+-	if (model == 14) return &gotoblas_BANIAS;
+ 	if (model == 15) return &gotoblas_CORE2;
+ 	return NULL;
+ 
+       case 1:
+ 	if (model == 6) return &gotoblas_CORE2;
+-	if (model == 7) return &gotoblas_PENRYN;
+-	if (model == 13) return &gotoblas_DUNNINGTON;
++	if (model == 7) {
++	  openblas_warning(FALLBACK_VERBOSE, CORE2_FALLBACK);
++	  return &gotoblas_PENRYN;
++	}
++	if (model == 13) {
++	  openblas_warning(FALLBACK_VERBOSE, CORE2_FALLBACK);
++	  return &gotoblas_DUNNINGTON;
++	}
+ 	if ((model == 10) || (model == 11) || (model == 14) || (model == 15)) return &gotoblas_NEHALEM;
+-	if (model == 12) return &gotoblas_ATOM;
+ 	return NULL;
+ 
+       case 2:
+@@ -235,7 +230,6 @@
+ 	    return &gotoblas_NEHALEM; //OS doesn't support AVX. Use old kernels.
+ 	  }
+ 	}
+-	if (model == 7) return &gotoblas_ATOM; //Bay Trail	
+ 	return NULL;
+       case 4:
+ 		//Intel Haswell
+@@ -316,29 +310,18 @@
+ 	return NULL;
+       }
+       case 0xf:
+-      if (model <= 0x2) return &gotoblas_NORTHWOOD;
+-      return &gotoblas_PRESCOTT;
++      return NULL;
+     }
+   }
+ 
+   if (vendor == VENDOR_AMD){
+     if (family <= 0xe) {
+-        // Verify that CPU has 3dnow and 3dnowext before claiming it is Athlon
+-        cpuid(0x80000000, &eax, &ebx, &ecx, &edx);
+-        if ( (eax & 0xffff)  >= 0x01) {
+-            cpuid(0x80000001, &eax, &ebx, &ecx, &edx);
+-            if ((edx & (1 << 30)) == 0 || (edx & (1 << 31)) == 0)
+-              return NULL;
+-          }
+-        else
+-          return NULL;
+-
+-        return &gotoblas_ATHLON;
++        // 32-bit Athlon not supported, so return NULL
++        return NULL;
+       }
+     if (family == 0xf){
+       if ((exfamily == 0) || (exfamily == 2)) {
+-	if (ecx & (1 <<  0)) return &gotoblas_OPTERON_SSE3;
+-	else return &gotoblas_OPTERON;
++	return NULL;
+       }  else if (exfamily == 5) {
+ 	return &gotoblas_BOBCAT;
+       } else if (exfamily == 6) {
+@@ -407,18 +390,11 @@
+     }
+   }
+ 
+-  if (vendor == VENDOR_CENTAUR) {
+-    switch (family) {
+-    case 0x6:
+-      return &gotoblas_NANO;
+-    }
+-  }
+-
+   return NULL;
+ }
+ 
+ static char *corename[] = {
+-    "Unknown",
++    "Unknown/Unsupported",
+     "Katmai",
+     "Coppermine",
+     "Northwood",
+@@ -446,21 +422,11 @@
+ 
+ char *gotoblas_corename(void) {
+ 
+-  if (gotoblas == &gotoblas_KATMAI)       return corename[ 1];
+-  if (gotoblas == &gotoblas_COPPERMINE)   return corename[ 2];
+-  if (gotoblas == &gotoblas_NORTHWOOD)    return corename[ 3];
+-  if (gotoblas == &gotoblas_PRESCOTT)     return corename[ 4];
+-  if (gotoblas == &gotoblas_BANIAS)       return corename[ 5];
+-  if (gotoblas == &gotoblas_ATOM)         return corename[ 6];
+   if (gotoblas == &gotoblas_CORE2)        return corename[ 7];
+   if (gotoblas == &gotoblas_PENRYN)       return corename[ 8];
+   if (gotoblas == &gotoblas_DUNNINGTON)   return corename[ 9];
+   if (gotoblas == &gotoblas_NEHALEM)      return corename[10];
+-  if (gotoblas == &gotoblas_ATHLON)       return corename[11];
+-  if (gotoblas == &gotoblas_OPTERON_SSE3) return corename[12];
+-  if (gotoblas == &gotoblas_OPTERON)      return corename[13];
+   if (gotoblas == &gotoblas_BARCELONA)    return corename[14];
+-  if (gotoblas == &gotoblas_NANO)         return corename[15];
+   if (gotoblas == &gotoblas_SANDYBRIDGE)  return corename[16];
+   if (gotoblas == &gotoblas_BOBCAT)       return corename[17];
+   if (gotoblas == &gotoblas_BULLDOZER)    return corename[18];
+@@ -507,21 +473,11 @@
+ 		case 18: return (&gotoblas_BULLDOZER);
+ 		case 17: return (&gotoblas_BOBCAT);
+ 		case 16: return (&gotoblas_SANDYBRIDGE);
+-		case 15: return (&gotoblas_NANO);
+ 		case 14: return (&gotoblas_BARCELONA);
+-		case 13: return (&gotoblas_OPTERON);
+-		case 12: return (&gotoblas_OPTERON_SSE3);
+-		case 11: return (&gotoblas_ATHLON);
+ 		case 10: return (&gotoblas_NEHALEM);
+ 		case  9: return (&gotoblas_DUNNINGTON);
+ 		case  8: return (&gotoblas_PENRYN);
+ 		case  7: return (&gotoblas_CORE2);
+-		case  6: return (&gotoblas_ATOM);
+-		case  5: return (&gotoblas_BANIAS);
+-		case  4: return (&gotoblas_PRESCOTT);
+-		case  3: return (&gotoblas_NORTHWOOD);
+-		case  2: return (&gotoblas_COPPERMINE);
+-		case  1: return (&gotoblas_KATMAI);
+ 	}
+ 	return(NULL);
+ 
+@@ -549,21 +505,6 @@
+   	gotoblas = get_coretype();
+   }
+ 
+-#ifdef ARCH_X86
+-  if (gotoblas == NULL) gotoblas = &gotoblas_KATMAI;
+-#else
+-  if (gotoblas == NULL) gotoblas = &gotoblas_PRESCOTT;
+-  /* sanity check, if 64bit pointer we can't have a 32 bit cpu */
+-  if (sizeof(void*) == 8) {
+-      if (gotoblas == &gotoblas_KATMAI ||
+-          gotoblas == &gotoblas_COPPERMINE ||
+-          gotoblas == &gotoblas_NORTHWOOD ||
+-          gotoblas == &gotoblas_BANIAS ||
+-          gotoblas == &gotoblas_ATHLON)
+-          gotoblas = &gotoblas_PRESCOTT;
+-  }
+-#endif
+-
+   if (gotoblas && gotoblas -> init) {
+     strncpy(coren,gotoblas_corename(),20);
+     sprintf(coremsg, "Core: %s\n",coren);

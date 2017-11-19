@@ -1,0 +1,57 @@
+{% set version = "0.2.20" %}
+
+package:
+  name: openblas
+  version: "{{ version }}"
+
+source:
+  fn: "openblas-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/xianyi/OpenBLAS/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/openblas-{{ version }}.tar.gz"
+  sha256: "5ef38b15d9c652985774869efd548b8e3e972e1e99475c673b25537ed7bcf394"
+  patches:
+    - x86_64-dynamic-arch.patch
+    - osx-build.patch
+
+requirements:
+  build:
+    - biobuilds-build
+
+    # Currently unable to use compiler('c') and compiler('fortran') for the
+    # "default" toolchain because the corresponding GCC 7.x packages in the
+    # "defaults" channel are missing the GNU OpenMP (gomp) libraries.
+    - gcc 4.8.*                   # [toolchain == 'default' and not ppc64le]
+    - {{ toolchain }}-build       # [toolchain != 'default']
+
+    # Need an updated assembler with AVX2 instruction support. (The system
+    # assembler on our CentOS 6 linux-64 build system is too old for this.)
+    - binutils                    # [toolchain == 'default' and linux and x86_64]
+  run:
+    # _Should_ be ok using any libgcc, so we won't request a specific version
+    # to avoid unresolvable dependency graphs when installing in environments
+    # with packages built using newer versions of GCC. If necessary, we'll
+    # revisit this decision if/when we get user breakage reports.
+    - libgcc                      # [toolchain == 'default' and not ppc64le]
+    - {{ toolchain }}-runtime     # [toolchain != 'default']
+
+build:
+  number: 0
+  features:
+    - opt                         # [toolchain != 'default']
+  run_exports:
+    # ABI seems fairly stable, so we'll pin to the "major.minor" versions; note
+    # that this pinning is less restrictive than the one for the "defaults"
+    # channel package (which pins to major.minor.patch" versions). See
+    # <https://abi-laboratory.pro/tracker/timeline/openblas/> for details.
+    - {{ pin_subpackage('openblas', max_pin='x.x') }}
+
+  # Recipes for previous OpenBLAS versions passed the "OPENBLAS_CORETYPE"
+  # environment variable using `script_env`; this has now been moved into
+  # "conda_build_config.yaml".
+
+about:
+  home: "http://www.openblas.net/"
+  license: BSD
+  license_file: LICENSE
+  summary: "Optimized BLAS library based on GotoBLAS2"
