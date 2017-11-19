@@ -1,0 +1,20 @@
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
+toolchain:
+  - default
+
+blas_impl:
+  - openblas
+
+openblas:
+  - 0.2.20
+
+python:
+  - 2.7
+  - 3.5
+  - 3.6
+
+pin_run_as_build:
+  python: {"min_pin": "x.x", "max_pin": "x.x"}

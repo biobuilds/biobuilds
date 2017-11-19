@@ -1,0 +1,22 @@
+diff --git a/numpy/distutils/fcompiler/gnu.py b/numpy/distutils/fcompiler/gnu.py
+index b786c0a..7832067 100644
+--- a/numpy/distutils/fcompiler/gnu.py
++++ b/numpy/distutils/fcompiler/gnu.py
+@@ -222,7 +222,7 @@ class GnuFCompiler(FCompiler):
+ 
+ class Gnu95FCompiler(GnuFCompiler):
+     compiler_type = 'gnu95'
+-    compiler_aliases = ('gfortran',)
++    compiler_aliases = ('gfortran', )
+     description = 'GNU Fortran 95 compiler'
+ 
+     def version_match(self, version_string):
+@@ -250,6 +250,8 @@ class Gnu95FCompiler(GnuFCompiler):
+     #       GNU Fortran (GCC) 4.3.0 20070316 (experimental)
+ 
+     possible_executables = ['gfortran', 'f95']
++    if os.getenv('GFORTRAN'):
++        possible_executables.append(os.path.basename(os.getenv('GFORTRAN')))
+     executables = {
+         'version_cmd'  : ["<F90>", "--version"],
+         'compiler_f77' : [None, "-Wall", "-ffixed-form",
