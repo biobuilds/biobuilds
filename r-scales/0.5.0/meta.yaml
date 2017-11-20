@@ -1,0 +1,84 @@
+{% set name = "scales" %}
+{% set version = "0.5.0" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "dbfcc0817c4ab8b8777ec7d68ebfe220177c193cfb5bd0e8ba5d365dbfe3e97d"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('cxx') }}
+    - r-r6
+    - r-rcolorbrewer
+    - r-rcpp
+    - r-dichromat
+    - r-labeling
+    - r-munsell >=0.2
+    - r-plyr
+    - r-viridislite
+
+  run:
+    - r-base
+    - r-r6
+    - r-rcolorbrewer
+    - r-rcpp
+    - r-dichromat
+    - r-labeling
+    - r-munsell >=0.2
+    - r-plyr
+    - r-viridislite
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/hadley/scales
+  license: MIT
+  summary: Scale functions for R visualization
+  description: |
+    Graphical scales map data to aesthetics, and provide methods for
+    automatically determining breaks and labels for axes and legends.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: scales
+# Version: 0.5.0
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", c("aut", "cre")), person("RStudio", role = "cph") )
+# Title: Scale Functions for Visualization
+# Description: Graphical scales map data to aesthetics, and provide methods for automatically determining breaks and labels for axes and legends.
+# URL: https://github.com/hadley/scales
+# BugReports: https://github.com/hadley/scales/issues
+# Depends: R (>= 2.13)
+# Imports: RColorBrewer, dichromat, plyr, munsell (>= 0.2), labeling, Rcpp, R6, viridisLite
+# LinkingTo: Rcpp
+# Suggests: testthat (>= 0.8), bit64, covr, hms
+# License: MIT + file LICENSE
+# LazyLoad: yes
+# RoxygenNote: 6.0.1
+# NeedsCompilation: yes
+# Packaged: 2017-08-23 21:21:31 UTC; Kara
+# Author: Hadley Wickham [aut, cre], RStudio [cph]
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2017-08-24 14:35:38 UTC
+#----------------------------------------------------------------------

@@ -1,0 +1,47 @@
+{% set name = "stringr" %}
+{% set version = "1.2.0" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "61d0b30768bbfd7c0bb89310e2de5b7b457ac504538acbcca50374b46b16129a"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - r-magrittr
+    - r-stringi >=0.4.1
+
+  run:
+    - r-base
+    - r-magrittr
+    - r-stringi >=0.4.1
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/hadley/stringr
+  license: GPLv2
+  summary: 'Simple, consistent wrappers for common string operations'
+  description: |
+    A consistent, simple and easy to use set of wrappers around the fantastic
+    'stringi' package. All function and argument names (and positions) are
+    consistent, all functions deal with NAs and zero length vectors in the same
+    way, and the output from one function is easy to feed into the input of
+    another.

@@ -1,37 +1,38 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "reshape2" %}
+{% set version = "1.4.2" %}
 
 package:
-  name: r-reshape2
-  version: "1.4.2"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: reshape2_1.4.2.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/reshape2_1.4.2.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/reshape2/reshape2_1.4.2.tar.gz
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "6d3783610379be4c5676d9236cf66276a166b5b96c18f2759e9b219758959b6b"
 
 build:
+  number: 0
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r-base
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
     - r-rcpp
     - r-plyr >=1.8.1
     - r-stringr
-    - posix               # [win]
-    - {{native}}toolchain # [win]
-    - gcc                 # [not win and not ppc64le]
 
   run:
     - r-base
     - r-rcpp
     - r-plyr >=1.8.1
     - r-stringr
-    - libgcc              # [not win and not ppc64le]
 
 test:
   commands:

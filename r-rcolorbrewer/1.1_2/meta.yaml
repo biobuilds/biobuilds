@@ -1,40 +1,48 @@
+{% set name = "RColorBrewer" %}
+{% set version = "1.1-2" %}
+
 package:
-  name: r-rcolorbrewer
-  version: "1.1_2"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: RColorBrewer_1.1-2.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/RColorBrewer_1.1-2.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/RColorBrewer/RColorBrewer_1.1-2.tar.gz
-  md5: "66054d83eade4dff8a43ad4732691182"
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "f3e9781e84e114b7a88eb099825936cc5ae7276bbba5af94d35adb1b3ea2ccdd"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r
+    - r-base {{ r_base }}
 
   run:
-    - r
+    - r-base
 
 test:
   commands:
-    - $R -e "library('RColorBrewer')" # [not win]
-    - "\"%R%\" -e \"library('RColorBrewer')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
   home: 'https://cran.r-project.org/web/packages/RColorBrewer/index.html'
   license: Apache 2.0
-  summary: 'Color brewer palettes, designed by Cynthia Brewer'
+  summary: Color brewer palettes
+  description: |
+    Provides color schemes for maps (and other graphics) designed by Cynthia
+    Brewer as described at http://colorbrewer2.org
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: RColorBrewer
 # Version: 1.1-2
 # Date: 2014-12-07

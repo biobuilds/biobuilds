@@ -1,0 +1,43 @@
+{% set name = "lazyeval" %}
+{% set version = "0.2.1" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "83b3a43e94c40fe7977e43eb607be0a3cd64c02800eae4f2774e7866d1e93f61"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: 'https://cran.r-project.org/web/packages/lazyeval/index.html'
+  license: GPLv3
+  summary: 'Lazy (Non-Standard) evaluation for R'
+  description: |
+    An alternative approach to non-standard evaluation using formulas. Provides
+    a full implementation of LISP style 'quasiquotation', making it easier to
+    generate code with other code.

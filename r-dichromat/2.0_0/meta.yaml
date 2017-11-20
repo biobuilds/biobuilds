@@ -1,40 +1,48 @@
+{% set name = "dichromat" %}
+{% set version = "2.0-0" %}
+
 package:
-  name: r-dichromat
-  version: "2.0_0"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: dichromat_2.0-0.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/dichromat_2.0-0.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/dichromat/dichromat_2.0-0.tar.gz
-  md5: "84e194ac95a69763d740947a7ee346a6"
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "31151eaf36f70bdc1172da5ff5088ee51cc0a3db4ead59c7c38c25316d580dd1"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r
+    - r-base {{ r_base }}
 
   run:
-    - r
+    - r-base
 
 test:
   commands:
-    - $R -e "library('dichromat')" # [not win]
-    - "\"%R%\" -e \"library('dichromat')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
   home: 'https://cran.r-project.org/web/packages/dichromat/index.html'
   license: GPLv2
-  summary: 'Color schemes for dichromats (simulates the effects of different types of color-blindness)'
+  summary: Color schemes for dichromats
+  description: |
+    Collapse red-green or green-blue distinctions to simulate the effects of
+    different types of color-blindness.
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: dichromat
 # Version: 2.0-0
 # Date: 2013-01-23

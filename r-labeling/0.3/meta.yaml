@@ -1,30 +1,35 @@
+{% set name = "labeling" %}
+{% set version = "0.3" %}
+
 package:
-  name: r-labeling
-  version: "0.3"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: labeling_0.3.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/labeling_0.3.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/labeling/labeling_0.3.tar.gz
-  md5: "ccd7082ec0b211aba8a89d85176bb534"
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "0d8069eb48e91f6f6d6a9148f4e2dc5026cabead15dd15fc343eff9cf33f538f"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r
+    - r-base {{ r_base }}
 
   run:
-    - r
+    - r-base
 
 test:
   commands:
-    - $R -e "library('labeling')" # [not win]
-    - "\"%R%\" -e \"library('labeling')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
   home: 'https://cran.r-project.org/web/packages/labeling/index.html'
@@ -35,7 +40,7 @@ about:
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: labeling
 # Type: Package
 # Title: Axis Labeling

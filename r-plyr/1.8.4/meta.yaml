@@ -1,45 +1,52 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "plyr" %}
+{% set version = "1.8.4" %}
 
 package:
-  name: r-plyr
-  version: "1.8.4"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: plyr_1.8.4.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/plyr_1.8.4.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/plyr/plyr_1.8.4.tar.gz
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "60b522d75961007658c9806f8394db27989f1154727cb0bb970062c96ec9eac5"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r-base
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
     - r-rcpp >=0.11.0
-    - posix               # [win]
-    - {{native}}toolchain # [win]
-    - gcc                 # [not win and not ppc64le]
 
   run:
     - r-base
     - r-rcpp >=0.11.0
-    - libgcc              # [not win and not ppc64le]
 
 test:
   commands:
-    - $R -e "library('plyr')" # [not win]
-    - "\"%R%\" -e \"library('plyr')\"" # [win]
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
 
 about:
   home: 'http://had.co.nz/plyr'
   license: MIT
   license_file: LICENSE
   summary: 'Tools for splitting, applying, and combining data'
-
+  description: |
+    A set of tools that solves a common set of problems---you need to break a
+    big problem down into manageable pieces, operate on each piece and then put
+    all the pieces back together. For example, you might want to fit a model to
+    each spatial location or time point in your study, summarise data by panels
+    or collapse high-dimensional arrays to simpler summary statistics.  The
+    development of 'plyr' has been generously supported by 'Becton Dickinson'.
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:

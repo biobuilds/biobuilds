@@ -1,32 +1,35 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "gtable" %}
+{% set version = "0.2.0" %}
 
 package:
-  name: r-gtable
-  version: "0.2.0"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: gtable_0.2.0.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/gtable_0.2.0.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/gtable/gtable_0.2.0.tar.gz
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "801e4869830ff3da1d38e41f5a2296a54fc10a7419c6ffb108582850c701e76f"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r-base
+    - r-base {{ r_base }}
 
   run:
     - r-base
 
 test:
   commands:
-    - $R -e "library('gtable')" # [not win]
-    - "\"%R%\" -e \"library('gtable')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
   home: 'https://cran.r-project.org/web/packages/gtable/index.html'

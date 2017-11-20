@@ -1,0 +1,47 @@
+{% set name = "digest" %}
+{% set version = "0.6.12" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "https://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "https://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "a479463f120037ad8e88bb1387170842e635a1f07ce7e3575316efd6e14d9eab"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: "http://dirk.eddelbuettel.com/code/digest.html"
+  license: GPLv2
+  summary: "Create compact hash digests of R objects"
+  description: |
+    Implementation of a function 'digest()' for the creation of hash digests of
+    arbitrary R objects (using the 'md5', 'sha-1', 'sha-256', 'crc32', 'xxhash'
+    and 'murmurhash' algorithms) permitting easy comparison of R language
+    objects, as well as a function 'hmac()' to create hash-based message
+    authentication code. Please note that this package is not meant to be
+    deployed for cryptographic purposes for which more comprehensive (and
+    widely tested) libraries such as 'OpenSSL' should be used.

@@ -1,0 +1,67 @@
+{% set name = "rlang" %}
+{% set version = "0.1.4" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "8d9b6c962ae81b96c96ada9614c6a1ffb9eda12dd407e2aff634f7d335e7b9f4"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: http://rlang.tidyverse.org, https://github.com/tidyverse/rlang
+  license: GPLv3
+  summary: Functions for base types and core R and 'tidyverse' features
+  description: |
+    A toolbox for working with base types, core R features like the condition
+    system, and core 'Tidyverse' features like tidy evaluation.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: rlang
+# Version: 0.1.4
+# Title: Functions for Base Types and Core R and 'Tidyverse' Features
+# Description: A toolbox for working with base types, core R features like the condition system, and core 'Tidyverse' features like tidy evaluation.
+# Authors@R: c( person("Lionel", "Henry", ,"lionel@rstudio.com", c("aut", "cre")), person("Hadley", "Wickham", ,"hadley@rstudio.com", "aut"), person("RStudio", role = "cph") )
+# License: GPL-3
+# LazyData: true
+# Depends: R (>= 3.1.0)
+# Suggests: knitr, rmarkdown (>= 0.2.65), testthat, covr
+# VignetteBuilder: knitr
+# RoxygenNote: 6.0.1
+# URL: http://rlang.tidyverse.org, https://github.com/tidyverse/rlang
+# BugReports: https://github.com/tidyverse/rlang/issues
+# NeedsCompilation: yes
+# Packaged: 2017-11-04 11:22:57 UTC; lionel
+# Author: Lionel Henry [aut, cre], Hadley Wickham [aut], RStudio [cph]
+# Maintainer: Lionel Henry <lionel@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2017-11-05 15:47:40 UTC
+#----------------------------------------------------------------------

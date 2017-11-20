@@ -1,0 +1,50 @@
+{% set name = "stringi" %}
+{% set version = "1.1.6" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "https://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "https://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "9590360b96627b18d7bed273deedabda4283dbae7d41c0a0ba78a58e6aa95188"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: 'http://www.gagolewski.com/software/stringi/'
+  license: BSD-like
+  license_file: LICENSE
+  summary: 'Character string processing facilities'
+  description: |
+    Allows for fast, correct, consistent, portable, as well as convenient
+    character string/text processing in every locale and any native encoding.
+    Owing to the use of the ICU library, the package provides R users with
+    platform-independent functions known to Java, Perl, Python, PHP, and Ruby
+    programmers. Available features include: pattern searching (e.g., with ICU
+    Java-like regular expressions or the Unicode Collation Algorithm), random
+    string generation, case mapping, string transliteration, concatenation,
+    Unicode normalization, date-time formatting and parsing, etc.
