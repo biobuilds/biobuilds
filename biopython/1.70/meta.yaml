@@ -1,0 +1,32 @@
+{% set name = "biopython" %}
+{% set version = "1.70" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "http://biopython.org/DIST/biopython-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "4a7c5298f03d1a45523f32bae1fffcff323ea9dce007fb1241af092f5ab2e45b"
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - python {{ python }}
+    - numpy {{ numpy }}
+    - reportlab
+  run:
+    - python
+    - numpy
+    - reportlab
+
+build:
+  number: 0
+
+about:
+  home: "https://biopython.org/"
+  license: BSD-like
+  summary: Python tools for computational molecular biology
