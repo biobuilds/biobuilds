@@ -1,0 +1,17 @@
+toolchain:
+  - default
+  #- intel-psxe2018  # [linux and x86_64]
+  #- ibm-at10.0      # [linux and ppc64le]
+
+# "$OPENBLAS_CORETYPE" is needed to get "DYNAMIC_ARCH=1" builds working
+# correctly on VMs with unreliable CPU identification; specifically, our OS X
+# 10.9 build VMs seem to always identify their CPU microarchitecture as
+# "Penryn", even when the VM host has a CPU with a more recent (Nehalem or
+# later) microarchitecture. However, since we can pass-through and use newer
+# (e.g., SSE4.2 or AVX) instructions, setting this environment variable lets us
+# properly build our modified "dynamic arch" library. Without it, "make tests"
+# will likely fail with an "Architecture Initialization failed" error when
+# building inside such VMs.
+OPENBLAS_CORETYPE:
+  - Nehalem         # [x86_64]
+  - Power8          # [ppc64le]

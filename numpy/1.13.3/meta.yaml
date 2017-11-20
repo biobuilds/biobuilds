@@ -1,0 +1,75 @@
+{% set name = "numpy" %}
+{% set version = "1.13.3" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.zip"
+  url:
+    - "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.zip"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "36ee86d5adbabc4fa2643a073f93d5504bdfed37a149a3a49f4dde259f35a750"
+  patches:
+    - mklfft.patch
+    - osx-dist.patch
+    - known-test-failures.patch
+    # customize gfortran executable that gets looked for to use our GFORTRAN env var
+    - gfortran_alias.patch
+
+build:
+  # Other platforms should just use the packages from the "defaults" channel
+  skip: True    # [not ppc64le]
+  number: 0
+  features:
+    - opt       # [toolchain != 'default']
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}         # [toolchain == 'default']
+    - {{ compiler('fortran') }}   # [toolchain == 'default']
+    - {{ toolchain }}-build       # [toolchain != 'default']
+    - openblas {{ openblas }}     # [blas_impl == 'openblas']
+    - python {{ python }}
+    - setuptools
+    - cython
+  run:
+    - {{ toolchain }}-runtime     # [toolchain != 'default']
+    - python
+    # BLAS runtime should be set by the build package's run_exports
+
+test:
+  requires:
+    - biobuilds-opt               # [toolchain != 'default']
+    - nose
+    - {{ compiler('c') }}
+    - {{ compiler('fortran') }}
+  commands:
+    - f2py -h
+    - conda inspect linkages -p $PREFIX numpy
+    - conda inspect objects -p $PREFIX numpy    # [osx]
+  imports:
+    - numpy
+    - numpy.linalg.lapack_lite
+
+about:
+  home: http://numpy.scipy.org/
+  license: BSD 3-Clause
+  license_file: LICENSE.txt
+  summary: 'Array processing for numbers, strings, records, and objects.'
+  description: |
+    NumPy is the fundamental package needed for scientific computing with Python.
+  doc_url: https://docs.scipy.org/doc/numpy-1.13.0/reference/
+  dev_url: https://github.com/numpy/numpy
+  dev_source_url: https://github.com/numpy/numpy/tree/master/doc
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - msarahan
+    - pelson
+    - rgommers
+    - ocefpaf
+    - chenghlee

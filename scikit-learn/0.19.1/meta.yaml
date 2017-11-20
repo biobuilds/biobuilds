@@ -1,0 +1,68 @@
+{% set name = "scikit-learn" %}
+{% set version = "0.19.1" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/{{ name }}/{{ name }}/archive/{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "2947f531ad52e81b2436b26608d8198778ac0b4baa7d2925db8b3b3fcb39c8a2"
+
+build:
+  # Other platforms should just use the packages from the "defaults" channel
+  skip: True    # [not ppc64le]
+  number: 0
+  features:
+    - opt       # [toolchain != 'default']
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}         # [toolchain == 'default']
+    - {{ compiler('cxx') }}       # [toolchain == 'default']
+    - {{ compiler('fortran') }}   # [toolchain == 'default']
+    - {{ toolchain }}-build       # [toolchain != 'default']
+    - openblas {{ openblas }}     # [blas_impl == 'openblas']
+    - python {{ python }}
+    - setuptools
+    - cython
+    - numpy {{ numpy }}
+    - scipy
+    - nose
+  run:
+    - {{ toolchain }}-runtime     # [toolchain != 'default']
+    - python
+    - scipy
+    - numpy
+    # BLAS runtime should be set by the build package's run_exports
+
+test:
+  requires:
+    - biobuilds-opt               # [toolchain != 'default']
+    - nose
+  imports:
+    - sklearn
+  commands:
+    - nosetests sklearn --exe
+    - conda inspect linkages -p $PREFIX scikit-learn
+    - conda inspect objects -p $PREFIX scikit-learn   # [osx]
+
+about:
+  home: http://scikit-learn.org/
+  license: BSD 3-Clause
+  license_file: COPYING
+  summary: A set of python modules for machine learning and data mining
+
+extra:
+  recipe-maintainers:
+    - amueller
+    - astaric
+    - jakirkham
+    - ogrisel
+    - ocefpaf
+    - lesteve
+    - chenghlee

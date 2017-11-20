@@ -1,0 +1,60 @@
+{% set name = "pandas" %}
+{% set version= "0.21.0" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: {{ version }}
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/pandas-dev/pandas/releases/download/v{{ version }}/{{ name }}-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "5cd5cb30e72eeaf202f0e5e180780b897570e889d2db328c689a5a263405c559"
+
+build:
+  # Other platforms should just use the packages from the "defaults" channel
+  skip: True    # [not ppc64le]
+  number: 0
+  features:
+    - opt       # [toolchain != 'default']
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ compiler('cxx') }}     # [toolchain == 'default']
+    - python {{ python }}
+    - setuptools
+    - cython
+    - numpy {{ numpy }}
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - python
+    - numpy
+    - python-dateutil
+    - pytz
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  imports:
+    - pandas
+  commands:
+    - conda inspect linkages -p $PREFIX pandas
+    - conda inspect objects -p $PREFIX pandas   # [osx]
+
+about:
+  home: http://pandas.pydata.org
+  license: BSD 3-clause
+  license_file: LICENSE
+  summary: 'High-performance, easy-to-use data structures and data analysis tools.'
+
+extra:
+  recipe-maintainers:
+    - jreback
+    - jorisvandenbossche
+    - msarahan
+    - ocefpaf
+    - TomAugspurger
+    - chenghlee

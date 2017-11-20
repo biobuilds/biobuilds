@@ -1,0 +1,18 @@
+# Works around this precision-related failure on little-endian POWER (ppc64le):
+#
+#   ======================================================================
+#   FAIL: test_umath.TestComplexFunctions.test_loss_of_precision_longcomplex
+#   ----------------------------------------------------------------------
+#   ... traceback ...
+#   AssertionError: (131, 1.5498743198116924955e-09, 4.0035173453530728024e-19, 'arcsinh')
+
+--- numpy/core/tests/test_umath.py
++++ numpy/core/tests/test_umath.py
+@@ -2379,6 +2379,7 @@
+             yield self.check_loss_of_precision, dtype
+ 
+     @dec.knownfailureif(is_longdouble_finfo_bogus(), "Bogus long double finfo")
++    @dec.knownfailureif(platform.machine() == "ppc64le", "arcsinh precision error on ppc64le")
+     def test_loss_of_precision_longcomplex(self):
+         self.check_loss_of_precision(np.longcomplex)
+ 
