@@ -1,0 +1,63 @@
+{% set name = "rematch" %}
+{% set version = "1.0.1" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "a409dec978cd02914cdddfedc974d9b45bd2975a124d8870d52cfd7d37d47578"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/MangoTheCat/rematch
+  license: MIT
+  summary: Match regular expressions with a nicer API
+  description: |
+    A small wrapper on 'regexpr' to extract the matches and captured groups
+    from the match of a regular expression to a character vector.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: rematch
+# Title: Match Regular Expressions with a Nicer 'API'
+# Version: 1.0.1
+# Author: Gabor Csardi
+# Maintainer: Gabor Csardi <gcsardi@mango-solutions.com>
+# Description: A small wrapper on 'regexpr' to extract the matches and captured groups from the match of a regular expression to a character vector.
+# License: MIT + file LICENSE
+# LazyData: true
+# URL: https://github.com/MangoTheCat/rematch
+# BugReports: https://github.com/MangoTheCat/rematch/issues
+# RoxygenNote: 5.0.1.9000
+# Suggests: covr, testthat
+# Encoding: UTF-8
+# NeedsCompilation: no
+# Packaged: 2016-04-20 19:54:37 UTC; gaborcsardi
+# Repository: CRAN
+# Date/Publication: 2016-04-21 08:20:46
+#----------------------------------------------------------------------

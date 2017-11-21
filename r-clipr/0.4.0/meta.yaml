@@ -1,0 +1,66 @@
+{% set name = "clipr" %}
+{% set version = "0.4.0" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "44a2f1ab4fde53e4fe81cf5800aa6ad45b72b5da93d6fe4d3661d7397220e8af"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/mdlincoln/clipr
+  license: GPLv3
+  summary: Read and write from the system clipboard
+  description: |
+    Simple utility functions to read from and write to the Windows, OS X, and
+    X11 clipboards.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: clipr
+# Type: Package
+# Title: Read and Write from the System Clipboard
+# Version: 0.4.0
+# Authors@R: c( person("Matthew", "Lincoln", email = "matthew.d.lincoln@gmail.com", role = c("aut", "cre")), person("Louis", "Maddox", role = "ctb"), person("Steve", "Simpson", role = "ctb"), person("Jennifer", "Bryan", role = "ctb"))
+# Description: Simple utility functions to read from and write to the Windows, OS X, and X11 clipboards.
+# Imports: utils
+# SystemRequirements: xclip (https://github.com/astrand/xclip) or xsel (http://www.vergenet.net/~conrad/software/xsel/) for accessing the X11 clipboard
+# License: GPL-3
+# LazyData: TRUE
+# Suggests: rstudioapi (>= 0.5), testthat
+# URL: https://github.com/mdlincoln/clipr
+# BugReports: https://github.com/mdlincoln/clipr/issues
+# RoxygenNote: 6.0.1
+# NeedsCompilation: no
+# Packaged: 2017-11-02 23:47:38 UTC; MLincoln
+# Author: Matthew Lincoln [aut, cre], Louis Maddox [ctb], Steve Simpson [ctb], Jennifer Bryan [ctb]
+# Maintainer: Matthew Lincoln <matthew.d.lincoln@gmail.com>
+# Repository: CRAN
+# Date/Publication: 2017-11-03 12:20:02 UTC
+#----------------------------------------------------------------------

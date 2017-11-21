@@ -1,0 +1,71 @@
+{% set name = "cli" %}
+{% set version = "1.0.0" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "8fa3dbfc954ca61b8510f767ede9e8a365dac2ef95fe87c715a0f37d721b5a1d"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - r-assertthat
+    - r-crayon
+
+  run:
+    - r-base
+    - r-assertthat
+    - r-crayon
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/r-lib/cli#readme
+  license: MIT
+  summary: Helpers for developing command line interfaces
+  description: |
+    A suite of tools designed to build attractive command line interfaces
+    ('CLIs'). Includes tools for drawing rules, boxes, trees, and Unicode
+    symbols with ASCII alternatives.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: cli
+# Title: Helpers for Developing Command Line Interfaces
+# Version: 1.0.0
+# Authors@R: c( person("Gabor", "Csardi", , "csardi.gabor@gmail.com", c("aut", "cre")), person("Hadley", "Wickham", role = c("ctb")), person("Kirill", "Muller", role = c("ctb")) )
+# Description: A suite of tools designed to build attractive command line interfaces ('CLIs'). Includes tools for drawing rules, boxes, trees, and 'Unicode' symbols with 'ASCII' alternatives.
+# License: MIT + file LICENSE
+# LazyData: true
+# URL: https://github.com/r-lib/cli#readme
+# BugReports: https://github.com/r-lib/cli/issues
+# RoxygenNote: 6.0.1.9000
+# Depends: R (>= 2.10)
+# Imports: assertthat, crayon, methods
+# Suggests: covr, mockery, testthat, withr
+# Encoding: UTF-8
+# NeedsCompilation: no
+# Packaged: 2017-11-03 20:31:55 UTC; gaborcsardi
+# Author: Gabor Csardi [aut, cre], Hadley Wickham [ctb], Kirill Muller [ctb]
+# Maintainer: Gabor Csardi <csardi.gabor@gmail.com>
+# Repository: CRAN
+# Date/Publication: 2017-11-05 12:38:47 UTC
+#----------------------------------------------------------------------

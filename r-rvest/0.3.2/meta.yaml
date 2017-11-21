@@ -1,24 +1,27 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "rvest" %}
+{% set version = "0.3.2" %}
 
 package:
-  name: r-rvest
-  version: "0.3.2"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: rvest_0.3.2.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/rvest_0.3.2.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/rvest/rvest_0.3.2.tar.gz
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "0d6e8837fb1df79b1c83e7b48d8f1e6245f34a10c4bb6952e7bec7867e4abb12"
 
 build:
+  number: 0
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r-base
+    - r-base {{ r_base }}
     - r-httr >=0.5
     - r-magrittr
     - r-selectr
@@ -33,19 +36,21 @@ requirements:
 
 test:
   commands:
-    - $R -e "library('rvest')" # [not win]
-    - "\"%R%\" -e \"library('rvest')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
   home: https://github.com/hadley/rvest
   license: GPLv3
-  summary: "Wrappers for the 'xml2' and 'httr' packages to make it easy to download and manipulate HTML and XML"
-  license_family: GPL3
+  summary: Easily harvest (scrape) web pages
+  description: |
+    Wrappers around the 'xml2' and 'httr' packages to make it easy to download,
+    then manipulate, HTML and XML.
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: rvest
 # Version: 0.3.2
 # Title: Easily Harvest (Scrape) Web Pages

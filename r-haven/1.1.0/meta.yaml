@@ -1,0 +1,81 @@
+{% set name = "haven" %}
+{% set version = "1.1.0" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "089fb4d0955f320abc48d0a3031799f96f3a20b82492474743903fdf12001d19"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - r-rcpp >=0.11.4
+    - r-forcats >=0.2.0
+    - r-hms
+    - r-readr >=0.1.0
+    - r-tibble
+
+  run:
+    - r-base
+    - r-rcpp >=0.11.4
+    - r-forcats >=0.2.0
+    - r-hms
+    - r-readr >=0.1.0
+    - r-tibble
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: http://haven.tidyverse.org, https://github.com/tidyverse/haven, https://github.com/WizardMac/ReadStat
+  license: MIT + file LICENSE
+  license_family: MIT
+  summary: Import and export SPSS, STATA, and SAS files
+  description: |
+    Import foreign statistical formats into R via the embedded ReadStat C library
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: haven
+# Version: 1.1.0
+# Title: Import and Export 'SPSS', 'Stata' and 'SAS' Files
+# Description: Import foreign statistical formats into R via the embedded 'ReadStat' C library, <https://github.com/WizardMac/ReadStat>.
+# License: MIT + file LICENSE
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", role = c("aut", "cre")), person("Evan", "Miller", , role = c("aut", "cph"), comment = "Author of included ReadStat code"), person("RStudio", role = c("cph", "fnd")) )
+# Depends: R (>= 3.1.0)
+# Suggests: testthat, knitr, rmarkdown, covr
+# LinkingTo: Rcpp
+# Imports: Rcpp (>= 0.11.4), readr (>= 0.1.0), hms, tibble, forcats (>= 0.2.0)
+# LazyData: true
+# URL: http://haven.tidyverse.org, https://github.com/tidyverse/haven, https://github.com/WizardMac/ReadStat
+# BugReports: https://github.com/hadley/haven/issues
+# VignetteBuilder: knitr
+# SystemRequirements: GNU make
+# RoxygenNote: 6.0.1
+# Encoding: UTF-8
+# NeedsCompilation: yes
+# Packaged: 2017-07-08 15:47:00 UTC; hadley
+# Author: Hadley Wickham [aut, cre], Evan Miller [aut, cph] (Author of included ReadStat code), RStudio [cph, fnd]
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2017-07-09 06:40:47 UTC
+#----------------------------------------------------------------------

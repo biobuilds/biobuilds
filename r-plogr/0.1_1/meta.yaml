@@ -1,0 +1,65 @@
+{% set name = "plogr" %}
+{% set version = "0.1-1" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "22755c93c76c26252841f43195df31681ea865e91aa89726010bd1b9288ef48f"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/krlmlr/plogr#readme
+  license: MIT
+  summary: The plog C++ logging library
+  description: |
+    A simple header-only logging library for C++. Add 'LinkingTo: plogr' to
+    'DESCRIPTION', and '#include <plogr.h>' in your C++ modules to use it.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: plogr
+# Title: The 'plog' C++ Logging Library
+# Version: 0.1-1
+# Date: 2016-09-24
+# Authors@R: c( person("Kirill", "Muller", role = c("aut", "cre"), email = "krlmlr+r@mailbox.org"), person("Sergey", "Podobry", role = "cph", comment = "Author of the bundled plog library"))
+# Description:  A simple header-only logging library for C++. Add 'LinkingTo: plogr' to 'DESCRIPTION', and '#include <plogr.h>' in your C++ modules to use it.
+# Suggests: Rcpp
+# License: MIT + file LICENSE
+# Encoding: UTF-8
+# LazyData: true
+# URL: https://github.com/krlmlr/plogr#readme
+# BugReports: https://github.com/krlmlr/plogr/issues
+# RoxygenNote: 5.0.1.9000
+# NeedsCompilation: no
+# Packaged: 2016-09-24 12:08:49 UTC; muelleki
+# Author: Kirill Muller [aut, cre], Sergey Podobry [cph] (Author of the bundled plog library)
+# Maintainer: Kirill Muller <krlmlr+r@mailbox.org>
+# Repository: CRAN
+# Date/Publication: 2016-09-24 18:23:26
+#----------------------------------------------------------------------

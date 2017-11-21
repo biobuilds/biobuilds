@@ -1,0 +1,76 @@
+{% set name = "tidyselect" %}
+{% set version = "0.2.3" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "0c193abc8251a60e1d2a32a99c77651c336bc185e3c2a72e5f8781813d181c2c"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('cxx') }}
+    - r-rcpp >=0.12.0
+    - r-glue
+    - r-purrr
+    - r-rlang >=0.1
+
+  run:
+    - r-base
+    - r-rcpp >=0.12.0
+    - r-glue
+    - r-purrr
+    - r-rlang >=0.1
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://CRAN.R-project.org/package=tidyselect
+  license: GPLv3
+  summary: Select from a set of strings
+  description: |
+    A backend for the selecting functions of the 'tidyverse'. It makes it easy
+    to implement select-like functions in your own packages in a way that is
+    consistent with other 'tidyverse' interfaces for selection.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: tidyselect
+# Title: Select from a Set of Strings
+# Version: 0.2.3
+# Authors@R: c( person("Lionel", "Henry", ,"lionel@rstudio.com", c("aut", "cre")), person("Hadley", "Wickham", ,"hadley@rstudio.com", "aut"), person("RStudio", role = "cph") )
+# Description: A backend for the selecting functions of the 'tidyverse'. It makes it easy to implement select-like functions in your own packages in a way that is consistent with other 'tidyverse' interfaces for selection.
+# Depends: R (>= 3.1.0)
+# Imports: glue, purrr, rlang (>= 0.1), Rcpp (>= 0.12.0)
+# Suggests: dplyr, testthat
+# LinkingTo: Rcpp (>= 0.12.0),
+# License: GPL-3
+# Encoding: UTF-8
+# LazyData: true
+# ByteCompile: true
+# RoxygenNote: 6.0.1
+# NeedsCompilation: yes
+# Packaged: 2017-11-06 19:12:16 UTC; lionel
+# Author: Lionel Henry [aut, cre], Hadley Wickham [aut], RStudio [cph]
+# Maintainer: Lionel Henry <lionel@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2017-11-06 21:55:42 UTC
+#----------------------------------------------------------------------

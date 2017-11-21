@@ -1,0 +1,72 @@
+{% set name = "htmltools" %}
+{% set version = "0.3.6" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "44affb82f9c2fd76c9e2b58f9229adb003217932b68c3fdbf1327c8d74c868a2"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - r-rcpp
+    - r-digest
+
+  run:
+    - r-base
+    - r-rcpp
+    - r-digest
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/rstudio/htmltools
+  license: GPL (>= 2)
+  license_family: GPL3
+  summary: Tools for HTML generation and output.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: htmltools
+# Type: Package
+# Title: Tools for HTML
+# Version: 0.3.6
+# Date: 2017-04-26
+# Author: RStudio, Inc.
+# Maintainer: Joe Cheng <joe@rstudio.com>
+# Description: Tools for HTML generation and output.
+# Depends: R (>= 2.14.1)
+# Imports: utils, digest, Rcpp
+# Suggests: markdown, testthat
+# Enhances: knitr
+# License: GPL (>= 2)
+# URL: https://github.com/rstudio/htmltools
+# BugReports: https://github.com/rstudio/htmltools/issues
+# RoxygenNote: 6.0.1
+# LinkingTo: Rcpp
+# NeedsCompilation: yes
+# Packaged: 2017-04-27 00:04:32 UTC; jcheng
+# Repository: CRAN
+# Date/Publication: 2017-04-28 07:41:46 UTC
+#----------------------------------------------------------------------

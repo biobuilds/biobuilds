@@ -1,0 +1,79 @@
+{% set name = "modelr" %}
+{% set version = "0.1.1" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "25b95198d6aa23e28a0bd97dcdc78264ef168ae403928bff01e1ee81ca021ce7"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - r-broom
+    - r-dplyr
+    - r-lazyeval >=0.2.0
+    - r-magrittr
+    - r-purrr >=0.2.2
+    - r-tibble
+    - r-tidyr >=0.6.0
+
+  run:
+    - r-base
+    - r-broom
+    - r-dplyr
+    - r-lazyeval >=0.2.0
+    - r-magrittr
+    - r-purrr >=0.2.2
+    - r-tibble
+    - r-tidyr >=0.6.0
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/hadley/modelr
+  license: GPLv3
+  summary: Modelling functions that work with the pipe
+  description: |
+    Functions for modelling that help you seamlessly integrate modelling into a
+    pipeline of data manipulation and visualisation.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: modelr
+# Version: 0.1.1
+# Title: Modelling Functions that Work with the Pipe
+# Description: Functions for modelling that help you seamlessly integrate modelling into a pipeline of data manipulation and visualisation.
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", role = c("aut", "cre")), person("RStudio", role = "cph") )
+# License: GPL-3
+# LazyData: true
+# Depends: R (>= 3.1.0)
+# Imports: magrittr, purrr (>= 0.2.2), lazyeval (>= 0.2.0), tibble, broom, dplyr, tidyr (>= 0.6.0)
+# Suggests: testthat, ggplot2, covr, compiler
+# URL: https://github.com/hadley/modelr
+# BugReports: https://github.com/hadley/modelr/issues
+# RoxygenNote: 6.0.1
+# NeedsCompilation: no
+# Packaged: 2017-07-22 21:47:57 UTC; hadley
+# Author: Hadley Wickham [aut, cre], RStudio [cph]
+# Maintainer: Hadley Wickham <hadley@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2017-07-24 18:28:20 UTC
+#----------------------------------------------------------------------

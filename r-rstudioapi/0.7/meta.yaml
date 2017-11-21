@@ -1,0 +1,63 @@
+{% set name = "rstudioapi" %}
+{% set version = "0.7" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "a541bc76ef082d2c27e42fd683f8262cb195b1497af3509178d2642870397a8c"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/rstudio/rstudioapi
+  license: MIT + file LICENSE
+  summary: Safely access the RStudio API
+  description: |
+    Access the RStudio API (if available) and provide informative error
+    messages when it's not.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: rstudioapi
+# Title: Safely Access the RStudio API
+# Description: Access the RStudio API (if available) and provide informative error messages when it's not.
+# Version: 0.7
+# Authors@R: c( person("JJ", "Allaire", role = c("aut", "cre"), email = "jj@rstudio.com"), person("Hadley", "Wickham", role = c("aut"), email = "hadley@rstudio.com"), person("Kevin", "Ushey", role = c("aut"), email = "kevin@rstudio.com"), person("Gary", "Ritchie", role = c("aut"), email = "gary@rstudio.com"), person(family = "RStudio", role = "cph") )
+# Maintainer: JJ Allaire <jj@rstudio.com>
+# License: MIT + file LICENSE
+# URL: https://github.com/rstudio/rstudioapi
+# BugReports: https://github.com/rstudio/rstudioapi/issues
+# RoxygenNote: 6.0.1
+# Suggests: testthat, knitr, rmarkdown
+# VignetteBuilder: knitr
+# NeedsCompilation: no
+# Packaged: 2017-09-07 17:48:48 UTC; kevin
+# Author: JJ Allaire [aut, cre], Hadley Wickham [aut], Kevin Ushey [aut], Gary Ritchie [aut], RStudio [cph]
+# Repository: CRAN
+# Date/Publication: 2017-09-07 21:41:46 UTC
+#----------------------------------------------------------------------

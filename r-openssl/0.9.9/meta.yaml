@@ -1,0 +1,77 @@
+{% set name = "openssl" %}
+{% set version = "0.9.9" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "e7ece774305f1ef99bb645b209395bf02cf85b7ad26440e040f6f50cf47b27c7"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - autoconf
+    - automake
+    - pkg-config
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/jeroen/openssl#readme
+  license: MIT
+  summary: Toolkit for encryption, signatures and certificates based on OpenSSL
+  description: |
+    Bindings to OpenSSL libssl and libcrypto, plus custom SSH pubkey parsers.
+    Supports RSA, DSA and EC curves P-256, P-384 and P-521. Cryptographic
+    signatures can either be created and verified manually or via x509
+    certificates. AES can be used in cbc, ctr or gcm mode for symmetric
+    encryption; RSA for asymmetric (public key) encryption or EC for Diffie
+    Hellman. High-level envelope functions combine RSA and AES for encrypting
+    arbitrary sized data. Other utilities include key generators, hash
+    functions (md5, sha1, sha256, etc), base64 encoder, a secure random number
+    generator, and bignum math methods for manually performing crypto
+    calculations on large multibyte integers.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: openssl
+# Type: Package
+# Title: Toolkit for Encryption, Signatures and Certificates Based on OpenSSL
+# Version: 0.9.9
+# Authors@R: c( person("Jeroen", "Ooms", , "jeroen@berkeley.edu", role = c("cre", "aut")), person("Oliver", "Keyes", role = "ctb"))
+# Description: Bindings to OpenSSL libssl and libcrypto, plus custom SSH pubkey parsers. Supports RSA, DSA and EC curves P-256, P-384 and P-521. Cryptographic signatures can either be created and verified manually or via x509 certificates. AES can be used in cbc, ctr or gcm mode for symmetric encryption; RSA for asymmetric (public key) encryption or EC for Diffie Hellman. High-level envelope functions combine RSA and AES for encrypting arbitrary sized data. Other utilities include key generators, hash functions (md5, sha1, sha256, etc), base64 encoder, a secure random number generator, and 'bignum' math methods for manually performing crypto calculations on large multibyte integers.
+# License: MIT + file LICENSE
+# URL: https://github.com/jeroen/openssl#readme
+# BugReports: https://github.com/jeroen/openssl/issues
+# SystemRequirements: OpenSSL >= 1.0.1
+# VignetteBuilder: knitr
+# Suggests: testthat, digest, knitr, rmarkdown, jsonlite, jose
+# RoxygenNote: 6.0.1.9000
+# NeedsCompilation: yes
+# Packaged: 2017-11-10 16:52:56 UTC; jeroen
+# Author: Jeroen Ooms [cre, aut], Oliver Keyes [ctb]
+# Maintainer: Jeroen Ooms <jeroen@berkeley.edu>
+# Repository: CRAN
+# Date/Publication: 2017-11-10 18:33:32 UTC
+#----------------------------------------------------------------------

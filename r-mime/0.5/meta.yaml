@@ -1,46 +1,49 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "mime" %}
+{% set version = "0.5" %}
 
 package:
-  name: r-mime
-  version: "0.5"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: mime_0.5.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/mime_0.5.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/mime/mime_0.5.tar.gz
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "fcc72115afb0eb43237da872754464f37ae9ae097f332ec7984149b5e3a82145"
 
 build:
+  number: 0
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r-base
-    - posix               # [win]
-    - {{native}}toolchain # [win]
-    - gcc                 # [not win and not ppc64le]
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
 
   run:
     - r-base
-    - libgcc              # [not win and not ppc64le]
 
 test:
   commands:
-    - $R -e "library('mime')" # [not win]
-    - "\"%R%\" -e \"library('mime')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
   home: https://github.com/yihui/mime
   license: GPL
-  summary: Guesses the MIME type from a file extension
+  summary: Map filenames to mime types
+  description: |
+    Guesses the MIME type from a filename extension using the data derived from
+    /etc/mime.types in UNIX-type systems.
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: mime
 # Type: Package
 # Title: Map Filenames to MIME Types

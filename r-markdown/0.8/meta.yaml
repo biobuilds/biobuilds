@@ -1,0 +1,72 @@
+{% set name = "markdown" %}
+{% set version = "0.8" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "538fd912b2220f2df344c6cca58304ce11e0960de7bd7bd573b3385105d48fed"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+# Suggests: knitr, RCurl
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - r-mime >=0.3
+
+  run:
+    - r-base
+    - r-mime >=0.3
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/rstudio/markdown
+  license: GPLv2
+  summary: Markdown rendering for R
+  description: |
+    Provides R bindings to the Sundown Markdown rendering library. Markdown is
+    a plain-text formatting syntax that can be converted to XHTML or other
+    formats.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: markdown
+# Type: Package
+# Title: 'Markdown' Rendering for R
+# Version: 0.8
+# Date: 2017-04-20
+# Authors@R: c( person("JJ", "Allaire", role = "aut"), person("Jeffrey", "Horner", role = "aut"), person("Henrik", "Bengtsson", role = "ctb"), person("Jim", "Hester", role = "ctb"), person("Yixuan", "Qiu", role = "ctb"), person("Kohske", "Takahashi", role = "ctb"), person("Adam", "November", role = "ctb"), person("Nacho", "Caballero", role = "ctb"), person("Jeroen", "Ooms", role = "ctb"), person("Thomas", "Leeper", role = "ctb"), person("Joe", "Cheng", role = "ctb"), person("Andrzej", "Oles", role = "ctb"), person("Vicent", "Marti", role = c("aut", "cph"), comment = "The Sundown library"), person("Natacha", "Porte", role = c("aut", "cph"), comment = "The Sundown library"), person(family = "RStudio", role = "cph"), person("Yihui", "Xie", role = c("cre", "ctb"), email = "xie@yihui.name") )
+# Description: Provides R bindings to the 'Sundown' 'Markdown' rendering library (https://github.com/vmg/sundown). 'Markdown' is a plain-text formatting syntax that can be converted to 'XHTML' or other formats. See http://en.wikipedia.org/wiki/Markdown for more information about 'Markdown'.
+# Depends: R (>= 2.11.1)
+# Imports: utils, mime (>= 0.3)
+# Suggests: knitr, RCurl
+# License: GPL-2
+# URL: https://github.com/rstudio/markdown
+# BugReports: https://github.com/rstudio/markdown/issues
+# VignetteBuilder: knitr
+# RoxygenNote: 6.0.1
+# NeedsCompilation: yes
+# Packaged: 2017-04-19 20:14:01 UTC; yihui
+# Author: JJ Allaire [aut], Jeffrey Horner [aut], Henrik Bengtsson [ctb], Jim Hester [ctb], Yixuan Qiu [ctb], Kohske Takahashi [ctb], Adam November [ctb], Nacho Caballero [ctb], Jeroen Ooms [ctb], Thomas Leeper [ctb], Joe Cheng [ctb], Andrzej Oles [ctb], Vicent Marti [aut, cph] (The Sundown library), Natacha Porte [aut, cph] (The Sundown library), RStudio [cph], Yihui Xie [cre, ctb]
+# Maintainer: Yihui Xie <xie@yihui.name>
+# Repository: CRAN
+# Date/Publication: 2017-04-20 09:07:54 UTC
+#----------------------------------------------------------------------

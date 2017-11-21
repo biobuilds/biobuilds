@@ -1,0 +1,61 @@
+{% set name = "base64enc" %}
+{% set version = "0.1-3" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "6d856d8a364bcdc499a0bf38bfd283b7c743d08f0b288174fba7dbf0a04b688d"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: http://www.rforge.net/base64enc
+  license: GPLv2
+  summary: Tools for base64 encoding
+  description: |
+    This package provides tools for handling base64 encoding. It is more
+    flexible than the orphaned base64 package.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: base64enc
+# Version: 0.1-3
+# Title: Tools for base64 encoding
+# Author: Simon Urbanek <Simon.Urbanek@r-project.org>
+# Maintainer: Simon Urbanek <Simon.Urbanek@r-project.org>
+# Depends: R (>= 2.9.0)
+# Enhances: png
+# Description: This package provides tools for handling base64 encoding. It is more flexible than the orphaned base64 package.
+# License: GPL-2 | GPL-3
+# URL: http://www.rforge.net/base64enc
+# NeedsCompilation: yes
+# Packaged: 2015-02-04 20:31:00 UTC; svnuser
+# Repository: CRAN
+# Date/Publication: 2015-07-28 08:03:37
+#----------------------------------------------------------------------

@@ -1,46 +1,53 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "mnormt" %}
+{% set version = "1.5-5" %}
 
 package:
-  name: r-mnormt
-  version: "1.5_5"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: mnormt_1.5-5.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/mnormt_1.5-5.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/mnormt/mnormt_1.5-5.tar.gz
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "ff78d5f935278935f1814a69e5a913d93d6dd2ac1b5681ba86b30c6773ef64ac"
 
 build:
+  number: 0
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r-base
-    - posix               # [win]
-    - {{native}}toolchain # [win]
-    - gcc                 # [not win and not ppc64le]
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('fortran') }}
 
   run:
     - r-base
-    - libgcc              # [not win and not ppc64le]
 
 test:
   commands:
-    - $R -e "library('mnormt')" # [not win]
-    - "\"%R%\" -e \"library('mnormt')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
-  home: 'http://azzalini.stat.unipd.it/SW/Pkg-mnormt'
+  home: http://azzalini.stat.unipd.it/SW/Pkg-mnormt
   license: GPLv2
-  summary: 'Multivariate normal and t distributions, computed using a non-Monte Carlo method'
+  summary: Functions for the multivariate normal and t distributions
+  description: |
+    Functions are provided for computing the density and the distribution
+    function of multivariate normal and t random variables, and for generating
+    random vectors sampled from these distributions. Probabilities are computed
+    via non-Monte Carlo methods; different routines are used in the case d=1,
+    d=2, d>2, if d denotes the number of dimensions.
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: mnormt
 # Version: 1.5-5
 # Date: 2016-10-15

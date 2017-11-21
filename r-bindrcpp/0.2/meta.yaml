@@ -1,0 +1,75 @@
+{% set name = "bindrcpp" %}
+{% set version = "0.2" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "d0efa1313cb8148880f7902a4267de1dcedae916f28d9a0ef5911f44bf103450"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('cxx') }}
+    - r-rcpp
+    - r-bindr
+    - r-plogr
+
+  run:
+    - r-base
+    - r-rcpp
+    - r-bindr
+    - r-plogr
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/krlmlr/bindrcpp, https://krlmlr.github.io/bindrcpp
+  license: MIT + file LICENSE
+  license_family: MIT
+  summary: An 'rcpp' interface to active bindings
+  description: |
+    Provides an easy way to fill an environment with active bindings that call
+    a C++ function.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: bindrcpp
+# Title: An 'Rcpp' Interface to Active Bindings
+# Description: Provides an easy way to fill an environment with active bindings that call a C++ function.
+# Authors@R: c( person("Kirill", "Muller", role = c("aut", "cre"), email = "krlmlr+r@mailbox.org"), person("RStudio", role = "cph") )
+# Version: 0.2
+# Date: 2017-06-15
+# URL: https://github.com/krlmlr/bindrcpp, https://krlmlr.github.io/bindrcpp
+# BugReports: https://github.com/krlmlr/bindrcpp/issues
+# Imports: Rcpp, bindr
+# Suggests: testthat
+# LinkingTo: Rcpp, plogr
+# RoxygenNote: 6.0.1
+# LazyData: true
+# License: MIT + file LICENSE
+# Encoding: UTF-8
+# NeedsCompilation: yes
+# Packaged: 2017-06-15 20:53:22 UTC; muelleki
+# Author: Kirill Muller [aut, cre], RStudio [cph]
+# Maintainer: Kirill Muller <krlmlr+r@mailbox.org>
+# Repository: CRAN
+# Date/Publication: 2017-06-17 23:52:40 UTC
+#----------------------------------------------------------------------
