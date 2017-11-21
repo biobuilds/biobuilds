@@ -1,0 +1,70 @@
+{% set name = "Pillow" %}
+{% set version = "4.2.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "c724f65870e545316f9e82e4c6d608ab5aa9dd82d5185e5b2e72119378740073"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - python {{ python }}
+    - setuptools
+    - freetype {{ freetype }}
+    - jpeg
+    - libtiff
+    - zlib {{ zlib }}
+    - tk    # [linux and not ppc64le]
+  run:
+    # Commented-out => handled by the package's 'run_exports'
+    - python
+    - olefile
+    - freetype
+    #- jpeg
+    #- libtiff
+    #- zlib
+    #- tk
+
+test:
+  imports:
+    - PIL
+    - PIL.Image
+    - PIL._imaging
+    - PIL._imagingft
+    - PIL._imagingmath
+    - PIL._imagingmorph
+    - PIL._imagingtk      # [linux and not ppc64le]
+
+  commands:
+    - conda inspect linkages -p $PREFIX pillow
+    - conda inspect objects -p $PREFIX pillow   # [osx]
+
+about:
+  home: http://python-imaging.github.io/
+  license: PIL
+  license_file: LICENSE
+  summary: 'Pillow is the friendly PIL fork by Alex Clark and Contributors.'
+  description: |
+    Pillow is the friendly PIL fork. PIL is the Python Imaging Library,
+    adds image processing capabilities to your Python interpreter.
+  doc_url: http://pillow.readthedocs.io/en/4.2.x/
+  doc_source_url: https://github.com/python-pillow/Pillow/blob/4.2.x/docs/index.rst
+  dev_url: https://github.com/python-pillow/Pillow
+
+extra:
+  recipe-maintainers:
+    - jakirkham
+    - patricksnape
+    - pelson
+    - ocefpaf
+    - chenghlee

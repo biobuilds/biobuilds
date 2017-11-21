@@ -1,0 +1,18 @@
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+
+python:
+  - 2.7
+  - 3.5
+  - 3.6
+
+freetype:
+  - 2.8
+
+zlib:
+  - 1.2.11
+
+pin_run_as_build:
+  python: {"min_pin": "x.x", "max_pin": "x.x"}
+  freetype: {"min_pin": "x.x", "max_pin": "x.x"}
