@@ -1,0 +1,80 @@
+{% set name = "cowplot" %}
+{% set version = "0.9.1" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "953fd9d6ff370472b9f5a9ee867a423bea3e26e406d08a2192ec1872a2e60047"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - r-ggplot2 >=2.1.0
+    - r-gtable >=0.1.2
+    - r-plyr >=1.8.2
+    - r-scales
+
+  run:
+    - r-base
+    - r-ggplot2 >=2.1.0
+    - r-gtable >=0.1.2
+    - r-plyr >=1.8.2
+    - r-scales
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/wilkelab/cowplot
+  license: GPLv2
+  summary: Streamlined plot theme and plot annotations for 'ggplot2'
+  description: |
+    Some helpful extensions and modifications to the 'ggplot2' package. In
+    particular, this package makes it easy to combine multiple 'ggplot2' plots
+    into one and label them with letters, e.g. A, B, C, etc., as is often
+    required for scientific publications.  The package also provides a
+    streamlined and clean theme that is used in the Wilke lab, hence the
+    package name, which stands for Claus O. Wilke's plot package.
+  license_family: GPL2
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: cowplot
+# Title: Streamlined Plot Theme and Plot Annotations for 'ggplot2'
+# Version: 0.9.1
+# Authors@R: c( person("Claus O.", "Wilke", role = c("aut", "cre"), email = "wilke@austin.utexas.edu"), person("RStudio", role = c("cph"), comment = "Copyright for ggplot2 code copied to cowplot" ))
+# Description: Some helpful extensions and modifications to the 'ggplot2' package. In particular, this package makes it easy to combine multiple 'ggplot2' plots into one and label them with letters, e.g. A, B, C, etc., as is often required for scientific publications. The package also provides a streamlined and clean theme that is used in the Wilke lab, hence the package name, which stands for Claus O. Wilke's plot package.
+# URL: https://github.com/wilkelab/cowplot
+# Depends: R (>= 3.3.0), ggplot2 (>= 2.1.0),
+# Imports: grid (>= 3.0.0), gtable (>= 0.1.2), plyr (>= 1.8.2), grDevices, methods, scales, utils
+# License: GPL-2
+# LazyData: true
+# Suggests: covr, gridGraphics, knitr, magick, maps, dplyr, tidyr, testthat, vdiffr, viridis
+# VignetteBuilder: knitr
+# BugReports: https://github.com/wilkelab/cowplot/issues
+# Collate: 'add_sub.R' 'axis_canvas.R' 'cowplot.R' 'draw.R' 'get_legend.R' 'get_panel.R' 'gtable.R' 'plot_grid.R' 'plot_to_gtable.R' 'save.R' 'setup.R' 'switch_axis.R' 'themes.R' 'utils_ggplot2.R'
+# RoxygenNote: 6.0.1
+# NeedsCompilation: no
+# Packaged: 2017-11-16 16:30:48 UTC; wilke
+# Author: Claus O. Wilke [aut, cre], RStudio [cph] (Copyright for ggplot2 code copied to cowplot)
+# Maintainer: Claus O. Wilke <wilke@austin.utexas.edu>
+# Repository: CRAN
+# Date/Publication: 2017-11-16 22:07:45 UTC
+#----------------------------------------------------------------------
