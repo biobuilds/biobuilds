@@ -1,0 +1,67 @@
+{% set name = 'memoise' %}
+{% set version = '1.1.0' %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "b276f9452a26aeb79e12dd7227fcc8712832781a42f92d70e86040da0573980c"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - r-digest >=0.6.3
+
+  run:
+    - r-base
+    - r-digest >=0.6.3
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://github.com/hadley/memoise
+  license: MIT
+  summary: Memoisation of functions
+  description: |
+    Cache the results of a function so that when you call it again with the
+    same arguments it returns the pre-computed value.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Encoding: UTF-8
+# Package: memoise
+# Title: Memoisation of Functions
+# Version: 1.1.0
+# Authors@R: c( person("Hadley", "Wickham", , "hadley@rstudio.com", role = "aut"), person("Jim", "Hester", , "jim.hester@rstudio.com", role = c("aut", "cre")), person("Kirill", "MAzller", , "krlmlr+r@mailbox.org", role = "aut"), person("Daniel", "Cook", , "danielecook@gmail.com", role = "aut"))
+# Description: Cache the results of a function so that when you call it again with the same arguments it returns the pre-computed value.
+# URL: https://github.com/hadley/memoise
+# BugReports: https://github.com/hadley/memoise/issues
+# Imports: digest (>= 0.6.3)
+# Suggests: testthat, aws.s3, httr, covr
+# Additional_repositories: http://cloudyr.github.io/drat
+# License: MIT + file LICENSE
+# RoxygenNote: 6.0.1
+# NeedsCompilation: no
+# Packaged: 2017-04-20 17:35:47 UTC; jhester
+# Author: Hadley Wickham [aut], Jim Hester [aut, cre], Kirill MAzller [aut], Daniel Cook [aut]
+# Maintainer: Jim Hester <jim.hester@rstudio.com>
+# Repository: CRAN
+# Date/Publication: 2017-04-21 05:54:22 UTC
+#----------------------------------------------------------------------

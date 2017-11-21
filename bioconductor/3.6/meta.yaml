@@ -1,0 +1,26 @@
+{% set version = "3.6" %}
+
+package:
+  name: bioconductor
+  version: {{ version }}
+
+build:
+  number: 0
+
+requirements:
+  # We technically don't need the "build" requirement, but it's an easy way to
+  # get requirementes pinning working as expected.
+  build:
+    - r-base {{ r_base }}
+  run:
+    - r-base
+    - bioconductor-annotationdbi ==1.40.0
+    - bioconductor-biobase ==2.38.0
+    - bioconductor-biocgenerics ==0.24.0
+    - bioconductor-biocinstaller ==1.28.0
+    - bioconductor-iranges ==2.12.0
+    - bioconductor-s4vectors ==0.16.0
+
+about:
+  home: "https://www.bioconductor.org/"
+  summary: "Minimal set of BioConductor packages installed by biocLite()"
