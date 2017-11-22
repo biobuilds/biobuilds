@@ -1,0 +1,110 @@
+--- setup.py
++++ setup.py
+@@ -20,6 +20,7 @@
+ '''
+ 
+ import os
++import os.path
+ import sys
+ import glob
+ import shutil
+@@ -85,7 +86,10 @@
+     chtslib_sources = []
+     htslib_library_dirs = [HTSLIB_LIBRARY_DIR]
+     htslib_include_dirs = [HTSLIB_INCLUDE_DIR]
+-    htslib_libraries = ['hts']
++    htslib_libraries = []
++    extra_objects = [
++        os.path.join(HTSLIB_LIBRARY_DIR, 'libhts.a'),
++        ]
+ elif HTSLIB_MODE == 'separate':
+     # add to each pysam component a separately compiled
+     # htslib
+@@ -98,6 +102,7 @@
+     htslib_library_dirs = []
+     htslib_include_dirs = ['htslib']
+     htslib_libraries = []
++    extra_objects = None
+ elif HTSLIB_MODE == 'shared':
+     # link each pysam component against the same
+     # htslib built from sources included in the pysam
+@@ -111,6 +116,7 @@
+     htslib_library_dirs = ['pysam']
+     htslib_include_dirs = ['htslib']
+     htslib_libraries = ['chtslib']
++    extra_objects = None
+ else:
+     raise ValueError("unknown HTSLIB value '%s'" % HTSLIB_MODE)
+ 
+@@ -317,6 +323,7 @@
+     libraries=["z"] + htslib_libraries,
+     language="c",
+     extra_compile_args=extra_compile_args,
++    extra_objects=extra_objects,
+     define_macros=define_macros
+ )
+ 
+@@ -331,6 +338,7 @@
+     libraries=["z"] + htslib_libraries,
+     language="c",
+     extra_compile_args=extra_compile_args,
++    extra_objects=extra_objects,
+     define_macros=define_macros
+ )
+ 
+@@ -351,6 +359,7 @@
+     libraries=["z"] + htslib_libraries,
+     language="c",
+     extra_compile_args=extra_compile_args,
++    extra_objects=extra_objects,
+     define_macros=define_macros
+ )
+ 
+@@ -371,6 +380,7 @@
+     libraries=["z"] + htslib_libraries,
+     language="c",
+     extra_compile_args=extra_compile_args,
++    extra_objects=extra_objects,
+     define_macros=define_macros
+ )
+ 
+@@ -391,6 +401,7 @@
+     libraries=["z"] + htslib_libraries,
+     language="c",
+     extra_compile_args=extra_compile_args,
++    extra_objects=extra_objects,
+     define_macros=define_macros
+ )
+ 
+@@ -405,6 +416,7 @@
+     libraries=["z"] + htslib_libraries,
+     language="c",
+     extra_compile_args=extra_compile_args,
++    extra_objects=extra_objects,
+     define_macros=define_macros
+ )
+ 
+@@ -418,6 +430,7 @@
+     libraries=["z"] + htslib_libraries,
+     language="c",
+     extra_compile_args=extra_compile_args,
++    extra_objects=extra_objects,
+     define_macros=define_macros
+ )
+ 
+@@ -431,6 +444,7 @@
+     libraries=["z"] + htslib_libraries,
+     language="c",
+     extra_compile_args=extra_compile_args,
++    extra_objects=extra_objects,
+     define_macros=define_macros
+ )
+ 
+@@ -468,6 +482,7 @@
+     libraries=["z"] + htslib_libraries,
+     language="c",
+     extra_compile_args=extra_compile_args,
++    extra_objects=extra_objects,
+     define_macros=define_macros
+ )
+ 

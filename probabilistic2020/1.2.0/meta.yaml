@@ -1,0 +1,40 @@
+{% set name = "probabilistic2020" %}
+{% set version = "1.2.0" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/KarchinLab/probabilistic2020/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "72f158b9e833d1ec90d0ddf80c57e7f35ac24d2b7cd27e769adc6dcdc691565d"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - python {{ python }}
+    - numpy {{ numpy }}
+  run:
+    - python
+    - numpy
+    - scipy
+    - pandas >=0.17.0
+    - pysam ==0.8.4
+
+test:
+  commands:
+    - probabilistic2020 --help
+
+about:
+  home: https://github.com/KarchinLab/probabilistic2020, http://probabilistic2020.readthedocs.io/en/latest/
+  license: Apache 2.0
+  license_file: LICENSE
+  summary: Somatic mutation simulator
+  description: |
+    Simulates somatic mutations, and calls statistically significant oncogenes
+    and tumor suppressor genes based on a randomization-based test

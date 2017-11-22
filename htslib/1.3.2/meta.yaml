@@ -4,12 +4,12 @@ package:
 
 requirements:
   build:
-    - biobuilds-build
-    - zlib
+    - biobuilds-build <=2017.05
+    - zlib 1.2.8
     - curl 7.51.0
   run:
     - biobuilds-opt     # [opt]
-    - zlib
+    - zlib 1.2.*
     - curl >=7.51,<8.0
 
 source:
@@ -20,7 +20,7 @@ source:
   md5: "64742a2a812da1bb6eb4417128be6944"
 
 build:
-  number: 2
+  number: 3
   features:
     - opt     # [opt]
   script_env:
