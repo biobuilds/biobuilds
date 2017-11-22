@@ -1,0 +1,55 @@
+{% set name = "GenomicRanges" %}
+{% set version = "1.30.0" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "https://bioconductor.org/packages/{{ bioc_version }}/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "4ac4ca12b73bdacc73238c4a9ae37a57c6749f67e0c754697c069e60a5162a83"
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - bioconductor-biocgenerics >=0.21.2
+    - bioconductor-s4vectors >=0.9.47
+    - bioconductor-iranges >=2.11.16
+    - bioconductor-genomeinfodb >=1.13.1
+    - bioconductor-xvector
+  run:
+    - r-base
+    - bioconductor-biocgenerics >=0.21.2
+    - bioconductor-s4vectors >=0.9.47
+    - bioconductor-iranges >=2.11.16
+    - bioconductor-genomeinfodb >=1.13.1
+    - bioconductor-xvector
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/{{ name }}.html"
+  license: Artistic 2.0
+  summary: Representation and manipulation of genomic intervals and variables defined along a genome
+  description: |
+    The GenomicRanges package defines general purpose containers for storing
+    and manipulating genomic intervals and variables defined along a genome.
+    More specialized containers for representing and manipulating short
+    alignments against a reference genome, or a matrix-like summarization of an
+    experiment, are defined in the GenomicAlignments and SummarizedExperiment
+    packages respectively. Both packages build on top of the GenomicRanges
+    infrastructure.

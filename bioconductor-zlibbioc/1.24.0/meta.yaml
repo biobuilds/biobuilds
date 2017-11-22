@@ -1,0 +1,37 @@
+{% set name = "zlibbioc" %}
+{% set version = "1.24.0" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "https://bioconductor.org/packages/{{ bioc_version }}/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "22f9bb05a415ae3ce828a904abc0f290aede5ae5fdb212fc75f4c152e08229ff"
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+  run:
+    - r-base
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/{{ name }}.html"
+  license: Artistic 2.0
+  summary: An R packaged zlib-1.2.5

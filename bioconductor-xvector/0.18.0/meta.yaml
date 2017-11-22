@@ -1,0 +1,48 @@
+{% set name = "XVector" %}
+{% set version = "0.18.0" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "https://bioconductor.org/packages/{{ bioc_version }}/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "b36e985344cc3d033d567e2206029e272e1fc23dc5e0ce66c8149ddcdb1c91c4"
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - bioconductor-biocgenerics >=0.19.2
+    - bioconductor-s4vectors >=0.15.14
+    - bioconductor-iranges >=2.9.18
+    - bioconductor-zlibbioc
+  run:
+    - r-base
+    - bioconductor-biocgenerics >=0.19.2
+    - bioconductor-s4vectors >=0.15.14
+    - bioconductor-iranges >=2.9.18
+    - bioconductor-zlibbioc
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/{{ name }}.html"
+  license: Artistic 2.0
+  summary: Representation and manipulation of external sequences
+  description: |
+    Memory efficient S4 classes for storing sequences externally (behind an R
+    external pointer or on disk).

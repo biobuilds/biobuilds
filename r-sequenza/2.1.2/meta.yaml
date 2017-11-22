@@ -1,0 +1,67 @@
+{% set name = 'sequenza' %}
+{% set version = '2.1.2' %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "ae074c880dfa3b3e9d3ebead6bd8cbf493b1c1ebd96c5a23e621af8d4d926a38"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - bioconductor-copynumber
+    - r-squash
+
+  run:
+    - r-base
+    - bioconductor-copynumber
+    - r-squash
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: 'http://cbs.dtu.dk/biotools/sequenza/'
+  license: GPLv3
+  summary: Copy number estimation from tumor genome sequencing data
+  description: |
+    Tools to analyze genomic sequencing data from paired normal-tumor samples,
+    including cellularity and ploidy estimation; mutation and copy number
+    (allele-specific and total copy number) detection, quantification and
+    visualization.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: sequenza
+# Title: Copy Number Estimation from Tumor Genome Sequencing Data
+# Description: Tools to analyze genomic sequencing data from paired normal-tumor samples, including cellularity and ploidy estimation; mutation and copy number (allele-specific and total copy number) detection, quantification  and visualization.
+# Version: 2.1.2
+# Date: 2015-08-18
+# Author: Francesco Favero, Andrea M. Marquard, Tejal Joshi, Aron C. Eklund
+# Maintainer: Francesco Favero <favero@cbs.dtu.dk>
+# Depends: R (>= 3.0.0), copynumber, parallel, squash
+# Suggests:
+# License: GPL-3
+# URL: http://cbs.dtu.dk/biotools/sequenza/, Mailing list: https://groups.google.com/forum/#!forum/sequenza-user-group
+# NeedsCompilation: no
+# Packaged: 2015-10-08 19:07:04 UTC; favero
+# Repository: CRAN
+# Date/Publication: 2015-10-10 01:22:44
+#----------------------------------------------------------------------

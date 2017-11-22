@@ -1,0 +1,64 @@
+{% set name = 'squash' %}
+{% set version = '1.0.8' %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "e6932c0a461d5c85f7180a31d18a3eb4f28afd6769efe251075a4de12de039f4"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: http://www.cbs.dtu.dk/~eklund/squash/
+  license: Artistic 2.0
+  summary: Color-based plots for multivariate visualization
+  description: |
+    Functions for color-based visualization of multivariate data, i.e.
+    colorgrams or heatmaps. Lower-level functions map numeric values to colors,
+    display a matrix as an array of colors, and draw color keys.  Higher-level
+    plotting functions generate a bivariate histogram, a dendrogram aligned
+    with a color-coded matrix, a triangular distance matrix, and more.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: squash
+# Version: 1.0.8
+# Date: 2017-05-29
+# Title: Color-Based Plots for Multivariate Visualization
+# Author: Aron C. Eklund
+# Maintainer: Aron C. Eklund <eklund@cbs.dtu.dk>
+# Imports: graphics, grDevices, methods, stats
+# Description: Functions for color-based visualization of multivariate data, i.e. colorgrams or heatmaps.  Lower-level functions  map numeric values to colors, display a matrix as an array of colors, and draw color keys.  Higher-level plotting functions generate a bivariate histogram, a dendrogram aligned with a color-coded matrix, a triangular distance matrix, and more.
+# License: Artistic-2.0
+# URL: http://www.cbs.dtu.dk/~eklund/squash/
+# NeedsCompilation: no
+# Packaged: 2017-05-29 13:18:46 UTC; aron
+# Repository: CRAN
+# Date/Publication: 2017-05-29 15:37:51 UTC
+#----------------------------------------------------------------------

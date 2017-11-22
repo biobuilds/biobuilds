@@ -1,15 +1,20 @@
+{% set name = 'bitops' %}
+{% set version = '1.0-6' %}
+
 package:
-  name: r-bitops
-  version: "1.0_6"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: bitops_1.0-6.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/bitops_1.0-6.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/bitops/bitops_1.0-6.tar.gz
-  md5: fba16485a51b1ccd354abde5816b6bdd
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "9b731397b7166dd54941fb0d2eac6df60c7a483b2e790f7eb15b4d7b79c9d69c"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
@@ -17,27 +22,26 @@ build:
 
 requirements:
   build:
-    - r
-    - gcc     # [not win and not ppc64le]
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
 
   run:
-    - r
-    - libgcc  # [not win and not ppc64le]
+    - r-base
 
 test:
   commands:
-    - $R -e "library('bitops')" # [not win]
-    - "\"%R%\" -e \"library('bitops')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
-  #home:
+  home: https://CRAN.R-project.org/package=bitops
   license: GPLv2
   summary: "R functions for bitwise operations on integer vectors."
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: bitops
 # Version: 1.0-6
 # Date: 2013-08-17
