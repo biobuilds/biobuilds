@@ -1,0 +1,55 @@
+{% set name = "2020plus" %}
+{% set version = "1.1.3" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/KarchinLab/2020plus/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "237e2e1690939a08c9c592cd8c6cb398c8ac85ce1d53f0404333ff9599175c20"
+  patches:
+    - script-paths.patch
+
+build:
+  number: 0
+  # Always copy and never link the config and data files so installs in
+  # separate environments don't affect each other's behaviors.
+  no_link:
+    - share/{{ name|lower }}/*.yaml
+    - share/{{ name|lower }}/config/*.cfg
+    - share/{{ name|lower }}/data/*.txt
+    - share/{{ name|lower }}/data/gene_lists/*.txt
+
+requirements:
+  build:
+    - python {{ python }}
+  run:
+    - r-base
+    - r-randomforest
+    - python
+    - numpy
+    - scipy
+    - pandas >=0.17
+    - scikit-learn
+    - rpy2
+    - probabilistic2020
+    #- matplotlib
+
+test:
+  requires:
+    - curl
+#  files:
+#    # From http://karchinlab.org/data/2020+/pancan_example.tar.gz
+#    - pancan_example.tar.gz
+  commands:
+    - 2020plus.py --help
+
+about:
+  home: https://github.com/KarchinLab/2020plus, http://2020plus.readthedocs.io/en/latest/
+  license: Apache 2.0
+  license_file: LICENSE
+  summary: Ratiometric prediction of cancer driver genes
