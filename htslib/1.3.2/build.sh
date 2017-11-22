@@ -19,6 +19,7 @@ source "${BUILD_ENV}" -v
 case "$BUILD_OS" in
     "linux")
         export LD_LIBRARY_PATH="${PREFIX}/lib"
+        CFLAGS="${CFLAGS} -fPIC"
         ;;
     "darwin")
         export DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib"
