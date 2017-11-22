@@ -1,0 +1,24 @@
+python:
+  - 2.7
+
+# ** NOTE **: This version of pysam is incompatible with htslib >=1.4 (triggers
+# conflicting type errors for 'errmod_*' in samtools/errmod.h). We're due for a
+# pysam upgrade, so instead of putting the effort into patching this version to
+# work with htslib >=1.4, we'll just statically link a compatible libhts. That
+# way, we can still use this version of pysam in newer BioBuilds environments.
+htslib:
+  - 1.3.2
+  #- 1.6.0
+
+# Use older zlib version to maintain backwards compatibilty with previous
+# BioBuilds releases.
+zlib:
+  - 1.2.8
+
+# See above for why we are not pinning htslib.
+pin_run_as_build:
+  python:
+    min_pin: "x.x"
+    max_pin: "x.x"
+  zlib:
+    max_pin: "x.x"
