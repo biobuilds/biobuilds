@@ -1,0 +1,30 @@
+{% set version = "1.25" %}
+
+package:
+  name: bamstats
+  version: "{{ version }}"
+
+source:
+  fn: "BAMStats-{{ version }}.zip"
+  url:
+    - "https://downloads.sourceforge.net/project/bamstats/BAMStats-{{ version }}.zip"
+    - "http://download.lab7.io/sources/BAMStats-{{ version }}.zip"
+  sha256: "034b6185fe50297824429c6aeac8d3e4fa036e724d7e5d2a5031f5bc1b64a6fd"
+
+requirements:
+  build: []
+  run:
+    # linux-ppc64le must still rely on their system-provided Java
+    - openjdk 8.*   # [not ppc64le]
+
+build:
+  number: 0
+
+test:
+  commands:
+    - BAMStats --help
+
+about:
+  home: http://bamstats.sourceforge.net/
+  license: GPL
+  summary: GUI desktop tool for calculating and displaying metrics to assess the success of NGS mapping tools
