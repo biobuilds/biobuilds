@@ -1,0 +1,45 @@
+{% set name = "cgpVcf" %}
+{% set version = "2.20" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/cancerit/cgpVcf/archive/v2.2.0.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "9d452aecaa4531841934ddfc2b3835d0efa71e4ac9a6b672af7942c8e934d122"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl {{ perl }}
+    - perl-const-fast
+    - perl-datetime
+    - perl-data-uuid
+    - perl-ipc-system-simple
+    - perl-test-fatal
+    - vcftools
+  run:
+    - perl
+    - perl-const-fast
+    - perl-datetime
+    - perl-data-uuid
+    - perl-ipc-system-simple
+    - perl-test-fatal
+    - vcftools
+
+test:
+  commands:
+    - cgpAppendIdsToVcf.pl --version
+    - cgpVCFSplit.pl --version
+
+about:
+  home: https://github.com/cancerit/cgpVcf
+  license: AGPL 3.0
+  license_file: LICENCE
+  summary: Set of common perl utilities for generating consistent VCF headers

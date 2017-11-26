@@ -1,0 +1,49 @@
+{% set name = "perl-b-hooks-endofscope" %}
+{% set version = "0.21" %}
+{% set sha256 = "90f3580880f1d68b843c142cc86f58bead1f3e03634c63868ac9eba5eedae02c" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/E/ET/ETHER/B-Hooks-EndOfScope-0.21.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-module-implementation
+    - perl-sub-exporter-progressive
+    #- perl-extutils-makemaker
+    #- perl-file-spec
+    #- perl-ipc-open2
+    #- perl-module-metadata
+    #- perl-strict
+    #- perl-test-more
+    #- perl-text-parsewords
+    #- perl-warnings
+
+  run:
+    - perl
+    - perl-module-implementation
+    - perl-sub-exporter-progressive
+    #- perl-strict
+    #- perl-warnings
+
+test:
+  imports:
+    - B::Hooks::EndOfScope
+    #- B::Hooks::EndOfScope::PP
+    #- B::Hooks::EndOfScope::XS
+
+about:
+  home: https://github.com/karenetheridge/B-Hooks-EndOfScope
+  license: perl_5
+  summary: 'Execute code after a scope finished compilation'

@@ -1,0 +1,39 @@
+{% set name = "perl-sub-quote" %}
+{% set version = "2.004000" %}
+{% set sha256 = "5861520313fa8c8bf8f8b8c64af0d6d9140380652dc1f98bd03370ddaf1a30ff" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/H/HA/HAARG/Sub-Quote-2.004000.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-test-fatal #0.003
+    #- perl-extutils-makemaker
+    #- perl-test-more
+    #- perl-scalar-util
+
+  run:
+    - perl
+    #- perl-scalar-util
+
+test:
+  imports:
+    - Sub::Defer
+    - Sub::Quote
+
+about:
+  home: http://metacpan.org/pod/Sub::Quote
+  license: perl_5
+  summary: 'Efficient generation of subroutines via string eval'

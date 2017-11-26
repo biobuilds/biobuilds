@@ -1,0 +1,97 @@
+{% set name = "perl-datetime" %}
+{% set version = "1.44" %}
+{% set sha256 = "a7165a9b1bcef735e76ea44c184ea741840249dd1862b8465f3777cd8f0bd701" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/DateTime-1.44.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-namespace-autoclean
+    - perl-test-fatal
+    - perl-try-tiny
+    - perl-datetime-locale
+    - perl-params-validationcompiler
+    - perl-cpan-meta-check
+    - perl-specio
+    - perl-datetime-timezone
+    - perl-test-warnings #0.005
+    - perl-dist-checkconflicts
+    #- perl-base
+    #- perl-carp
+    #- perl-cpan-meta-requirements
+    #- perl-extutils-makemaker
+    #- perl-file-spec
+    #- perl-integer
+    #- perl-overload
+    #- perl-parent
+    #- perl-posix
+    #- perl-scalar-util
+    #- perl-specio-declare
+    #- perl-specio-exporter
+    #- perl-specio-library-builtins
+    #- perl-specio-library-numeric
+    #- perl-specio-library-string
+    #- perl-storable
+    #- perl-strict
+    #- perl-test-more
+    #- perl-utf8
+    #- perl-warnings
+    #- perl-warnings-register
+    #- perl-xsloader
+
+  run:
+    - perl
+    - perl-datetime-locale
+    - perl-params-validationcompiler
+    - perl-namespace-autoclean
+    - perl-specio
+    - perl-datetime-timezone
+    - perl-try-tiny
+    - perl-dist-checkconflicts
+    #- perl-base
+    #- perl-carp
+    #- perl-integer
+    #- perl-overload
+    #- perl-parent
+    #- perl-posix
+    #- perl-scalar-util
+    #- perl-specio-declare
+    #- perl-specio-exporter
+    #- perl-specio-library-builtins
+    #- perl-specio-library-numeric
+    #- perl-specio-library-string
+    #- perl-strict
+    #- perl-warnings
+    #- perl-warnings-register
+    #- perl-xsloader
+
+test:
+  imports:
+    - DateTime
+    - DateTime::Duration
+    #- DateTime::Helpers
+    - DateTime::Infinite
+    #- DateTime::Infinite::Future
+    #- DateTime::Infinite::Past
+    - DateTime::LeapSecond
+    #- DateTime::PP
+    #- DateTime::PPExtra
+    - DateTime::Types
+
+about:
+  home: http://metacpan.org/release/DateTime
+  license: artistic_2
+  summary: 'A date and time object for Perl'

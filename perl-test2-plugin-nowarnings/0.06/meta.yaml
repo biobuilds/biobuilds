@@ -1,0 +1,58 @@
+{% set name = "perl-test2-plugin-nowarnings" %}
+{% set version = "0.06" %}
+{% set sha256 = "8288c1d934f69a03224598fbb715adc079c0d1609bfbaea6c88682aab1995800" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Test2-Plugin-NoWarnings-0.06.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    #- perl-extutils-makemaker
+    #- perl-carp
+    - perl-ipc-run3
+    #- perl-parent
+    #- perl-strict
+    #- perl-file-spec
+    #- perl-test2-bundle-extended
+    #- perl-test-more
+    #- perl-warnings
+    - perl-test-simple
+    #- perl-test2-api
+    #- perl-test2-event
+    #- perl-test2-util-hashbase
+    - perl-test2-suite
+    #- perl-test2-require-module
+
+  run:
+    - perl
+    #- perl-carp
+    #- perl-parent
+    #- perl-strict
+    #- perl-test2-event
+    #- perl-test2-api
+    #- perl-warnings
+    - perl-test-simple
+    #- perl-test2-util-hashbase
+    - perl-test2-suite
+
+test:
+  imports:
+    - Test2::Event::Warning
+    - Test2::Plugin::NoWarnings
+
+about:
+  home: http://metacpan.org/release/Test2-Plugin-NoWarnings
+  license: artistic_2
+  summary: 'Fail if tests warn'

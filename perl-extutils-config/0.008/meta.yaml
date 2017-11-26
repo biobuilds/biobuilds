@@ -1,0 +1,44 @@
+{% set name = "perl-extutils-config" %}
+{% set version = "0.008" %}
+{% set sha256 = "ae5104f634650dce8a79b7ed13fb59d67a39c213a6776cfdaa3ee749e62f1a8c" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/L/LE/LEONT/ExtUtils-Config-0.008.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    #- perl-extutils-makemaker
+    #- perl-data-dumper
+    #- perl-strict
+    #- perl-io-handle
+    #- perl-warnings
+    #- perl-test-more
+    #- perl-ipc-open3
+    #- perl-file-spec
+
+  run:
+    - perl
+    #- perl-data-dumper
+    #- perl-strict
+    #- perl-warnings
+
+test:
+  imports:
+    - ExtUtils::Config
+
+about:
+  home: http://metacpan.org/pod/ExtUtils::Config
+  license: perl_5
+  summary: "A wrapper for perl's configuration"

@@ -1,0 +1,87 @@
+{% set name = "perl-datetime-timezone" %}
+{% set version = "2.15" %}
+{% set sha256 = "06feaca8c5abfac73b262bb94a1b6c428b7098f6b2c1ac896c9785924cd8d428" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/DateTime-TimeZone-2.15.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-test-requires
+    - perl-module-runtime
+    - perl-params-validationcompiler
+    - perl-namespace-autoclean
+    - perl-test-fatal
+    - perl-try-tiny
+    - perl-class-singleton
+
+    - perl-specio
+    #- perl-specio-library-builtins
+    #- perl-specio-library-string
+
+    #- perl-base
+    #- perl-constant
+    #- perl-cwd
+    #- perl-extutils-makemaker
+    #- perl-file-basename
+    #- perl-file-copy
+    #- perl-file-find
+    #- perl-file-path
+    #- perl-file-spec
+    #- perl-file-spec-functions
+    #- perl-file-temp
+    #- perl-lib
+    #- perl-list-util
+    #- perl-overload
+    #- perl-parent
+    #- perl-storable
+    #- perl-strict
+    #- perl-test-more
+    #- perl-warnings
+
+  run:
+    - perl
+    - perl-module-runtime
+    - perl-params-validationcompiler
+    - perl-namespace-autoclean
+    - perl-try-tiny
+    - perl-class-singleton
+
+    - perl-specio
+    #- perl-specio-library-builtins
+    #- perl-specio-library-string
+
+    #- perl-constant
+    #- perl-cwd
+    #- perl-file-basename
+    #- perl-file-find
+    #- perl-file-spec
+    #- perl-list-util
+    #- perl-parent
+    #- perl-strict
+    #- perl-warnings
+
+# Skip Perl import tests due to a cylic dependency problem; OlsonDB/Rule.pm
+# uses DateTime::Duration, but we can't build that package without this one.
+#test:
+#  imports:
+#    - DateTime::TimeZone
+#    - DateTime::TimeZone::UTC
+#    - DateTime::TimeZone::America::Chicago
+
+about:
+  home: http://metacpan.org/release/DateTime-TimeZone
+  license: perl_5
+  summary: 'Time zone object base class and factory'

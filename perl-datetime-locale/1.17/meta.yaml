@@ -1,0 +1,81 @@
+{% set name = "perl-datetime-locale" %}
+{% set version = "1.17" %}
+{% set sha256 = "0ca6598b3f89e92e3d1140e5685c69f6f795f6eed158fa482f33ce2122b35cc9" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/DateTime-Locale-1.17.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-cpan-meta-check
+    - perl-dist-checkconflicts
+    - perl-file-sharedir
+    - perl-file-sharedir-install
+    - perl-namespace-autoclean
+    - perl-params-validationcompiler
+    - perl-scalar-list-utils >=1.45.0
+    - perl-test-fatal
+    - perl-test-file-sharedir
+    - perl-test-requires
+    - perl-test-warnings
+
+    - perl-specio
+    #- perl-specio-declare
+    #- perl-specio-library-string
+
+    #- perl-base
+    #- perl-carp
+    #- perl-cpan-meta-requirements
+    #- perl-exporter
+    #- perl-extutils-makemaker
+    #- perl-file-spec
+    #- perl-list-util
+    #- perl-storable
+    #- perl-strict
+    #- perl-test-more
+    #- perl-utf8
+    #- perl-warnings
+
+  run:
+    - perl
+    - perl-dist-checkconflicts
+    - perl-file-sharedir
+    - perl-namespace-autoclean
+    - perl-params-validationcompiler
+    - perl-scalar-list-utils >=1.45.0
+
+    - perl-specio
+    #- perl-specio-declare
+    #- perl-specio-library-string
+
+    #- perl-carp
+    #- perl-exporter
+    #- perl-list-util
+    #- perl-strict
+    #- perl-warnings
+
+test:
+  imports:
+    - DateTime::Locale
+    - DateTime::Locale::Base
+    - DateTime::Locale::Catalog
+    - DateTime::Locale::Data
+    - DateTime::Locale::FromData
+    - DateTime::Locale::Util
+
+about:
+  home: http://metacpan.org/release/DateTime-Locale
+  license: perl_5
+  summary: 'Localization support for DateTime.pm'

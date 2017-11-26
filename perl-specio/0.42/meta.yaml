@@ -1,0 +1,120 @@
+{% set name = "perl-specio" %}
+{% set version = "0.42" %}
+{% set sha256 = "None" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Specio-0.42.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-devel-stacktrace
+    - perl-eval-closure
+    - perl-module-runtime
+    - perl-mro-compat
+    - perl-role-tiny
+    - perl-sub-quote
+    - perl-test-fatal
+    - perl-test-needs
+    - perl-try-tiny
+    #- perl-b
+    #- perl-carp
+    #- perl-exporter
+    #- perl-extutils-makemaker
+    #- perl-file-spec
+    #- perl-io-file
+    #- perl-lib
+    #- perl-list-util
+    #- perl-overload
+    #- perl-parent
+    #- perl-re
+    #- perl-scalar-util
+    #- perl-storable
+    #- perl-strict
+    #- perl-test-more
+    #- perl-utf8
+    #- perl-version
+    #- perl-warnings
+
+  run:
+    - perl
+    - perl-devel-stacktrace
+    - perl-eval-closure
+    - perl-module-runtime
+    - perl-mro-compat
+    - perl-role-tiny
+    - perl-sub-quote
+    - perl-test-fatal
+    - perl-try-tiny
+    #- perl-b
+    #- perl-carp
+    #- perl-exporter
+    #- perl-io-file
+    #- perl-list-util
+    #- perl-overload
+    #- perl-parent
+    #- perl-re
+    #- perl-scalar-util
+    #- perl-storable
+    #- perl-strict
+    #- perl-test-more
+    #- perl-version
+    #- perl-warnings
+
+test:
+  imports:
+    - Specio
+    - Specio::Coercion
+    - Specio::Constraint::AnyCan
+    - Specio::Constraint::AnyDoes
+    - Specio::Constraint::AnyIsa
+    - Specio::Constraint::Enum
+    - Specio::Constraint::Intersection
+    - Specio::Constraint::ObjectCan
+    - Specio::Constraint::ObjectDoes
+    - Specio::Constraint::ObjectIsa
+    - Specio::Constraint::Parameterizable
+    - Specio::Constraint::Parameterized
+    - Specio::Constraint::Role::CanType
+    - Specio::Constraint::Role::DoesType
+    - Specio::Constraint::Role::Interface
+    - Specio::Constraint::Role::IsaType
+    - Specio::Constraint::Simple
+    - Specio::Constraint::Structurable
+    - Specio::Constraint::Structured
+    - Specio::Constraint::Union
+    - Specio::Declare
+    - Specio::DeclaredAt
+    - Specio::Exception
+    - Specio::Exporter
+    - Specio::Helpers
+    - Specio::Library::Builtins
+    - Specio::Library::Numeric
+    - Specio::Library::Perl
+    - Specio::Library::String
+    - Specio::Library::Structured
+    - Specio::Library::Structured::Dict
+    - Specio::Library::Structured::Map
+    - Specio::Library::Structured::Tuple
+    - Specio::OO
+    - Specio::PartialDump
+    - Specio::Registry
+    - Specio::Role::Inlinable
+    - Specio::Subs
+    - Specio::TypeChecks
+
+about:
+  home: http://metacpan.org/release/Specio
+  license: artistic_2
+  summary: 'Type constraints and coercions for Perl'

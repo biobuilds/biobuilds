@@ -1,0 +1,35 @@
+{% set name = "perl-importer" %}
+{% set version = "0.024" %}
+{% set sha256 = "1d19760ceb366b664985ace9a7ee1b54a438b1e060a5bca6eff0c6a35b07a557" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/E/EX/EXODIST/Importer-0.024.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    #- perl-extutils-makemaker
+    #- perl-test-more
+
+  run:
+    - perl
+
+test:
+  imports:
+    - Importer
+
+about:
+  home: http://metacpan.org/pod/Importer
+  license: perl_5
+  summary: 'Alternative but compatible interface to modules that export symbols.'

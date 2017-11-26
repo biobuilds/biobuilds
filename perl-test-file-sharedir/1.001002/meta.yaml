@@ -1,0 +1,66 @@
+{% set name = "perl-test-file-sharedir" %}
+{% set version = "1.001002" %}
+{% set sha256 = "b33647cbb4b2f2fcfbde4f8bb4383d0ac95c2f89c4c5770eb691f1643a337aad" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/K/KE/KENTNL/Test-File-ShareDir-1.001002.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-file-copy-recursive
+    - perl-path-tiny
+    - perl-test-fatal
+    - perl-class-tiny
+    - perl-scope-guard
+    - perl-file-sharedir
+    #- perl-carp
+    #- perl-cwd
+    #- perl-exporter
+    #- perl-extutils-makemaker
+    #- perl-file-spec
+    #- perl-lib
+    #- perl-parent
+    #- perl-strict
+    #- perl-test-more
+    #- perl-warnings
+
+  run:
+    - perl
+    - perl-file-copy-recursive
+    - perl-path-tiny
+    - perl-class-tiny
+    - perl-scope-guard
+    - perl-file-sharedir
+    #- perl-carp
+    #- perl-exporter
+    #- perl-parent
+    #- perl-strict
+    #- perl-warnings
+
+test:
+  imports:
+    - Test::File::ShareDir
+    #- Test::File::ShareDir::Dist
+    #- Test::File::ShareDir::Module
+    - Test::File::ShareDir::Object::Dist
+    - Test::File::ShareDir::Object::Inc
+    - Test::File::ShareDir::Object::Module
+    #- Test::File::ShareDir::TempDirObject
+    - Test::File::ShareDir::Utils
+
+about:
+  home: https://github.com/kentnl/Test-File-ShareDir
+  license: perl_5
+  summary: 'Create a Fake ShareDir for your modules for testing.'

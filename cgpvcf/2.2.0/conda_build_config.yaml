@@ -1,0 +1,7 @@
+perl:
+  - 5.22.0
+
+pin_run_as_build:
+  perl:
+    min_pin: "x.x"
+    max_pin: "x.x"

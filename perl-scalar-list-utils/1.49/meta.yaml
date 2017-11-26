@@ -1,0 +1,36 @@
+{% set name = "perl-scalar-list-utils" %}
+{% set version = "1.49" %}
+{% set sha256 = "f4ffdd4833e872f472c22a86cd8057e715e565c247d94bd5f9b3ba9af284bfdc" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/P/PE/PEVANS/Scalar-List-Utils-1.49.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    #- perl-extutils-makemaker
+    #- perl-test-more
+
+  run:
+    - perl
+    #- perl-test-more
+
+test:
+  imports:
+    - Scalar::Util
+
+about:
+  home: http://metacpan.org/pod/Scalar::List::Utils
+  license: perl_5
+  summary: 'Common Scalar and List utility subroutines'

@@ -1,0 +1,12 @@
+--- t/make_executable.t
++++ t/make_executable.t
+@@ -12,7 +12,7 @@
+ my @files;
+ 
+ open my $out, '>', $filename or die "Couldn't create $filename: $!";
+-print $out "#! perl -w\nexit \$ARGV[0];\n";
++print $out "#!/usr/bin/env perl\nexit \$ARGV[0];\n";
+ close $out;
+ 
+ make_executable($filename);
+

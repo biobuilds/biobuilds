@@ -1,0 +1,49 @@
+{% set name = "perl-extutils-installpaths" %}
+{% set version = "0.011" %}
+{% set sha256 = "7609fa048cdcf1451cad5b1d7d494f30e3d5bad0672d15404f1ea60e1df0067c" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/L/LE/LEONT/ExtUtils-InstallPaths-0.011.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-extutils-config
+    #- perl-carp
+    #- perl-extutils-makemaker
+    #- perl-file-spec
+    #- perl-file-spec-functions
+    #- perl-file-temp
+    #- perl-io-handle
+    #- perl-ipc-open3
+    #- perl-strict
+    #- perl-test-more
+    #- perl-warnings
+
+  run:
+    - perl
+    - perl-extutils-config
+    #- perl-carp
+    #- perl-file-spec
+    #- perl-strict
+    #- perl-warnings
+
+test:
+  imports:
+    - ExtUtils::InstallPaths
+
+about:
+  home: http://metacpan.org/pod/ExtUtils::InstallPaths
+  license: perl_5
+  summary: 'Build.PL install path logic made easy'

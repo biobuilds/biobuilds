@@ -1,0 +1,52 @@
+{% set name = "perl-dist-checkconflicts" %}
+{% set version = "0.11" %}
+{% set sha256 = "ea844b9686c94d666d9d444321d764490b2cde2f985c4165b4c2c77665caedc4" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/D/DO/DOY/Dist-CheckConflicts-0.11.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-module-runtime #0.009
+    - perl-test-fatal
+    #- perl-base
+    #- perl-carp
+    #- perl-exporter
+    #- perl-extutils-makemaker
+    #- perl-file-spec
+    #- perl-io-handle
+    #- perl-ipc-open3
+    #- perl-lib
+    #- perl-strict
+    #- perl-test-more
+    #- perl-warnings
+
+  run:
+    - perl
+    - perl-module-runtime #0.009
+    #- perl-base
+    #- perl-carp
+    #- perl-exporter
+    #- perl-strict
+    #- perl-warnings
+
+test:
+  imports:
+    - Dist::CheckConflicts
+
+about:
+  home: http://metacpan.org/release/Dist-CheckConflicts
+  license: perl_5
+  summary: 'declare version conflicts for your dist'

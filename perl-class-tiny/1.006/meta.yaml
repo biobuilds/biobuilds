@@ -1,0 +1,46 @@
+{% set name = "perl-class-tiny" %}
+{% set version = "1.006" %}
+{% set sha256 = "2efcbd31528be51d3022c616768558b78c6172df5f03c5dc698939f65488cb4e" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/D/DA/DAGOLDEN/Class-Tiny-1.006.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    #- perl-lib
+    #- perl-extutils-makemaker
+    #- perl-exporter
+    #- perl-carp
+    #- perl-base
+    #- perl-test-more
+    #- perl-strict
+    #- perl-file-spec
+    #- perl-warnings
+
+  run:
+    - perl
+    #- perl-carp
+    #- perl-strict
+    #- perl-warnings
+
+test:
+  imports:
+    - Class::Tiny
+    #- Class::Tiny::Object
+
+about:
+  home: https://github.com/dagolden/Class-Tiny
+  license: Apache 2.0
+  summary: 'Minimalist class construction'

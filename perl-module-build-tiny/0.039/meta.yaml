@@ -1,0 +1,73 @@
+{% set name = "perl-module-build-tiny" %}
+{% set version = "0.039" %}
+{% set sha256 = "7d580ff6ace0cbe555bf36b86dc8ea232581530cbeaaea09bccb57b55797f11c" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/L/LE/LEONT/Module-Build-Tiny-0.039.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-extutils-installpaths
+    - perl-extutils-config
+    - perl-extutils-helpers
+    #- perl-data-dumper
+    #- perl-cpan-meta
+    #- perl-extutils-install
+    #- perl-getopt-long
+    #- perl-json-pp
+    #- perl-carp
+    #- perl-extutils-parsexs
+    #- perl-lib
+    #- perl-file-temp
+    #- perl-xsloader
+    #- perl-extutils-cbuilder
+    #- perl-exporter
+    #- perl-file-path
+    #- perl-file-basename
+    #- perl-strict
+    #- perl-cwd
+    #- perl-file-spec
+    #- perl-test-more
+    #- perl-io-handle
+    #- perl-warnings
+    #- perl-file-find
+    #- perl-ipc-open3
+
+  run:
+    - perl
+    - perl-extutils-config
+    - perl-extutils-installpaths
+    - perl-extutils-helpers
+    #- perl-cpan-meta
+    #- perl-exporter
+    #- perl-extutils-cbuilder
+    #- perl-extutils-install
+    #- perl-extutils-parsexs
+    #- perl-file-basename
+    #- perl-file-find
+    #- perl-file-path
+    #- perl-getopt-long
+    #- perl-json-pp
+    #- perl-strict
+    #- perl-warnings
+
+test:
+  imports:
+    - Module::Build::Tiny
+
+about:
+  home: http://metacpan.org/pod/Module::Build::Tiny
+  license: perl_5
+  summary: 'A tiny replacement for Module::Build'

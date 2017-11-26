@@ -1,0 +1,51 @@
+{% set name = "perl-module-implementation" %}
+{% set version = "0.09" %}
+{% set sha256 = "c15f1a12f0c2130c9efff3c2e1afe5887b08ccd033bd132186d1e7d5087fd66d" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Module-Implementation-0.09.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    - perl-test-requires
+    - perl-module-runtime
+    - perl-try-tiny
+    - perl-test-fatal #0.006
+    #- perl-carp
+    #- perl-extutils-makemaker
+    #- perl-file-spec
+    #- perl-io-handle
+    #- perl-ipc-open3
+    #- perl-lib
+    #- perl-strict
+    #- perl-test-more
+    #- perl-warnings
+
+  run:
+    - perl
+    - perl-module-runtime
+    - perl-try-tiny
+    #- perl-carp
+    #- perl-strict
+    #- perl-warnings
+
+test:
+  imports:
+    - Module::Implementation
+
+about:
+  home: http://metacpan.org/release/Module-Implementation
+  license: artistic_2
+  summary: 'Loads one of several alternate underlying implementations for a module'

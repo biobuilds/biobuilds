@@ -1,0 +1,37 @@
+{% set name = "perl-file-copy-recursive" %}
+{% set version = "0.38" %}
+{% set sha256 = "84ccbddf3894a88a2c2b6be68ff6ef8960037803bb36aa228b31944cfdf6deeb" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "https://cpan.metacpan.org/authors/id/D/DM/DMUEY/File-Copy-Recursive-0.38.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - perl
+    #- perl-file-copy
+    #- perl-file-spec
+
+  run:
+    - perl
+    #- perl-file-copy
+    #- perl-file-spec
+
+test:
+  imports:
+    - File::Copy::Recursive
+
+about:
+  home: http://metacpan.org/pod/File::Copy::Recursive
+  license: unknown
+  summary: 'Perl extension for recursively copying files and directories'
