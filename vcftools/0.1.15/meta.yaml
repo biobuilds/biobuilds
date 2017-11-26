@@ -1,0 +1,70 @@
+{% set version = "0.1.15" %}
+
+package:
+  name: vcftools
+  version: "{{ version }}"
+
+source:
+  fn: "vcftools-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/vcftools/vcftools/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/vcftools-{{ version }}.tar.gz"
+  sha256: "bfbc50d92262868802d62f595c076b34f8e61a5ecaf48682328dad19defd3e7d"
+  patches:
+    - help-exit-codes.patch
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - autoconf
+    - automake
+    - pkg-config
+    - perl {{ perl }}
+    - openblas {{ openblas }}
+    - zlib {{ zlib }}
+  run:
+    - perl
+
+    # These runtime requirements should be automatically added and pinned by
+    # the `build/run_exports` directives in their package recipes.
+    #- openblas
+    #- zlib
+
+build:
+  number: 0
+
+test:
+  commands:
+    - vcftools --help >/dev/null
+    - fill-aa --help >/dev/null
+    - fill-an-ac --help >/dev/null
+    - fill-fs --help >/dev/null
+    - fill-ref-md5 --help >/dev/null
+    - vcf-annotate --help >/dev/null
+    - vcf-compare --help >/dev/null
+    - vcf-concat --help >/dev/null
+    - vcf-consensus --help >/dev/null
+    - vcf-contrast --help >/dev/null
+    - vcf-convert --help >/dev/null
+    - vcf-fix-newlines --help >/dev/null
+    - vcf-fix-ploidy --help >/dev/null
+    - vcf-indel-stats --help >/dev/null
+    - vcf-isec --help >/dev/null
+    - vcf-merge --help >/dev/null
+    - vcf-phased-join --help >/dev/null
+    - vcf-query --help >/dev/null
+    - vcf-shuffle-cols --help >/dev/null
+    - vcf-sort --help >/dev/null
+    - vcf-stats --help >/dev/null
+    - vcf-subset --help >/dev/null
+    - vcf-to-tab --help >/dev/null
+    - vcf-tstv --help >/dev/null
+    - vcf-validator --help >/dev/null
+
+about:
+  home: "https://vcftools.github.io/index.html"
+  license: LGPLv3
+  license_file: LICENSE
+  summary: Tools for working with VCF files

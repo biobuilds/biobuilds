@@ -1,0 +1,22 @@
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
+toolchain:
+  - default
+
+perl:
+  - 5.22.0
+
+openblas:
+  - 0.2.20
+
+zlib:
+  - 1.2.8
+
+pin_run_as_build:
+  perl:
+    min_pin: "x.x"
+    max_pin: "x.x"
+  zlib:
+    max_pin: "x.x"
