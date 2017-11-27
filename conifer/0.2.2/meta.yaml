@@ -14,15 +14,15 @@ source:
 requirements:
   run:
     - python
-    - numpy x.x
+    - numpy
     # Require pytables 3.2 because 3.3+ has an API change that causes Conifer
     # to fail with "NameError: global name 'openFile' is not defined".
-    - pytables 3.2.2
-    - matplotlib 1.5.*
-    - pysam 0.8.*
+    - pytables ==3.2.2
+    - matplotlib >=1.5.0,<1.6.0
+    - pysam >=0.8.4,<0.9.0
 
 build:
-  number: 0
+  number: 1
 
 test:
   commands:
