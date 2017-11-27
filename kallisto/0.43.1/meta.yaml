@@ -1,0 +1,48 @@
+{% set name = "kallisto" %}
+{% set version = "0.43.1" %}
+{% set sha256 = "2164938c2c61c04e338c4c132cf749f56d39e6f0b4c517121bca1fbc218e430e" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/pachterlab/kallisto/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+requirements:
+  build:
+    - biobuilds-build
+    # `or x86_64` clause ensures we have updated (C++11) STL headers needed by
+    # the Intel compiler (`icpc`) to build kallisto, as the g++-4.4 STL headers
+    # (default in our x86_64 build container) are too old for this.
+    - {{ compiler('cxx') }}     # [toolchain == 'default' or x86_64]
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - cmake >=2.8.12
+    - hdf5 {{ hdf5 }}
+    - zlib {{ zlib }}           # [toolchain != 'ibm-at10.0']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - hdf5
+    - zlib                      # [toolchain != 'ibm-at10.0']
+
+test:
+  source_files:
+    - test/*.fasta.gz
+    - test/*.fastq.gz
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+
+about:
+  home: https://pachterlab.github.io/kallisto/, https://github.com/pachterlab/kallisto
+  license: BSD
+  license_file: license.txt
+  summary: Program for quantifying abundances of transcripts from RNA-Seq data using pseudoalignment

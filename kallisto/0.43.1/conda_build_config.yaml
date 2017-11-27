@@ -1,0 +1,24 @@
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
+toolchain:
+  - default
+  - intel-psxe2018  # [linux and x86_64]
+  - ibm-at10.0      # [linux and ppc64le]
+
+hdf5:
+  # Using an older version to avoid breaking existing BioBuilds packages.
+  # TODO: Upgrade to the latest HDF5 release.
+  - 1.8.17
+
+zlib:
+  - 1.2.8
+
+pin_run_as_build:
+  # Comment from the "defaults"-channel HDF5 1.10.1 package: "hdf5 has
+  # historically broken API between bugfix revisions. Pin it to be safe."
+  hdf5:
+    max_pin: "x.x.x"
+  zlib:
+    max_pin: "x.x"
