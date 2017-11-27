@@ -1,0 +1,40 @@
+{% set name = "migrate" %}
+{% set version = "3.6.11" %}
+{% set sha256 = "a9ba06a4e995a45b8d04037f5f2da23e1fe64a2f3565189bdd50c62c6fe01fb8" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name }}-{{ version }}.tar.gz"
+  url:
+    - "http://popgen.sc.fsu.edu/currentversions/{{ name }}-{{ version }}.src.tar.gz"
+    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+  patches:
+    - ppc64le-support.patch     # [ppc64le]
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ compiler('cxx') }}     # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - autoconf-update
+    - pkg-config
+    - veclib-headers            # [ppc64le]
+    - zlib                      # [toolchain != 'ibm-at10.0']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - zlib                      # [toolchain != 'ibm-at10.0']
+
+about:
+  home: "http://popgen.sc.fsu.edu/Migrate/Migrate-n.html"
+  license: MIT
+  summary: "Estimates effective population sizes and past migration rates"
