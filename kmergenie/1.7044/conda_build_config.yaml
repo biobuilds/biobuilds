@@ -1,0 +1,18 @@
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
+toolchain:
+  - default
+  - intel-psxe2018  # [linux and x86_64]
+  - ibm-at10.0      # [linux and ppc64le]
+
+python:
+  - 2.7
+
+pin_run_as_build:
+  python:
+    min_pin: "x.x"
+    max_pin: "x.x"
+  zlib:
+    max_pin: "x.x"

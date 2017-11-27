@@ -1,0 +1,11 @@
+--- setup.py
++++ setup.py
+@@ -7,8 +7,6 @@
+ class MyInstall(install):
+ 
+     def run(self):
+-        import os
+-        os.system('make')
+         install.run(self)
+ 
+ setup(

@@ -1,0 +1,47 @@
+{% set name = "kmergenie" %}
+{% set version = "1.7044" %}
+{% set sha256 = "46f2a08a2d7b1885414143e436829dd7e61fcc31ec4e429433e516a168d2978e" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "http://kmergenie.bx.psu.edu/kmergenie-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+  patches:
+    - setup.py-do-not-run-make.patch
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('cxx') }}     # [toolchain == 'default']
+    - llvm-openmp               # [toolchain == 'default' and osx]
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - zlib                      # [toolchain != 'ibm-at10.0']
+    - python {{ python }}
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - zlib                      # [toolchain != 'ibm-at10.0']
+    - python
+    - r-base
+
+test:
+  requires:
+    - biobuilds-opt       # [toolchain != 'default']
+    - mapper-test-data    # For reference genome FASTA
+    - samtools            # For `wgsim`
+
+about:
+  home: http://kmergenie.bx.psu.edu/
+  license: CeCILL Free Software License
+  license_file: LICENSE
+  summary: Estimates the best k-mer length for genome de novo assembly
