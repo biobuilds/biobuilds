@@ -8,13 +8,14 @@ source:
   md5: 20337132c4ab06c1146ad384d55372c5
 
 build:
-  number: 2
+  number: 3
 
 requirements:
   build:
-    - cairo
-    - python
+    - cairo {{ cairo }}
+    - python {{ python }}
   run:
+    # These package's `run_exports` should handle pinning runtime versions.
     - cairo
     - python
 

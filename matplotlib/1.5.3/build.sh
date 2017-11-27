@@ -2,8 +2,8 @@
 
 if [ `uname` == 'Linux' ]; then
     pushd $PREFIX/lib
-    [ -f libtcl8.5.so ] && ln -s libtcl8.5.so libtcl.so
-    [ -f libtk8.5.so ] && ln -s libtk8.5.so libtk.so
+    [ -f libtcl${tk}.so ] && ln -s libtcl${tk}.so libtcl.so
+    [ -f libtk${tk}.so ]  && ln -s libtk${tk}.so libtk.so
     popd
 fi
 
