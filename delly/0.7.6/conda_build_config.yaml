@@ -1,0 +1,13 @@
+htslib:
+  - 1.6.0
+
+boost:
+  - 1.62.0
+
+pin_run_as_build:
+  htslib:
+    max_pin: "x.x"
+  boost:
+    max_pin: "x.x"
+  llvm-openmp:
+    max_pin: "x.x"
