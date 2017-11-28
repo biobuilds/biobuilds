@@ -4,12 +4,15 @@ package:
 
 requirements:
   build:
-    - gcc >=4.7     # [not ppc64le]
-    - htslib 1.3.2
+    - biobuilds-build
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - llvm-openmp             # [osx]
+    - htslib {{ htslib }}
     - zlib
   run:
-    - libgcc >=4.7  # [not ppc64le]
-    - htslib 1.3.2
+    - llvm-openmp             # [osx]
+    - htslib
     - zlib
 
 source:
@@ -17,18 +20,19 @@ source:
   url:
     - "https://github.com/alexdobin/STAR/archive/2.5.2b.tar.gz"
     - "http://download.lab7.io/sources/star-2.5.2b.tar.gz"
-  md5: "31a0c48f4d163f11238e1f7add3ab5c4"
+  sha256: "f88b992740807ab10f2ac3b83781bf56951617f210001fab523f6480d0b546d9"
   patches:
     - compile-id.patch
     - local-htslib.patch
     - osx-link.patch  # [osx]
 
+    # clang++ is much stricter about type correctness than g++, so we need to
+    # patch the sources so the OS X/macOS compile doesn't fail.
+    - clang-pointer-arith.patch   # [osx]
+    - clang-const-ness.patch      # [osx]
+
 build:
-  number: 0
-  script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+  number: 1
 
 test:
   commands:
