@@ -1,0 +1,53 @@
+{% set name = "ShortRead" %}
+{% set version = "1.36.0" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://bioconductor.org/packages/release/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "9f7dbec9d74f16a67403a0f801024fceb637c5ddef2ad97e5716925635b5b31a"
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - pkg-config
+    - r-hwriter
+    - r-latticeextra
+    - bioconductor-biocgenerics >=0.23.3
+    - bioconductor-biocparallel
+    - bioconductor-biostrings >=2.37.1
+    - bioconductor-rsamtools >=1.21.4
+    - bioconductor-genomicalignments >=1.5.4
+  run:
+    - r-base
+    - r-hwriter
+    - r-latticeextra
+    - bioconductor-biocgenerics >=0.23.3
+    - bioconductor-biocparallel
+    - bioconductor-biostrings >=2.37.1
+    - bioconductor-rsamtools >=1.21.4
+    - bioconductor-genomicalignments >=1.5.4
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/{{ name }}.html"
+  license: "Artistic 2.0"
+  summary: "FASTQ input and manipulation"

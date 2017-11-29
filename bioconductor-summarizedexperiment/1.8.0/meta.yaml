@@ -1,0 +1,49 @@
+{% set name = "SummarizedExperiment" %}
+{% set version = "1.8.0" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://bioconductor.org/packages/release/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "aeeec5e6a5caacb209ba11e245dc5f454d7359eb04d615860482a00928ca2180"
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - r-matrix
+    - bioconductor-genomicranges >=1.29.14
+    - bioconductor-biobase
+    - bioconductor-delayedarray >=0.3.20
+  run:
+    - r-base
+    - r-matrix
+    - bioconductor-genomicranges >=1.29.14
+    - bioconductor-biobase
+    - bioconductor-delayedarray >=0.3.20
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/{{ name }}.html"
+  license: Artistic 2.0
+  summary: SummarizedExperiment container
+  description: |
+    The SummarizedExperiment container contains one or more assays, each
+    represented by a matrix-like object of numeric or other mode. The rows
+    typically represent genomic ranges of interest and the columns represent
+    samples.

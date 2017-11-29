@@ -1,0 +1,51 @@
+{% set name = "Rsamtools" %}
+{% set version = "1.30.0" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://bioconductor.org/packages/release/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "ba2a6f2c13e7d001fb8e1a00bd73130a6a748c8d9daf41a16fceae2d5df1565e"
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - bioconductor-biocparallel
+    - bioconductor-genomeinfodb >=1.1.3
+    - bioconductor-genomicranges >=1.21.6
+    - bioconductor-biostrings >=2.37.1
+  run:
+    - r-base
+    - bioconductor-biocparallel
+    - bioconductor-genomeinfodb >=1.1.3
+    - bioconductor-genomicranges >=1.21.6
+    - bioconductor-biostrings >=2.37.1
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/{{ name }}.html"
+  license: Artistic 2.0
+  summary: Binary alignment (BAM), FASTA, variant call (BCF), and tabix file import
+  description: |
+     Interface to the "samtools", "bcftools", and "tabix" utilities (see
+     "LICENCE") for manipulating SAM (Sequence Alignment / Map), FASTA, binary
+     variant call (BCF) and compressed indexed tab-delimited (tabix) files.

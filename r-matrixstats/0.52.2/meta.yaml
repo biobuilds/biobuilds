@@ -1,0 +1,66 @@
+{% set name = "matrixStats" %}
+{% set version = "0.52.2" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "39da6aa6b109f89a141dab8913d981abc4fbd3f8be9e206f92e382cc5270d2a5"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+# Suggests: base64enc, ggplot2, knitr, microbenchmark, R.devices, R.rsp
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: https://github.com/HenrikBengtsson/matrixStats
+  license: Artistic 2.0
+  summary: High-performance functions that apply to rows and columns of matrices (and to vectors)
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: matrixStats
+# Version: 0.52.2
+# Depends: R (>= 2.12.0)
+# Suggests: base64enc, ggplot2, knitr, microbenchmark, R.devices, R.rsp
+# VignetteBuilder: R.rsp
+# Date: 2017-04-13
+# Title: Functions that Apply to Rows and Columns of Matrices (and to Vectors)
+# Authors@R: c( person("Henrik", "Bengtsson", role=c("aut", "cre", "cph"), email="henrikb@braju.com"), person("Hector", "Corrada Bravo", role="ctb"), person("Robert", "Gentleman", role="ctb"), person("Ola", "Hossjer", role="ctb"), person("Harris", "Jaffee", role="ctb"), person("Dongcan", "Jiang", role="ctb"), person("Peter", "Langfelder", role="ctb"))
+# Author: Henrik Bengtsson [aut, cre, cph], Hector Corrada Bravo [ctb], Robert Gentleman [ctb], Ola Hossjer [ctb], Harris Jaffee [ctb], Dongcan Jiang [ctb], Peter Langfelder [ctb]
+# Maintainer: Henrik Bengtsson <henrikb@braju.com>
+# Description: High-performing functions operating on rows and columns of matrices, e.g. col / rowMedians(), col / rowRanks(), and col / rowSds().  Functions optimized per data type and for subsetted calculations such that both memory usage and processing time is minimized.  There are also optimized vector-based methods, e.g. binMeans(), madDiff() and weightedMedian().
+# License: Artistic-2.0
+# LazyLoad: TRUE
+# NeedsCompilation: yes
+# ByteCompile: TRUE
+# URL: https://github.com/HenrikBengtsson/matrixStats
+# BugReports: https://github.com/HenrikBengtsson/matrixStats/issues
+# RoxygenNote: 6.0.1
+# Packaged: 2017-04-13 07:54:02 UTC; hb
+# Repository: CRAN
+# Date/Publication: 2017-04-14 14:49:54 UTC
+#----------------------------------------------------------------------

@@ -13,4 +13,8 @@ export DISABLE_AUTOBREW=1
 mv DESCRIPTION DESCRIPTION.old
 grep -v '^Priority: ' DESCRIPTION.old > DESCRIPTION
 
+# For some reason, `./configure` doesn't correctly pick up all the R-supplied
+# $LDFLAGS on ppc64le, so we need this to help it find libz.so ("-lz").
+export LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
+
 $R CMD INSTALL --build .
