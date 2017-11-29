@@ -1,24 +1,28 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "gplots" %}
+{% set version = "3.0.1" %}
 
 package:
-  name: r-gplots
-  version: "3.0.1"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: gplots_3.0.1.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/gplots_3.0.1.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/gplots/gplots_3.0.1.tar.gz
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "343df84327ac3d03494992e79ee3afc78ba3bdc08af9a305ee3fb0a38745cb0a"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
 
+# Suggests: grid, MASS
 requirements:
   build:
-    - r-base
+    - r-base {{ r_base }}
     - r-kernsmooth
     - r-catools
     - r-gdata
@@ -33,18 +37,18 @@ requirements:
 
 test:
   commands:
-    - $R -e "library('gplots')" # [not win]
-    - "\"%R%\" -e \"library('gplots')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
-  #home:
-  license: GPLv2
-  summary: 'Various R tools for plotting data'
+  home: https://CRAN.R-project.org/package=gplots
+  license: GPL-2
+  summary: Various R programming tools for plotting data
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: gplots
 # Title: Various R Programming Tools for Plotting Data
 # Description: Various R programming tools for plotting data, including: - calculating and plotting locally smoothed summary function as ('bandplot', 'wapply'), - enhanced versions of standard plots ('barplot2', 'boxplot2', 'heatmap.2', 'smartlegend'), - manipulating colors ('col2hex', 'colorpanel', 'redgreen', 'greenred', 'bluered', 'redblue', 'rich.colors'), - calculating and plotting two-dimensional data summaries ('ci2d', 'hist2d'), - enhanced regression diagnostic plots ('lmplot2', 'residplot'), - formula-enabled interface to 'stats::lowess' function ('lowess'), - displaying textual data in plots ('textplot', 'sinkplot'), - plotting a matrix where each cell contains a dot whose size reflects the relative magnitude of the elements ('balloonplot'), - plotting "Venn" diagrams ('venn'), - displaying Open-Office style plots ('ooplot'), - plotting multiple data on same region, with separate axes ('overplot'), - plotting means and confidence intervals ('plotCI', 'plotmeans'), - spacing points in an x-y plot so they don't overlap ('space').

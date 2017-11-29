@@ -1,33 +1,36 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "testthat" %}
+{% set version = '1.0.2' %}
 
 package:
-  name: r-testthat
-  version: "1.0.2"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: testthat_1.0.2.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/testthat_1.0.2.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/testthat/testthat_1.0.2.tar.gz
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "0ef7df0ace1fddf821d329f9d9a5d42296085350ae0d94af62c45bd203c8415e"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
   detect_binary_files_with_prefix: true
 
+# Suggests: devtools, withr, covr
 requirements:
   build:
-    - r-base
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
     - r-r6
     - r-crayon
     - r-digest
     - r-magrittr
     - r-praise
-    - posix               # [win]
-    - {{native}}toolchain # [win]
-    - gcc                 # [not win and not ppc64le]
 
   run:
     - r-base
@@ -36,12 +39,11 @@ requirements:
     - r-digest
     - r-magrittr
     - r-praise
-    - libgcc              # [not win and not ppc64le]
 
 test:
   commands:
-    - $R -e "library('testthat')" # [not win]
-    - "\"%R%\" -e \"library('testthat')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
   home: https://github.com/hadley/testthat
@@ -51,7 +53,7 @@ about:
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: testthat
 # Version: 1.0.2
 # Title: Unit Testing for R

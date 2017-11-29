@@ -1,0 +1,43 @@
+{% set name = "EBSeq" %}
+{% set version = "1.18.0" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://bioconductor.org/packages/release/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "bc9eeeeb1ac825d74d9f325d8c10fee39e7bf76958655486cfc372629cea275f"
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - r-blockmodeling
+    - r-gplots
+    - r-testthat
+  run:
+    - r-base
+    - r-blockmodeling
+    - r-gplots
+    - r-testthat
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - $R -e "library('EBSeq')"            # [not win]
+    - "\"%R%\" -e \"library('EBSeq')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/{{ name }}.html"
+  license: Artistic 2.0
+  summary: "R package for gene and isoform differential expression analysis of RNA-seq data"

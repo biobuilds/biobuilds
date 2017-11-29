@@ -1,0 +1,70 @@
+{% set name = "blockmodeling" %}
+{% set version = "0.1.9" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "c93a74d439de861fc7a1c484dc0cc983a7330904f1cdef15a03ee1b2b98ba8e5"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+# Suggests: sna, Matrix
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - {{ compiler('fortran') }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://CRAN.R-project.org/package=blockmodeling
+  license: GPL-2
+  summary: Generalized and Classical Blockmodeling of Valued Networks
+  description: |
+    This is primarily meant as an implementation of Generalized blockmodeling
+    for valued networks. In addition, measures of similarity or dissimilarity
+    based on structural equivalence and regular equivalence (REGE algorithm)
+    can be computed and partitioned matrices can be plotted. This is a CRAN
+    version. A newer version is available on R-forge, which for however lacks
+    help files.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: blockmodeling
+# Type: Package
+# Title: An R Package for Generalized and Classical Blockmodeling of Valued Networks
+# Version: 0.1.9
+# Date: 2017-07-02
+# Imports: stats, methods
+# Suggests: sna, Matrix
+# Author: Ales Ziberna
+# Maintainer: Ales Ziberna <ales.ziberna@gmail.com>
+# Description: This is primarily meant as an implementation of Generalized blockmodeling for valued networks. In addition, measures of similarity or dissimilarity based on structural equivalence and regular equivalence (REGE algorithm) can be computed and partitioned matrices can be plotted. This is a CRAN version. A newer version is available on R-forge, which for however lacks help files.
+# License: GPL-2 | GPL-3
+# Encoding: UTF-8
+# NeedsCompilation: yes
+# Packaged: 2017-07-03 13:04:28 UTC; zibernaa
+# Repository: CRAN
+# Date/Publication: 2017-07-03 13:29:03 UTC
+#----------------------------------------------------------------------
