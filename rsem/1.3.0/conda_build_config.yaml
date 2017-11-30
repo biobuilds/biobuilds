@@ -1,0 +1,21 @@
+toolchain:
+  - default
+  - intel-psxe2018  # [linux and x86_64]
+  - ibm-at10.0      # [linux and ppc64le]
+
+boost:
+  - 1.62.0
+
+htslib:
+  - 1.6.0
+
+r_base:
+  - 3.4.2
+
+pin_run_as_build:
+  boost:
+    max_pin: "x.x"
+  htslib:
+    max_pin: "x.x"
+  r-base:
+    max_pin: "x.x"

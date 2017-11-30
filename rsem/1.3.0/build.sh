@@ -21,16 +21,48 @@ if [ "$BUILD_OS" == 'darwin' ]; then
     # Make sure we use the same C++ standard library as boost
     CXXFLAGS="${CXXFLAGS} -stdlib=libc++"
     LDFLAGS="${LDFLAGS} -stdlib=libc++"
+
+    CXXFLAGS="${CXXFLAGS} -std=c++11"
 fi
+
+# Force use of the older C++ language standard to avoid build failures with
+# newer versions of g++ (e.g., what Anaconda provides for x86_64 Linux).
+CXXFLAGS="-std=gnu++98 ${CXXFLAGS}"
 
 # Squash annoying, Boost-related warnings
 #CXXFLAGS="${CXXFLAGS} -Wno-unused-local-typedefs"
 
+# Make sure g++ knows that our Boost libraries were built with a pre-C++11 ABI.
+#
+# NOTE: we don't have a conditional here to check for g++ because conda's
+# linux-64 C++ compiler package sets $CXX to the binary named "*-c++", and we
+# don't want to put the additional effort into determining if said "c++" binary
+# is _really_ the GNU compiler.
+CXXFLAGS="${CXXFLAGS} -D_GLIBCXX_USE_CXX11_ABI=0"
+
 # Make sure we don't accidentally build with packaged libraries
 rm -rf boost samtools*
 
-# Weirdly, "conda build" doesn't set this for us
-R_VER=$(R --version | head -n1 | awk '{print $3;}' | cut -d. -f1-2)
+# Get R version information
+if [[ -z "${R_VER}" ]]; then
+    # Older versions of conda-build don't seem to set $R_VER for us
+    R_VER=$(R --version | head -n1 | awk '{print $3;}' | cut -d. -f1-3)
+fi
+R_VER=(${R_VER//./ })
+R_MAJOR_VER=${R_VER[0]}
+R_MINOR_VER=${R_VER[1]}
+
+# Make sure we can support this version of R
+if [[ $R_MAJOR_VER -ne 3 ]]; then
+    echo "FATAL: Only R version 3.x is supported!" >&2
+    exit 1
+fi
+
+if [[ $R_MINOR_VER -gt 3 ]]; then
+    pushd pRSEM/phantompeakqualtools
+    ln -sfn "spp_1.10.1_on_R3.3" "spp_1.10.1_on_R3.${R_MINOR_VER}"
+    popd
+fi
 
 
 ## Build and install
@@ -87,9 +119,9 @@ install -m 755 idrCode/*.sh "${PRSEM_DIR}/idrCode"
 install -m 644 phantompeakqualtools/*.R phantompeakqualtools/*.txt \
     "${PRSEM_DIR}/phantompeakqualtools"
 
-SPP_SRC="${SRC_DIR}/pRSEM/phantompeakqualtools/spp_1.10.1_on_R${R_VER}"
+SPP_SRC="${SRC_DIR}/pRSEM/phantompeakqualtools/spp_1.10.1_on_R${R_MAJOR_VER}.${R_MINOR_VER}"
 if [ ! -d "${SPP_SRC}" ]; then
-    echo "ERROR: Could not find spp source for R ${R_VER}" >&2
+    echo "ERROR: Could not find spp source for R ${R_MAJOR_VER}.${R_MINOR_VER}" >&2
     exit 1
 fi
 cd "${SPP_SRC}"
