@@ -1,0 +1,41 @@
+{% set name = "jellyfish" %}
+{% set version = "2.2.7" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/gmarcais/Jellyfish/releases/download/v{{ version }}/{{ name }}-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "d80420b4924aa0119353a5b704f923863abc802e94efeb531593147c13e631a8"
+
+requirements:
+  build:
+    - biobuilds-build
+    - libtool
+    # The `or x86_64` clause ensures we have proper C++11 support needed by the
+    # Intel compiler (`icpc`) to build jellyfish.
+    - {{ compiler('cxx') }}     # [toolchain == 'default' or x86_64]
+    - {{ toolchain }}-build     # [toolchain != 'default']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  commands:
+    - jellyfish --help
+
+about:
+  home: https://github.com/gmarcais/Jellyfish
+  license: GPL-3
+  license_file: LICENSE
+  summary: A fast, multi-threaded k-mer counter
