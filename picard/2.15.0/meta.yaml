@@ -1,0 +1,26 @@
+{% set version = "2.15.0" %}
+
+package:
+  name: picard
+  version: "{{ version }}"
+
+source:
+  fn: "picard-{{ version }}.jar"
+  url:
+    - "https://github.com/broadinstitute/picard/releases/download/{{ version }}/picard.jar"
+    - "http://download.lab7.io/sources/picard-{{ version }}.jar"
+  sha256: "dc3ff74c704954a10796b390738078617bb0b0fef15731e9d268ed3b26c6a285"
+
+requirements:
+  build: []
+  run:
+    # linux-ppc64le must still rely on their system-provided Java
+    - openjdk >=8.0   # [not ppc64le]
+
+build:
+  number: 0
+
+about:
+  home: "http://broadinstitute.github.io/picard/"
+  license: MIT
+  summary: "Java tools for working with NGS data in the BAM format"
