@@ -1,0 +1,26 @@
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
+boost:
+  - 1.62.0
+
+#icu:
+#  - 60.1
+
+libxml2:
+  - 2.9.4
+
+libxslt:
+  - 1.1.29
+
+pin_run_as_build:
+  boost:
+    max_pin: "x.x"
+
+  # According to the ABI Laboratory, these libraries have fairly stable ABIs,
+  # so it should be fairly safe to pin them to the major number.
+  libxml2:
+    max_pin: "x"
+  libxslt:
+    max_pin: "x"

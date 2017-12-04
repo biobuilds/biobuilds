@@ -1,0 +1,49 @@
+{% set name = "isaac4" %}
+{% set version = "17.09.06" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "isaac-04.{{ version }}.tar.gz"
+  url:
+    - "https://github.com/Illumina/Isaac4/archive/Isaac-04.{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/isaac-04.{{ version }}.tar.gz"
+  sha256: "b93ed57e1edf9c829e638f169fe327ec37f0360fbc489d25cfe999a1421fdf26"
+  patches:
+    - cmake-files.patch
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('cxx') }}
+    - pkg-config
+    - cmake
+    - zlib
+    - boost {{ boost }}
+    - libxml2 {{ libxml2 }}
+    - libxslt {{ libxslt }}
+  run:
+    - zlib
+    - boost
+    - libxml2
+    - libxslt
+    - gnuplot
+
+build:
+  skip: True  # [osx]
+  number: 0
+  detect_binary_files_with_prefix: True
+
+test:
+  requires:
+    - python
+  source_files:
+    - src/data/examples/PhiX/*
+
+about:
+  home: "https://github.com/Illumina/isaac4"
+  license: GPL-3
+  license_file: COPYRIGHT
+  summary: "Illumina short-read alignment program"
