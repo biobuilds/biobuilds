@@ -14,7 +14,7 @@ source:
   sha256: "5b11140590e632739e4151cae06b8116160d59e22bf36a3ccd5df76d1cf0383e"
 
 build:
-  number: 0
+  number: 1
   detect_binary_files_with_prefix: true
 
 requirements:
@@ -31,6 +31,19 @@ requirements:
     - freetype
     - harfbuzz
     - libpng
+
+    # Need to include ICU as a dependency so we don't pick up the wrong
+    # harfbuzz package at run-time (i.e., build pango with a harfbuzz linked to
+    # ICU w.x but run with a harfbuzz linked to ICU y.z). Doing so can cause
+    # missing symbol and/or share object file (library) errors.
+    - icu {{ icu }}
+  run:
+    # These should be set by their package's run_exports.
+    #- fontconfig
+    #- freetype
+    #- harfbuzz
+    #- libpng
+    #- icu
 
 test:
   commands:
