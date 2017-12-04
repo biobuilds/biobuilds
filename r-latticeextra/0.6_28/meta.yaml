@@ -1,28 +1,31 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "latticeExtra" %}
+{% set version = "0.6-28" %}
 
 package:
-  name: r-latticeextra
-  version: "0.6_28"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: "latticeExtra_0.6-28.tar.gz"
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - "http://cran.r-project.org/src/contrib/latticeExtra_0.6-28.tar.gz"
-    - "http://cran.r-project.org/src/contrib/Archive/latticeExtra/latticeExtra_0.6-28.tar.gz"
-  md5: "771938f25d0983763369b48a1153b26c"
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "780695323dfadac108fb27000011c734e2927b1e0f069f247d65d27994c67ec2"
 
 build:
-  number: 0
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
 
+# Suggests: maps, mapproj, deldir, tripack, zoo, MASS, quantreg, mgcv
 requirements:
   build:
-    - r-base
+    - r-base {{ r_base }}
     - r-rcolorbrewer
     - r-lattice
+
   run:
     - r-base
     - r-rcolorbrewer
@@ -30,18 +33,18 @@ requirements:
 
 test:
   commands:
-    - $R -e "library('latticeExtra')" # [not win]
-    - "\"%R%\" -e \"library('latticeExtra')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
-  home: "http://latticeextra.r-forge.r-project.org/"
+  home: http://latticeextra.r-forge.r-project.org/
   license: GPLv2
   summary: Extra graphical utilities based on lattice
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: latticeExtra
 # Version: 0.6-28
 # Date: 2016-01-09

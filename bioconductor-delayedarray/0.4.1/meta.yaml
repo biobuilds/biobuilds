@@ -1,0 +1,48 @@
+{% set name = "DelayedArray" %}
+{% set version = "0.4.1" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://bioconductor.org/packages/release/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "8b7ca552d391c58c5899480bbab5bdb975c8ef5f6b2222cc6304fcede313f068"
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - r-matrixstats
+    - bioconductor-biocgenerics
+    - bioconductor-s4vectors >=0.15.3
+    - bioconductor-iranges >=2.11.17
+  run:
+    - r-base
+    - r-matrixstats
+    - bioconductor-biocgenerics
+    - bioconductor-s4vectors >=0.15.3
+    - bioconductor-iranges >=2.11.17
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/{{ name }}.html"
+  license: Artistic 2.0
+  summary: Delayed operations on array-like objects
+  description: |
+    Wrapping an array-like object (typically an on-disk object) in a
+    DelayedArray object allows one to perform common array operations on it
+    without loading the object in memory.

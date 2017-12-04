@@ -1,0 +1,50 @@
+{% set name = "Biostrings" %}
+{% set version = "2.46.0" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://bioconductor.org/packages/release/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "f353f6c1fdbc520a685b880ef05f61245f04397adfcaae4c1395e14e1b06e56d"
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('c') }}
+    - bioconductor-biocgenerics >=0.15.6
+    - bioconductor-s4vectors >=0.13.13
+    - bioconductor-iranges >=2.9.18
+    - bioconductor-xvector >=0.11.6
+  run:
+    - r-base
+    - bioconductor-biocgenerics >=0.15.6
+    - bioconductor-s4vectors >=0.13.13
+    - bioconductor-iranges >=2.9.18
+    - bioconductor-xvector >=0.11.6
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - $R -e "library('Biostrings')"            # [not win]
+    - "\"%R%\" -e \"library('Biostrings')\""   # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/Biostrings.html"
+  license: "Artistic 2.0"
+  summary: "Efficient manipulation of biological strings"
+  description: |
+    Memory efficient string containers, string matching algorithms, and other
+    utilities, for fast manipulation of large biological sequences or sets of
+    sequences.

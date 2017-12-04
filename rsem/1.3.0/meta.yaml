@@ -5,23 +5,34 @@ package:
 requirements:
   build:
     - biobuilds-build
-    - htslib 1.3.*
-    - samtools 1.3.*
+
+    # Need the Anaconda compilers regardless of toolchain we're using to
+    # properly compile the R packages (since the BioBuilds "r-base" package was
+    # built with the Anaconda toolchain).
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ toolchain }}-build     # [toolchain != 'default']
+
+    - htslib {{ htslib }}
+    - samtools
+
     # Use BioBuilds Boost package instead of one from 'default' channel
     # to ensure consistency across all the platforms we support.
-    - boost 1.62.*
-    - r
+    - boost {{ boost }}
+
+    - r-base {{ r_base }}
     # Needed by the pRSEM component
     - r-catools >=1.17.1
     - r-data.table >=1.9.6
     - bioconductor-genomicranges >=1.24.3
     - bioconductor-shortread >=1.30.0
+
   run:
-    - biobuilds-opt   # [opt]
-    - samtools 1.3*
-    - perl
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - samtools
+    - perl >=5.0,<6.0
     - python
-    - r
+    - r-base
     # Needed by the EBSeq component
     - bioconductor-ebseq >=1.2.0
     # Needed by the pRSEM component
@@ -42,13 +53,13 @@ source:
     - ebseq-install.patch
     - prefix-paths.patch
     - help-exit-codes.patch
+    - r-spp-makevars-gcc.patch        # [linux]
+    - r-spp-gnu_cxx-namespace.patch   # [osx]
 
 build:
-  number: 1
+  number: 2
   features:
-    - opt     # [opt]
-  script_env:
-    - MAKE_JOBS
+    - opt                       # [toolchain != 'default']
   skip_compile_pyc:
     - libexec/{{ environ['PKG_NAME'] }}/pRSEM/*.py
 

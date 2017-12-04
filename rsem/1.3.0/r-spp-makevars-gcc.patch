@@ -1,0 +1,16 @@
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/Makevars.in
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/Makevars.in
+@@ -1,4 +1,4 @@
+ PKG_LIBS=@LIBS@ -lz
+ PKG_CFLAGS=-I./ -D_FASTMAP -DMAQ_LONGREADS @HAVE_LIBBZ2@ 
+-PKG_CXXFLAGS=-I./ -D_FASTMAP -DMAQ_LONGREADS	@HAVE_LIBBZ2@ 
++PKG_CXXFLAGS=-std=gnu++98 -D_GLIBCXX_USE_CXX11_ABI=0 -I./ -D_FASTMAP -DMAQ_LONGREADS	@HAVE_LIBBZ2@ 
+ 
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/Makevars.in
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/Makevars.in
+@@ -1,4 +1,4 @@
+ PKG_LIBS=@LIBS@ -lz
+ PKG_CFLAGS=-I./ -D_FASTMAP -DMAQ_LONGREADS @HAVE_LIBBZ2@ 
+-PKG_CXXFLAGS=-I./ -D_FASTMAP -DMAQ_LONGREADS	@HAVE_LIBBZ2@ 
++PKG_CXXFLAGS=-std=gnu++98 -D_GLIBCXX_USE_CXX11_ABI=0 -I./ -D_FASTMAP -DMAQ_LONGREADS	@HAVE_LIBBZ2@ 
+ 

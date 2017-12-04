@@ -4,37 +4,37 @@ package:
 
 requirements:
   build:
+    - biobuilds-build
     - autoconf-update
-    - gcc     # [not ppc64le]
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - llvm-openmp             # [osx]
     - samtools 0.1.19
-    - htslib 1.3.2
+    - htslib {{ htslib }}
   run:
-    - perl
+    - llvm-openmp             # [osx]
+    - perl >=5.0,<6
     - python
-    - r
+    - r-base
     - bowtie
-    - libgcc  # [not ppc64le]
 
 source:
   fn: trinityrnaseq-2.2.0.tar.gz
   url:
     - https://github.com/trinityrnaseq/trinityrnaseq/archive/v2.2.0.tar.gz
     - http://download.lab7.io/sources/trinityrnaseq-2.2.0.tar.gz
-  md5: b91159641bfd2d1a40626ae526e56aa3
+  sha256: 9256e3f8c49fc83a20fd4259cabeecd6681b32c2bac3b8b4231a331ac1aa583a
   patches:
     - trinity-path.patch
     - inchworm-build.patch
-    - chrysalis-build.patch
+    - chrysalis-clang.patch         # [osx]
+    - chrysalis-ppc64le.patch       # [ppc64le]
     - scaffold-iworm-contigs.patch
     - collectl-install.patch
     - test-fixes.patch
 
 build:
-  number: 1
-  script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+  number: 2
   detect_binary_files_with_prefix: true
 
 test:

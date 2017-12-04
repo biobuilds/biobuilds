@@ -24,21 +24,22 @@ requirements:
     - pkg-config
     - python
     - setuptools
-    - numpy x.x
+    - numpy {{ numpy }}
     - python-dateutil
     - freetype
     - pyparsing
     - pytz
+    - cairo {{ cairo }}
     - py2cairo            [linux and py2k]
     - tornado
     - libpng
-    - tk                  [not osx and not ppc64le]
+    - tk {{ tk }}         [not osx and not ppc64le]
     - pyqt 4.*            [not osx and not ppc64le]
     - cycler
     - nose
   run:
     - python
-    - numpy x.x
+    - numpy
     - python-dateutil
     - freetype            [unix]
     - pytz
@@ -50,7 +51,7 @@ requirements:
     - cycler
 
 build:
-  number: 2
+  number: 3
 
 test:
   requires:

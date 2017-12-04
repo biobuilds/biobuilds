@@ -12,6 +12,12 @@ fi
 source "${BUILD_ENV}" -v
 unset ARFLAGS
 
+# Build with pthread support
+CFLAGS="${CFLAGS} -pthread"
+CXXFLAGS="${CXXFLAGS} -pthread"
+
+# Assume the same signedness for plain "char" declarations on all platforms
+# (default for x86_64).
 CFLAGS="${CFLAGS} -fsigned-char"
 CXXFLAGS="${CXXFLAGS} -fsigned-char"
 
@@ -49,13 +55,13 @@ case "$BUILD_OS" in
         # Give install_name_tool enough space to work its magic
         LDFLAGS="${LDFLAGS} -headerpad_max_install_names"
 
-        # No additional flags needed to statically link to libhts
+        # No additional flags needed to link to libhts
         HTS_LIB_LDFLAGS=
 
         DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib"
         ;;
     'linux')
-        # Flags needed to statically link to libhts
+        # Flags needed to link to libhts
         HTS_LIB_LDFLAGS="-ldl"
 
         LD_LIBRARY_PATH="${PREFIX}/lib"
@@ -79,7 +85,7 @@ rm -f test/tests/main
 env CC="${CC}" CFLAGS="${CFLAGS}" \
     CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
     LDFLAGS="${LDFLAGS}" \
-    HTS_LIB="${PREFIX}/lib/libhts.a" \
+    HTS_LIB="-lhts" \
     HTS_LIB_LDFLAGS="${HTS_LIB_LDFLAGS}" \
     make -j${MAKE_JOBS} \
     LD="${LD}" AR="${AR}" \
@@ -95,7 +101,7 @@ env CC="${CC}" CFLAGS="${CFLAGS}" \
 env CC="${CC}" CFLAGS="${CFLAGS}" \
     CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
     LDFLAGS="${LDFLAGS}" \
-    HTS_LIB="${PREFIX}/lib/libhts.a" \
+    HTS_LIB="-lhts" \
     HTS_LIB_LDFLAGS="${HTS_LIB_LDFLAGS}" \
     make -C test -j${MAKE_JOBS} \
     LD="${LD}" AR="${AR}" \

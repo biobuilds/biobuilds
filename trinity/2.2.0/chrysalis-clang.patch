@@ -1,0 +1,137 @@
+--- Chrysalis/GraphFromFasta_MPI.cc
++++ Chrysalis/GraphFromFasta_MPI.cc
+@@ -52,13 +52,13 @@
+ static struct timeval start,end;
+ void timer_start(){
+ 
+-  gettimeofday(&start,NULL);
++  gettimeofday(&::start,NULL);
+ }
+ 
+ 
+ double timer_stop(){
+-  gettimeofday(&end,NULL);
+-  double time_taken = ((end.tv_usec-start.tv_usec) + 1000000*(end.tv_sec - start.tv_sec));
++  gettimeofday(&::end,NULL);
++  double time_taken = ((::end.tv_usec-::start.tv_usec) + 1000000*(::end.tv_sec - ::start.tv_sec));
+  time_taken = time_taken/1000;
+   return time_taken;
+ }
+--- Chrysalis/Makefile
++++ Chrysalis/Makefile
+@@ -232,7 +232,7 @@
+ ASSERT		= SLOW
+ 
+ # OPEN_MP=yes enables OpenMP directives.  Any other value is ignored.
+-OPEN_MP		= yes
++OPEN_MP		= no
+ 
+ # Enables Posix multithreading.	 This is currently only supported for CXX
+ # compilations, and partially for GCC v3.  This is enabled by default, since
+--- Chrysalis/Makefile_g++_i386
++++ Chrysalis/Makefile_g++_i386
+@@ -24,7 +24,7 @@
+ 
+ # compiler options controlling C++ dialects:
+ # for compiling
+-SYS_WARN	+= -fno-nonansi-builtins
++SYS_WARN	+= 
+ 
+ # compiler options controlling C++ dialects:
+ # for optimization and code-generation
+--- Chrysalis/Makefile_g++_i686
++++ Chrysalis/Makefile_g++_i686
+@@ -21,7 +21,7 @@
+ 
+ # compiler options controlling C++ dialects:
+ # for compiling
+-SYS_WARN	+= -fno-nonansi-builtins
++SYS_WARN	+= 
+ 
+ # compiler options controlling C++ dialects:
+ # for optimization and code-generation
+--- Chrysalis/Makefile_g++_i86pc
++++ Chrysalis/Makefile_g++_i86pc
+@@ -21,7 +21,7 @@
+ 
+ # compiler options controlling C++ dialects:
+ # for compiling
+-SYS_WARN	+= -fno-nonansi-builtins
++SYS_WARN	+= 
+ 
+ # compiler options controlling C++ dialects:
+ # for optimization and code-generation
+--- Chrysalis/Makefile_g++_ia64
++++ Chrysalis/Makefile_g++_ia64
+@@ -18,7 +18,7 @@
+ 
+ # compiler options controlling C++ dialects:
+ # for compiling
+-SYS_LANG	+= -fno-nonansi-builtins
++SYS_LANG	+= 
+ 
+ # compiler options controlling C++ dialects:
+ # for optimization and code-generation
+--- Chrysalis/Makefile_g++_x86_64
++++ Chrysalis/Makefile_g++_x86_64
+@@ -24,7 +24,7 @@
+ 
+ # compiler options controlling C++ dialects:
+ # for compiling
+-SYS_WARN	+= -fno-nonansi-builtins
++SYS_WARN	+= 
+ 
+ # compiler options controlling C++ dialects:
+ # for optimization and code-generation
+--- Chrysalis/Makefile_g++_x86_64_mpi
++++ Chrysalis/Makefile_g++_x86_64_mpi
+@@ -24,7 +24,7 @@
+ 
+ # compiler options controlling C++ dialects:
+ # for compiling
+-SYS_WARN	+= -fno-nonansi-builtins
++SYS_WARN	+= 
+ 
+ # compiler options controlling C++ dialects:
+ # for optimization and code-generation
+--- Chrysalis/ReadsToTranscripts_MPI.cc
++++ Chrysalis/ReadsToTranscripts_MPI.cc
+@@ -43,7 +43,7 @@
+ void timer_start(){                                                                                                                                                                                                                        
+    
+                                                                                                                                                                                                                                           
+-    gettimeofday(&start,NULL);                                                                                                                                                                                                             
++    gettimeofday(&::start,NULL);                                                                                                                                                                                                             
+      
+ }                                                                                                                                                                                                                                       
+       
+@@ -53,8 +53,8 @@
+                        
+ double timer_stop(){                                                                                                                                                                                            
+                               
+-    gettimeofday(&end,NULL);                                                                                                                                                                                                               
+-    double time_taken = ((end.tv_usec-start.tv_usec) + 1000000*(end.tv_sec - start.tv_sec));                                                                                                                                               
++    gettimeofday(&::end,NULL);                                                                                                                                                                                                               
++    double time_taken = ((::end.tv_usec-::start.tv_usec) + 1000000*(::end.tv_sec - ::start.tv_sec));                                                                                                                                               
+     time_taken = time_taken/1000;                                                                                                                                                                                                         
+     return time_taken;                                                                                                                                                                                                                     
+      
+--- Chrysalis/ReadsToTranscripts_MPI_chang.cc
++++ Chrysalis/ReadsToTranscripts_MPI_chang.cc
+@@ -37,13 +37,13 @@
+ static struct timeval start,end;
+ void timer_start(){
+ 
+-  gettimeofday(&start,NULL);
++  gettimeofday(&::start,NULL);
+ }
+ 
+ 
+ double timer_stop(){
+-  gettimeofday(&end,NULL);
+-  double time_taken = ((end.tv_usec-start.tv_usec) + 1000000*(end.tv_sec - start.tv_sec));
++  gettimeofday(&::end,NULL);
++  double time_taken = ((::end.tv_usec-::start.tv_usec) + 1000000*(::end.tv_sec - ::start.tv_sec));
+  time_taken = time_taken/1000;
+   return time_taken;
+ }

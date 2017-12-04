@@ -1,0 +1,624 @@
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/bamread.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/bamread.cpp
+@@ -64,7 +64,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -101,7 +101,7 @@
+       
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/bed2vector.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/bed2vector.cpp
+@@ -109,7 +109,7 @@
+   vector< vector<int> > pos;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+ 
+   typedef boost::tokenizer<boost::char_separator<char> >  tokType;
+@@ -154,7 +154,7 @@
+       }
+ 
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -245,7 +245,7 @@
+   vector< vector<int> > poslen; // length
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -287,7 +287,7 @@
+       int fpos=atoi(str_pos.c_str());
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -423,7 +423,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -467,7 +467,7 @@
+       int fpos=atoi(str_pos.c_str());
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -615,7 +615,7 @@
+   vector< vector<int> > mm2; // position of the second mismatch
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -683,7 +683,7 @@
+       }
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -808,7 +808,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -859,7 +859,7 @@
+       }
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -995,7 +995,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1069,7 +1069,7 @@
+       }
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -1204,7 +1204,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1357,7 +1357,7 @@
+       }
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -1491,7 +1491,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1566,7 +1566,7 @@
+ 
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -1705,7 +1705,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1783,7 +1783,7 @@
+       int nm=atoi(str_ndel.c_str())+atoi(str_nins.c_str())+atoi(str_nsub.c_str());
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -1932,7 +1932,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1975,7 +1975,7 @@
+       }
+ 
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -2110,7 +2110,7 @@
+   vector< vector<int> > posnm; // number of mismatches
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -2152,7 +2152,7 @@
+       int nm=atoi(str_qual.c_str());
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -2261,7 +2261,7 @@
+   vector< vector<int> > posnm; // number of mismatches
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -2320,7 +2320,7 @@
+       
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -2432,7 +2432,7 @@
+   vector< vector<int> > poslen; // length of the match
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -2521,7 +2521,7 @@
+       
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/maqread.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/maqread.cpp
+@@ -55,7 +55,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -89,7 +89,7 @@
+     
+ 
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/pc.h
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/pc.h
+@@ -8,11 +8,11 @@
+ 
+ namespace __gnu_cxx
+ {
+-        template<> struct hash< std::string >
++        template<> struct __gnu_cxx::hash< std::string >
+         {
+                 size_t operator()( const std::string& x ) const
+                 {
+-                        return hash< const char* >()( x.c_str() );
++                        return __gnu_cxx::hash< const char* >()( x.c_str() );
+                 }
+         };
+ }
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/peaks.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/peaks.cpp
+@@ -12,7 +12,6 @@
+ }
+ 
+ using namespace std;
+-using namespace __gnu_cxx; 
+ 
+ /**
+  * Calculate all local peaks
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/wdl.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.2/src/wdl.cpp
+@@ -12,7 +12,6 @@
+ }
+ 
+ using namespace std;
+-using namespace __gnu_cxx; 
+ 
+ //#define DEBUG 1
+ 
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/bamread.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/bamread.cpp
+@@ -66,7 +66,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -103,7 +103,7 @@
+       
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/bed2vector.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/bed2vector.cpp
+@@ -111,7 +111,7 @@
+   vector< vector<int> > pos;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+ 
+   typedef boost::tokenizer<boost::char_separator<char> >  tokType;
+@@ -156,7 +156,7 @@
+       }
+ 
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -247,7 +247,7 @@
+   vector< vector<int> > poslen; // length
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -289,7 +289,7 @@
+       int fpos=atoi(str_pos.c_str());
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -425,7 +425,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -469,7 +469,7 @@
+       int fpos=atoi(str_pos.c_str());
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -617,7 +617,7 @@
+   vector< vector<int> > mm2; // position of the second mismatch
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -685,7 +685,7 @@
+       }
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -810,7 +810,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -861,7 +861,7 @@
+       }
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -997,7 +997,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1071,7 +1071,7 @@
+       }
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -1206,7 +1206,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1359,7 +1359,7 @@
+       }
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -1493,7 +1493,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1568,7 +1568,7 @@
+ 
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -1707,7 +1707,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1785,7 +1785,7 @@
+       int nm=atoi(str_ndel.c_str())+atoi(str_nins.c_str())+atoi(str_nsub.c_str());
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -1934,7 +1934,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -1977,7 +1977,7 @@
+       }
+ 
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -2112,7 +2112,7 @@
+   vector< vector<int> > posnm; // number of mismatches
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -2154,7 +2154,7 @@
+       int nm=atoi(str_qual.c_str());
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -2263,7 +2263,7 @@
+   vector< vector<int> > posnm; // number of mismatches
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -2322,7 +2322,7 @@
+       
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+@@ -2434,7 +2434,7 @@
+   vector< vector<int> > poslen; // length of the match
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -2523,7 +2523,7 @@
+       
+       
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/maqread.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/maqread.cpp
+@@ -57,7 +57,7 @@
+   vector< vector<string> > tagnames;
+ 
+   // chromosome map
+-  hash_map<string, int, hash<string>,equal_to<string> > cind_map;
++  hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> > cind_map;
+   vector<string> cnames;
+   
+ 
+@@ -91,7 +91,7 @@
+     
+ 
+       // determine the chromosome index
+-      hash_map<string, int, hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
++      hash_map<string, int, __gnu_cxx::hash<string>,equal_to<string> >::const_iterator li=cind_map.find(chr);
+       int cind=-1;
+       if(li==cind_map.end()) {
+ 	// register new chromosome
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/pc.h
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/pc.h
+@@ -8,11 +8,11 @@
+ 
+ namespace __gnu_cxx
+ {
+-        template<> struct hash< std::string >
++        template<> struct __gnu_cxx::hash< std::string >
+         {
+                 size_t operator()( const std::string& x ) const
+                 {
+-                        return hash< const char* >()( x.c_str() );
++                        return __gnu_cxx::hash< const char* >()( x.c_str() );
+                 }
+         };
+ }
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/peaks.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/peaks.cpp
+@@ -16,7 +16,6 @@
+ }
+ 
+ using namespace std;
+-using namespace __gnu_cxx; 
+ 
+ /**
+  * Calculate all local peaks
+--- pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/wdl.cpp
++++ pRSEM/phantompeakqualtools/spp_1.10.1_on_R3.3/src/wdl.cpp
+@@ -15,7 +15,6 @@
+ }
+ 
+ using namespace std;
+-using namespace __gnu_cxx; 
+ 
+ //#define DEBUG 1
+ 

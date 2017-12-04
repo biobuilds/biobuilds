@@ -1,0 +1,11 @@
+htslib:
+  - 1.6.0
+
+zlib:
+  - 1.2.8
+
+pin_run_as_build:
+  htslib:
+    max_pin: "x.x"
+  zlib:
+    max_pin: "x.x"

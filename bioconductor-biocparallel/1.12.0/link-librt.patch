@@ -1,0 +1,5 @@
+new file mode 100644
+--- /dev/null
++++ src/Makevars
+@@ -0,0 +1 @@
++PKG_LIBS="-lrt"

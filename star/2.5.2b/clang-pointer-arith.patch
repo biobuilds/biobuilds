@@ -1,0 +1,49 @@
+--- source/sortSuffixesBucket.cpp
++++ source/sortSuffixesBucket.cpp
+@@ -24,11 +24,11 @@
+     } else
+     {//initial bucketing according to the ind
+         uN=0;
+-        uint64_t iprev=*(uint64_t*)(ind+0*indSkip);
++        uint64_t iprev=*(uint64_t*)((uint64_t*)ind+0*indSkip);
+         int un=1;
+         for (int id=1; id<indN; id++)
+         {
+-            if (*(uint64_t*)(ind+id*indSkip)==iprev)
++            if (*(uint64_t*)((uint64_t*)ind+id*indSkip)==iprev)
+             {
+                 un++;
+             } else
+@@ -40,7 +40,7 @@
+                     uN++;
+                     un=1;
+                 };
+-                iprev=*(uint64_t*)(ind+id*indSkip);
++                iprev=*(uint64_t*)((uint64_t*)ind+id*indSkip);
+             };
+         };
+     };
+@@ -59,7 +59,7 @@
+ 
+             for (int id=uB1[iu]; id<uB2[iu]; id++)
+             {//count the number of chars in each bucket
+-                charCount[G[*(uint64_t*)(ind+id*indSkip+8) + charShift]]++;//TODO can template uint64_t
++                charCount[G[*(uint64_t*)((uint64_t*)ind+id*indSkip+8) + charShift]]++;//TODO can template uint64_t
+             };
+ 
+             charStart[0]=uB1[iu];
+@@ -82,11 +82,11 @@
+             {//otherwise it's either all sorted or all unsorted, no need to move indexes in either case
+                 for (int id=uB1[iu]; id<uB2[iu]; id++)
+                 {//bucket-sort all indexes 
+-                    char c=G[*(uint64_t*)(ind+id*indSkip+8) + charShift];
+-                    memcpy(ind1+charStart[c]*indSkip, ind+id*indSkip, indSkip);
++                    char c=G[*(uint64_t*)((uint64_t*)ind+id*indSkip+8) + charShift];
++                    memcpy(ind1+charStart[c]*indSkip, (uint64_t*)ind+id*indSkip, indSkip);
+                     charStart[c]++;
+                 };
+-                memcpy(ind+uB1[iu]*indSkip, ind1+uB1[iu]*indSkip, (uB2[iu]-uB1[iu])*indSkip);
++                memcpy((uint64_t*)ind+uB1[iu]*indSkip, ind1+uB1[iu]*indSkip, (uB2[iu]-uB1[iu])*indSkip);
+             };
+         };
+         //going to the next cycle

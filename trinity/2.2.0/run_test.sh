@@ -2,8 +2,8 @@
 set -o pipefail
 echo -n > test.log
 
-SCRIPTS="${PREFIX}/share/trinity-2.2.0/util/support_scripts"
-PLUGINS="${PREFIX}/share/trinity-2.2.0/trinity-plugins"
+SCRIPTS="${PREFIX}/share/trinity/util/support_scripts"
+PLUGINS="${PREFIX}/share/trinity/trinity-plugins"
 
 # Make sure the samtools we copied is runnable
 "${PLUGINS}/BIN/samtools" view -bS test.sam > test.bam

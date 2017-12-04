@@ -2,15 +2,14 @@
 set -x -o pipefail
 
 ## Configure
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CXXFLAGS="${CXXFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
-CXXFLAGS="${CXXFLAGS} -I${PREFIX}/include"
-LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
 
-# Favor environment-provided g++ over "system" one
-[ -x "${PREFIX}/bin/g++" ] && CXX="${PREFIX}/bin/g++" || CXX="g++"
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
 
 if [ `uname -s` == "Darwin" ]; then
     # Disable certain SHMEM constants when building on OS X

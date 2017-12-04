@@ -33,6 +33,9 @@ CXXFLAGS="${CXXFLAGS} -I${PREFIX}/include/bamtools"
 # "CXXFLAGS" argument to "make"
 CXXFLAGS="${CXXFLAGS} -D_FILE_OFFSET_BITS=64 -fPIC"
 
+# Make sure g++ knows to use a pre-C++11 ABI.
+CXXFLAGS="${CXXFLAGS} -D_GLIBCXX_USE_CXX11_ABI=0"
+
 BIN_DIR="${PREFIX}/bin"
 LIBEXEC_DIR="${PREFIX}/libexec/${PKG_NAME}-${PKG_VERSION}"
 
@@ -50,6 +53,7 @@ make -j${MAKE_JOBS} \
     CXXFLAGS="${CXXFLAGS}" \
     LDFLAGS="${LDFLAGS}" \
     2>&1 | tee build.log
+
 
 ## Install
 PREFIX_BIN="${PREFIX}/bin"

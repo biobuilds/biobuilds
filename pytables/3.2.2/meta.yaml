@@ -17,7 +17,7 @@ source:
     - no-march-native.patch
 
 build:
-  number: 5
+  number: 6
   detect_binary_files_with_prefix: False
   entry_points:
     - pt2to3 = tables.scripts.pt2to3:main
@@ -27,14 +27,16 @@ build:
 
 requirements:
   build:
-    - python
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - python {{ python }}
     - setuptools
     - cython
-    - numpy x.x
-    - zlib 1.2.*
+    - numpy {{ numpy }}
+    - zlib
     - lzo 2.06        # [linux]
     - bzip2
-    - hdf5 1.8.17
+    - hdf5 {{ hdf5 }}
     - numexpr
     # Building blosc is done internally.
     # This is an old version, though.
@@ -43,11 +45,11 @@ requirements:
     # - blosc
   run:
     - python
-    - numpy x.x
+    - numpy
     - numexpr
-    - hdf5 1.8.17
-    - zlib 1.2.*
-    - bzip2           # [win]
+    - hdf5
+    - zlib
+    - bzip2
     # building blosc is done internally.
     # this is an old version, though.
     # would be better to link against new version externally.

@@ -1,40 +1,48 @@
+{% set name = "praise" %}
+{% set version = "1.0.0" %}
+
 package:
-  name: r-praise
-  version: "1.0.0"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: praise_1.0.0.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - http://cran.r-project.org/src/contrib/praise_1.0.0.tar.gz
-    - http://cran.r-project.org/src/contrib/Archive/praise/praise_1.0.0.tar.gz
-  md5: 9318724cec0454884b5f762bee2da6a1
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "5c035e74fd05dfa59b03afe0d5f4c53fbf34144e175e90c53d09c6baedf5debd"
 
 build:
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
 
 requirements:
   build:
-    - r
+    - r-base {{ r_base }}
 
   run:
-    - r
+    - r-base
 
 test:
   commands:
-    - $R -e "library('praise')" # [not win]
-    - "\"%R%\" -e \"library('praise')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
   home: https://github.com/gaborcsardi/praise
-  license: MIT + file LICENSE
-  summary: "Build friendly R packages that praise their users if they have done something good, or they just need it to feel better."
+  license: MIT
+  summary: Praise users
+  description: |
+    Build friendly R packages that praise their users if they have done
+    something good, or they just need it to feel better.
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: praise
 # Title: Praise Users
 # Version: 1.0.0

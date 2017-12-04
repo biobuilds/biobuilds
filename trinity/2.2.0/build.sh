@@ -9,25 +9,38 @@ COLLECTL_VERSION="3.7.4"
 GAL_VERSION="0.2.1"
 
 ## Set up target install directory
-TGT_DIR="${PREFIX}/share/${PKG_NAME}-${PKG_VERSION}"
+TGT_DIR="${PREFIX}/share/${PKG_NAME}"
 [ -d "${TGT_DIR}" ] || mkdir -p "$TGT_DIR"
 
 ## Build environment configuration
-build_os=$(uname -s)
-build_arch=$(uname -m)
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
+
 CFLAGS="${CFLAGS} -fsigned-char"
-CFLAGS="${CFLAGS} -I${PREFIX}/include"
-CXXFLAGS="${CFLAGS}"
-LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
-export CFLAGS CXXFLAGS LDFLAGS
+CXXFLAGS="${CXXFLAGS} -fsigned-char"
+
+CFLAGS="${CFLAGS} -fopenmp"
+CXXFLAGS="${CXXFLAGS} -fopenmp"
+
+if [[ "$CC" == *clang ]]; then
+    CFLAGS="${CFLAGS} -Wno-ignored-optimization-argument"
+    CFLAGS="${CFLAGS} -Wno-unused-command-line-argument"
+fi
+
+if [[ "$CXX" == *clang++ ]]; then
+    CXXFLAGS="${CXXFLAGS} -Wno-ignored-optimization-argument"
+    CXXFLAGS="${CXXFLAGS} -Wno-unused-command-line-argument"
+fi
+
+export CC CFLAGS CXX CXXFLAGS AR LD LDFLAGS
 
 # Needed to help certain supplemental build tools that are themselves built
 # from source along, especially on OS X (e.g., MakeDepends used by Chrysalis).
-if [ "$build_os" == "Darwin" ]; then
+if [ "$BUILD_OS" == "darwin" ]; then
     export DYLD_FALLBACK_LIBRARY_PATH="${PREFIX}/lib"
 else
     export LD_LIBRARY_PATH="${PREFIX}/lib"
@@ -39,12 +52,15 @@ cp -fvp "${SRC_DIR}/Trinity" "${TGT_DIR}/Trinity"
 sed -i.bak "s:@@INSTALL_DIR@@:${TGT_DIR}:g" "${TGT_DIR}/Trinity"
 rm -f "${TGT_DIR}/Trinity.bak"
 
-make -j${BB_MAKE_JOBS} inchworm_target TRINITY_COMPILER=gnu \
+make -j${MAKE_JOBS} inchworm_target TRINITY_COMPILER=gnu \
     INCHWORM_CONFIGURE_FLAGS="CXX='${CXX}' CXXFLAGS='${CXXFLAGS}'" \
     INCHWORM_PREFIX="${TGT_DIR}/Inchworm"
 cp -fv "${SRC_DIR}/Inchworm/README" "${TGT_DIR}/Inchworm"
 
-make -j${BB_MAKE_JOBS} chrysalis_target TRINITY_COMPILER=gnu \
+make -j${MAKE_JOBS} -C Chrysalis UNSUPPORTED=yes TRINITY_COMPILER=gnu \
+    CC="${CC} -fopenmp ${ARCH_FLAGS}" \
+    CPLUSPLUS="${CXX} -fopenmp ${ARCH_FLAGS}" \
+    CPPFLAGS="${CXXFLAGS}" \
     SYS_OPT="" SYS_LIBS="-pthread"
 [ -d "${TGT_DIR}/Chrysalis" ] && rm -rf "${TGT_DIR}/Chrysalis"
 cp -Rf "${SRC_DIR}/Chrysalis" "${TGT_DIR}/Chrysalis"
@@ -75,8 +91,8 @@ if [ -d ${JELLYFISH_SRC} ]; then
     echo "removing old jellyfish build" >&2
     rm -rf ${JELLYFISH_SRC}
 fi
-if [ "$build_arch" == ppc64le ]; then
-    JELLYFISH_OPTS="--without-int128 --without-sse"
+if [ "$BUILD_ARCH" == ppc64le ]; then
+    JELLYFISH_OPTS="--with-int128 --without-sse"
 else
     JELLYFISH_OPTS="--with-int128 --with-sse"
 fi
@@ -85,13 +101,12 @@ cd ${JELLYFISH_SRC}
 cp -f "${PREFIX}/share/autoconf/config.guess" ./config.guess
 cp -f "${PREFIX}/share/autoconf/config.sub" ./config.sub
 patch -b -p0 < "${RECIPE_DIR}/jellyfish-srcs.patch"
-env CC="gcc" CXX="g++" \
-    ./configure \
+./configure \
     --prefix="${TGT_DIR}/trinity-plugins/jellyfish" \
     --enable-static --disable-shared \
     ${JELLYFISH_OPTS} \
     2>&1 | tee jellyfish-configure.log
-make -j${BB_MAKE_JOBS} V=1 \
+make -j${MAKE_JOBS} V=1 \
     LDFLAGS="${LDFLAGS} -lpthread" \
     AM_CPPFLAGS="-std=c++11 -Wall -Wnon-virtual-dtor -I"`pwd`"/include"
 make install-strip
@@ -102,7 +117,7 @@ rm -rf "${TGT_DIR}/trinity-plugins/jellyfish/lib" \
 ## Build and install the fastool plugin
 cd "${SRC_DIR}/trinity-plugins/${FASTOOL_VERSION}"
 make clean
-make CFLAGS="${CFLAGS} -std=c99 -Werror"
+make CC="${CC}" CFLAGS="${CFLAGS} -std=c99 -Werror"
 install -d "${TGT_DIR}/trinity-plugins/fastool"
 install -m 0755 fastool "${TGT_DIR}/trinity-plugins/fastool"
 
@@ -111,14 +126,16 @@ cd "${SRC_DIR}/trinity-plugins/parafly-code"
 [ -f Makefile ] && make distclean
 patch -b -p2 < "${RECIPE_DIR}/parafly-configure.patch"
 ./configure --prefix="${TGT_DIR}/trinity-plugins/parafly" \
-    CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
-make -j${BB_MAKE_JOBS}
+    CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
+    LD="${LD}" LDFLAGS="${LDFLAGS}"
+make -j${MAKE_JOBS}
 make install
 
 ## Build and install the scaffold_iworm_contigs plugin
 cd "${SRC_DIR}/trinity-plugins/scaffold_iworm_contigs"
 make clean
-make CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS} -lpthread" \
+make CXX="${CXX}" CXXFLAGS="${CXXFLAGS}" \
+    LD="${LD}" LDFLAGS="${LDFLAGS} -lpthread" \
     LIBHTS="${PREFIX}/lib/libhts.a -ldl -lz"
 install -d "${TGT_DIR}/trinity-plugins/scaffold_iworm_contigs"
 install -m 0755 scaffold_iworm_contigs \
@@ -139,7 +156,7 @@ install -m 0755 "${PREFIX}/bin/samtools" "${TGT_DIR}/trinity-plugins/BIN"
 ## Install the slclust plugin
 cd "${SRC_DIR}/trinity-plugins/slclust"
 make clean
-make -j${BB_MAKE_JOBS} LOCAL_CFLAGS="${CXXFLAGS}"
+make -j${MAKE_JOBS} LOCAL_CFLAGS="${CXXFLAGS}"
 install -d "${TGT_DIR}/trinity-plugins/slclust/bin"
 install -m 0755 src/slclust "${TGT_DIR}/trinity-plugins/slclust/bin"
 
@@ -163,4 +180,4 @@ chmod a+x "${TGT_DIR}/util/support_scripts/plugin_install_tests.sh"
 ## Create useful symlink
 [ -d "${PREFIX}/bin" ] || mkdir -p "${PREFIX}/bin"
 cd "${PREFIX}/bin"
-ln -sf "../share/${PKG_NAME}-${PKG_VERSION}/Trinity" Trinity
+ln -sf "../share/${PKG_NAME}/Trinity" Trinity

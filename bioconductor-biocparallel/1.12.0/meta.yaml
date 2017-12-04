@@ -1,0 +1,51 @@
+{% set name = "BiocParallel" %}
+{% set version = "1.12.0" %}
+{% set bioc_version = "3.6" %}
+
+package:
+  name: "bioconductor-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://bioconductor.org/packages/release/bioc/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/bioconductor-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "0de25aa5c7a1b1cce8da0d5f42a00eaccc50de1edf4ab30174833ecd851dcf8e"
+  patches:
+    - link-librt.patch    # [linux]
+
+requirements:
+  build:
+    - r-base {{ r_base }}
+    - {{ compiler('cxx') }}
+    - r-bh
+    - r-codetools
+    - r-futile.logger
+    - r-snow
+  run:
+    - r-base
+    - r-bh
+    - r-futile.logger
+    - r-snow
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+  detect_binary_files_with_prefix: true
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"           # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\""  # [win]
+
+about:
+  home: "https://bioconductor.org/packages/release/bioc/html/BiocParallel.html"
+  license: "Artistic 2.0"
+  summary: "Bioconductor facilities for parallel evaluation"
+  description: |
+    This package provides modified versions and novel implementation of
+    functions for parallel evaluation, tailored to use with Bioconductor
+    objects.

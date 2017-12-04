@@ -1,27 +1,31 @@
-{% set posix = 'm2-' if win else '' %}
-{% set native = 'm2w64-' if win else '' %}
+{% set name = "futile.logger" %}
+{% set version = "1.4.3" %}
 
 package:
-  name: r-futile.logger
-  version: "1.4.3"
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
 
 source:
-  fn: futile.logger_1.4.3.tar.gz
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
   url:
-    - "http://cran.r-project.org/src/contrib/futile.logger_1.4.3.tar.gz"
-    - "http://cran.r-project.org/src/contrib/Archive/futile.logger/futile.logger_1.4.3.tar.gz"
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "5e8b32d65f77a86d17d90fd8690fc085aa0612df8018e4d6d6c1a60fa65776e4"
 
 build:
-  number: 0
+  number: 1
   rpaths:
     - lib/R/lib/
     - lib/
 
+# Suggests: testthat, jsonlite
 requirements:
   build:
-    - r-base
+    - r-base {{ r_base }}
     - r-futile.options
     - r-lambda.r >=1.1.0
+
   run:
     - r-base
     - r-futile.options
@@ -29,17 +33,18 @@ requirements:
 
 test:
   commands:
-    - $R -e "library('futile.logger')" # [not win]
-    - "\"%R%\" -e \"library('futile.logger')\"" # [win]
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
 
 about:
+  home: https://CRAN.R-project.org/package=futile.logger
   license: LGPLv3
-  summary: "Logging utility for R based on log4j"
+  summary: "Logging utility for R, based loosely on log4j"
 
 
 #----------------------------------------------------------------------
 # The original CRAN metadata for this package was:
-
+#
 # Package: futile.logger
 # Type: Package
 # Title: A Logging Utility for R

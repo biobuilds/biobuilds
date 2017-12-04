@@ -1,0 +1,64 @@
+{% set name = "lambda.r" %}
+{% set version = "1.2" %}
+
+package:
+  name: "r-{{ name|lower }}"
+  version: "{{ version|replace('-', '_') }}"
+
+source:
+  fn: "r-{{ name|lower }}_{{ version }}.tar.gz"
+  url:
+    - "http://cran.r-project.org/src/contrib/{{ name }}_{{ version }}.tar.gz"
+    - "http://cran.r-project.org/src/contrib/Archive/{{ name }}/{{ name }}_{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/r-{{ name|lower }}_{{ version }}.tar.gz"
+  sha256: "7dc4188ce1d4a6b026a1b128719ff60234ae1e3ffa583941bbcd8473ad18146f"
+
+build:
+  number: 0
+  rpaths:
+    - lib/R/lib/
+    - lib/
+
+# Suggests: RUnit
+requirements:
+  build:
+    - r-base {{ r_base }}
+
+  run:
+    - r-base
+
+test:
+  commands:
+    - $R -e "library('{{ name }}')"          # [not win]
+    - "\"%R%\" -e \"library('{{ name }}')\"" # [win]
+
+about:
+  home: https://CRAN.R-project.org/package=lambda.r
+  license: LGPLv3
+  summary: Modeling data with functional programming
+  description: |
+    A language extension to efficiently write functional programs in R. Syntax
+    extensions include multi-part function definitions, pattern matching, guard
+    statements, built-in (optional) type safety.
+
+
+#----------------------------------------------------------------------
+# The original CRAN metadata for this package was:
+#
+# Package: lambda.r
+# Type: Package
+# Title: Modeling Data with Functional Programming
+# Version: 1.2
+# Date: 2017-09-12
+# Depends: R (>= 3.0.0)
+# Suggests: RUnit
+# Author: Brian Lee Yung Rowe
+# Maintainer: Brian Lee Yung Rowe <r@zatonovo.com>
+# Description: A language extension to efficiently write functional programs in R. Syntax extensions include multi-part function definitions, pattern matching, guard statements, built-in (optional) type safety.
+# License: LGPL-3
+# LazyLoad: yes
+# NeedsCompilation: no
+# Packaged: 2017-09-16 17:33:39 UTC; brian
+# Repository: CRAN
+# Date/Publication: 2017-09-16 18:51:43 UTC
+#----------------------------------------------------------------------
