@@ -1,0 +1,50 @@
+{% set version = "5.2.2" %}
+
+package:
+  name: gnuplot
+  version: "{{ version }}"
+
+source:
+  fn: "gnuplot-{{ version }}.tar.gz"
+  url:
+    - "https://downloads.sourceforge.net/project/gnuplot/gnuplot/{{ version }}/gnuplot-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/gnuplot-{{ version }}.tar.gz"
+  sha256: "a416d22f02bdf3873ef82c5eb7f8e94146795811ef808e12b035ada88ef7b1a1"
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+
+    # X11 libraries used by our 'linux-64' cairo package
+    - {{ cdt('libx11-devel') }}          # [linux and x86_64]
+    - {{ cdt('libxau-devel') }}          # [linux and x86_64]
+    - {{ cdt('libxcb') }}                # [linux and x86_64]
+    - {{ cdt('libxext-devel') }}         # [linux and x86_64]
+    - {{ cdt('libxrender-devel') }}      # [linux and x86_64]
+    - {{ cdt('xorg-x11-proto-devel') }}  # [linux and x86_64]
+
+    - readline {{ readline }}
+    - libgd {{ libgd }}
+    - icu {{ icu }}
+    - cairo     # [linux]
+    - pango     # [linux]
+  run:
+    - readline
+    - libgd
+    - cairo     # [linux]
+    - pango     # [linux]
+
+build:
+  number: 0
+  detect_binary_files_with_prefix: True
+
+test:
+  commands:
+    - gnuplot -V
+
+about:
+  home: "http://www.gnuplot.info/index.html"
+  license: gnuplot
+  license_file: Copyright
+  summary: "Portable command-line driven graphing utility"
