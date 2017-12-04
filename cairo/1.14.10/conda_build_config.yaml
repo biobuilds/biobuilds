@@ -3,4 +3,5 @@ VERBOSE_AT: V=1
 VERBOSE_CM: VERBOSE=1
 
 icu:
+  - 58.1
   - 60.1
