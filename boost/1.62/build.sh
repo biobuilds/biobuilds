@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e -x
+set -e
 set -o pipefail
 
 build_os=$(uname -s)
@@ -8,7 +8,7 @@ build_os=$(uname -s)
 # Pull in the common BioBuilds build flags
 BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
 if [[ ! -f "${BUILD_ENV}" ]]; then
-    echo "FATAL: Could not find build environment  configuration script!" >&2
+    echo "FATAL: Could not find build environment configuration script!" >&2
     exit 1
 fi
 source "${BUILD_ENV}" -v
@@ -44,7 +44,7 @@ fi
     --without-libraries=graph_parallel,mpi \
     2>&1 | tee config.log
 
-./b2 -q -d+2 \
+./b2 -q \
     variant=release \
     debug-symbols=off \
     link=shared \

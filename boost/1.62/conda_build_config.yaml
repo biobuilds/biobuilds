@@ -1,7 +1,9 @@
 icu:
   - 54.1    # [osx or linux64]
   - 58.1
-  - 60.1
+  # Do not build with ICU 60.1 for now because that requires C++11 support, and
+  # that ABI change-over could potentially break a lot of existing packages.
+  #- 60.1
 
 # Need this because the older ICU packages don't have run_exports directives
 # that automatically take care of run-time dependency pinning for us.
