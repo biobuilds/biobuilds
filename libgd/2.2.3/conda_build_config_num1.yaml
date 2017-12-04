@@ -1,0 +1,32 @@
+# Configuration for the build number 1 package; mostly a record for posterity's
+# sake as builds number 2 and above should remain backwards compatible enough
+# for packages depending on build #1 to use.
+
+libpng:
+  - "1.6.22"
+
+libtiff:
+  - "4.0.6"
+
+freetype:
+  - "2.5.5"
+
+jpeg:
+  - "8d"
+
+zlib:
+  - "1.2.8"
+
+# Older versions of these packages don't provide `run_exports` information, so
+# we need to provide these so conda-build correctly pings the run dependencies.
+pin_run_as_build:
+  libpng:
+    max_pin: "x.x"
+  libtiff:
+    max_pin: "x"
+  freetype:
+    max_pin: "x.x"
+  jpeg:
+    max_pin: "x"
+  zlib:
+    max_pin: "x.x"

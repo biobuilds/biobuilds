@@ -3,12 +3,14 @@
 set -o pipefail
 
 ## Configure
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-[ "$BB_MAKE_JOBS" == "<UNDEFINED>" ] && BB_MAKE_JOBS=1
-CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
-CFLAGS="${CFLAGS} -I${PREFIX}/include"
-LDFLAGS="${LDFLAGS} -L${PREFIX}/lib"
+
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
 
 env CFLAGS="${CFLAGS}" \
     LDFLAGS="${LDFLAGS}" \
@@ -32,5 +34,5 @@ env CFLAGS="${CFLAGS}" \
 
 
 ## Build and install
-make -j${BB_MAKE_JOBS} V=1 2>&1 | tee build.log
+make -j${MAKE_JOBS} V=1 2>&1 | tee build.log
 make install 2>&1
