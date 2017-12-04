@@ -12,7 +12,7 @@ source:
   sha256: "574623a4901a9969080ab4a2df9437026c8a87150dfd5c235e28c94b212964a7"
 
 build:
-  number: 0
+  number: 1
   run_exports:
     # SO name changes at minor rev bumps.
     - {{ pin_subpackage('libpng', max_pin='x.x') }}
@@ -22,7 +22,8 @@ requirements:
     - {{ compiler('c') }}
     - libtool
     - automake
-  host:
+    - zlib {{ zlib }}
+  run:
     - zlib
 
 test:
