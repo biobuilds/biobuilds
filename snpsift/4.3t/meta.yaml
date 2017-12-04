@@ -1,0 +1,26 @@
+{% set version = "4.3t" %}
+
+package:
+  name: snpsift
+  version: "{{ version }}"
+
+source:
+  fn: snpEff-{{ version }}.zip
+  url:
+    - "http://downloads.sourceforge.net/project/snpeff/snpEff_v4_3t_core.zip"
+    - "http://download.lab7.io/sources/snpEff-{{ version }}.zip"
+  sha256: "d55a7389a78312947c1e7dadf5e6897b42d3c6e942e7c1b8ec68bb35d2ae2244"
+
+build:
+  number: 0
+
+requirements:
+  build: []
+  run:
+    # linux-ppc64le must still rely on their system-provided Java
+    - openjdk >=7.0   # [not ppc64le]
+
+about:
+  home: "http://snpeff.sourceforge.net/SnpSift.html"
+  license: LGPL
+  summary: "Toolbox for filtering and manipulating annotated VCF files"
