@@ -18,7 +18,7 @@ requirements:
     - openjdk 8.*   # [not ppc64le]
 
 build:
-  number: 0
+  number: 1
 
 test:
   commands:

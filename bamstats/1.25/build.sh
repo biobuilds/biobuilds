@@ -54,7 +54,7 @@ done
 export CLASSPATH="${LIBEXEC}/lib:${LIBEXEC}"
 exec java "\${jre_opts[@]}" \\
     -jar "${LIBEXEC}/${app}-${PKG_VERSION}.jar" \\
-    "\${app_opts[@]}" \\
+    "\${app_opts[@]}"
 EOF
 
     chmod 755 "${PREFIX}/bin/${app}"
