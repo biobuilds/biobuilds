@@ -2,11 +2,21 @@ MACOSX_DEPLOYMENT_TARGET: '10.9'
 VERBOSE_AT: V=1
 VERBOSE_CM: VERBOSE=1
 
+# Currently unable to build with Intel Parallel Studio (`icc`/`icpc`), which
+# fails with multiple "expression must have a constant value" errors stemming
+# from the "static constexpr unsigned char table[256]" definition in
+# `src/c++/include/oligo/Nucleotides.hh`.
+toolchain:
+  - default
+  #- intel-psxe2018  # [linux and x86_64]
+  - ibm-at10.0      # [linux and ppc64le]
+
 boost:
   - 1.62.0
 
-#icu:
-#  - 60.1
+icu:
+  - "58.1"
+  - "60.1"
 
 libxml2:
   - 2.9.4

@@ -37,9 +37,38 @@ CMAKE=$(command -V cmake 2>/dev/null)
 #   std::exception::what: Failed to read neighbor counts from /path/to/neighbors-1-16.16bpb.gz: Success
 #
 #CFLAGS="${CFLAGS} -fsigned-char"
+#CXXFLAGS="${CXXFLAGS} -fsigned-char"
 
-# Ensure g++ uses a pre-C++11 ABI for compatibility with our Boost package.
-CXXFLAGS="${CXXFLAGS} -D_GLIBCXX_USE_CXX11_ABI=0"
+# Default to using the BioBuilds-provided Boost package
+BOOST_ROOT="${PREFIX}"
+BOOST_INCLUDEDIR="${PREFIX}/include"
+BOOST_LIBRARYDIR="${PREFIX}/lib"
+
+case "$CXX" in
+    # Tweaks for the IBM Advance Toolchain
+    /opt/at*/bin/g++)
+        # Use AT-provided, rather than BioBuilds-provided, Boost
+        AT_ROOT=$(cd "`dirname "${CXX}"`/.." && pwd)
+        BOOST_ROOT="${AT_ROOT}"
+        BOOST_INCLUDEDIR="${AT_ROOT}/include"
+        BOOST_LIBRARYDIR="${AT_ROOT}/lib64"
+
+        LDFLAGS="${LDFLAGS} -Wl,-rpath,${PREFIX}/lib"
+        ;;
+    # Tweaks for the Intel compiler
+    */bin/icpc)
+        #CXXFLAGS="${CXXFLAGS} -gcc-name=${CONDA_CC}"
+        #CXXFLAGS="${CXXFLAGS} -gxx-name=${CONDA_CXX}"
+
+        # Ensure icpc uses a pre-C++11 ABI compatible with our Boost package.
+        CXXFLAGS="${CXXFLAGS} -D_GLIBCXX_USE_CXX11_ABI=0"
+        ;;
+    # "Stock" GNU compiler (g++)
+    *)
+        # Ensure g++ uses a pre-C++11 ABI compatible with our Boost package.
+        CXXFLAGS="${CXXFLAGS} -D_GLIBCXX_USE_CXX11_ABI=0"
+        ;;
+esac
 
 cd "${SRC_DIR}"
 rm -rf "build"
@@ -48,13 +77,13 @@ cd "build"
 
 export CC CFLAGS CXX CXXFLAGS
 export AR LD LDFLAGS
+export BOOST_ROOT BOOST_INCLUDEDIR BOOST_LIBRARYDIR
+export C_INCLUDE_PATH="${PREFIX}/include"
+export CPLUS_INCLUDE_PATH="${PREFIX}/include"
+export LIBRARY_PATH="${PREFIX}/lib"
 
 chmod 755 ../src/configure
-env BOOST_ROOT="${PREFIX}" \
-    C_INCLUDE_PATH="${PREFIX}/include" \
-    CPLUS_INCLUDE_PATH="${PREFIX}/include" \
-    LIBRARY_PATH="${PREFIX}/lib" \
-    ../src/configure --prefix="${PREFIX}" \
+../src/configure --prefix="${PREFIX}" \
     --with-cmake="${CMAKE}" \
     --build-type=Release \
     --parallel=${MAKE_JOBS} \

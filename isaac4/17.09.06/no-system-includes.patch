@@ -1,0 +1,39 @@
+# 3rd-party libraries (Boost, libxml, etc) should just be standard ("-I")
+# include paths, rather than system ("-isystem") ones. This is especially true
+# for Boost, where treating it as a system include directory can horribly break
+# the IBM AT compiler (e.g., C math functions becoming undeclared).
+--- src/cmake/boost.cmake
++++ src/cmake/boost.cmake
+@@ -91,7 +91,7 @@
+         message(FATAL_ERROR "boost libraries are required to build the Isaac")
+     endif (NOT Boost_FOUND)
+ 
+-    include_directories(BEFORE SYSTEM ${Boost_INCLUDE_DIRS})
++    include_directories(BEFORE ${Boost_INCLUDE_DIRS})
+ 
+     set      (HAVE_LIBBOOST_DATE_TIME       ${Boost_DATE_TIME_FOUND})
+     set      (HAVE_LIBBOOST_FILESYSTEM      ${Boost_FILESYSTEM_FOUND})
+--- src/cmake/cxxConfigure.cmake
++++ src/cmake/cxxConfigure.cmake
+@@ -83,7 +83,7 @@
+     isaac_find_library(NUMA numa.h numa)
+     if    (HAVE_NUMA)
+         message(STATUS "NUMA supported")
+-        include_directories(BEFORE SYSTEM ${NUMA_INCLUDE_DIR})
++        include_directories(BEFORE ${NUMA_INCLUDE_DIR})
+         set(iSAAC_ADDITIONAL_LIB ${iSAAC_ADDITIONAL_LIB} "${NUMA_LIBRARY}")
+     else  (HAVE_NUMA)
+         message(STATUS "No support for NUMA")
+@@ -136,9 +136,9 @@
+ endif((NOT HAVE_LIBXML2) OR (NOT HAVE_LIBXSLT) OR (NOT HAVE_LIBEXSLT))
+ 
+ 
+-include_directories(BEFORE SYSTEM ${LIBXML2_INCLUDE_DIR})
+-include_directories(BEFORE SYSTEM ${LIBXSLT_INCLUDE_DIR})
+-include_directories(BEFORE SYSTEM ${LIBEXSLT_INCLUDE_DIR})
++include_directories(BEFORE ${LIBXML2_INCLUDE_DIR})
++include_directories(BEFORE ${LIBXSLT_INCLUDE_DIR})
++include_directories(BEFORE ${LIBEXSLT_INCLUDE_DIR})
+ set(iSAAC_DEP_LIB ${iSAAC_DEP_LIB} "${LIBEXSLT_LIBRARIES}" "${LIBXSLT_LIBRARIES}" "${LIBXML2_LIBRARIES}")
+ 
+ set (CMAKE_CXX_FLAGS_DEBUG "${iSAAC_CXX_OPTIMIZATION_FLAGS} -ggdb -D_GLIBCXX_DEBUG=1 -pedantic" CACHE STRING "g++ flags" FORCE)
