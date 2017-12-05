@@ -8,6 +8,8 @@ requirements:
   build:
     - biobuilds-build
     - autoconf-update
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
   # Header-only library
   run: []
 
@@ -19,7 +21,7 @@ source:
   sha1: "94a9aad9167275af41b13122c60754ad1a5adb34"
 
 build:
-  number: 0
+  number: 1
   script_env:
     - MAKE_JOBS
 
