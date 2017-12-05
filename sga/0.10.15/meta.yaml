@@ -1,0 +1,52 @@
+{% set name = "sga" %}
+{% set version = "0.10.15" %}
+{% set sha256 = "1b18996e6ec47985bc4889a8cbc3cd4dd3a8c7d385ae9f450bd474e36342558b" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/jts/{{ name }}/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+  patches:
+    - ambiguous-abs.patch
+    #- c++11-changes.patch
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+requirements:
+  build:
+    - biobuilds-build
+    - autoconf
+    - automake
+    - {{ compiler('c') }}       # [toolchain == 'default' or x86_64]
+    - {{ compiler('cxx') }}     # [toolchain == 'default' or x86_64]
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - sparsehash
+    - bamtools {{ bamtools }}
+    - jemalloc {{ jemalloc }}
+    - zlib {{ zlib }}           # [toolchain != 'ibm-at10.0']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - bamtools
+    - jemalloc
+    - zlib                      # [toolchain != 'ibm-at10.0']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  commands:
+    - sga --help
+
+about:
+  home: https://github.com/jts/sga
+  license: GPL-3
+  license_file: src/COPYING
+  summary: de novo sequence assembler using string graphs

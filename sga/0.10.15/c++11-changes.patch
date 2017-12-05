@@ -1,0 +1,44 @@
+--- src/SGA/rmdup.cpp
++++ src/SGA/rmdup.cpp
+@@ -232,7 +232,7 @@
+     while(!done)
+     {
+         // Parse a line from the current file
+-        bool valid = getline(*reader_vec[currReaderIdx], line);
++        bool valid = static_cast<bool>(getline(*reader_vec[currReaderIdx], line));
+         ++numRead;
+         // Deal with switching the active reader and the end of files
+         if(!valid || numRead == buffer_size)
+--- src/Util/ClusterReader.cpp
++++ src/Util/ClusterReader.cpp
+@@ -67,7 +67,7 @@
+ bool ClusterReader::readCluster(ClusterRecord& record)
+ {
+     std::string line;
+-    bool good = getline(*m_pReader, line);
++    bool good = static_cast<bool>(getline(*m_pReader, line));
+     if(!good || line.empty())
+         return false;
+     std::stringstream parser(line);
+--- src/Util/StdAlnTools.cpp
++++ src/Util/StdAlnTools.cpp
+@@ -119,7 +119,7 @@
+     char code;
+     while(parser >> length)
+     {
+-        bool success = parser >> code;
++        bool success = static_cast<bool>(parser >> code);
+         expanded.append(length, code);
+         assert(success);
+         (void)success;
+--- src/configure.ac
++++ src/configure.ac
+@@ -92,7 +92,7 @@
+ 
+ # Set compiler flags.
+ AC_SUBST(AM_CXXFLAGS, "-Wall -Wextra $fail_on_warning -Wno-unknown-pragmas")
+-AC_SUBST(CXXFLAGS, "-std=c++98 -O3")
++AC_SUBST(CXXFLAGS, "-std=c++11 -O3")
+ AC_SUBST(CFLAGS, "-std=gnu99 -O3")
+ AC_SUBST(CPPFLAGS, "$CPPFLAGS $openmp_cppflags $sparsehash_include $bamtools_include")
+ AC_SUBST(LDFLAGS, "$openmp_cppflags $external_malloc_ldflags $bamtools_ldflags $LDFLAGS")

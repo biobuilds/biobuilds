@@ -1,0 +1,22 @@
+--- src/Algorithm/GapFillProcess.cpp
++++ src/Algorithm/GapFillProcess.cpp
+@@ -233,7 +233,7 @@
+ 
+     for(size_t i = 0; i < sequences.size(); ++i)
+     {
+-        int diff = abs(sequences[i].size() - estimatedSize);
++        int diff = abs((long)sequences[i].size() - estimatedSize);
+         //printf("ES: %d S: %zu D: %d\n", estimatedSize, sequences[i].size(), diff);
+ 
+         if(diff < selectedSizeDiff)
+--- src/Util/VariantIndex.cpp
++++ src/Util/VariantIndex.cpp
+@@ -86,7 +86,7 @@
+         for(size_t vi = 0; vi < bucket.size(); ++vi)
+         {
+             const VariantRecord& record = m_records[bucket[vi]];
+-            if(abs(record.position - position) < distance)
++            if(abs((long)record.position - position) < distance)
+                 out.push_back(record);
+         }
+     }
