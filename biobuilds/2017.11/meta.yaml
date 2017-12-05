@@ -1,0 +1,151 @@
+package:
+  name: biobuilds
+  version: 2017.11
+
+build:
+  number: 0
+
+requirements:
+  run:
+    # Require certain versions of core components; these were specifically used
+    # to build various BioBuilds packages and should be used instead of any
+    # newer versions that might be available through the "defaults" channel.
+    - boost =={{ boost }}
+    - python =={{ python }}
+    - numpy =={{ numpy }}
+    - scipy ==1.0.0
+    - r =={{ r_base }}
+    - perl =={{ perl }}
+    # Set of tools included in this BioBuilds release for all platforms
+    - 2020plus ==1.1.3
+    - abyss ==2.0.2
+    - aragorn ==1.2.38
+    - bamkit ==16.07.26
+    - bamstats ==1.25
+    - bamtools ==2.4.1
+    - bcftools ==1.6.0
+    - beagle-lib ==2.1.2
+    - beast ==2.4.6
+    - bedops ==2.4.26
+    - bedtools ==2.26.0
+    - bfast ==0.7.0a
+    - bioconductor ==3.6
+    - bioconductor-ebseq ==1.18.0
+    - biopython ==1.70
+    - blast ==2.6.0
+    - bowtie ==1.1.2
+    - bowtie2 ==2.3.1
+    - breakdancer ==1.4.5
+    - bwa ==0.7.17
+    - canu ==1.5
+    - cgpvcf ==2.20
+    - chimerascan ==0.4.5a
+    - clark ==1.2.3.1
+    - clustalomega ==1.2.4
+    - clustalw ==2.1
+    - conifer ==0.2.2
+    - cufflinks ==2.2.1
+    - curl ==7.56.1
+    - cutadapt ==1.13
+    - delly ==0.7.6
+    - diamond ==0.8.24
+    - drfast ==1.0.0.0
+    - emboss ==6.6.0
+    - fasta ==36.3.8e
+    - fastqc ==0.11.5
+    - fastx-toolkit ==0.0.14
+    - freebayes ==1.1.0
+    - gcta ==1.26.0
+    - genomonfisher ==0.2.0
+    - gnuplot ==5.2.2
+    - hisat2 ==2.0.5
+    - hmmer ==3.1b2
+    - htseq ==0.6.1
+    - htslib ==1.6.0
+    - igv ==2.3.93
+    - infernal ==1.1.2
+    - jellyfish ==2.2.7
+    - kallisto ==0.43.1
+    - kmergenie ==1.7044
+    - kraken ==0.10.5_beta
+    - lighter ==1.1.1
+    - lofreq_star ==2.1.2
+    - lumpy-sv ==0.2.13
+    - matplotlib ==1.5.3
+    - migrate ==3.6.11
+    - mothur ==1.39.5
+    - mrbayes ==3.2.6
+    - mrfast ==2.6.1.0
+    - mrsfast ==3.4.0
+    - muscle ==3.8.31
+    - novelseq ==1.0.2
+    - oases ==0.2.8
+    - openblas ==0.2.20
+    - pandas ==0.21.0
+    - parallel ==20160922
+    - perl-bioperl ==1.6.924
+    - phylip ==3.696
+    - picard ==2.15.0
+    - pindel ==0.2.5b8
+    - plink ==1.07
+    - plink-ng ==1.90b3.42
+    - primer3 ==2.3.7
+    - probabilistic2020 ==1.2.0
+    - prodigal ==2.6.3
+    - prokka ==1.12
+    - pysam ==0.8.4
+    - r-cowplot ==0.9.1
+    - r-ggplot2 ==2.2.1
+    - r-rio ==0.5.5
+    - r-sequenza ==2.1.2
+    - r-tidyverse ==1.2.1
+    - raxml ==8.2.9
+    - rsem ==1.3.0
+    - sailfish ==0.10.0
+    - salmon ==0.7.2
+    - sambamba ==0.6.6
+    - samblaster ==0.1.24
+    - samtools ==1.6.0
+    - scalpel ==0.5.3
+    - scikit-bio ==0.4.2
+    - scikit-learn ==0.19.1
+    - seqtk ==1.2.94
+    - sga ==0.10.15
+    - shrimp ==2.2.3
+    - snap ==1.0beta.18
+    - snippy ==3.0
+    - snpeff ==4.3t
+    - snpsift ==4.3t
+    - soapaligner ==2.20
+    - soapbuilder ==2.20
+    - soapdenovo2 ==2.4.240
+    - spades ==3.10.1
+    - splazers ==1.3.3
+    - star ==2.5.2b
+    - star-fusion ==0.8.0
+    - t-coffee ==11.00.00_8cbe486
+    - tabix ==1.6.0
+    - tassel ==5.2.37
+    - tbl2asn ==25.3
+    - tmap ==3.4.0
+    - tophat ==2.1.1
+    - trimmomatic ==0.36
+    - trinity ==2.2.0
+    - variant_tools ==2.7.0
+    - vcflib ==1.0.0_rc1_16.05.18
+    - vcftools ==0.1.15
+    - velvet ==1.2.10
+    # Don't pin these to a specific version as we may need to provide updates to
+    # ensure compatibility with the latest SRA formats and protocols.
+    - sra-tools
+    # GPU-enabled applications currently not available on OS X
+    - barracuda ==0.7.107e        # [not osx]
+    - soap3-dp ==r177             # [not osx]
+    # Applications using Linux-specific system calls
+    - allpathslg ==52488          # [linux]
+    - isaac4 ==17.09.06           # [linux]
+    # Applications that require X11 libraries (not available on OS X)
+    - parasight ==7.6             # [not osx]
+
+about:
+  summary: "Meta-packages for BioBuilds releases"
