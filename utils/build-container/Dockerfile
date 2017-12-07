@@ -69,12 +69,17 @@ ENV PATH /opt/miniconda/bin:$PATH
 # Install a minimal set of X11 development packages from the official CentOS
 # repository; these are needed for building conda packages that depend on the
 # cairo vector graphics library (among other things).
+#
+# Also install the "man" package since `manpath` is needed by Intel Parallel
+# Studio's environment configuration scripts (e.g., compilervars.sh). Parallel
+# Studio is used to build the "opt"-featured linux-64 BioBuilds packages.
 RUN yum upgrade -y \
     && yum install -y \
         libX11-devel \
         libXext-devel \
         libXrender-devel \
         libXt-devel \
+        man \
     && yum clean all
 
 # Install the CUDA compiler (nvcc). Note that a "functional" libcuda.so (i.e.,
@@ -100,14 +105,19 @@ COPY conda-build.sh /
 ENTRYPOINT ["/conda-build.sh"]
 
 # Install "conda-build" from the Anaconda "defaults" channel.
-# NOTE: "biobuilds" channel needed to get updates for linux-ppc64le that may
-#       not yet be available in the "defaults" channel.
+# NOTE: Doing this in two phases (i.e., update "conda" first, then install
+#       "conda-build") to avoid potential problems (e.g., unable to find the
+#       desired "conda-build" package) caused by having too big a jump from
+#       the existing to the desired versions of "conda".
 # NOTE: Pin conda & conda-build versions to match what's available on ppc64le.
 RUN /opt/miniconda/bin/conda install --yes --quiet \
-        --override-channels -c biobuilds -c defaults \
-        'conda==4.3.16' 'conda-build==2.1.10' 'anaconda-client' \
-    && echo 'conda ==4.3.16' > /opt/miniconda/conda-meta/pinned \
-    && echo 'conda-build ==2.1.10' >> /opt/miniconda/conda-meta/pinned \
+        --override-channels -c defaults \
+        conda==4.3.27 \
+    && echo 'conda ==4.3.27' > /opt/miniconda/conda-meta/pinned \
+    && /opt/miniconda/bin/conda install --yes --quiet \
+        --override-channels -c defaults \
+        conda-build==3.0.28 anaconda-client \
+    && echo 'conda-build ==3.0.28' >> /opt/miniconda/conda-meta/pinned \
     # See comments above for why this `chmod` is needed
     && chmod -R go-w /opt/miniconda \
     # "conda build" now creates build environments in $CONDA_BLD_PATH instead

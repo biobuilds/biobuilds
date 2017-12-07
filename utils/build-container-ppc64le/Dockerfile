@@ -105,14 +105,19 @@ COPY conda-build.sh /
 ENTRYPOINT ["/conda-build.sh"]
 
 # Install "conda-build" from the Anaconda "defaults" channel.
-# NOTE: "biobuilds" channel needed to get updates for linux-ppc64le that may
-#       not yet be available in the "defaults" channel.
+# NOTE: Doing this in two phases (i.e., update "conda" first, then install
+#       "conda-build") to avoid potential problems (e.g., unable to find the
+#       desired "conda-build" package) caused by having too big a jump from
+#       the existing to the desired versions of "conda".
 # NOTE: Pin conda & conda-build versions to match what's available on ppc64le.
 RUN /opt/miniconda/bin/conda install --yes --quiet \
-        --override-channels -c biobuilds -c defaults \
-        'conda==4.3.16' 'conda-build==2.1.10' 'anaconda-client' \
-    && echo 'conda ==4.3.16' > /opt/miniconda/conda-meta/pinned \
-    && echo 'conda-build ==2.1.10' >> /opt/miniconda/conda-meta/pinned \
+        --override-channels -c defaults \
+        conda==4.3.27 \
+    && echo 'conda ==4.3.27' > /opt/miniconda/conda-meta/pinned \
+    && /opt/miniconda/bin/conda install --yes --quiet \
+        --override-channels -c defaults \
+        conda-build==3.0.28 anaconda-client \
+    && echo 'conda-build ==3.0.28' >> /opt/miniconda/conda-meta/pinned \
     # See above comments for why this `chmod` is needed
     && chmod -R go-w /opt/miniconda \
     # "conda build" now creates build environments in $CONDA_BLD_PATH instead
