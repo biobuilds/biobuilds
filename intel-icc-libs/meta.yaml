@@ -17,7 +17,39 @@ requirements:
 
 build:
   skip: True  # [not x86_64 or not linux]
-  number: 0
+  number: 1
+
+# Separate the Intel OpenMP libraries into their own "intel-openmp" package to
+# prevent the identically-named package in the "defaults" channel from
+# clobbering the files we provide (even though they're likely the same or, at
+# the very least, fully compatible).
+outputs:
+  - name: intel-openmp
+    requirements:
+      build: []
+      run: []
+    files:
+      - lib/libiomp*.so
+
+  - name: intel-icc-libs
+    requirements:
+      build: []
+      run:
+        - intel-openmp =={{ version }}
+    run_exports:
+      - intel-openmp =={{ version }}
+    files:
+      - lib/*cilk*
+      - lib/*offload*
+      - lib/libchkp*
+      - lib/libimf*
+      - lib/libintlc*
+      - lib/libirc*
+      - lib/libirng*
+      - lib/libistrconv*
+      - lib/libmpx*
+      - lib/libpdbx*
+      - lib/libsvml*
 
 about:
   summary: "Redistributable runtime libraries for the Intel C/C++ Compiler"
