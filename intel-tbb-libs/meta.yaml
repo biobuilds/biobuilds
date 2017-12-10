@@ -1,4 +1,5 @@
-{% set version = "2018.0.128" %}
+{% set version = "2018.1.163" %}
+{% set sha256 = "f764dfcac18c25707df94b316a398bcb72bf09294ca9e5f38d1d02df95975d7a" %}
 
 package:
   name: intel-tbb-libs
@@ -8,7 +9,7 @@ source:
   # No source URL; registration required to download the Intel Performance
   # Libraries <https://software.intel.com/en-us/performance-libraries>
   fn: "intel-tbb-libs-{{ version }}.tgz"
-  sha256: "badb81ba5132a0b40bee530012cc5dddc0495ac356843b2e72f62f6bdf751a89"
+  sha256: "{{ sha256 }}"
 
 requirements:
   build: []

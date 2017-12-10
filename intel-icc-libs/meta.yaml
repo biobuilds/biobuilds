@@ -1,4 +1,5 @@
-{% set version = "2018.0.128" %}
+{% set version = "2018.1.163" %}
+{% set sha256 = "45385a9bc31ec13ef2faff382250f2fc59ba32599b49e65e13507280398c4ca7" %}
 
 package:
   name: intel-icc-libs
@@ -7,9 +8,9 @@ package:
 source:
   fn: "intel-icc-libs-{{ version }}.tgz"
   url:
-    - "https://software.intel.com/sites/default/files/managed/f9/f4/l_comp_lib_{{ version }}_comp.cpp_redist.tgz"
-    - "http://download.lab7.io/sources/intel-icc-libs-{{ version }}.tgz"
-  sha256: "8e2abef5021f4f7e2d93056ce5945e897f8ea131ce7e2b22db3aa8d9d0625d7c"
+    - "https://software.intel.com/sites/default/files/managed/c4/23/l_comp_lib_{{ version }}_comp.cpp_redist.tgz"
+    - "http://download.lab7.io/sources/intel-icc-libs-{{ version }}_{{ sha256[:10] }}.tgz"
+  sha256: "{{ sha256 }}"
 
 requirements:
   build: []
@@ -17,7 +18,7 @@ requirements:
 
 build:
   skip: True  # [not x86_64 or not linux]
-  number: 1
+  number: 0
 
 # Separate the Intel OpenMP libraries into their own "intel-openmp" package to
 # prevent the identically-named package in the "defaults" channel from

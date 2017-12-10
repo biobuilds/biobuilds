@@ -1,4 +1,4 @@
-{% set version = "2018.0.128" %}
+{% set version = "2018.1.163" %}
 
 package:
   name: intel-psxe2018-runtime
