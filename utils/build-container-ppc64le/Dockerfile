@@ -1,54 +1,56 @@
-FROM ppc64le/ubuntu:14.04
+FROM ppc64le/centos:7
 MAINTAINER BioBuilds Support <support@biobuilds.org>
 
+# Install "lsb_release" script. Also available through the "redhat-lsb-core"
+# package, but that would force us to install other things we don't need.
+COPY lsb_release /usr/bin/lsb_release
+
 # Make sure a basic set of command line tools are available
-RUN apt-get update && apt-get -y -q dist-upgrade && \
-    apt-get install -q -y --no-install-recommends \
+RUN yum update -y && yum install -y \
         bzip2 \
-        ca-certificates \
         curl \
-        debianutils \
         file \
         findutils \
         gawk \
         grep \
         gzip \
         hostname \
-        lsb-release \
         openssl \
         sed \
         tar \
         unzip \
         wget \
-        xz-utils \
-    && apt-get clean
+        which \
+        xz \
+    && yum clean all
 
 # Install a basic set of build tools (compilers, make, patch, etc.) from the
 # official CentOS repository as well as Continuum Analytics' conda for use as
 # a supplemental package manager. (Conda saves us the trouble of having to
 # maintain our own tarballs and/or RPM repositories in case we want/need to
 # install newer versions of other build tools.)
-RUN apt-get update && apt-get install -y -q --no-install-recommends \
+RUN yum update -y && yum install -y \
         bison \
         chrpath \
         cvs \
         flex \
-        g++ \
         gcc \
-        gfortran \
+        gcc-c++ \
+        gcc-gfortran \
         git \
-        libffi-dev \
+        glibc-static \
+        libstdc++-static \
         make \
         mercurial \
         nasm \
         patch \
         perl \
-        pkg-config \
-        subversion \
+        pkgconfig \
+        svn \
         vim-common \
-    && apt-get clean \
+    && yum clean all \
     && curl -o /tmp/miniconda.sh \
-        "http://download.lab7.io/devops/Miniconda-3.16.0-Linux-ppc64le.sh" \
+        "https://repo.continuum.io/miniconda/Miniconda2-4.3.27-Linux-ppc64le.sh" \
     && /bin/bash /tmp/miniconda.sh -f -b -p /opt/miniconda \
     # GNU `tar` ignore root's umask by default, so we need to forcibly remove
     # non-root write permissions from the extracted files. Not doing this can
@@ -65,30 +67,23 @@ RUN apt-get update && apt-get install -y -q --no-install-recommends \
 
 ENV PATH /opt/miniconda/bin:$PATH
 
-# Install a minimal set of X11 development packages from the official Ubuntu
+# Install a minimal set of X11 development packages from the official CentOS
 # repository; these are needed for building conda packages that depend on the
 # cairo vector graphics library (among other things).
-RUN apt-get update \
-    && apt-get dist-upgrade -y \
-    && apt-get install --no-install-recommends -q -y \
-        libx11-dev \
-        libxext-dev \
-        libxrender-dev \
-        libxt-dev \
-    && apt-get clean
+RUN yum update -y && yum install -y \
+        libX11-devel \
+        libXext-devel \
+        libXrender-devel \
+        libXt-devel \
+    && yum clean all
 
 # Install the CUDA compiler (nvcc). Note that a "functional" libcuda.so (i.e.,
 # driver runtime library) is *not* actually needed to build GPU applications as
 # the CUDA toolkit contains a stub version which can be used by the linker.
-RUN cd /tmp && wget -q 'http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/ppc64el/cuda-repo-ubuntu1404_7.0-28_ppc64el.deb' \
-    && dpkg -i cuda-repo-ubuntu1404_7.0-28_ppc64el.deb \
-    && rm -f /tmp/cuda-repo-ubuntu1404_7.0-28_ppc64el.deb \
-    && apt-get update \
-    && apt-get install -y -q --no-install-recommends \
-        cuda-core-7-0 \
-        cuda-cudart-dev-7-0 \
-    && apt-get clean \
-    && ln -sfn /usr/local/cuda-7.0 /usr/local/cuda
+RUN rpm -Uvh "http://developer.download.nvidia.com/compute/cuda/repos/rhel7/ppc64le/cuda-repo-rhel7-7.5-23.ppc64le.rpm" \
+    && yum install -y cuda-minimal-build-7-5 \
+    && ln -sfn /usr/local/cuda-7.5 /usr/local/cuda \
+    && yum clean all
 ENV PATH /usr/local/cuda/bin:$PATH
 
 # Configure things so non-root users can use conda in this container
