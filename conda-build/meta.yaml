@@ -1,6 +1,5 @@
 {% set name = "conda-build" %}
-{% set version = "3.0.28" %}
-{% set sha1 = "cfc93d292402e826e5e6f3da2278d0edde1fb3ec" %}
+{% set version = "3.1.0" %}
 
 package:
   name: {{ name }}
@@ -8,9 +7,11 @@ package:
 
 source:
   git_url: https://github.com/conda/conda-build
-  git_tag: {{ sha1 }}
+  git_tag: {{ version }}
 
 build:
+  # All other platforms should use the "defaults" channel package
+  skip: True    # [not ppc64le]
   number: 0
   entry_points:
     - conda-build = conda_build.cli.main_build:main
@@ -23,7 +24,7 @@ build:
     - conda-skeleton = conda_build.cli.main_skeleton:main
 
 requirements:
-  host:
+  build:
     - python
     - setuptools
 
@@ -45,51 +46,52 @@ requirements:
     - six
 
 test:
-  # If you run the test suite (~10 min), these are required
-  # requires:
-  #   - pytest
-  #   - pytest-cov
-  #   - pytest-catchlog
-  #   - pytest-xdist
-  #   - pytest-env
+  requires:
+    - pytest
+    - pytest-cov
+    # Optional: you can use pytest-xdist to run the tests in parallel
+    # - pytest-env  # [win]
+    # - pytest-xdist
+    - mock
 
-  files:
-    - test_bdist_conda_setup.py
+  source_files:
+    - tests
+
+  #files:
+  #  - test_bdist_conda_setup.py
 
   imports:
     - conda_build
 
   commands:
-    # Check for all subcommands
-    - which conda-build  # [unix]
-    - where conda-build  # [win]
-    - conda-build -h
-    - which conda-convert  # [unix]
-    - where conda-convert  # [win]
-    - conda-convert -h
-    - which conda-develop  # [unix]
-    - where conda-develop  # [win]
-    - conda-develop -h
-    - which conda-index  # [unix]
-    - where conda-index  # [win]
-    - conda-index -h
-    - which conda-inspect  # [unix]
-    - where conda-inspect  # [win]
-    - conda-inspect linkages -h \| grep "--name ENVIRONMENT"  # [unix]
-    - conda-inspect objects -h \| grep "--name ENVIRONMENT"   # [osx]
-    - conda-inspect -h
-    - which conda-metapackage  # [unix]
-    - where conda-metapackage  # [win]
-    - conda-metapackage -h
-    - which conda-render  # [unix]
-    - where conda-render  # [win]
-    - conda-render -h
-    - which conda-skeleton  # [unix]
-    - where conda-skeleton  # [win]
-    - conda-skeleton -h
-
+    # Check for all subcommands. Use `command -v` rather than `which` to work
+    # around `which` on CentOS 7 for ppc64le failing on long prefixes.
+    - command -v conda-build
+    - conda build -h
+    - command -v conda-convert
+    - conda convert -h
+    - command -v conda-develop
+    - conda develop -h
+    - command -v conda-index
+    - conda index -h
+    - command -v conda-inspect
+    - conda inspect linkages -h \| grep "--name ENVIRONMENT"
+    - conda inspect objects -h \| grep "--name ENVIRONMENT"   # [osx]
+    - conda inspect -h
+    - command -v conda-metapackage
+    - conda metapackage -h
+    - command -v conda-render
+    - conda render -h
+    - command -v conda-skeleton
+    - conda skeleton -h
+    # test that conda sees entry points appropriately in help
+    - conda --help
     # Check for bdist_conda
-    - python test_bdist_conda_setup.py bdist_conda --help
+    #- python test_bdist_conda_setup.py bdist_conda --help
+
+#outputs:
+#  - type: wheel
+#  - name: {{ PKG_NAME }}
 
 about:
   home: https://github.com/conda/conda-build
@@ -102,16 +104,3 @@ about:
     packages for conda.
   doc_url: http://conda.pydata.org/docs/
   dev_url: https://github.com/conda/conda-build
-
-extra:
-  recipe-maintainers:
-    - jakirkham
-    - jjhelmus
-    - mingwandroid
-    - msarahan
-    - mwcraig
-    - ocefpaf
-    - patricksnape
-    - pelson
-    - scopatz
-    - stuertz
