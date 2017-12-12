@@ -111,8 +111,8 @@ RUN /opt/miniconda/bin/conda install --yes --quiet \
     && echo 'conda ==4.3.27' > /opt/miniconda/conda-meta/pinned \
     && /opt/miniconda/bin/conda install --yes --quiet \
         --override-channels -c defaults \
-        conda-build==3.0.28 anaconda-client \
-    && echo 'conda-build ==3.0.28' >> /opt/miniconda/conda-meta/pinned \
+        conda-build==3.1.2 anaconda-client \
+    && echo 'conda-build ==3.1.2' >> /opt/miniconda/conda-meta/pinned \
     # See above comments for why this `chmod` is needed
     && chmod -R go-w /opt/miniconda \
     # "conda build" now creates build environments in $CONDA_BLD_PATH instead
