@@ -7,12 +7,19 @@ package:
 requirements:
   build:
     - biobuilds-build
-    - {{ toolchain }}-build     # [toolchain != 'default']
+    - {{ compiler('c') }}         # [toolchain == 'default']
+    - {{ compiler('cxx') }}       # [toolchain == 'default']
+    - {{ compiler('fortran') }}   # [toolchain == 'default']
+    - {{ toolchain }}-build       # [toolchain != 'default']
   run:
-    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - {{ toolchain }}-runtime     # [toolchain != 'default']
+    - zlib
+
+source:
+  path: .
 
 build:
-  number: 0
+  number: 1
   features:
     - opt                       # [toolchain != 'default']
 
@@ -21,6 +28,8 @@ test:
     - biobuilds-opt             # [toolchain != 'default']
   commands:
     - hello-world
+    - hello-world-cxx
+    - hello-world-f95
 
 about:
   home: https://biobuilds.org/

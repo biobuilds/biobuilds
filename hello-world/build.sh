@@ -17,18 +17,14 @@ source "${BUILD_ENV}" -v
 env | sort -t= -k1,1 -f | sed "s|${PREFIX}|\$PREFIX|g" \
     > "${PREFIX}/share/${PKG_NAME}/build-env.log"
 
-# Create the source file
-cat >"$SRC" <<'EOF'
-#include <stdio.h>
+# Build the executables
+${CC} ${CFLAGS} ${LDFLAGS} hello-world.c -o hello-world
+${CXX} ${CXXFLAGS} ${LDFLAGS} hello-world.cxx -o hello-world-cxx
+${FC} ${FCFLAGS} ${LDFLAGS} hello-world.f95 -o hello-world-f95
 
-int main(int argc, char** argv) {
-    printf("hello world!\n");
-    return 0;
-}
-EOF
-
-# Build and install the executable
-if [[ "$-" != *x* ]]; then set -x; restore_x_opt=1; fi
-"${CC}" ${CFLAGS} ${LDFLAGS} -o "${EXE}" "${SRC}"
-install -m 755 "${EXE}" "${PREFIX}/bin"
-if [[ ${restore_x_opt:-0} -eq 1 ]]; then set +x; fi
+# Install the executables
+install -m 755 \
+    hello-world \
+    hello-world-cxx \
+    hello-world-f95 \
+    ${PREFIX}/bin
