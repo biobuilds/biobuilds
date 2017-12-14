@@ -3,7 +3,7 @@ package:
   version: 2017.11
 
 build:
-  number: 0
+  number: 1
 
 requirements:
   run:
@@ -38,7 +38,7 @@ requirements:
     - breakdancer ==1.4.5
     - bwa ==0.7.17
     - canu ==1.5
-    - cgpvcf ==2.20
+    - cgpvcf ==2.2.0
     - chimerascan ==0.4.5a
     - clark ==1.2.3.1
     - clustalomega ==1.2.4

@@ -142,7 +142,7 @@ The following table lists applications included in the BioBuilds 2017.11 release
 | BreakDancer             | 1.4.5                 | No change               |
 | BWA                     | 0.7.17                | Upgrade                 |
 | Canu                    | 1.5                   | No change               |
-| cgpVcf                  | 2.20                  | New                     |
+| cgpVcf                  | 2.2.0                 | New                     |
 | chimerascan             | 0.4.5a                | No change               |
 | CLARK                   | 1.2.3.1               | No change               |
 | Clustal Omega           | 1.2.4                 | No change               |

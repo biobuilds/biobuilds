@@ -1,5 +1,5 @@
 {% set name = "cgpVcf" %}
-{% set version = "2.20" %}
+{% set version = "2.2.0" %}
 
 package:
   name: "{{ name|lower }}"
