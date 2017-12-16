@@ -1,0 +1,43 @@
+{% set name = "zip" %}
+{% set version = "3.0" %}
+{% set sha256 = "f0e8bb1f9b7eb0b01285495a2699df3a4b766784c1765a8f1aeedf63c0806369" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "ftp://ftp.info-zip.org/pub/infozip/src/zip{{ version|replace('.', '') }}.tgz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+  host:
+    - biobuilds-build
+    - bzip2
+
+test:
+  source_files:
+    - zipfile.c
+    - win32/README.NT
+    - win32/README.txt
+  commands:
+    - zip -h
+    - zip -v -r test.zip win32 zipfile.c
+    - zipnote -h
+    - zipsplit -h
+    - zipcloak -h
+
+about:
+  home: "http://www.info-zip.org/"
+  license: "Info-ZIP License"
+  license_family: "BSD"
+  license_file: "LICENSE"
+  summary: "Archiver for .zip files"
