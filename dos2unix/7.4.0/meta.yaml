@@ -1,0 +1,47 @@
+{% set name = "dos2unix" %}
+{% set version = "7.4.0" %}
+{% set sha256 = "bac765abdbd95cdd87a71989d4382c32cf3cbfeee2153f0086cb9cf18261048a" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://waterlan.home.xs4all.nl/dos2unix/dos2unix-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+  patches:
+    - "bin-only-make-target.patch"
+    - "skip-gb18030-check.patch"    # [osx]
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    # Needed for the `prove` executable used by `make check-bin`
+    - perl
+
+  host:
+    - biobuilds-build
+    - gettext           # [osx]
+
+  # Use jinja `if` statement rather than selectors to set run dependencies to
+  # avoid a "'NoneType' is not iterable" error with `conda build`.
+  {% if osx %}
+  run:
+    - {{ pin_compatible("gettext", max_pin="x.x") }}
+  {% endif %}
+
+test:
+  source_files:
+    - README.txt
+
+about:
+  home: "https://waterlan.home.xs4all.nl/dos2unix.html"
+  license: "BSD"
+  license_file: "COPYING.txt"
+  summary: "Convert text files with DOS (CRLF), Mac (CR), Unix (LF) line breaks"
