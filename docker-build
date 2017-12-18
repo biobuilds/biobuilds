@@ -9,7 +9,6 @@ img=
 build_pkgs=
 build_opts=
 make_jobs=
-FEATURE_OPT=0
 
 use_pkg_cache=1
 
@@ -63,8 +62,8 @@ while [ "$1" != "" ]; do
             use_pkg_cache=0
             ;;
         "-o" | "--opt")
-            FEATURE_OPT=1
-            need_opt_image=1
+            echo "*** WARNING: Ignoring deprecated '-o'/'--opt' option. Please update your" >&2
+            echo "*** WARNING: recipes to use 'toolchain' conda build variants instead." >&2
             ;;
         "--psxe")
             shift; psxe_root="$1"
@@ -187,7 +186,6 @@ echo "Launching image '$img'..." >&2
 $dry_run \
 docker run --rm \
     -e MAKE_JOBS=${make_jobs} \
-    -e FEATURE_OPT=${FEATURE_OPT} \
     -v "${basedir}:/src" \
     $docker_opts \
     "$img" $build_opts $build_pkgs
