@@ -41,7 +41,7 @@ requirements:
     - zlib
 
 build:
-  number: 0
+  number: 1
   features:
     - opt     # [opt]
   script_env:
@@ -51,6 +51,7 @@ test:
   commands:
     - freebayes -h
     - bamleftalign -h
+    - "test \"`freebayes --version | awk '{print $2;}'`\" = 'v{{ version }}'"
 
 about:
   home: "https://github.com/ekg/freebayes"
