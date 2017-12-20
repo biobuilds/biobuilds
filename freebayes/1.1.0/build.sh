@@ -72,6 +72,8 @@ fi
 # Remove external sources we don't want to accidentally build
 rm -rf SeqLib/bwa SeqLib/htslib bamtools vcflib
 
+# Make sure we have the correct version string
+sed -i.bak "s/^v[0-9]*\..*$/v${PKG_VERSION}/" src/version_release.txt
 
 ## Build
 env CC="$CC" CFLAGS="$CFLAGS" \
