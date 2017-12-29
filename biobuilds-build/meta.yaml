@@ -1,13 +1,13 @@
 package:
   name: biobuilds-build
-  version: "2017.11"
+  version: "2018.01"
 
 requirements:
   build: []
   run: []
 
 build:
-  number: 3
+  number: 0
   noarch: generic
 
 about:

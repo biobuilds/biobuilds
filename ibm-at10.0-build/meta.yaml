@@ -10,7 +10,7 @@ requirements:
 
 build:
   skip: True    # [not linux or not ppc64le]
-  number: 2
+  number: 3
   track_feature:
     - opt
 
