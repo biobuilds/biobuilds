@@ -1,5 +1,5 @@
-{% set version = "2018.1.163" %}
-{% set sha256 = "f764dfcac18c25707df94b316a398bcb72bf09294ca9e5f38d1d02df95975d7a" %}
+{% set version = "2018.3.222" %}
+{% set sha256 = "860fe73b9e69ab7ed35264aa1ec8fb5cc253a4c532021c7eb37f946776c9f3f1" %}
 
 package:
   name: intel-tbb-libs

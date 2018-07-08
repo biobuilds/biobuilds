@@ -1,5 +1,5 @@
-{% set version = "2018.1.163" %}
-{% set sha256 = "fe36b4de91666fdd6e8236f121105792f5f39b41e2bedf378f298e22c7e1fb8d" %}
+{% set version = "2018.3.222" %}
+{% set sha256 = "b9eaf0ed8b8dac01b4d169165624aafc86776c4ae5ed73f564b04090a94a1be6" %}
 
 package:
   name: intel-ifort-libs
@@ -8,7 +8,7 @@ package:
 source:
   fn: "intel-ifort-libs-{{ version }}.tgz"
   url:
-    - "https://software.intel.com/sites/default/files/managed/aa/dc/l_comp_lib_{{ version }}_comp.for_redist.tgz"
+    - "https://software.intel.com/sites/default/files/managed/c4/bc/l_comp_lib_{{ version }}_comp.for_redist.tgz"
     - "http://download.lab7.io/sources/intel-ifort-libs-{{ version }}_{{ sha256[:10] }}.tgz"
   sha256: "{{ sha256 }}"
 

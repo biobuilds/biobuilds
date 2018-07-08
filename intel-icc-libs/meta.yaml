@@ -1,5 +1,5 @@
-{% set version = "2018.1.163" %}
-{% set sha256 = "45385a9bc31ec13ef2faff382250f2fc59ba32599b49e65e13507280398c4ca7" %}
+{% set version = "2018.3.222" %}
+{% set sha256 = "de70ee4d4727828b5f2f27b3e8adc69ca60cf5b5623b7812e4962b01620b6b74" %}
 
 package:
   name: intel-icc-libs
@@ -8,7 +8,7 @@ package:
 source:
   fn: "intel-icc-libs-{{ version }}.tgz"
   url:
-    - "https://software.intel.com/sites/default/files/managed/c4/23/l_comp_lib_{{ version }}_comp.cpp_redist.tgz"
+    - "https://software.intel.com/sites/default/files/managed/85/3d/l_comp_lib_{{ version }}_comp.cpp_redist.tgz"
     - "http://download.lab7.io/sources/intel-icc-libs-{{ version }}_{{ sha256[:10] }}.tgz"
   sha256: "{{ sha256 }}"
 
