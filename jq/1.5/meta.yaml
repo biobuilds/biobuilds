@@ -1,0 +1,33 @@
+{% set name = "jq" %}
+{% set version = "1.5" %}
+{% set sha256 = "c4d2bfec6436341113419debf479d833692cc5cdab7eb0326b5a4d4fbe9f493c" %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/stedolan/jq/releases/download/jq-{{ version }}/jq-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+
+build:
+  number: 0
+
+test:
+  commands:
+    - jq --help
+
+about:
+  home: "https://stedolan.github.io/jq/"
+  license: MIT
+  license_file: COPYING
+  summary: "Lightweight and flexible command-line JSON processor"
+  dev_url: "https://github.com/stedolan/jq"
