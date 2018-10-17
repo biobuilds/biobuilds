@@ -1,0 +1,74 @@
+{% set name = "intel-psxe" %}
+{% set version_major = "2018" %}
+{% set version_minor = "3" %}
+{% set version_patch = "222" %}
+{% set version = [version_major, version_minor, version_patch]|join(".") %}
+
+package:
+  name: "{{ name }}"
+  version: "{{ version }}"
+
+build:
+  skip: True    # [not linux or not x86_64]
+  number: 0
+
+outputs:
+  - name: "{{ name }}-build"
+    requirements:
+      build: []
+      run:
+        # Need GCC suite
+        - "{{ compiler('c') }}"
+        - "{{ compiler('cxx') }}"
+        - "{{ compiler('fortran') }}"
+    files:
+      - "share/biobuilds-build/build-*.env"
+      - "share/biobuilds-build/*.cfg"
+
+  - name: "{{ name }}-runtime"
+    requirements:
+      build: []
+      run:
+        - intel-icc-libs =={{ version }}
+        - intel-ifort-libs =={{ version }}
+
+  - name: "intel-openmp"
+    requirements:
+      build: []
+      run: []
+    files:
+      - lib/libiomp*.so
+
+  - name: "intel-icc-libs"
+    requirements:
+      build: []
+      run:
+        - intel-openmp =={{ version }}
+    run_exports:
+      - intel-openmp =={{ version }}
+    files:
+      - lib/*cilk*
+      - lib/*offload*
+      - lib/libchkp*
+      - lib/libimf*
+      - lib/libintlc*
+      - lib/libirc*
+      - lib/libirng*
+      - lib/libistrconv*
+      - lib/libmpx*
+      - lib/libpdbx*
+      - lib/libsvml*
+
+  - name: "intel-ifort-libs"
+    requirements:
+      build: []
+      run:
+        - intel-icc-libs =={{ version }}
+    files:
+      - lib/libicaf.so*
+      - lib/libif*.so*
+
+about:
+  home: "https://www.biobuilds.org/"
+  license: BSD
+  summary: "Packages for building and deploying tools using Intel Parallel Studio"
