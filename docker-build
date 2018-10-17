@@ -72,7 +72,17 @@ while [ "$1" != "" ]; do
             psxe_root="${1#*=}"
             ;;
         # `conda build` options that accept a value
-        "-c" | "--channel" | "-m" | "--numpy" | "--perl" | "--python" | "--R")
+        "--bootstrap" | \
+        "--append-file " | \
+        "--clobber-file" | \
+        "-m" | "--variant-config-files" | \
+        "-e" | "--exclusive-config-files" | "--exclusive-config-file" | \
+        "--prefix-length" | \
+        "--cache-dir" | \
+        "--output-folder" | \
+        "--stats-file" | \
+        "-c" | "--channel" | \
+        "--numpy" | "--perl" | "--python" | "--R")
             build_opts="$build_opts $1"
             shift
             build_opts="$build_opts $1"
@@ -109,17 +119,14 @@ done
 
 
 # Use the default image if "--img" option was not provided.
-if [[ -z "$img" ]]; then
-    case "${HOST_ARCH}" in
-        "ppc64le")
-            [ ${need_opt_image} -eq 1 ] && tag="at10.0" || tag="latest"
-            ;;
-        *)
-            tag="latest"
-            ;;
-    esac
-    img="biobuilds/build-${HOST_ARCH}:${tag}"
-fi
+case "${HOST_ARCH}" in
+    "ppc64le")
+        if [ ${need_opt_image} -eq 1 ]; then
+            : ${img:="biobuilds/build-ppc64le:at10.0"}
+        fi
+        ;;
+esac
+: ${img:="biobuilds/build"}
 
 
 # Mount the host's Intel Parallel Studio XE install directory as a volume in
@@ -129,17 +136,14 @@ fi
 # to install Parallel Studio inside a Docker image, but that approach would
 # make the image [1] several gigabytes larger and [2] not re-distributable due
 # to license management issues.)
-if [[ "$HOST_ARCH" == 'x86_64' && ${need_opt_image} -eq 1 ]]; then
+if [[ "$HOST_ARCH" == 'x86_64' ]]; then
     # Standard install location if the "--psxe" argument was not provided
     : ${psxe_root:=/opt/intel}
 
-    # Make sure there's at least something resembling a Parallel Studio install
-    # in the directory
-    test -e "${psxe_root}/bin/compilervars.sh" || \
-        abort "No Intel Parallel Studio installation found in '$psxe_root'!"
-
-    docker_opts="$docker_opts -v ${psxe_root}:/opt/intel:ro"
-    docker_opts="$docker_opts -e PSXE_ROOT=/opt/intel"
+    if [[ -d "$psxe_root" ]]; then
+        docker_opts="$docker_opts -v ${psxe_root}:/opt/intel:ro"
+        docker_opts="$docker_opts -e PSXE_ROOT=/opt/intel"
+    fi
 fi
 
 
@@ -153,7 +157,6 @@ elif [ "$HOST_ARCH" == 'ppc64le' ]; then
     PKG_CACHE_DIR="${basedir}/${PKG_CACHE_BASE}/linux-ppc64le"
 fi
 if [[ "$use_pkg_cache" -eq 1 && \
-        -f "${PKG_CACHE_DIR}/.index.json" && \
         -f "${PKG_CACHE_DIR}/repodata.json" ]]; then
     build_opts="$build_opts -c file:///src/${PKG_CACHE_BASE}"
 fi
