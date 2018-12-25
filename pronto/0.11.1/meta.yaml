@@ -1,0 +1,43 @@
+{% set name = "pronto" %}
+{% set version = "0.11.1" %}
+{% set sha256 = "ec6fd512b3f509aefc67169f1fd8da7f4b34b600dfc21c606530906b15e99eda" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  url:
+    - "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.zip"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.zip"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vvv"
+  noarch: python
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - python
+    - six
+
+test:
+  imports:
+    - pronto
+
+about:
+  home: "https://pronto.readthedocs.io/en/latest/"
+  license: MIT
+  license_family: MIT
+  license_file: "COPYING"
+  summary: "Python frontend for ontologies"
+  doc_url: "https://pronto.readthedocs.io/en/latest/"
+  dev_url: "https://github.com/althonos/pronto"
+
+extra:
+  recipe-maintainers:
+    - chenghlee
