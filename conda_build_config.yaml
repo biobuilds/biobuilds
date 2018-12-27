@@ -1,0 +1,4 @@
+# Important settings for building MacOS packages
+MACOSX_DEPLOYMENT_TARGET: '10.9'
+CONDA_BUILD_SYSROOT:
+  - /opt/MacOSX10.9.sdk     # [osx]
