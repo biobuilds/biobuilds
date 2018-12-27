@@ -1,0 +1,29 @@
+--- Makefile
++++ Makefile
+@@ -369,6 +369,8 @@
+ all: $(BIN) $(MAC2UNIX_BIN) $(UNIX2DOS_BIN) $(UNIX2MAC_BIN) doc \
+      mofiles man
+ 
++bin-only: $(BIN) $(MAC2UNIX_BIN) $(UNIX2DOS_BIN) $(UNIX2MAC_BIN)
++
+ status:
+ 	@echo "D2U_OS       = $(D2U_OS)"
+ 	@echo "UCS          = $(UCS)"
+@@ -530,8 +532,17 @@
+ 	cd test; $(MAKE) test UCS=$(UCS)
+ endif
+ 
++test-bin: bin-only
++ifneq ($(DJGPP),)
++	cd test; $(MAKE) test UCS= SHELL=$(shell which sh)
++else
++	cd test; $(MAKE) test UCS=$(UCS)
++endif
++
+ check: test
+ 
++check-bin: test-bin
++
+ install-bin: $(BIN) $(MAC2UNIX_BIN) $(UNIX2DOS_BIN) $(UNIX2MAC_BIN)
+ 	$(MKDIR) -p -m 755 $(DESTDIR)$(bindir)
+ 	$(INSTALL_PROGRAM) $(BIN) $(DESTDIR)$(bindir)
