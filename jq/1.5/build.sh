@@ -9,6 +9,10 @@ if [[ ! -f "${BUILD_ENV}" ]]; then
 fi
 source "${BUILD_ENV}" -v
 
-./configure --prefix="$PREFIX"
+./configure --prefix="$PREFIX" \
+    --enable-shared \
+    --enable-static \
+    --with-pic
+
 make -j${MAKE_JOBS} ${VERBOSE_AT}
 make install

@@ -17,9 +17,14 @@ requirements:
   build:
     - biobuilds-build
     - {{ compiler('c') }}
+    # Supply these so `./configure` doesn't accidentally trip over the versions
+    # supplied in the user's default (non-conda) $PATH. This can be a problem,
+    # e.g., when trying to build on macOS systems with XCode installed.
+    - bison >=3.0
+    - flex
 
 build:
-  number: 0
+  number: 1
 
 test:
   commands:
