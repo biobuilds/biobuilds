@@ -1,0 +1,42 @@
+{% set name = "fastp" %}
+{% set version = "0.19.5" %}
+{% set sha256 = "7a3f508ddc19466c2523884a8abc869ef0deb96957cfdf44736546ac1a578ab1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('cxx') }}
+  host:
+    - zlib {{ zlib }}
+  run:
+    - zlib
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/OpenGene/fastp/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
+  patches:
+    - use-system-zlib.patch
+
+build:
+  number: 0
+
+test:
+  source_files:
+    - testdata/*.fq*
+  commands:
+    - fastp --help
+    - fastp -i testdata/R1.fq -o out.fq
+    - fastp -i testdata/R1.fq.gz -I testdata/R2.fq.gz -o R1-out.fq.gz -O R2-out.fq.gz
+
+about:
+  home: "https://github.com/OpenGene/fastp"
+  license: MIT
+  license_file: LICENSE
+  summary: "Fast, all-in-one preprocessing for FastQ files"
