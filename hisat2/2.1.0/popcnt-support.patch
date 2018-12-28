@@ -1,0 +1,66 @@
+--- gfm.h
++++ gfm.h
+@@ -546,8 +546,12 @@
+         int64_t count;
+ #ifdef USING_MSC_COMPILER
+ 		count = __popcnt64(x);
+-#else
++#elif __x86_64__
+         asm ("popcntq %[x],%[count]\n": [count] "=&r" (count): [x] "r" (x));
++#elif __PPC64__
++        asm ("popcntd %0, %1": "=r" (count): "r" (x));
++#else
++        #error "Unsupported architecture for POPCNT_CAPABILITY!"
+ #endif
+         return (int)count;
+     }
+--- processor_support.h
++++ processor_support.h
+@@ -9,7 +9,7 @@
+ // for GCC compiler __get_cpuid() is provided by #include <cpuid.h>
+ 
+ // Intel compiler defines __GNUC__, so this is needed to disambiguate
+-
++#ifdef __x86_64__
+ #if defined(__INTEL_COMPILER)
+ #   define USING_INTEL_COMPILER
+ #elif defined(__GNUC__)
+@@ -19,6 +19,7 @@
+ // __MSC_VER defined by Microsoft compiler
+ #define USING_MSC_COMPILER
+ #endif
++#endif
+ 
+ struct regs_t {unsigned int EAX, EBX, ECX, EDX;};
+ #define BIT(n) ((1<<n))
+@@ -29,6 +30,7 @@
+ 
+ public: 
+     ProcessorSupport() { } 
++#ifdef __x86_64__
+     bool POPCNTenabled()
+     {
+     // from: Intel® 64 and IA-32 Architectures Software Developer’s Manual, 325462-036US,March 2013
+@@ -47,8 +49,8 @@
+ 		__cpuid((int *) &regs, 0); // test if __cpuid() works, if not catch the exception
+ 		__cpuid((int *) &regs, 0x1); // POPCNT bit is bit 23 in ECX
+ #elif defined(USING_INTEL_COMPILER)
+-        __cpuid((void *) &regs,0); // test if __cpuid() works, if not catch the exception
+-        __cpuid((void *) &regs,0x1); // POPCNT bit is bit 23 in ECX
++        __cpuid((int *) &regs,0); // test if __cpuid() works, if not catch the exception
++        __cpuid((int *) &regs,0x1); // POPCNT bit is bit 23 in ECX
+ #elif defined(USING_GCC_COMPILER)
+         __get_cpuid(0x1, &regs.EAX, &regs.EBX, &regs.ECX, &regs.EDX);
+ #else
+@@ -62,6 +64,11 @@
+     }
+     return true;
+     }
++#elif __PPC64__
++    bool POPCNTenabled() { return true; }
++#else
++    #error "Unsupported architecture for POPCNT_CAPABILITY!"
++#endif
+ 
+ #endif // POPCNT_CAPABILITY
+ };
