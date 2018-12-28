@@ -1,15 +1,17 @@
+{% set name = "zlib" %}
 {% set version = "1.2.8" %}
+{% set sha256 = "36658cb768a54c1d4dec43c3116c27ed893e88b02ecfcb44f2166f9c0b7f2a0d" %}
 
 package:
-  name: zlib
+  name: "{{ name|lower }}"
   version: "{{ version }}"
 
 source:
-  fn: "zlib-{{ version }}.tar.gz"
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
   url:
     - "https://zlib.net/fossils/zlib-{{ version }}.tar.gz"
-    - "http://download.lab7.io/sources/zlib-{{ version }}.tar.gz"
-  sha256: "36658cb768a54c1d4dec43c3116c27ed893e88b02ecfcb44f2166f9c0b7f2a0d"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
   patches:
     - intel-ipp.patch
 
@@ -22,7 +24,7 @@ requirements:
     - {{ toolchain }}-runtime   # [toolchain != 'default']
 
 build:
-  number: 1
+  number: 2
   run_exports:
     # mostly OK, but some scary symbol removal. Let's try for trusting them.
     #   https://abi-laboratory.pro/tracker/timeline/zlib/
@@ -38,14 +40,15 @@ test:
     - test -f "${PREFIX}/lib/libz.a"
     - test -f "${PREFIX}/lib/libz.so"     # [linux]
     - test -f "${PREFIX}/lib/libz.dylib"  # [osx]
+    - conda inspect linkages -p ${PREFIX} zlib  # [linux]
 
 about:
-  home: http://zlib.net/
-  license: zlib (http://zlib.net/zlib_license.html)
-  license_family: Other
+  home: https://zlib.net/
+  license: zlib (https://zlib.net/zlib_license.html)
+  license_file: license.txt
   summary: Unobtrusive compression library
   description: |
     zlib is designed to be a free, general-purpose, lossless data-compression
     library for use on virtually any computer hardware and operating system.
-  doc_url: http://zlib.net/manual.html
+  doc_url: https://zlib.net/manual.html
   dev_url: https://github.com/madler/zlib
