@@ -1,20 +1,22 @@
+{% set name = "bzip2" %}
 {% set version = "1.0.6" %}
+{% set sha256 = "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd" %}
 
 package:
-  name: bzip2
+  name: "{{ name|lower }}"
   version: "{{ version }}"
 
 source:
-  fn: "bzip2-{{ version }}.tar.gz"
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
   url:
     - "http://www.bzip.org/{{ version }}/bzip2-{{ version }}.tar.gz"
-    - "http://download.lab7.io/sources/bzip2-{{ version }}.tar.gz"
-  sha256: "a2848f34fcd5d6cf47def00461fcb528a0484d8edef8208d6d2e2909dc61d9cd"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
   patches:
-    - 0001-cross.patch
+    - makefiles.patch
 
 build:
-  number: 0
+  number: 1
   features:
     - opt                       # [toolchain != 'default']
   run_exports:
@@ -59,7 +61,7 @@ about:
   license_family: BSD
   license_file: LICENSE
   license: bzip2
-  summary: high-quality data compressor
+  summary: High-quality data compressor
   description: |
     Bzip2 is a freely available high-quality data compressor. It typically
     compresses files to within 10% to 15% of the best available techniques,

@@ -1,0 +1,47 @@
+{% set name = "HISAT2" %}
+{% set version = "2.1.0" %}
+{% set sha256 = "89a276eed1fc07414b1601947bc9466bdeb50e8f148ad42074186fe39a1ee781" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ compiler('cxx') }}     # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - veclib-headers            # [toolchain == 'ibm-at10.0']
+  host: []
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - perl
+    - python
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.zip"
+  url:
+    - "ftp://ftp.ccb.jhu.edu/pub/infphilo/hisat2/downloads/hisat2-{{ version }}-source.zip"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.zip"
+  sha256: "{{ sha256 }}"
+  patches:
+    - code-fixes.patch
+    - makefile.patch
+    - popcnt-support.patch
+    - veclib-support.patch      # [toolchain == 'ibm-at10.0']
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  source_files:
+    - example
+
+about:
+  home: "http://ccb.jhu.edu/software/hisat2/index.shtml"
+  license: "GPL 3"
+  license_file: "LICENSE"
+  summary: "Graph-based alignment of NGS reads to a population of genomes"

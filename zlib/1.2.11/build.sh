@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Pull in the common BioBuilds build flags
-BUILD_ENV="${PREFIX}/share/biobuilds-build/build.env"
+BUILD_ENV="${BUILD_PREFIX}/share/biobuilds-build/build.env"
 if [[ ! -f "${BUILD_ENV}" ]]; then
     echo "FATAL: Could not find build environment configuration script!" >&2
     exit 1
@@ -43,4 +43,4 @@ make install
 rm -rf $PREFIX/share
 
 # Copy license file to the source directory so conda-build can find it.
-cp $RECIPE_DIR/license.txt $SRC_DIR/license.txt
+cp "${RECIPE_DIR}/license.txt" "${SRC_DIR}/license.txt"

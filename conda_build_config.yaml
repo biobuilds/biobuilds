@@ -1,3 +1,7 @@
+# Standard verbosity flags
+VERBOSE_AT: V=1
+VERBOSE_CM: VERBOSE=1
+
 # Important settings for building MacOS packages
 MACOSX_DEPLOYMENT_TARGET: '10.9'
 CONDA_BUILD_SYSROOT:
