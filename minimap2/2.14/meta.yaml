@@ -1,0 +1,50 @@
+{% set name = "minimap2" %}
+{% set version = "2.14" %}
+{% set sha256 = "88abb9603ba244dae345932ae609faca7e62bb44ebaa9873aeec35c883e07a9e" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+    - veclib-headers            # [toolchain == 'ibm-at10.0']
+  host:
+    - biobuilds-opt             # [toolchain != 'default']
+    - zlib {{ zlib }}           # [toolchain != 'ibm-at10.0']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - zlib                      # [toolchain != 'ibm-at10.0']
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://github.com/lh3/minimap2/archive/v{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
+  patches:
+    - makefile-ldflags.patch
+    - makefile-sse4only.patch
+    - veclib-support.patch      # [toolchain == 'ibm-at10.0']
+
+build:
+  number: 0
+  features:
+    - opt                       # [toolchain != 'default']
+
+test:
+  source_files:
+    - test/MT-*.fa
+
+about:
+  home: "https://github.com/lh3/minimap2"
+  license: "MIT"
+  license_file: "LICENSE.txt"
+  summary: >-
+    Versatile sequence alignment program that aligns DNA or mRNA sequences
+    against a large reference database
+  doc_url: "https://github.com/lh3/minimap2/blob/v{{ version }}/README.md"
+  dev_url: "https://github.com/lh3/minimap2"

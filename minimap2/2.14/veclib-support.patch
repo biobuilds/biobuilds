@@ -1,0 +1,1082 @@
+--- ksw2_extd2_sse.c
++++ ksw2_extd2_sse.c
+@@ -4,7 +4,7 @@
+ #include "ksw2.h"
+ 
+ #ifdef __SSE2__
+-#include <emmintrin.h>
++#include <vec128int.h>
+ 
+ #ifdef KSW_SSE2_ONLY
+ #undef __SSE4_1__
+@@ -28,34 +28,34 @@
+ #endif // ~KSW_CPU_DISPATCH
+ {
+ #define __dp_code_block1 \
+-	z = _mm_load_si128(&s[t]); \
+-	xt1 = _mm_load_si128(&x[t]);                     /* xt1 <- x[r-1][t..t+15] */ \
+-	tmp = _mm_srli_si128(xt1, 15);                   /* tmp <- x[r-1][t+15] */ \
+-	xt1 = _mm_or_si128(_mm_slli_si128(xt1, 1), x1_); /* xt1 <- x[r-1][t-1..t+14] */ \
++	z = vec_load1q(&s[t]); \
++	xt1 = vec_load1q(&x[t]);                     /* xt1 <- x[r-1][t..t+15] */ \
++	tmp = vec_shiftrightbytes1q(xt1, 15);                   /* tmp <- x[r-1][t+15] */ \
++	xt1 = vec_bitor1q(vec_shiftleftbytes1q(xt1, 1), x1_); /* xt1 <- x[r-1][t-1..t+14] */ \
+ 	x1_ = tmp; \
+-	vt1 = _mm_load_si128(&v[t]);                     /* vt1 <- v[r-1][t..t+15] */ \
+-	tmp = _mm_srli_si128(vt1, 15);                   /* tmp <- v[r-1][t+15] */ \
+-	vt1 = _mm_or_si128(_mm_slli_si128(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] */ \
++	vt1 = vec_load1q(&v[t]);                     /* vt1 <- v[r-1][t..t+15] */ \
++	tmp = vec_shiftrightbytes1q(vt1, 15);                   /* tmp <- v[r-1][t+15] */ \
++	vt1 = vec_bitor1q(vec_shiftleftbytes1q(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] */ \
+ 	v1_ = tmp; \
+-	a = _mm_add_epi8(xt1, vt1);                      /* a <- x[r-1][t-1..t+14] + v[r-1][t-1..t+14] */ \
+-	ut = _mm_load_si128(&u[t]);                      /* ut <- u[t..t+15] */ \
+-	b = _mm_add_epi8(_mm_load_si128(&y[t]), ut);     /* b <- y[r-1][t..t+15] + u[r-1][t..t+15] */ \
+-	x2t1= _mm_load_si128(&x2[t]); \
+-	tmp = _mm_srli_si128(x2t1, 15); \
+-	x2t1= _mm_or_si128(_mm_slli_si128(x2t1, 1), x21_); \
++	a = vec_add16sb(xt1, vt1);                      /* a <- x[r-1][t-1..t+14] + v[r-1][t-1..t+14] */ \
++	ut = vec_load1q(&u[t]);                      /* ut <- u[t..t+15] */ \
++	b = vec_add16sb(vec_load1q(&y[t]), ut);     /* b <- y[r-1][t..t+15] + u[r-1][t..t+15] */ \
++	x2t1= vec_load1q(&x2[t]); \
++	tmp = vec_shiftrightbytes1q(x2t1, 15); \
++	x2t1= vec_bitor1q(vec_shiftleftbytes1q(x2t1, 1), x21_); \
+ 	x21_= tmp; \
+-	a2= _mm_add_epi8(x2t1, vt1); \
+-	b2= _mm_add_epi8(_mm_load_si128(&y2[t]), ut);
++	a2= vec_add16sb(x2t1, vt1); \
++	b2= vec_add16sb(vec_load1q(&y2[t]), ut);
+ 
+ #define __dp_code_block2 \
+-	_mm_store_si128(&u[t], _mm_sub_epi8(z, vt1));    /* u[r][t..t+15] <- z - v[r-1][t-1..t+14] */ \
+-	_mm_store_si128(&v[t], _mm_sub_epi8(z, ut));     /* v[r][t..t+15] <- z - u[r-1][t..t+15] */ \
+-	tmp = _mm_sub_epi8(z, q_); \
+-	a = _mm_sub_epi8(a, tmp); \
+-	b = _mm_sub_epi8(b, tmp); \
+-	tmp = _mm_sub_epi8(z, q2_); \
+-	a2= _mm_sub_epi8(a2, tmp); \
+-	b2= _mm_sub_epi8(b2, tmp);
++	vec_store1q(&u[t], vec_subtract16sb(z, vt1));    /* u[r][t..t+15] <- z - v[r-1][t-1..t+14] */ \
++	vec_store1q(&v[t], vec_subtract16sb(z, ut));     /* v[r][t..t+15] <- z - u[r-1][t..t+15] */ \
++	tmp = vec_subtract16sb(z, q_); \
++	a = vec_subtract16sb(a, tmp); \
++	b = vec_subtract16sb(b, tmp); \
++	tmp = vec_subtract16sb(z, q2_); \
++	a2= vec_subtract16sb(a2, tmp); \
++	b2= vec_subtract16sb(b2, tmp);
+ 
+ 	int r, t, qe = q + e, n_col_, *off = 0, *off_end = 0, tlen_, qlen_, last_st, last_en, wl, wr, max_sc, min_sc, long_thres, long_diff;
+ 	int with_cigar = !(flag&KSW_EZ_SCORE_ONLY), approx_max = !!(flag&KSW_EZ_APPROX_MAX);
+@@ -69,15 +69,15 @@
+ 
+ 	if (q2 + e2 < q + e) t = q, q = q2, q2 = t, t = e, e = e2, e2 = t; // make sure q+e no larger than q2+e2
+ 
+-	zero_   = _mm_set1_epi8(0);
+-	q_      = _mm_set1_epi8(q);
+-	q2_     = _mm_set1_epi8(q2);
+-	qe_     = _mm_set1_epi8(q + e);
+-	qe2_    = _mm_set1_epi8(q2 + e2);
+-	sc_mch_ = _mm_set1_epi8(mat[0]);
+-	sc_mis_ = _mm_set1_epi8(mat[1]);
+-	sc_N_   = mat[m*m-1] == 0? _mm_set1_epi8(-e2) : _mm_set1_epi8(mat[m*m-1]);
+-	m1_     = _mm_set1_epi8(m - 1); // wildcard
++	zero_   = vec_splat16sb(0);
++	q_      = vec_splat16sb(q);
++	q2_     = vec_splat16sb(q2);
++	qe_     = vec_splat16sb(q + e);
++	qe2_    = vec_splat16sb(q2 + e2);
++	sc_mch_ = vec_splat16sb(mat[0]);
++	sc_mis_ = vec_splat16sb(mat[1]);
++	sc_N_   = mat[m*m-1] == 0? vec_splat16sb(-e2) : vec_splat16sb(mat[m*m-1]);
++	m1_     = vec_splat16sb(m - 1); // wildcard
+ 
+ 	if (w < 0) w = tlen > qlen? tlen : qlen;
+ 	wl = wr = w;
+@@ -157,27 +157,27 @@
+ 		if (!(flag & KSW_EZ_GENERIC_SC)) {
+ 			for (t = st0; t <= en0; t += 16) {
+ 				__m128i sq, st, tmp, mask;
+-				sq = _mm_loadu_si128((__m128i*)&sf[t]);
+-				st = _mm_loadu_si128((__m128i*)&qrr[t]);
+-				mask = _mm_or_si128(_mm_cmpeq_epi8(sq, m1_), _mm_cmpeq_epi8(st, m1_));
+-				tmp = _mm_cmpeq_epi8(sq, st);
++				sq = vec_loadu1q((__m128i*)&sf[t]);
++				st = vec_loadu1q((__m128i*)&qrr[t]);
++				mask = vec_bitor1q(vec_compareeq16sb(sq, m1_), vec_compareeq16sb(st, m1_));
++				tmp = vec_compareeq16sb(sq, st);
+ #ifdef __SSE4_1__
+ 				tmp = _mm_blendv_epi8(sc_mis_, sc_mch_, tmp);
+ 				tmp = _mm_blendv_epi8(tmp,     sc_N_,   mask);
+ #else
+-				tmp = _mm_or_si128(_mm_andnot_si128(tmp,  sc_mis_), _mm_and_si128(tmp,  sc_mch_));
+-				tmp = _mm_or_si128(_mm_andnot_si128(mask, tmp),     _mm_and_si128(mask, sc_N_));
++				tmp = vec_bitor1q(vec_bitandnotleft1q(tmp,  sc_mis_), vec_bitand1q(tmp,  sc_mch_));
++				tmp = vec_bitor1q(vec_bitandnotleft1q(mask, tmp),     vec_bitand1q(mask, sc_N_));
+ #endif
+-				_mm_storeu_si128((__m128i*)((int8_t*)s + t), tmp);
++				vec_storeu1q((__m128i*)((int8_t*)s + t), tmp);
+ 			}
+ 		} else {
+ 			for (t = st0; t <= en0; ++t)
+ 				((uint8_t*)s)[t] = mat[sf[t] * m + qrr[t]];
+ 		}
+ 		// core loop
+-		x1_  = _mm_cvtsi32_si128((uint8_t)x1);
+-		x21_ = _mm_cvtsi32_si128((uint8_t)x21);
+-		v1_  = _mm_cvtsi32_si128((uint8_t)v1);
++		x1_  = vec_convert1swto1uq((uint8_t)x1);
++		x21_ = vec_convert1swto1uq((uint8_t)x21);
++		v1_  = vec_convert1swto1uq((uint8_t)v1);
+ 		st_ = st / 16, en_ = en / 16;
+ 		assert(en_ - st_ + 1 <= n_col_);
+ 		if (!with_cigar) { // score only
+@@ -191,30 +191,30 @@
+ 				z = _mm_max_epi8(z, b2);
+ 				z = _mm_min_epi8(z, sc_mch_);
+ 				__dp_code_block2; // save u[] and v[]; update a, b, a2 and b2
+-				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_max_epi8(a,  zero_), qe_));
+-				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_max_epi8(b,  zero_), qe_));
+-				_mm_store_si128(&x2[t], _mm_sub_epi8(_mm_max_epi8(a2, zero_), qe2_));
+-				_mm_store_si128(&y2[t], _mm_sub_epi8(_mm_max_epi8(b2, zero_), qe2_));
++				vec_store1q(&x[t],  vec_subtract16sb(_mm_max_epi8(a,  zero_), qe_));
++				vec_store1q(&y[t],  vec_subtract16sb(_mm_max_epi8(b,  zero_), qe_));
++				vec_store1q(&x2[t], vec_subtract16sb(_mm_max_epi8(a2, zero_), qe2_));
++				vec_store1q(&y2[t], vec_subtract16sb(_mm_max_epi8(b2, zero_), qe2_));
+ #else
+-				tmp = _mm_cmpgt_epi8(a,  z);
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, a));
+-				tmp = _mm_cmpgt_epi8(b,  z);
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, b));
+-				tmp = _mm_cmpgt_epi8(a2, z);
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, a2));
+-				tmp = _mm_cmpgt_epi8(b2, z);
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, b2));
+-				tmp = _mm_cmplt_epi8(sc_mch_, z);
+-				z = _mm_or_si128(_mm_and_si128(tmp, sc_mch_), _mm_andnot_si128(tmp, z));
++				tmp = vec_comparegt16sb(a,  z);
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, a));
++				tmp = vec_comparegt16sb(b,  z);
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, b));
++				tmp = vec_comparegt16sb(a2, z);
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, a2));
++				tmp = vec_comparegt16sb(b2, z);
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, b2));
++				tmp = vec_comparelt16sb(sc_mch_, z);
++				z = vec_bitor1q(vec_bitand1q(tmp, sc_mch_), vec_bitandnotleft1q(tmp, z));
+ 				__dp_code_block2;
+-				tmp = _mm_cmpgt_epi8(a, zero_);
+-				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_and_si128(tmp, a),  qe_));
+-				tmp = _mm_cmpgt_epi8(b, zero_);
+-				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_and_si128(tmp, b),  qe_));
+-				tmp = _mm_cmpgt_epi8(a2, zero_);
+-				_mm_store_si128(&x2[t], _mm_sub_epi8(_mm_and_si128(tmp, a2), qe2_));
+-				tmp = _mm_cmpgt_epi8(b2, zero_);
+-				_mm_store_si128(&y2[t], _mm_sub_epi8(_mm_and_si128(tmp, b2), qe2_));
++				tmp = vec_comparegt16sb(a, zero_);
++				vec_store1q(&x[t],  vec_subtract16sb(vec_bitand1q(tmp, a),  qe_));
++				tmp = vec_comparegt16sb(b, zero_);
++				vec_store1q(&y[t],  vec_subtract16sb(vec_bitand1q(tmp, b),  qe_));
++				tmp = vec_comparegt16sb(a2, zero_);
++				vec_store1q(&x2[t], vec_subtract16sb(vec_bitand1q(tmp, a2), qe2_));
++				tmp = vec_comparegt16sb(b2, zero_);
++				vec_store1q(&y2[t], vec_subtract16sb(vec_bitand1q(tmp, b2), qe2_));
+ #endif
+ 			}
+ 		} else if (!(flag&KSW_EZ_RIGHT)) { // gap left-alignment
+@@ -224,45 +224,45 @@
+ 				__m128i d, z, a, b, a2, b2, xt1, x2t1, vt1, ut, tmp;
+ 				__dp_code_block1;
+ #ifdef __SSE4_1__
+-				d = _mm_and_si128(_mm_cmpgt_epi8(a, z), _mm_set1_epi8(1));       // d = a  > z? 1 : 0
++				d = vec_bitand1q(vec_comparegt16sb(a, z), vec_splat16sb(1));       // d = a  > z? 1 : 0
+ 				z = _mm_max_epi8(z, a);
+-				d = _mm_blendv_epi8(d, _mm_set1_epi8(2), _mm_cmpgt_epi8(b,  z)); // d = b  > z? 2 : d
++				d = _mm_blendv_epi8(d, vec_splat16sb(2), vec_comparegt16sb(b,  z)); // d = b  > z? 2 : d
+ 				z = _mm_max_epi8(z, b);
+-				d = _mm_blendv_epi8(d, _mm_set1_epi8(3), _mm_cmpgt_epi8(a2, z)); // d = a2 > z? 3 : d
++				d = _mm_blendv_epi8(d, vec_splat16sb(3), vec_comparegt16sb(a2, z)); // d = a2 > z? 3 : d
+ 				z = _mm_max_epi8(z, a2);
+-				d = _mm_blendv_epi8(d, _mm_set1_epi8(4), _mm_cmpgt_epi8(b2, z)); // d = a2 > z? 3 : d
++				d = _mm_blendv_epi8(d, vec_splat16sb(4), vec_comparegt16sb(b2, z)); // d = a2 > z? 3 : d
+ 				z = _mm_max_epi8(z, b2);
+ 				z = _mm_min_epi8(z, sc_mch_);
+ #else // we need to emulate SSE4.1 intrinsics _mm_max_epi8() and _mm_blendv_epi8()
+-				tmp = _mm_cmpgt_epi8(a,  z);
+-				d = _mm_and_si128(tmp, _mm_set1_epi8(1));
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, a));
+-				tmp = _mm_cmpgt_epi8(b,  z);
+-				d = _mm_or_si128(_mm_andnot_si128(tmp, d), _mm_and_si128(tmp, _mm_set1_epi8(2)));
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, b));
+-				tmp = _mm_cmpgt_epi8(a2, z);
+-				d = _mm_or_si128(_mm_andnot_si128(tmp, d), _mm_and_si128(tmp, _mm_set1_epi8(3)));
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, a2));
+-				tmp = _mm_cmpgt_epi8(b2, z);
+-				d = _mm_or_si128(_mm_andnot_si128(tmp, d), _mm_and_si128(tmp, _mm_set1_epi8(4)));
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, b2));
+-				tmp = _mm_cmplt_epi8(sc_mch_, z);
+-				z = _mm_or_si128(_mm_and_si128(tmp, sc_mch_), _mm_andnot_si128(tmp, z));
++				tmp = vec_comparegt16sb(a,  z);
++				d = vec_bitand1q(tmp, vec_splat16sb(1));
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, a));
++				tmp = vec_comparegt16sb(b,  z);
++				d = vec_bitor1q(vec_bitandnotleft1q(tmp, d), vec_bitand1q(tmp, vec_splat16sb(2)));
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, b));
++				tmp = vec_comparegt16sb(a2, z);
++				d = vec_bitor1q(vec_bitandnotleft1q(tmp, d), vec_bitand1q(tmp, vec_splat16sb(3)));
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, a2));
++				tmp = vec_comparegt16sb(b2, z);
++				d = vec_bitor1q(vec_bitandnotleft1q(tmp, d), vec_bitand1q(tmp, vec_splat16sb(4)));
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, b2));
++				tmp = vec_comparelt16sb(sc_mch_, z);
++				z = vec_bitor1q(vec_bitand1q(tmp, sc_mch_), vec_bitandnotleft1q(tmp, z));
+ #endif
+ 				__dp_code_block2;
+-				tmp = _mm_cmpgt_epi8(a, zero_);
+-				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_and_si128(tmp, a),  qe_));
+-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x08))); // d = a > 0? 1<<3 : 0
+-				tmp = _mm_cmpgt_epi8(b, zero_);
+-				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_and_si128(tmp, b),  qe_));
+-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x10))); // d = b > 0? 1<<4 : 0
+-				tmp = _mm_cmpgt_epi8(a2, zero_);
+-				_mm_store_si128(&x2[t], _mm_sub_epi8(_mm_and_si128(tmp, a2), qe2_));
+-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x20))); // d = a > 0? 1<<5 : 0
+-				tmp = _mm_cmpgt_epi8(b2, zero_);
+-				_mm_store_si128(&y2[t], _mm_sub_epi8(_mm_and_si128(tmp, b2), qe2_));
+-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x40))); // d = b > 0? 1<<6 : 0
+-				_mm_store_si128(&pr[t], d);
++				tmp = vec_comparegt16sb(a, zero_);
++				vec_store1q(&x[t],  vec_subtract16sb(vec_bitand1q(tmp, a),  qe_));
++				d = vec_bitor1q(d, vec_bitand1q(tmp, vec_splat16sb(0x08))); // d = a > 0? 1<<3 : 0
++				tmp = vec_comparegt16sb(b, zero_);
++				vec_store1q(&y[t],  vec_subtract16sb(vec_bitand1q(tmp, b),  qe_));
++				d = vec_bitor1q(d, vec_bitand1q(tmp, vec_splat16sb(0x10))); // d = b > 0? 1<<4 : 0
++				tmp = vec_comparegt16sb(a2, zero_);
++				vec_store1q(&x2[t], vec_subtract16sb(vec_bitand1q(tmp, a2), qe2_));
++				d = vec_bitor1q(d, vec_bitand1q(tmp, vec_splat16sb(0x20))); // d = a > 0? 1<<5 : 0
++				tmp = vec_comparegt16sb(b2, zero_);
++				vec_store1q(&y2[t], vec_subtract16sb(vec_bitand1q(tmp, b2), qe2_));
++				d = vec_bitor1q(d, vec_bitand1q(tmp, vec_splat16sb(0x40))); // d = b > 0? 1<<6 : 0
++				vec_store1q(&pr[t], d);
+ 			}
+ 		} else { // gap right-alignment
+ 			__m128i *pr = p + (size_t)r * n_col_ - st_;
+@@ -271,45 +271,45 @@
+ 				__m128i d, z, a, b, a2, b2, xt1, x2t1, vt1, ut, tmp;
+ 				__dp_code_block1;
+ #ifdef __SSE4_1__
+-				d = _mm_andnot_si128(_mm_cmpgt_epi8(z, a), _mm_set1_epi8(1));    // d = z > a?  0 : 1
++				d = vec_bitandnotleft1q(vec_comparegt16sb(z, a), vec_splat16sb(1));    // d = z > a?  0 : 1
+ 				z = _mm_max_epi8(z, a);
+-				d = _mm_blendv_epi8(_mm_set1_epi8(2), d, _mm_cmpgt_epi8(z, b));  // d = z > b?  d : 2
++				d = _mm_blendv_epi8(vec_splat16sb(2), d, vec_comparegt16sb(z, b));  // d = z > b?  d : 2
+ 				z = _mm_max_epi8(z, b);
+-				d = _mm_blendv_epi8(_mm_set1_epi8(3), d, _mm_cmpgt_epi8(z, a2)); // d = z > a2? d : 3
++				d = _mm_blendv_epi8(vec_splat16sb(3), d, vec_comparegt16sb(z, a2)); // d = z > a2? d : 3
+ 				z = _mm_max_epi8(z, a2);
+-				d = _mm_blendv_epi8(_mm_set1_epi8(4), d, _mm_cmpgt_epi8(z, b2)); // d = z > b2? d : 4
++				d = _mm_blendv_epi8(vec_splat16sb(4), d, vec_comparegt16sb(z, b2)); // d = z > b2? d : 4
+ 				z = _mm_max_epi8(z, b2);
+ 				z = _mm_min_epi8(z, sc_mch_);
+ #else // we need to emulate SSE4.1 intrinsics _mm_max_epi8() and _mm_blendv_epi8()
+-				tmp = _mm_cmpgt_epi8(z, a);
+-				d = _mm_andnot_si128(tmp, _mm_set1_epi8(1));
+-				z = _mm_or_si128(_mm_and_si128(tmp, z), _mm_andnot_si128(tmp, a));
+-				tmp = _mm_cmpgt_epi8(z, b);
+-				d = _mm_or_si128(_mm_and_si128(tmp, d), _mm_andnot_si128(tmp, _mm_set1_epi8(2)));
+-				z = _mm_or_si128(_mm_and_si128(tmp, z), _mm_andnot_si128(tmp, b));
+-				tmp = _mm_cmpgt_epi8(z, a2);
+-				d = _mm_or_si128(_mm_and_si128(tmp, d), _mm_andnot_si128(tmp, _mm_set1_epi8(3)));
+-				z = _mm_or_si128(_mm_and_si128(tmp, z), _mm_andnot_si128(tmp, a2));
+-				tmp = _mm_cmpgt_epi8(z, b2);
+-				d = _mm_or_si128(_mm_and_si128(tmp, d), _mm_andnot_si128(tmp, _mm_set1_epi8(4)));
+-				z = _mm_or_si128(_mm_and_si128(tmp, z), _mm_andnot_si128(tmp, b2));
+-				tmp = _mm_cmplt_epi8(sc_mch_, z);
+-				z = _mm_or_si128(_mm_and_si128(tmp, sc_mch_), _mm_andnot_si128(tmp, z));
++				tmp = vec_comparegt16sb(z, a);
++				d = vec_bitandnotleft1q(tmp, vec_splat16sb(1));
++				z = vec_bitor1q(vec_bitand1q(tmp, z), vec_bitandnotleft1q(tmp, a));
++				tmp = vec_comparegt16sb(z, b);
++				d = vec_bitor1q(vec_bitand1q(tmp, d), vec_bitandnotleft1q(tmp, vec_splat16sb(2)));
++				z = vec_bitor1q(vec_bitand1q(tmp, z), vec_bitandnotleft1q(tmp, b));
++				tmp = vec_comparegt16sb(z, a2);
++				d = vec_bitor1q(vec_bitand1q(tmp, d), vec_bitandnotleft1q(tmp, vec_splat16sb(3)));
++				z = vec_bitor1q(vec_bitand1q(tmp, z), vec_bitandnotleft1q(tmp, a2));
++				tmp = vec_comparegt16sb(z, b2);
++				d = vec_bitor1q(vec_bitand1q(tmp, d), vec_bitandnotleft1q(tmp, vec_splat16sb(4)));
++				z = vec_bitor1q(vec_bitand1q(tmp, z), vec_bitandnotleft1q(tmp, b2));
++				tmp = vec_comparelt16sb(sc_mch_, z);
++				z = vec_bitor1q(vec_bitand1q(tmp, sc_mch_), vec_bitandnotleft1q(tmp, z));
+ #endif
+ 				__dp_code_block2;
+-				tmp = _mm_cmpgt_epi8(zero_, a);
+-				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_andnot_si128(tmp, a),  qe_));
+-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x08))); // d = a > 0? 1<<3 : 0
+-				tmp = _mm_cmpgt_epi8(zero_, b);
+-				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_andnot_si128(tmp, b),  qe_));
+-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x10))); // d = b > 0? 1<<4 : 0
+-				tmp = _mm_cmpgt_epi8(zero_, a2);
+-				_mm_store_si128(&x2[t], _mm_sub_epi8(_mm_andnot_si128(tmp, a2), qe2_));
+-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x20))); // d = a > 0? 1<<5 : 0
+-				tmp = _mm_cmpgt_epi8(zero_, b2);
+-				_mm_store_si128(&y2[t], _mm_sub_epi8(_mm_andnot_si128(tmp, b2), qe2_));
+-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x40))); // d = b > 0? 1<<6 : 0
+-				_mm_store_si128(&pr[t], d);
++				tmp = vec_comparegt16sb(zero_, a);
++				vec_store1q(&x[t],  vec_subtract16sb(vec_bitandnotleft1q(tmp, a),  qe_));
++				d = vec_bitor1q(d, vec_bitandnotleft1q(tmp, vec_splat16sb(0x08))); // d = a > 0? 1<<3 : 0
++				tmp = vec_comparegt16sb(zero_, b);
++				vec_store1q(&y[t],  vec_subtract16sb(vec_bitandnotleft1q(tmp, b),  qe_));
++				d = vec_bitor1q(d, vec_bitandnotleft1q(tmp, vec_splat16sb(0x10))); // d = b > 0? 1<<4 : 0
++				tmp = vec_comparegt16sb(zero_, a2);
++				vec_store1q(&x2[t], vec_subtract16sb(vec_bitandnotleft1q(tmp, a2), qe2_));
++				d = vec_bitor1q(d, vec_bitandnotleft1q(tmp, vec_splat16sb(0x20))); // d = a > 0? 1<<5 : 0
++				tmp = vec_comparegt16sb(zero_, b2);
++				vec_store1q(&y2[t], vec_subtract16sb(vec_bitandnotleft1q(tmp, b2), qe2_));
++				d = vec_bitor1q(d, vec_bitandnotleft1q(tmp, vec_splat16sb(0x40))); // d = b > 0? 1<<6 : 0
++				vec_store1q(&pr[t], d);
+ 			}
+ 		}
+ 		if (!approx_max) { // find the exact max with a 32-bit score array
+@@ -320,26 +320,26 @@
+ 				__m128i max_H_, max_t_;
+ 				max_H = H[en0] = en0 > 0? H[en0-1] + u8[en0] : H[en0] + v8[en0]; // special casing the last element
+ 				max_t = en0;
+-				max_H_ = _mm_set1_epi32(max_H);
+-				max_t_ = _mm_set1_epi32(max_t);
++				max_H_ = vec_splat4sw(max_H);
++				max_t_ = vec_splat4sw(max_t);
+ 				for (t = st0; t < en1; t += 4) { // this implements: H[t]+=v8[t]-qe; if(H[t]>max_H) max_H=H[t],max_t=t;
+ 					__m128i H1, tmp, t_;
+-					H1 = _mm_loadu_si128((__m128i*)&H[t]);
+-					t_ = _mm_setr_epi32(v8[t], v8[t+1], v8[t+2], v8[t+3]);
+-					H1 = _mm_add_epi32(H1, t_);
+-					_mm_storeu_si128((__m128i*)&H[t], H1);
+-					t_ = _mm_set1_epi32(t);
+-					tmp = _mm_cmpgt_epi32(H1, max_H_);
++					H1 = vec_loadu1q((__m128i*)&H[t]);
++					t_ = vec_setreverse4sw(v8[t], v8[t+1], v8[t+2], v8[t+3]);
++					H1 = vec_add4sw(H1, t_);
++					vec_storeu1q((__m128i*)&H[t], H1);
++					t_ = vec_splat4sw(t);
++					tmp = vec_comparegt4sw(H1, max_H_);
+ #ifdef __SSE4_1__
+ 					max_H_ = _mm_blendv_epi8(max_H_, H1, tmp);
+ 					max_t_ = _mm_blendv_epi8(max_t_, t_, tmp);
+ #else
+-					max_H_ = _mm_or_si128(_mm_and_si128(tmp, H1), _mm_andnot_si128(tmp, max_H_));
+-					max_t_ = _mm_or_si128(_mm_and_si128(tmp, t_), _mm_andnot_si128(tmp, max_t_));
++					max_H_ = vec_bitor1q(vec_bitand1q(tmp, H1), vec_bitandnotleft1q(tmp, max_H_));
++					max_t_ = vec_bitor1q(vec_bitand1q(tmp, t_), vec_bitandnotleft1q(tmp, max_t_));
+ #endif
+ 				}
+-				_mm_storeu_si128((__m128i*)HH, max_H_);
+-				_mm_storeu_si128((__m128i*)tt, max_t_);
++				vec_storeu1q((__m128i*)HH, max_H_);
++				vec_storeu1q((__m128i*)tt, max_t_);
+ 				for (i = 0; i < 4; ++i)
+ 					if (max_H < HH[i]) max_H = HH[i], max_t = tt[i] + i;
+ 				for (; t < en0; ++t) { // for the rest of values that haven't been computed with SSE
+--- ksw2_exts2_sse.c
++++ ksw2_exts2_sse.c
+@@ -4,7 +4,7 @@
+ #include "ksw2.h"
+ 
+ #ifdef __SSE2__
+-#include <emmintrin.h>
++#include <vec128int.h>
+ 
+ #ifdef KSW_SSE2_ONLY
+ #undef __SSE4_1__
+@@ -28,32 +28,32 @@
+ #endif // ~KSW_CPU_DISPATCH
+ {
+ #define __dp_code_block1 \
+-	z = _mm_load_si128(&s[t]); \
+-	xt1 = _mm_load_si128(&x[t]);                     /* xt1 <- x[r-1][t..t+15] */ \
+-	tmp = _mm_srli_si128(xt1, 15);                   /* tmp <- x[r-1][t+15] */ \
+-	xt1 = _mm_or_si128(_mm_slli_si128(xt1, 1), x1_); /* xt1 <- x[r-1][t-1..t+14] */ \
++	z = vec_load1q(&s[t]); \
++	xt1 = vec_load1q(&x[t]);                     /* xt1 <- x[r-1][t..t+15] */ \
++	tmp = vec_shiftrightbytes1q(xt1, 15);                   /* tmp <- x[r-1][t+15] */ \
++	xt1 = vec_bitor1q(vec_shiftleftbytes1q(xt1, 1), x1_); /* xt1 <- x[r-1][t-1..t+14] */ \
+ 	x1_ = tmp; \
+-	vt1 = _mm_load_si128(&v[t]);                     /* vt1 <- v[r-1][t..t+15] */ \
+-	tmp = _mm_srli_si128(vt1, 15);                   /* tmp <- v[r-1][t+15] */ \
+-	vt1 = _mm_or_si128(_mm_slli_si128(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] */ \
++	vt1 = vec_load1q(&v[t]);                     /* vt1 <- v[r-1][t..t+15] */ \
++	tmp = vec_shiftrightbytes1q(vt1, 15);                   /* tmp <- v[r-1][t+15] */ \
++	vt1 = vec_bitor1q(vec_shiftleftbytes1q(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] */ \
+ 	v1_ = tmp; \
+-	a = _mm_add_epi8(xt1, vt1);                      /* a <- x[r-1][t-1..t+14] + v[r-1][t-1..t+14] */ \
+-	ut = _mm_load_si128(&u[t]);                      /* ut <- u[t..t+15] */ \
+-	b = _mm_add_epi8(_mm_load_si128(&y[t]), ut);     /* b <- y[r-1][t..t+15] + u[r-1][t..t+15] */ \
+-	x2t1= _mm_load_si128(&x2[t]); \
+-	tmp = _mm_srli_si128(x2t1, 15); \
+-	x2t1= _mm_or_si128(_mm_slli_si128(x2t1, 1), x21_); \
++	a = vec_add16sb(xt1, vt1);                      /* a <- x[r-1][t-1..t+14] + v[r-1][t-1..t+14] */ \
++	ut = vec_load1q(&u[t]);                      /* ut <- u[t..t+15] */ \
++	b = vec_add16sb(vec_load1q(&y[t]), ut);     /* b <- y[r-1][t..t+15] + u[r-1][t..t+15] */ \
++	x2t1= vec_load1q(&x2[t]); \
++	tmp = vec_shiftrightbytes1q(x2t1, 15); \
++	x2t1= vec_bitor1q(vec_shiftleftbytes1q(x2t1, 1), x21_); \
+ 	x21_= tmp; \
+-	a2  = _mm_add_epi8(x2t1, vt1); \
+-	a2a = _mm_add_epi8(a2, _mm_load_si128(&acceptor[t]));
++	a2  = vec_add16sb(x2t1, vt1); \
++	a2a = vec_add16sb(a2, vec_load1q(&acceptor[t]));
+ 
+ #define __dp_code_block2 \
+-	_mm_store_si128(&u[t], _mm_sub_epi8(z, vt1));    /* u[r][t..t+15] <- z - v[r-1][t-1..t+14] */ \
+-	_mm_store_si128(&v[t], _mm_sub_epi8(z, ut));     /* v[r][t..t+15] <- z - u[r-1][t..t+15] */ \
+-	tmp = _mm_sub_epi8(z, q_); \
+-	a = _mm_sub_epi8(a, tmp); \
+-	b = _mm_sub_epi8(b, tmp); \
+-	a2= _mm_sub_epi8(a2, _mm_sub_epi8(z, q2_));
++	vec_store1q(&u[t], vec_subtract16sb(z, vt1));    /* u[r][t..t+15] <- z - v[r-1][t-1..t+14] */ \
++	vec_store1q(&v[t], vec_subtract16sb(z, ut));     /* v[r][t..t+15] <- z - u[r-1][t..t+15] */ \
++	tmp = vec_subtract16sb(z, q_); \
++	a = vec_subtract16sb(a, tmp); \
++	b = vec_subtract16sb(b, tmp); \
++	a2= vec_subtract16sb(a2, vec_subtract16sb(z, q2_));
+ 
+ 	int r, t, qe = q + e, n_col_, *off = 0, *off_end = 0, tlen_, qlen_, last_st, last_en, max_sc, min_sc, long_thres, long_diff;
+ 	int with_cigar = !(flag&KSW_EZ_SCORE_ONLY), approx_max = !!(flag&KSW_EZ_APPROX_MAX);
+@@ -65,14 +65,14 @@
+ 	ksw_reset_extz(ez);
+ 	if (m <= 1 || qlen <= 0 || tlen <= 0 || q2 <= q + e) return;
+ 
+-	zero_   = _mm_set1_epi8(0);
+-	q_      = _mm_set1_epi8(q);
+-	q2_     = _mm_set1_epi8(q2);
+-	qe_     = _mm_set1_epi8(q + e);
+-	sc_mch_ = _mm_set1_epi8(mat[0]);
+-	sc_mis_ = _mm_set1_epi8(mat[1]);
+-	sc_N_   = mat[m*m-1] == 0? _mm_set1_epi8(-e) : _mm_set1_epi8(mat[m*m-1]);
+-	m1_     = _mm_set1_epi8(m - 1); // wildcard
++	zero_   = vec_splat16sb(0);
++	q_      = vec_splat16sb(q);
++	q2_     = vec_splat16sb(q2);
++	qe_     = vec_splat16sb(q + e);
++	sc_mch_ = vec_splat16sb(mat[0]);
++	sc_mis_ = vec_splat16sb(mat[1]);
++	sc_N_   = mat[m*m-1] == 0? vec_splat16sb(-e) : vec_splat16sb(mat[m*m-1]);
++	m1_     = vec_splat16sb(m - 1); // wildcard
+ 
+ 	tlen_ = (tlen + 15) / 16;
+ 	n_col_ = ((qlen < tlen? qlen : tlen) + 15) / 16 + 1;
+@@ -157,27 +157,27 @@
+ 		if (!(flag & KSW_EZ_GENERIC_SC)) {
+ 			for (t = st0; t <= en0; t += 16) {
+ 				__m128i sq, st, tmp, mask;
+-				sq = _mm_loadu_si128((__m128i*)&sf[t]);
+-				st = _mm_loadu_si128((__m128i*)&qrr[t]);
+-				mask = _mm_or_si128(_mm_cmpeq_epi8(sq, m1_), _mm_cmpeq_epi8(st, m1_));
+-				tmp = _mm_cmpeq_epi8(sq, st);
++				sq = vec_loadu1q((__m128i*)&sf[t]);
++				st = vec_loadu1q((__m128i*)&qrr[t]);
++				mask = vec_bitor1q(vec_compareeq16sb(sq, m1_), vec_compareeq16sb(st, m1_));
++				tmp = vec_compareeq16sb(sq, st);
+ #ifdef __SSE4_1__
+ 				tmp = _mm_blendv_epi8(sc_mis_, sc_mch_, tmp);
+ 				tmp = _mm_blendv_epi8(tmp,     sc_N_,   mask);
+ #else
+-				tmp = _mm_or_si128(_mm_andnot_si128(tmp,  sc_mis_), _mm_and_si128(tmp,  sc_mch_));
+-				tmp = _mm_or_si128(_mm_andnot_si128(mask, tmp),     _mm_and_si128(mask, sc_N_));
++				tmp = vec_bitor1q(vec_bitandnotleft1q(tmp,  sc_mis_), vec_bitand1q(tmp,  sc_mch_));
++				tmp = vec_bitor1q(vec_bitandnotleft1q(mask, tmp),     vec_bitand1q(mask, sc_N_));
+ #endif
+-				_mm_storeu_si128((__m128i*)((int8_t*)s + t), tmp);
++				vec_storeu1q((__m128i*)((int8_t*)s + t), tmp);
+ 			}
+ 		} else {
+ 			for (t = st0; t <= en0; ++t)
+ 				((uint8_t*)s)[t] = mat[sf[t] * m + qrr[t]];
+ 		}
+ 		// core loop
+-		x1_  = _mm_cvtsi32_si128((uint8_t)x1);
+-		x21_ = _mm_cvtsi32_si128((uint8_t)x21);
+-		v1_  = _mm_cvtsi32_si128((uint8_t)v1);
++		x1_  = vec_convert1swto1uq((uint8_t)x1);
++		x21_ = vec_convert1swto1uq((uint8_t)x21);
++		v1_  = vec_convert1swto1uq((uint8_t)v1);
+ 		st_ = st / 16, en_ = en / 16;
+ 		assert(en_ - st_ + 1 <= n_col_);
+ 		if (!with_cigar) { // score only
+@@ -189,26 +189,26 @@
+ 				z = _mm_max_epi8(z, b);
+ 				z = _mm_max_epi8(z, a2a);
+ 				__dp_code_block2; // save u[] and v[]; update a, b and a2
+-				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_max_epi8(a,  zero_), qe_));
+-				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_max_epi8(b,  zero_), qe_));
+-				tmp = _mm_load_si128(&donor[t]);
+-				_mm_store_si128(&x2[t], _mm_sub_epi8(_mm_max_epi8(a2, tmp), q2_));
++				vec_store1q(&x[t],  vec_subtract16sb(_mm_max_epi8(a,  zero_), qe_));
++				vec_store1q(&y[t],  vec_subtract16sb(_mm_max_epi8(b,  zero_), qe_));
++				tmp = vec_load1q(&donor[t]);
++				vec_store1q(&x2[t], vec_subtract16sb(_mm_max_epi8(a2, tmp), q2_));
+ #else
+-				tmp = _mm_cmpgt_epi8(a,  z);
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, a));
+-				tmp = _mm_cmpgt_epi8(b,  z);
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, b));
+-				tmp = _mm_cmpgt_epi8(a2a, z);
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, a2a));
++				tmp = vec_comparegt16sb(a,  z);
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, a));
++				tmp = vec_comparegt16sb(b,  z);
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, b));
++				tmp = vec_comparegt16sb(a2a, z);
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, a2a));
+ 				__dp_code_block2;
+-				tmp = _mm_cmpgt_epi8(a, zero_);
+-				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_and_si128(tmp, a),  qe_));
+-				tmp = _mm_cmpgt_epi8(b, zero_);
+-				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_and_si128(tmp, b),  qe_));
+-				tmp = _mm_load_si128(&donor[t]); // TODO: check if this is correct
+-				tmp = _mm_cmpgt_epi8(a2, tmp);
+-				tmp = _mm_or_si128(_mm_andnot_si128(tmp, tmp), _mm_and_si128(tmp, a2));
+-				_mm_store_si128(&x2[t], _mm_sub_epi8(tmp, q2_));
++				tmp = vec_comparegt16sb(a, zero_);
++				vec_store1q(&x[t],  vec_subtract16sb(vec_bitand1q(tmp, a),  qe_));
++				tmp = vec_comparegt16sb(b, zero_);
++				vec_store1q(&y[t],  vec_subtract16sb(vec_bitand1q(tmp, b),  qe_));
++				tmp = vec_load1q(&donor[t]); // TODO: check if this is correct
++				tmp = vec_comparegt16sb(a2, tmp);
++				tmp = vec_bitor1q(vec_bitandnotleft1q(tmp, tmp), vec_bitand1q(tmp, a2));
++				vec_store1q(&x2[t], vec_subtract16sb(tmp, q2_));
+ #endif
+ 			}
+ 		} else if (!(flag&KSW_EZ_RIGHT)) { // gap left-alignment
+@@ -218,41 +218,41 @@
+ 				__m128i d, z, a, b, a2, a2a, xt1, x2t1, vt1, ut, tmp, tmp2;
+ 				__dp_code_block1;
+ #ifdef __SSE4_1__
+-				d = _mm_and_si128(_mm_cmpgt_epi8(a, z), _mm_set1_epi8(1));       // d = a  > z? 1 : 0
++				d = vec_bitand1q(vec_comparegt16sb(a, z), vec_splat16sb(1));       // d = a  > z? 1 : 0
+ 				z = _mm_max_epi8(z, a);
+-				d = _mm_blendv_epi8(d, _mm_set1_epi8(2), _mm_cmpgt_epi8(b,  z)); // d = b  > z? 2 : d
++				d = _mm_blendv_epi8(d, vec_splat16sb(2), vec_comparegt16sb(b,  z)); // d = b  > z? 2 : d
+ 				z = _mm_max_epi8(z, b);
+-				d = _mm_blendv_epi8(d, _mm_set1_epi8(3), _mm_cmpgt_epi8(a2a, z)); // d = a2 > z? 3 : d
++				d = _mm_blendv_epi8(d, vec_splat16sb(3), vec_comparegt16sb(a2a, z)); // d = a2 > z? 3 : d
+ 				z = _mm_max_epi8(z, a2a);
+ #else // we need to emulate SSE4.1 intrinsics _mm_max_epi8() and _mm_blendv_epi8()
+-				tmp = _mm_cmpgt_epi8(a,  z);
+-				d = _mm_and_si128(tmp, _mm_set1_epi8(1));
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, a));
+-				tmp = _mm_cmpgt_epi8(b,  z);
+-				d = _mm_or_si128(_mm_andnot_si128(tmp, d), _mm_and_si128(tmp, _mm_set1_epi8(2)));
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, b));
+-				tmp = _mm_cmpgt_epi8(a2a, z);
+-				d = _mm_or_si128(_mm_andnot_si128(tmp, d), _mm_and_si128(tmp, _mm_set1_epi8(3)));
+-				z = _mm_or_si128(_mm_andnot_si128(tmp, z), _mm_and_si128(tmp, a2a));
++				tmp = vec_comparegt16sb(a,  z);
++				d = vec_bitand1q(tmp, vec_splat16sb(1));
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, a));
++				tmp = vec_comparegt16sb(b,  z);
++				d = vec_bitor1q(vec_bitandnotleft1q(tmp, d), vec_bitand1q(tmp, vec_splat16sb(2)));
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, b));
++				tmp = vec_comparegt16sb(a2a, z);
++				d = vec_bitor1q(vec_bitandnotleft1q(tmp, d), vec_bitand1q(tmp, vec_splat16sb(3)));
++				z = vec_bitor1q(vec_bitandnotleft1q(tmp, z), vec_bitand1q(tmp, a2a));
+ #endif
+ 				__dp_code_block2;
+-				tmp = _mm_cmpgt_epi8(a, zero_);
+-				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_and_si128(tmp, a),  qe_));
+-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x08))); // d = a > 0? 1<<3 : 0
+-				tmp = _mm_cmpgt_epi8(b, zero_);
+-				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_and_si128(tmp, b),  qe_));
+-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x10))); // d = b > 0? 1<<4 : 0
++				tmp = vec_comparegt16sb(a, zero_);
++				vec_store1q(&x[t],  vec_subtract16sb(vec_bitand1q(tmp, a),  qe_));
++				d = vec_bitor1q(d, vec_bitand1q(tmp, vec_splat16sb(0x08))); // d = a > 0? 1<<3 : 0
++				tmp = vec_comparegt16sb(b, zero_);
++				vec_store1q(&y[t],  vec_subtract16sb(vec_bitand1q(tmp, b),  qe_));
++				d = vec_bitor1q(d, vec_bitand1q(tmp, vec_splat16sb(0x10))); // d = b > 0? 1<<4 : 0
+ 
+-				tmp2 = _mm_load_si128(&donor[t]);
+-				tmp = _mm_cmpgt_epi8(a2, tmp2);
++				tmp2 = vec_load1q(&donor[t]);
++				tmp = vec_comparegt16sb(a2, tmp2);
+ #ifdef __SSE4_1__
+ 				tmp2 = _mm_max_epi8(a2, tmp2);
+ #else
+-				tmp2 = _mm_or_si128(_mm_andnot_si128(tmp, tmp2), _mm_and_si128(tmp, a2));
++				tmp2 = vec_bitor1q(vec_bitandnotleft1q(tmp, tmp2), vec_bitand1q(tmp, a2));
+ #endif
+-				_mm_store_si128(&x2[t], _mm_sub_epi8(tmp2, q2_));
+-				d = _mm_or_si128(d, _mm_and_si128(tmp, _mm_set1_epi8(0x20)));
+-				_mm_store_si128(&pr[t], d);
++				vec_store1q(&x2[t], vec_subtract16sb(tmp2, q2_));
++				d = vec_bitor1q(d, vec_bitand1q(tmp, vec_splat16sb(0x20)));
++				vec_store1q(&pr[t], d);
+ 			}
+ 		} else { // gap right-alignment
+ 			__m128i *pr = p + r * n_col_ - st_;
+@@ -261,41 +261,41 @@
+ 				__m128i d, z, a, b, a2, a2a, xt1, x2t1, vt1, ut, tmp, tmp2;
+ 				__dp_code_block1;
+ #ifdef __SSE4_1__
+-				d = _mm_andnot_si128(_mm_cmpgt_epi8(z, a), _mm_set1_epi8(1));    // d = z > a?  0 : 1
++				d = vec_bitandnotleft1q(vec_comparegt16sb(z, a), vec_splat16sb(1));    // d = z > a?  0 : 1
+ 				z = _mm_max_epi8(z, a);
+-				d = _mm_blendv_epi8(_mm_set1_epi8(2), d, _mm_cmpgt_epi8(z, b));  // d = z > b?  d : 2
++				d = _mm_blendv_epi8(vec_splat16sb(2), d, vec_comparegt16sb(z, b));  // d = z > b?  d : 2
+ 				z = _mm_max_epi8(z, b);
+-				d = _mm_blendv_epi8(_mm_set1_epi8(3), d, _mm_cmpgt_epi8(z, a2a)); // d = z > a2? d : 3
++				d = _mm_blendv_epi8(vec_splat16sb(3), d, vec_comparegt16sb(z, a2a)); // d = z > a2? d : 3
+ 				z = _mm_max_epi8(z, a2a);
+ #else // we need to emulate SSE4.1 intrinsics _mm_max_epi8() and _mm_blendv_epi8()
+-				tmp = _mm_cmpgt_epi8(z, a);
+-				d = _mm_andnot_si128(tmp, _mm_set1_epi8(1));
+-				z = _mm_or_si128(_mm_and_si128(tmp, z), _mm_andnot_si128(tmp, a));
+-				tmp = _mm_cmpgt_epi8(z, b);
+-				d = _mm_or_si128(_mm_and_si128(tmp, d), _mm_andnot_si128(tmp, _mm_set1_epi8(2)));
+-				z = _mm_or_si128(_mm_and_si128(tmp, z), _mm_andnot_si128(tmp, b));
+-				tmp = _mm_cmpgt_epi8(z, a2a);
+-				d = _mm_or_si128(_mm_and_si128(tmp, d), _mm_andnot_si128(tmp, _mm_set1_epi8(3)));
+-				z = _mm_or_si128(_mm_and_si128(tmp, z), _mm_andnot_si128(tmp, a2a));
++				tmp = vec_comparegt16sb(z, a);
++				d = vec_bitandnotleft1q(tmp, vec_splat16sb(1));
++				z = vec_bitor1q(vec_bitand1q(tmp, z), vec_bitandnotleft1q(tmp, a));
++				tmp = vec_comparegt16sb(z, b);
++				d = vec_bitor1q(vec_bitand1q(tmp, d), vec_bitandnotleft1q(tmp, vec_splat16sb(2)));
++				z = vec_bitor1q(vec_bitand1q(tmp, z), vec_bitandnotleft1q(tmp, b));
++				tmp = vec_comparegt16sb(z, a2a);
++				d = vec_bitor1q(vec_bitand1q(tmp, d), vec_bitandnotleft1q(tmp, vec_splat16sb(3)));
++				z = vec_bitor1q(vec_bitand1q(tmp, z), vec_bitandnotleft1q(tmp, a2a));
+ #endif
+ 				__dp_code_block2;
+-				tmp = _mm_cmpgt_epi8(zero_, a);
+-				_mm_store_si128(&x[t],  _mm_sub_epi8(_mm_andnot_si128(tmp, a),  qe_));
+-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x08))); // d = a > 0? 1<<3 : 0
+-				tmp = _mm_cmpgt_epi8(zero_, b);
+-				_mm_store_si128(&y[t],  _mm_sub_epi8(_mm_andnot_si128(tmp, b),  qe_));
+-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x10))); // d = b > 0? 1<<4 : 0
++				tmp = vec_comparegt16sb(zero_, a);
++				vec_store1q(&x[t],  vec_subtract16sb(vec_bitandnotleft1q(tmp, a),  qe_));
++				d = vec_bitor1q(d, vec_bitandnotleft1q(tmp, vec_splat16sb(0x08))); // d = a > 0? 1<<3 : 0
++				tmp = vec_comparegt16sb(zero_, b);
++				vec_store1q(&y[t],  vec_subtract16sb(vec_bitandnotleft1q(tmp, b),  qe_));
++				d = vec_bitor1q(d, vec_bitandnotleft1q(tmp, vec_splat16sb(0x10))); // d = b > 0? 1<<4 : 0
+ 
+-				tmp2 = _mm_load_si128(&donor[t]);
+-				tmp = _mm_cmpgt_epi8(tmp2, a2);
++				tmp2 = vec_load1q(&donor[t]);
++				tmp = vec_comparegt16sb(tmp2, a2);
+ #ifdef __SSE4_1__
+ 				tmp2 = _mm_max_epi8(tmp2, a2);
+ #else
+-				tmp2 = _mm_or_si128(_mm_andnot_si128(tmp, a2), _mm_and_si128(tmp, tmp2));
++				tmp2 = vec_bitor1q(vec_bitandnotleft1q(tmp, a2), vec_bitand1q(tmp, tmp2));
+ #endif
+-				_mm_store_si128(&x2[t], _mm_sub_epi8(tmp2, q2_));
+-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, _mm_set1_epi8(0x20))); // d = a > 0? 1<<5 : 0
+-				_mm_store_si128(&pr[t], d);
++				vec_store1q(&x2[t], vec_subtract16sb(tmp2, q2_));
++				d = vec_bitor1q(d, vec_bitandnotleft1q(tmp, vec_splat16sb(0x20))); // d = a > 0? 1<<5 : 0
++				vec_store1q(&pr[t], d);
+ 			}
+ 		}
+ 		if (!approx_max) { // find the exact max with a 32-bit score array
+@@ -306,26 +306,26 @@
+ 				__m128i max_H_, max_t_;
+ 				max_H = H[en0] = en0 > 0? H[en0-1] + u8[en0] : H[en0] + v8[en0]; // special casing the last element
+ 				max_t = en0;
+-				max_H_ = _mm_set1_epi32(max_H);
+-				max_t_ = _mm_set1_epi32(max_t);
++				max_H_ = vec_splat4sw(max_H);
++				max_t_ = vec_splat4sw(max_t);
+ 				for (t = st0; t < en1; t += 4) { // this implements: H[t]+=v8[t]-qe; if(H[t]>max_H) max_H=H[t],max_t=t;
+ 					__m128i H1, tmp, t_;
+-					H1 = _mm_loadu_si128((__m128i*)&H[t]);
+-					t_ = _mm_setr_epi32(v8[t], v8[t+1], v8[t+2], v8[t+3]);
+-					H1 = _mm_add_epi32(H1, t_);
+-					_mm_storeu_si128((__m128i*)&H[t], H1);
+-					t_ = _mm_set1_epi32(t);
+-					tmp = _mm_cmpgt_epi32(H1, max_H_);
++					H1 = vec_loadu1q((__m128i*)&H[t]);
++					t_ = vec_setreverse4sw(v8[t], v8[t+1], v8[t+2], v8[t+3]);
++					H1 = vec_add4sw(H1, t_);
++					vec_storeu1q((__m128i*)&H[t], H1);
++					t_ = vec_splat4sw(t);
++					tmp = vec_comparegt4sw(H1, max_H_);
+ #ifdef __SSE4_1__
+ 					max_H_ = _mm_blendv_epi8(max_H_, H1, tmp);
+ 					max_t_ = _mm_blendv_epi8(max_t_, t_, tmp);
+ #else
+-					max_H_ = _mm_or_si128(_mm_and_si128(tmp, H1), _mm_andnot_si128(tmp, max_H_));
+-					max_t_ = _mm_or_si128(_mm_and_si128(tmp, t_), _mm_andnot_si128(tmp, max_t_));
++					max_H_ = vec_bitor1q(vec_bitand1q(tmp, H1), vec_bitandnotleft1q(tmp, max_H_));
++					max_t_ = vec_bitor1q(vec_bitand1q(tmp, t_), vec_bitandnotleft1q(tmp, max_t_));
+ #endif
+ 				}
+-				_mm_storeu_si128((__m128i*)HH, max_H_);
+-				_mm_storeu_si128((__m128i*)tt, max_t_);
++				vec_storeu1q((__m128i*)HH, max_H_);
++				vec_storeu1q((__m128i*)tt, max_t_);
+ 				for (i = 0; i < 4; ++i)
+ 					if (max_H < HH[i]) max_H = HH[i], max_t = tt[i] + i;
+ 				for (; t < en0; ++t) { // for the rest of values that haven't been computed with SSE
+--- ksw2_extz2_sse.c
++++ ksw2_extz2_sse.c
+@@ -3,7 +3,7 @@
+ #include "ksw2.h"
+ 
+ #ifdef __SSE2__
+-#include <emmintrin.h>
++#include <vec128int.h>
+ 
+ #ifdef KSW_SSE2_ONLY
+ #undef __SSE4_1__
+@@ -24,27 +24,27 @@
+ #endif // ~KSW_CPU_DISPATCH
+ {
+ #define __dp_code_block1 \
+-	z = _mm_add_epi8(_mm_load_si128(&s[t]), qe2_); \
+-	xt1 = _mm_load_si128(&x[t]);                     /* xt1 <- x[r-1][t..t+15] */ \
+-	tmp = _mm_srli_si128(xt1, 15);                   /* tmp <- x[r-1][t+15] */ \
+-	xt1 = _mm_or_si128(_mm_slli_si128(xt1, 1), x1_); /* xt1 <- x[r-1][t-1..t+14] */ \
++	z = vec_add16sb(vec_load1q(&s[t]), qe2_); \
++	xt1 = vec_load1q(&x[t]);                     /* xt1 <- x[r-1][t..t+15] */ \
++	tmp = vec_shiftrightbytes1q(xt1, 15);                   /* tmp <- x[r-1][t+15] */ \
++	xt1 = vec_bitor1q(vec_shiftleftbytes1q(xt1, 1), x1_); /* xt1 <- x[r-1][t-1..t+14] */ \
+ 	x1_ = tmp; \
+-	vt1 = _mm_load_si128(&v[t]);                     /* vt1 <- v[r-1][t..t+15] */ \
+-	tmp = _mm_srli_si128(vt1, 15);                   /* tmp <- v[r-1][t+15] */ \
+-	vt1 = _mm_or_si128(_mm_slli_si128(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] */ \
++	vt1 = vec_load1q(&v[t]);                     /* vt1 <- v[r-1][t..t+15] */ \
++	tmp = vec_shiftrightbytes1q(vt1, 15);                   /* tmp <- v[r-1][t+15] */ \
++	vt1 = vec_bitor1q(vec_shiftleftbytes1q(vt1, 1), v1_); /* vt1 <- v[r-1][t-1..t+14] */ \
+ 	v1_ = tmp; \
+-	a = _mm_add_epi8(xt1, vt1);                      /* a <- x[r-1][t-1..t+14] + v[r-1][t-1..t+14] */ \
+-	ut = _mm_load_si128(&u[t]);                      /* ut <- u[t..t+15] */ \
+-	b = _mm_add_epi8(_mm_load_si128(&y[t]), ut);     /* b <- y[r-1][t..t+15] + u[r-1][t..t+15] */
++	a = vec_add16sb(xt1, vt1);                      /* a <- x[r-1][t-1..t+14] + v[r-1][t-1..t+14] */ \
++	ut = vec_load1q(&u[t]);                      /* ut <- u[t..t+15] */ \
++	b = vec_add16sb(vec_load1q(&y[t]), ut);     /* b <- y[r-1][t..t+15] + u[r-1][t..t+15] */
+ 
+ #define __dp_code_block2 \
+-	z = _mm_max_epu8(z, b);                          /* z = max(z, b); this works because both are non-negative */ \
+-	z = _mm_min_epu8(z, max_sc_); \
+-	_mm_store_si128(&u[t], _mm_sub_epi8(z, vt1));    /* u[r][t..t+15] <- z - v[r-1][t-1..t+14] */ \
+-	_mm_store_si128(&v[t], _mm_sub_epi8(z, ut));     /* v[r][t..t+15] <- z - u[r-1][t..t+15] */ \
+-	z = _mm_sub_epi8(z, q_); \
+-	a = _mm_sub_epi8(a, z); \
+-	b = _mm_sub_epi8(b, z);
++	z = vec_max16ub(z, b);                          /* z = max(z, b); this works because both are non-negative */ \
++	z = vec_min16ub(z, max_sc_); \
++	vec_store1q(&u[t], vec_subtract16sb(z, vt1));    /* u[r][t..t+15] <- z - v[r-1][t-1..t+14] */ \
++	vec_store1q(&v[t], vec_subtract16sb(z, ut));     /* v[r][t..t+15] <- z - u[r-1][t..t+15] */ \
++	z = vec_subtract16sb(z, q_); \
++	a = vec_subtract16sb(a, z); \
++	b = vec_subtract16sb(b, z);
+ 
+ 	int r, t, qe = q + e, n_col_, *off = 0, *off_end = 0, tlen_, qlen_, last_st, last_en, wl, wr, max_sc, min_sc;
+ 	int with_cigar = !(flag&KSW_EZ_SCORE_ONLY), approx_max = !!(flag&KSW_EZ_APPROX_MAX);
+@@ -56,18 +56,18 @@
+ 	ksw_reset_extz(ez);
+ 	if (m <= 0 || qlen <= 0 || tlen <= 0) return;
+ 
+-	zero_   = _mm_set1_epi8(0);
+-	q_      = _mm_set1_epi8(q);
+-	qe2_    = _mm_set1_epi8((q + e) * 2);
+-	flag1_  = _mm_set1_epi8(1);
+-	flag2_  = _mm_set1_epi8(2);
+-	flag8_  = _mm_set1_epi8(0x08);
+-	flag16_ = _mm_set1_epi8(0x10);
+-	sc_mch_ = _mm_set1_epi8(mat[0]);
+-	sc_mis_ = _mm_set1_epi8(mat[1]);
+-	sc_N_   = mat[m*m-1] == 0? _mm_set1_epi8(-e) : _mm_set1_epi8(mat[m*m-1]);
+-	m1_     = _mm_set1_epi8(m - 1); // wildcard
+-	max_sc_ = _mm_set1_epi8(mat[0] + (q + e) * 2);
++	zero_   = vec_splat16sb(0);
++	q_      = vec_splat16sb(q);
++	qe2_    = vec_splat16sb((q + e) * 2);
++	flag1_  = vec_splat16sb(1);
++	flag2_  = vec_splat16sb(2);
++	flag8_  = vec_splat16sb(0x08);
++	flag16_ = vec_splat16sb(0x10);
++	sc_mch_ = vec_splat16sb(mat[0]);
++	sc_mis_ = vec_splat16sb(mat[1]);
++	sc_N_   = mat[m*m-1] == 0? vec_splat16sb(-e) : vec_splat16sb(mat[m*m-1]);
++	m1_     = vec_splat16sb(m - 1); // wildcard
++	max_sc_ = vec_splat16sb(mat[0] + (q + e) * 2);
+ 
+ 	if (w < 0) w = tlen > qlen? tlen : qlen;
+ 	wl = wr = w;
+@@ -125,26 +125,26 @@
+ 		if (!(flag & KSW_EZ_GENERIC_SC)) {
+ 			for (t = st0; t <= en0; t += 16) {
+ 				__m128i sq, st, tmp, mask;
+-				sq = _mm_loadu_si128((__m128i*)&sf[t]);
+-				st = _mm_loadu_si128((__m128i*)&qrr[t]);
+-				mask = _mm_or_si128(_mm_cmpeq_epi8(sq, m1_), _mm_cmpeq_epi8(st, m1_));
+-				tmp = _mm_cmpeq_epi8(sq, st);
++				sq = vec_loadu1q((__m128i*)&sf[t]);
++				st = vec_loadu1q((__m128i*)&qrr[t]);
++				mask = vec_bitor1q(vec_compareeq16sb(sq, m1_), vec_compareeq16sb(st, m1_));
++				tmp = vec_compareeq16sb(sq, st);
+ #ifdef __SSE4_1__
+ 				tmp = _mm_blendv_epi8(sc_mis_, sc_mch_, tmp);
+ 				tmp = _mm_blendv_epi8(tmp,     sc_N_,   mask);
+ #else
+-				tmp = _mm_or_si128(_mm_andnot_si128(tmp,  sc_mis_), _mm_and_si128(tmp,  sc_mch_));
+-				tmp = _mm_or_si128(_mm_andnot_si128(mask, tmp),     _mm_and_si128(mask, sc_N_));
++				tmp = vec_bitor1q(vec_bitandnotleft1q(tmp,  sc_mis_), vec_bitand1q(tmp,  sc_mch_));
++				tmp = vec_bitor1q(vec_bitandnotleft1q(mask, tmp),     vec_bitand1q(mask, sc_N_));
+ #endif
+-				_mm_storeu_si128((__m128i*)((uint8_t*)s + t), tmp);
++				vec_storeu1q((__m128i*)((uint8_t*)s + t), tmp);
+ 			}
+ 		} else {
+ 			for (t = st0; t <= en0; ++t)
+ 				((uint8_t*)s)[t] = mat[sf[t] * m + qrr[t]];
+ 		}
+ 		// core loop
+-		x1_ = _mm_cvtsi32_si128(x1);
+-		v1_ = _mm_cvtsi32_si128(v1);
++		x1_ = vec_convert1swto1uq(x1);
++		v1_ = vec_convert1swto1uq(v1);
+ 		st_ = st / 16, en_ = en / 16;
+ 		assert(en_ - st_ + 1 <= n_col_);
+ 		if (!with_cigar) { // score only
+@@ -154,18 +154,18 @@
+ #ifdef __SSE4_1__
+ 				z = _mm_max_epi8(z, a);                          // z = z > a? z : a (signed)
+ #else // we need to emulate SSE4.1 intrinsics _mm_max_epi8()
+-				z = _mm_and_si128(z, _mm_cmpgt_epi8(z, zero_));  // z = z > 0? z : 0;
+-				z = _mm_max_epu8(z, a);                          // z = max(z, a); this works because both are non-negative
++				z = vec_bitand1q(z, vec_comparegt16sb(z, zero_));  // z = z > 0? z : 0;
++				z = vec_max16ub(z, a);                          // z = max(z, a); this works because both are non-negative
+ #endif
+ 				__dp_code_block2;
+ #ifdef __SSE4_1__
+-				_mm_store_si128(&x[t], _mm_max_epi8(a, zero_));
+-				_mm_store_si128(&y[t], _mm_max_epi8(b, zero_));
++				vec_store1q(&x[t], _mm_max_epi8(a, zero_));
++				vec_store1q(&y[t], _mm_max_epi8(b, zero_));
+ #else
+-				tmp = _mm_cmpgt_epi8(a, zero_);
+-				_mm_store_si128(&x[t], _mm_and_si128(a, tmp));
+-				tmp = _mm_cmpgt_epi8(b, zero_);
+-				_mm_store_si128(&y[t], _mm_and_si128(b, tmp));
++				tmp = vec_comparegt16sb(a, zero_);
++				vec_store1q(&x[t], vec_bitand1q(a, tmp));
++				tmp = vec_comparegt16sb(b, zero_);
++				vec_store1q(&y[t], vec_bitand1q(b, tmp));
+ #endif
+ 			}
+ 		} else if (!(flag&KSW_EZ_RIGHT)) { // gap left-alignment
+@@ -174,25 +174,25 @@
+ 			for (t = st_; t <= en_; ++t) {
+ 				__m128i d, z, a, b, xt1, vt1, ut, tmp;
+ 				__dp_code_block1;
+-				d = _mm_and_si128(_mm_cmpgt_epi8(a, z), flag1_); // d = a > z? 1 : 0
++				d = vec_bitand1q(vec_comparegt16sb(a, z), flag1_); // d = a > z? 1 : 0
+ #ifdef __SSE4_1__
+ 				z = _mm_max_epi8(z, a);                          // z = z > a? z : a (signed)
+-				tmp = _mm_cmpgt_epi8(b, z);
++				tmp = vec_comparegt16sb(b, z);
+ 				d = _mm_blendv_epi8(d, flag2_, tmp);             // d = b > z? 2 : d
+ #else // we need to emulate SSE4.1 intrinsics _mm_max_epi8() and _mm_blendv_epi8()
+-				z = _mm_and_si128(z, _mm_cmpgt_epi8(z, zero_));  // z = z > 0? z : 0;
+-				z = _mm_max_epu8(z, a);                          // z = max(z, a); this works because both are non-negative
+-				tmp = _mm_cmpgt_epi8(b, z);
+-				d = _mm_or_si128(_mm_andnot_si128(tmp, d), _mm_and_si128(tmp, flag2_)); // d = b > z? 2 : d; emulating blendv
++				z = vec_bitand1q(z, vec_comparegt16sb(z, zero_));  // z = z > 0? z : 0;
++				z = vec_max16ub(z, a);                          // z = max(z, a); this works because both are non-negative
++				tmp = vec_comparegt16sb(b, z);
++				d = vec_bitor1q(vec_bitandnotleft1q(tmp, d), vec_bitand1q(tmp, flag2_)); // d = b > z? 2 : d; emulating blendv
+ #endif
+ 				__dp_code_block2;
+-				tmp = _mm_cmpgt_epi8(a, zero_);
+-				_mm_store_si128(&x[t], _mm_and_si128(tmp, a));
+-				d = _mm_or_si128(d, _mm_and_si128(tmp, flag8_));  // d = a > 0? 0x08 : 0
+-				tmp = _mm_cmpgt_epi8(b, zero_);
+-				_mm_store_si128(&y[t], _mm_and_si128(tmp, b));
+-				d = _mm_or_si128(d, _mm_and_si128(tmp, flag16_)); // d = b > 0? 0x10 : 0
+-				_mm_store_si128(&pr[t], d);
++				tmp = vec_comparegt16sb(a, zero_);
++				vec_store1q(&x[t], vec_bitand1q(tmp, a));
++				d = vec_bitor1q(d, vec_bitand1q(tmp, flag8_));  // d = a > 0? 0x08 : 0
++				tmp = vec_comparegt16sb(b, zero_);
++				vec_store1q(&y[t], vec_bitand1q(tmp, b));
++				d = vec_bitor1q(d, vec_bitand1q(tmp, flag16_)); // d = b > 0? 0x10 : 0
++				vec_store1q(&pr[t], d);
+ 			}
+ 		} else { // gap right-alignment
+ 			__m128i *pr = p + (size_t)r * n_col_ - st_;
+@@ -200,25 +200,25 @@
+ 			for (t = st_; t <= en_; ++t) {
+ 				__m128i d, z, a, b, xt1, vt1, ut, tmp;
+ 				__dp_code_block1;
+-				d = _mm_andnot_si128(_mm_cmpgt_epi8(z, a), flag1_); // d = z > a? 0 : 1
++				d = vec_bitandnotleft1q(vec_comparegt16sb(z, a), flag1_); // d = z > a? 0 : 1
+ #ifdef __SSE4_1__
+ 				z = _mm_max_epi8(z, a);                          // z = z > a? z : a (signed)
+-				tmp = _mm_cmpgt_epi8(z, b);
++				tmp = vec_comparegt16sb(z, b);
+ 				d = _mm_blendv_epi8(flag2_, d, tmp);             // d = z > b? d : 2
+ #else // we need to emulate SSE4.1 intrinsics _mm_max_epi8() and _mm_blendv_epi8()
+-				z = _mm_and_si128(z, _mm_cmpgt_epi8(z, zero_));  // z = z > 0? z : 0;
+-				z = _mm_max_epu8(z, a);                          // z = max(z, a); this works because both are non-negative
+-				tmp = _mm_cmpgt_epi8(z, b);
+-				d = _mm_or_si128(_mm_andnot_si128(tmp, flag2_), _mm_and_si128(tmp, d)); // d = z > b? d : 2; emulating blendv
++				z = vec_bitand1q(z, vec_comparegt16sb(z, zero_));  // z = z > 0? z : 0;
++				z = vec_max16ub(z, a);                          // z = max(z, a); this works because both are non-negative
++				tmp = vec_comparegt16sb(z, b);
++				d = vec_bitor1q(vec_bitandnotleft1q(tmp, flag2_), vec_bitand1q(tmp, d)); // d = z > b? d : 2; emulating blendv
+ #endif
+ 				__dp_code_block2;
+-				tmp = _mm_cmpgt_epi8(zero_, a);
+-				_mm_store_si128(&x[t], _mm_andnot_si128(tmp, a));
+-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, flag8_));  // d = 0 > a? 0 : 0x08
+-				tmp = _mm_cmpgt_epi8(zero_, b);
+-				_mm_store_si128(&y[t], _mm_andnot_si128(tmp, b));
+-				d = _mm_or_si128(d, _mm_andnot_si128(tmp, flag16_)); // d = 0 > b? 0 : 0x10
+-				_mm_store_si128(&pr[t], d);
++				tmp = vec_comparegt16sb(zero_, a);
++				vec_store1q(&x[t], vec_bitandnotleft1q(tmp, a));
++				d = vec_bitor1q(d, vec_bitandnotleft1q(tmp, flag8_));  // d = 0 > a? 0 : 0x08
++				tmp = vec_comparegt16sb(zero_, b);
++				vec_store1q(&y[t], vec_bitandnotleft1q(tmp, b));
++				d = vec_bitor1q(d, vec_bitandnotleft1q(tmp, flag16_)); // d = 0 > b? 0 : 0x10
++				vec_store1q(&pr[t], d);
+ 			}
+ 		}
+ 		if (!approx_max) { // find the exact max with a 32-bit score array
+@@ -229,28 +229,28 @@
+ 				__m128i max_H_, max_t_, qe_;
+ 				max_H = H[en0] = en0 > 0? H[en0-1] + u8[en0] - qe : H[en0] + v8[en0] - qe; // special casing the last element
+ 				max_t = en0;
+-				max_H_ = _mm_set1_epi32(max_H);
+-				max_t_ = _mm_set1_epi32(max_t);
+-				qe_    = _mm_set1_epi32(q + e);
++				max_H_ = vec_splat4sw(max_H);
++				max_t_ = vec_splat4sw(max_t);
++				qe_    = vec_splat4sw(q + e);
+ 				for (t = st0; t < en1; t += 4) { // this implements: H[t]+=v8[t]-qe; if(H[t]>max_H) max_H=H[t],max_t=t;
+ 					__m128i H1, tmp, t_;
+-					H1 = _mm_loadu_si128((__m128i*)&H[t]);
+-					t_ = _mm_setr_epi32(v8[t], v8[t+1], v8[t+2], v8[t+3]);
+-					H1 = _mm_add_epi32(H1, t_);
+-					H1 = _mm_sub_epi32(H1, qe_);
+-					_mm_storeu_si128((__m128i*)&H[t], H1);
+-					t_ = _mm_set1_epi32(t);
+-					tmp = _mm_cmpgt_epi32(H1, max_H_);
++					H1 = vec_loadu1q((__m128i*)&H[t]);
++					t_ = vec_setreverse4sw(v8[t], v8[t+1], v8[t+2], v8[t+3]);
++					H1 = vec_add4sw(H1, t_);
++					H1 = vec_subtract4sw(H1, qe_);
++					vec_storeu1q((__m128i*)&H[t], H1);
++					t_ = vec_splat4sw(t);
++					tmp = vec_comparegt4sw(H1, max_H_);
+ #ifdef __SSE4_1__
+ 					max_H_ = _mm_blendv_epi8(max_H_, H1, tmp);
+ 					max_t_ = _mm_blendv_epi8(max_t_, t_, tmp);
+ #else
+-					max_H_ = _mm_or_si128(_mm_and_si128(tmp, H1), _mm_andnot_si128(tmp, max_H_));
+-					max_t_ = _mm_or_si128(_mm_and_si128(tmp, t_), _mm_andnot_si128(tmp, max_t_));
++					max_H_ = vec_bitor1q(vec_bitand1q(tmp, H1), vec_bitandnotleft1q(tmp, max_H_));
++					max_t_ = vec_bitor1q(vec_bitand1q(tmp, t_), vec_bitandnotleft1q(tmp, max_t_));
+ #endif
+ 				}
+-				_mm_storeu_si128((__m128i*)HH, max_H_);
+-				_mm_storeu_si128((__m128i*)tt, max_t_);
++				vec_storeu1q((__m128i*)HH, max_H_);
++				vec_storeu1q((__m128i*)tt, max_t_);
+ 				for (i = 0; i < 4; ++i)
+ 					if (max_H < HH[i]) max_H = HH[i], max_t = tt[i] + i;
+ 				for (; t < en0; ++t) { // for the rest of values that haven't been computed with SSE
+--- ksw2_ll_sse.c
++++ ksw2_ll_sse.c
+@@ -1,7 +1,7 @@
+ #include <stdlib.h>
+ #include <stdint.h>
+ #include <string.h>
+-#include <emmintrin.h>
++#include <vec128int.h>
+ #include "ksw2.h"
+ 
+ #ifdef __GNUC__
+@@ -85,17 +85,17 @@
+ 	uint16_t *H8;
+ 
+ #define __max_8(ret, xx) do { \
+-		(xx) = _mm_max_epi16((xx), _mm_srli_si128((xx), 8)); \
+-		(xx) = _mm_max_epi16((xx), _mm_srli_si128((xx), 4)); \
+-		(xx) = _mm_max_epi16((xx), _mm_srli_si128((xx), 2)); \
+-		(ret) = _mm_extract_epi16((xx), 0); \
++		(xx) = vec_max8sh((xx), vec_shiftrightbytes1q((xx), 8)); \
++		(xx) = vec_max8sh((xx), vec_shiftrightbytes1q((xx), 4)); \
++		(xx) = vec_max8sh((xx), vec_shiftrightbytes1q((xx), 2)); \
++		(ret) = vec_extract8sh((xx), 0); \
+ 	} while (0)
+ 
+ 	// initialization
+ 	*qe = *te = -1;
+-	zero = _mm_set1_epi32(0);
+-	gapoe = _mm_set1_epi16(_gapo + _gape);
+-	gape = _mm_set1_epi16(_gape);
++	zero = vec_splat4sw(0);
++	gapoe = vec_splat8sh(_gapo + _gape);
++	gape = vec_splat8sh(_gape);
+ 	H0 = q->H0; H1 = q->H1; E = q->E; Hmax = q->Hmax;
+ 	slen = q->slen, qlen8 = slen * 8;
+ 	memset(E,    0, slen * sizeof(__m128i));
+@@ -105,32 +105,32 @@
+ 	for (i = 0; i < tlen; ++i) {
+ 		int j, k, imax;
+ 		__m128i e, h, f = zero, max = zero, *S = q->qp + target[i] * slen; // s is the 1st score vector
+-		h = _mm_load_si128(H0 + slen - 1); // h={2,5,8,11,14,17,-1,-1} in the above example
+-		h = _mm_slli_si128(h, 2);
++		h = vec_load1q(H0 + slen - 1); // h={2,5,8,11,14,17,-1,-1} in the above example
++		h = vec_shiftleftbytes1q(h, 2);
+ 		for (j = 0; LIKELY(j < slen); ++j) {
+-			h = _mm_adds_epi16(h, *S++);
+-			e = _mm_load_si128(E + j);
+-			h = _mm_max_epi16(h, e);
+-			h = _mm_max_epi16(h, f);
+-			max = _mm_max_epi16(max, h);
+-			_mm_store_si128(H1 + j, h);
+-			h = _mm_subs_epu16(h, gapoe);
+-			e = _mm_subs_epu16(e, gape);
+-			e = _mm_max_epi16(e, h);
+-			_mm_store_si128(E + j, e);
+-			f = _mm_subs_epu16(f, gape);
+-			f = _mm_max_epi16(f, h);
+-			h = _mm_load_si128(H0 + j);
++			h = vec_addsaturating8sh(h, *S++);
++			e = vec_load1q(E + j);
++			h = vec_max8sh(h, e);
++			h = vec_max8sh(h, f);
++			max = vec_max8sh(max, h);
++			vec_store1q(H1 + j, h);
++			h = vec_subtractsaturating8uh(h, gapoe);
++			e = vec_subtractsaturating8uh(e, gape);
++			e = vec_max8sh(e, h);
++			vec_store1q(E + j, e);
++			f = vec_subtractsaturating8uh(f, gape);
++			f = vec_max8sh(f, h);
++			h = vec_load1q(H0 + j);
+ 		}
+ 		for (k = 0; LIKELY(k < 8); ++k) {
+-			f = _mm_slli_si128(f, 2);
++			f = vec_shiftleftbytes1q(f, 2);
+ 			for (j = 0; LIKELY(j < slen); ++j) {
+-				h = _mm_load_si128(H1 + j);
+-				h = _mm_max_epi16(h, f);
+-				_mm_store_si128(H1 + j, h);
+-				h = _mm_subs_epu16(h, gapoe);
+-				f = _mm_subs_epu16(f, gape);
+-				if(UNLIKELY(!_mm_movemask_epi8(_mm_cmpgt_epi16(f, h)))) goto end_loop_i16;
++				h = vec_load1q(H1 + j);
++				h = vec_max8sh(h, f);
++				vec_store1q(H1 + j, h);
++				h = vec_subtractsaturating8uh(h, gapoe);
++				f = vec_subtractsaturating8uh(f, gape);
++				if(UNLIKELY(!vec_extractupperbit16sb(vec_comparegt8sh(f, h)))) goto end_loop_i16;
+ 			}
+ 		}
+ end_loop_i16:

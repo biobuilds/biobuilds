@@ -1,0 +1,22 @@
+--- Makefile
++++ Makefile
+@@ -33,16 +33,16 @@
+ extra:all $(PROG_EXTRA)
+ 
+ minimap2:main.o libminimap2.a
+-		$(CC) $(CFLAGS) main.o -o $@ -L. -lminimap2 $(LIBS)
++		$(CC) $(CFLAGS) main.o -o $@ -L. -lminimap2 $(LDFLAGS) $(LIBS)
+ 
+ minimap2-lite:example.o libminimap2.a
+-		$(CC) $(CFLAGS) $< -o $@ -L. -lminimap2 $(LIBS)
++		$(CC) $(CFLAGS) $< -o $@ -L. -lminimap2 $(LDFLAGS) $(LIBS)
+ 
+ libminimap2.a:$(OBJS)
+ 		$(AR) -csru $@ $(OBJS)
+ 
+ sdust:sdust.c kalloc.o kalloc.h kdq.h kvec.h kseq.h ketopt.h sdust.h
+-		$(CC) -D_SDUST_MAIN $(CFLAGS) $< kalloc.o -o $@ -lz
++		$(CC) -D_SDUST_MAIN $(CFLAGS) $< kalloc.o -o $@ $(LDFLAGS) -lz
+ 
+ # SSE-specific targets on x86/x86_64
+ 
