@@ -1,0 +1,97 @@
+{% set name = "pcre" %}
+{% set version = "8.42" %}
+{% set sha256 = "2cd04b7c887808be030254e8d77de11d3fe9d4505c39d4b15d2664ffe8bf9301" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.bz2"
+  url:
+    - "https://ftp.pcre.org/pub/pcre/pcre-{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}.tar.bz2"
+  sha256: "{{ sha256 }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - pkg-config
+    - libtool
+  host:
+    - zlib
+    - bzip2
+
+build:
+  number: 0
+
+outputs:
+  - name: "{{ name|lower }}"
+    files:
+      - "bin/pcregrep"
+      - "bin/pcretest"
+      - "lib/libpcre*.so*"      # [linux]
+      - "lib/libpcre*.dylib*"   # [osx]
+    test:
+      commands:
+        # Verify executables
+        - pcregrep --help
+        - pcretest --help
+
+        # Verify libraries.
+        - test -f "${PREFIX}/lib/libpcre.so"          # [linux]
+        - test -f "${PREFIX}/lib/libpcrecpp.so"       # [linux]
+        - test -f "${PREFIX}/lib/libpcreposix.so"     # [linux]
+        - test -f "${PREFIX}/lib/libpcre.dylib"       # [osx]
+        - test -f "${PREFIX}/lib/libpcrecpp.dylib"    # [osx]
+        - test -f "${PREFIX}/lib/libpcreposix.dylib"  # [osx]
+    about:
+      summary: >
+        Perl 5 compatible regular expression runtime libraries and utilities
+
+  - name: "{{ name|lower }}-devel"
+    files:
+      - "bin/pcre-config"
+      - "include/pcre*.h"
+      - "lib/libpcre*.a"
+      - "lib/libpcre*.la"
+      - "lib/pkgconfig/libpcre*.pc"
+    test:
+      commands:
+        # Verify executables
+        - pcre-config --version
+
+        # Verify headers
+        - test -f "${PREFIX}/include/pcre.h"
+        - test -f "${PREFIX}/include/pcre_scanner.h"
+        - test -f "${PREFIX}/include/pcre_stringpiece.h"
+        - test -f "${PREFIX}/include/pcrecpp.h"
+        - test -f "${PREFIX}/include/pcrecpparg.h"
+        - test -f "${PREFIX}/include/pcreposix.h"
+
+        # Verify libraries
+        - test -f "${PREFIX}/lib/libpcre.a"
+        - test -f "${PREFIX}/lib/libpcrecpp.a"
+        - test -f "${PREFIX}/lib/libpcreposix.a"
+    about:
+      summary: >
+        Perl 5 compatible regular expression headers and static libraries
+
+about:
+  home: "https://www.pcre.org/"
+  license: BSD
+  license_file: LICENCE
+  summary: >
+    Perl 5 compatible regular expression library (and associated utilities)
+  description: >
+    PCRE implement regular expression pattern matching using the same syntax
+    and semantics as Perl 5. PCRE has its own native API, as well as a set of
+    wrapper functions that correspond to the POSIX regular expression API.
+  doc_url: https://www.pcre.org/original/doc/html/
+  dev_url: https://vcs.pcre.org/pcre2/
+
+extra:
+  recipe-maintainers:
+    - chenghlee
