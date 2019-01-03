@@ -1,24 +1,79 @@
+{% set name = "libtool" %}
+{% set version = "2.4.6" %}
+{% set sha256 = "e3bd4d5d3d025a36c21dd6af7ea818a2afcd4dfc1ea5a17b39d7854bcd0c06e3" %}
+
 package:
   name: libtool
-  version: 2.4.6
+  version: {{ version }}
 
 source:
-  fn: libtool-2.4.6.tar.gz
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
   url:
-    - http://ftpmirror.gnu.org/libtool/libtool-2.4.6.tar.gz
-    - http://download.lab7.io/sources/libtool-2.4.6.tar.gz
-  md5: addf44b646ddb4e3919805aa88fa7c5e
+    - "http://ftpmirror.gnu.org/libtool/libtool-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
+  patches:
+    # From: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=557388;att=1;filename=link-as-needed.patch;msg=5
+    # See: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=347650 and
+    # and: https://sigquit.wordpress.com/2011/02/16/why-asneeded-doesnt-work-as-expected-for-your-libraries-on-your-autotools-project/
+    - 0001-link-as-needed.patch
+
+    # Potentially useful patches from the Ubuntu package
+    - fix-infinite-recursion-in-m4.patch
+    - grep-spaces.patch
 
 requirements:
   build:
-    - automake
-    - autoconf
+    - {{ compiler('c') }}
+    - make
+  host:
+    - autoconf-update
+    - automake 1.15
+    - m4
 
-test:
-  commands:
-    - libtool --help
+build:
+  number: 1
+
+outputs:
+  - name: libltdl
+    files:
+      - lib/libltdl.so*     # [linux]
+      - lib/libltdl.dylib*  # [osx]
+    about:
+      summary: System-independent `dlopen` wrapper from GNU libtool
+      license: LGPL-2.1
+      license_file: libltdl/COPYING.LIB
+
+  - name: libtool
+    requirements:
+      run:
+        - libltdl =={{ version }}
+    files:
+      - bin/libtool*
+      - include/libltdl/*
+      - include/ltdl.h
+      - lib/libltdl.a
+      - share/aclocal/*.m4
+      - share/libtool/*
+      - share/libtool/build-aux/*
+      - share/libtool/libltdl/*
+      - share/libtool/loaders/*
+      - share/man/man1/libtool*.1
+    test:
+      commands:
+        - libtool --help
 
 about:
   home: "http://www.gnu.org/software/libtool/"
-  license: GPLv3
+  license: GPL-2
   license_file: COPYING
+  summary: The GNU Portable Library Tool
+  description: >
+    Generic library support script that hides the complexity of using shared
+    libraries behind a consistent, portable interface.
+  doc_url: http://www.gnu.org/software/libtool/manual/
+  dev_url: http://git.savannah.gnu.org/cgit/libtool.git
+
+extra:
+  recipe-maintainers:
+    - chenghlee

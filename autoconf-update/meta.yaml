@@ -1,12 +1,15 @@
 package:
   name: autoconf-update
-  version: "2015_10_21"
+  version: "2019_01_11"
 
 build:
   number: 0
+  noarch: generic
   binary_relocation: false
 
 about:
   home: "http://git.savannah.gnu.org/gitweb/?p=config.git"
   license: GPLv3
-  summary: "Updated autoconf config.guess and config.sub scripts; useful for building older software on newer platforms"
+  summary: >
+    Updated autoconf `config.guess` and `config.sub` scripts; useful for
+    building older software on newer platforms

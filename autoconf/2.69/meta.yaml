@@ -1,24 +1,49 @@
+{% set name = "autoconf" %}
+{% set version = "2.69" %}
+{% set sha256 = "954bd69b391edc12d6a4a51a2dd1476543da5c6bbf05a95b59dc0dd6fd4c2969" %}
+
 package:
-  name: autoconf
-  version: "2.69"
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
 
 source:
-  fn: autoconf-2.69.tar.gz
+  # Please keep these lines around. They are used to rebase the patches
+  # easily. Unfortunately, autoconf requires autotools to build itself.
+  # git_url: http://git.sv.gnu.org/r/autoconf.git
+  # git_tag: v2.69
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
   url:
-    - http://ftp.gnu.org/gnu/autoconf/autoconf-2.69.tar.gz
-    - http://download.lab7.io/sources/autoconf-2.69.tar.gz
-  md5: 82d05e03b93e45f5a39b828dc9c6c29b
+    - "http://ftp.gnu.org/gnu/autoconf/autoconf-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
+  patches:
+    # Patches from Anaconda packaging
+    - 0001-autoscan-port-to-perl-5.17.patch
+    - 0002-tests-avoid-spurious-test-failure-with-libtool-2.4.3.patch
+    - 0003-patch-shebang.patch
+    - 0004-add-use-lib-.-to-auto-scan-header-.in.patch
+    # Patches from Ubuntu packaging
+    - 1000-AM_PROG_LIBTOOL.patch
 
 requirements:
-  # For Linux, assume "m4" provided via distro package
-  build:
+  host:
     - autoconf-update
-    - m4  # [not linux]
+    - m4
+    - perl
+#  build:
+#    #  make check requirements
+#    - "{{ compiler('c') }}"
+#    - libtool
   run:
-    - m4  # [not linux]
+    - m4
+    - perl
 
 build:
-  number: 1
+  # Since this package does not really depend on any specific Perl version, use
+  # "string" rather than "number" here to squash the "pl5xx" build substring
+  # `conda build` would otherwise generate.
+  string: 2
+  noarch: generic
 
 test:
   commands:
@@ -28,3 +53,12 @@ about:
   home: http://www.gnu.org/software/autoconf/
   license: GPL3
   license_file: COPYING
+  summary: >
+    Extensible M4 macros that produce shell scripts to configure software
+    source code packages.
+  doc_url: https://www.gnu.org/software/autoconf/manual/autoconf.html
+  dev_url: http://git.sv.gnu.org/r/autoconf.git
+
+extra:
+  recipe-maintainers:
+    - chenghlee

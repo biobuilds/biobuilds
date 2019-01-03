@@ -1,0 +1,54 @@
+{% set name = "automake" %}
+{% set version = "1.15.1" %}
+{% set sha256 = "988e32527abe052307d21c8ca000aa238b914df363a617e38f4fb89f5abf6260" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "http://ftp.gnu.org/gnu/automake/automake-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
+  patches:
+    # Patches from Ubuntu packaging
+    - 0003-install-sh-avoid-low-risk-race-in-tmp.patch
+    - 0007-fix-for-newerpython.patch
+
+requirements:
+  host:
+    - autoconf
+    - autoconf-update
+    - m4
+    - perl
+  run:
+    - autoconf
+    - m4
+    - perl
+
+build:
+  # Since this package does not really depend on any specific Perl version, use
+  # "string" rather than "number" here to squash the "pl5xx" build substring
+  # `conda build` would otherwise generate.
+  string: 0
+  noarch: generic
+
+test:
+  commands:
+    - automake --help
+
+about:
+  home: "http://www.gnu.org/software/automake/"
+  license: GPL-3
+  license_file: COPYING
+  summary: >
+    Tool for automatically generating `Makefile.in` files compliant with the
+    GNU Coding Standards
+  dev_url: "https://git.savannah.gnu.org/git/automake.git"
+  doc_url: "https://www.gnu.org/software/automake/manual/automake.html"
+
+extra:
+  recipe-maintainers:
+    - chenghlee

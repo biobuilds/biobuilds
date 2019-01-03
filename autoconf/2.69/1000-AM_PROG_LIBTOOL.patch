@@ -1,0 +1,56 @@
+Description: Make autoreconf recognize AM_PROG_LIBTOOL too
+ .
+ during the "getting the main packages ready"-campaign for ppc64el I
+ noticed that dh-autoreconf doesn't work if a package uses
+ AM_PROG_LIBTOOL but works with AC_PROG_LIBTOOL though both makros
+ should behave the same (and are both deprecated) according to
+ http://www.gnu.org/software/libtool/manual/html_node/LT_005fINIT.html
+ A sample package for this is version 0.4.5+cvs20030824-7 of smpeg (I
+ will upload an NMU now for that package, because it prevents the build
+ of kde4libs).
+ .
+ The following patch changes this behaviour, and would save quite many
+ sourceful uploads, so I'd ask you to check the fix and if applicable
+ upload it soon. That would really be a great help for this / all
+ future ports of Debian (though of course packages should be fixed to
+ not use deprecated macros, but that's something else).
+Author: Andreas Barth <aba@ayous.org>
+Bug-Debian: http://bugs.debian.org/759739
+
+---
+ bin/autoreconf.in |    2 ++
+ lib/autom4te.in   |    1 +
+ 2 files changed, 3 insertions(+)
+
+Index: b/bin/autoreconf.in
+===================================================================
+--- a/bin/autoreconf.in
++++ b/bin/autoreconf.in
+@@ -472,6 +472,7 @@ sub autoreconf_current_directory ()
+ 	     'AC_CONFIG_SUBDIRS',
+ 	     'AC_INIT',
+ 	     'AC_PROG_LIBTOOL',
++	     'AM_PROG_LIBTOOL',
+ 	     'LT_INIT',
+ 	     'LT_CONFIG_LTDL_DIR',
+ 	     'AM_GNU_GETTEXT',
+@@ -486,6 +487,7 @@ sub autoreconf_current_directory ()
+       $uses_autoconf = 1            if $macro eq "AC_INIT";
+       $uses_gettext_via_traces = 1  if $macro eq "AM_GNU_GETTEXT";
+       $uses_libtool = 1             if $macro eq "AC_PROG_LIBTOOL"
++                                       || $macro eq "AM_PROG_LIBTOOL"
+                                        || $macro eq "LT_INIT";
+       $uses_libltdl = 1             if $macro eq "LT_CONFIG_LTDL_DIR";
+       $uses_autoheader = 1          if $macro eq "AC_CONFIG_HEADERS";
+Index: b/lib/autom4te.in
+===================================================================
+--- a/lib/autom4te.in
++++ b/lib/autom4te.in
+@@ -93,6 +93,7 @@ args: --preselect AC_CONFIG_HEADERS
+ args: --preselect AC_CONFIG_SUBDIRS
+ args: --preselect AC_INIT
+ args: --preselect AC_PROG_LIBTOOL
++args: --preselect AM_PROG_LIBTOOL
+ args: --preselect LT_INIT
+ args: --preselect LT_CONFIG_LTDL_DIR
+ args: --preselect AM_GNU_GETTEXT
