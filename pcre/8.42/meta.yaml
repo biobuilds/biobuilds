@@ -25,7 +25,7 @@ requirements:
     - bzip2
 
 build:
-  number: 0
+  number: 1
 
 outputs:
   - name: "{{ name|lower }}"
@@ -58,6 +58,9 @@ outputs:
       - "lib/libpcre*.a"
       - "lib/libpcre*.la"
       - "lib/pkgconfig/libpcre*.pc"
+    requirements:
+      run:
+        - "{{ pin_subpackage('pcre', exact=True) }}"
     test:
       commands:
         # Verify executables

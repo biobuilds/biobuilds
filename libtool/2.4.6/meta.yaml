@@ -32,7 +32,7 @@ requirements:
     - m4
 
 build:
-  number: 1
+  number: 2
 
 outputs:
   - name: libltdl
@@ -47,7 +47,7 @@ outputs:
   - name: libtool
     requirements:
       run:
-        - libltdl =={{ version }}
+        - "{{ pin_subpackage('libltdl', exact=True) }}"
     files:
       - bin/libtool*
       - include/libltdl/*
