@@ -1,0 +1,6 @@
+pcre: 8.42
+
+pin_run_as_build:
+  pcre:
+    min_pin: x.x
+    max_pin: x

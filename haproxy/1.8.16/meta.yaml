@@ -1,0 +1,38 @@
+{% set name = "haproxy" %}
+{% set version = "1.8.16" %}
+{% set sha256 = "5401e4ad243d9e403621e389ec3605d8d43241affe0b72f0b15c0db8a7a3653f" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "http://www.haproxy.org/download/1.8/src/{{ name }}-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - "{{ compiler('c') }}"
+  host:
+    - openssl
+    - pcre-devel {{ pcre }}
+    - zlib
+  run:
+    - pcre
+
+build:
+  number: 0
+
+test:
+  commands:
+    - haproxy -vv
+
+about:
+  home: "https://www.haproxy.org/"
+  license: "GPL/LGPL (with OpenSSL exception)"
+  license_file: "LICENSE"
+  summary: "Reliable, high-performance TCP/HTTP load balancer"
