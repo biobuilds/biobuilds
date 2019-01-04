@@ -1,26 +1,35 @@
+{% set name = "samtools" %}
+{% set version = "0.1.19" %}
+{% set sha256 = "d080c9d356e5f0ad334007e4461cbcee3c4ca97b8a7a5a48c44883cf9dee63d4" %}
+
 package:
-  name: samtools
-  version: "0.1.19"
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
 
 requirements:
   build:
-    - zlib
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+  host:
+    - biobuilds-opt             # [toolchain != 'default']
+    - zlib {{ zlib }}           # [toolchain != 'ibm-at10.0']
   run:
-    - zlib
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+    - perl
 
 source:
-  fn: samtools-0.1.19.tar.bz2
-  url: http://download.lab7.io/sources/samtools-0.1.19.tar.bz2
-  md5: ff8b46e6096cfb452003b1ec5091d86a
+  fn: "{{ name|lower }}-{{ version }}.tar.bz2"
+  url:
+    - "https://downloads.sourceforge.net/project/samtools/samtools/{{ version }}/samtools-{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+  sha256: "{{ sha256 }}"
   patches:
     - samtools-makefiles.patch
     - samtools-sources.patch
 
 build:
-  number: 0
-  script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
+  number: 1
 
 test:
   files:

@@ -1,18 +1,28 @@
 #!/bin/bash
 
-command -v pkg-config >/dev/null || \
-    { echo "Could not find 'pkg-config' command" >&2; exit 1; }
+# Pull in the common BioBuilds build flags
+BUILD_ENV="${BUILD_PREFIX}/share/biobuilds-build/build.env"
+if [[ ! -f "${BUILD_ENV}" ]]; then
+    echo "FATAL: Could not find build environment  configuration script!" >&2
+    exit 1
+fi
+source "${BUILD_ENV}" -v
 
-# If available, pull in BioBuilds optimization flags
-[ "$BB_ARCH_FLAGS" == "<UNDEFINED>" ] && BB_ARCH_FLAGS=
-[ "$BB_OPT_FLAGS" == "<UNDEFINED>" ] && BB_OPT_FLAGS=
-CFLAGS="${CFLAGS} ${BB_ARCH_FLAGS} ${BB_OPT_FLAGS}"
-
-env CFLAGS="${CFLAGS} $(pkg-config --cflags zlib)" \
-    LDFLAGS="${LDFLAGS} $(pkg-config --libs zlib)" \
-    make
+make -j${MAKE_JOBS} \
+    CC="${CC}" \
+    CFLAGS="-Wall ${CFLAGS}" \
+    LD="${CC}" \
+    LDFLAGS="${LDFLAGS}" \
+    AR="${AR}" \
+    all-recur
 
 # "lib-recur" dummy dependency for "samtools" triggers re-linking, so we
 # need to make sure LDFLAGS are provided to "install" target.
-env LDFLAGS="${LDFLAGS} $(pkg-config --libs zlib)" \
-    make PREFIX="$PREFIX" install-recur
+make -j${MAKE_JOBS} \
+    PREFIX="${PREFIX}" \
+    CC="${CC}" \
+    CFLAGS="-Wall ${CFLAGS}" \
+    LD="${CC}" \
+    LDFLAGS="${LDFLAGS}" \
+    AR="${AR}" \
+    install-recur
