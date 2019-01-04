@@ -1,0 +1,56 @@
+{% set name = "xz" %}
+{% set version = "5.2.4" %}
+{% set sha256 = "3313fd2a95f43d88e44264e6b015e7d03053e681860b0d5d3f9baca79c57b7bf" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.bz2"
+  url:
+    - "http://downloads.sourceforge.net/project/lzmautils/xz-{{ version }}.tar.bz2"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+  run_exports:
+    # XZ's track record has a good record of backwards compatibility, so we'll
+    # keep pins to the next major version.
+    # Reference: https://abi-laboratory.pro/tracker/timeline/xz/
+    - {{ pin_subpackage('xz', max_pin='x') }}
+  features:
+    - opt                       # [toolchain != 'default']
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}       # [toolchain == 'default']
+    - {{ toolchain }}-build     # [toolchain != 'default']
+  run:
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
+
+test:
+  requires:
+    - biobuilds-opt             # [toolchain != 'default']
+  commands:
+    - xz --help
+    - unxz --help
+    - lzma --help
+    # Useful commands for verifying things linked correctly
+    - conda inspect linkages -p $PREFIX xz
+    - conda inspect objects  -p $PREFIX xz   # [osx]
+
+about:
+  home: http://tukaani.org/xz/
+  license: LGPL-2.1 and GPL-2.0
+  license_file: COPYING
+  summary: >
+    Free, general-purpose data compression software with a high compression ratio
+  doc_url: http://tukaani.org/xz/
+  dev_url: http://git.tukaani.org/
+
+extra:
+  recipe-maintainers:
+    - chenghlee
