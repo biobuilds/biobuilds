@@ -1,0 +1,75 @@
+{% set name = "icu" %}
+{% set version = "63.1" %}
+{% set sha256 = "05c490b69454fce5860b7e8e2821231674af0a11d7ef2febea9a32512998cb9d" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "icu4c-{{ version }}.tgz"
+  url:
+    - "http://download.icu-project.org/files/icu4c/{{ version }}/icu4c-{{ version|replace('.', '_') }}-src.tgz"
+    - "http://download.lab7.io/sources/icu4c-{{ version }}_{{ sha256[:10] }}.tgz"
+  sha256: "{{ sha256 }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - "{{ compiler('c') }}"       # [toolchain == 'default']
+    - "{{ compiler('cxx') }}"     # [toolchain == 'default']
+    - "{{ toolchain }}-build"     # [toolchain != 'default']
+    - pkg-config
+    - python 3.*
+  run:
+    - "{{ toolchain }}-runtime"   # [toolchain != 'default']
+
+outputs:
+  - name: "{{ name|lower }}"
+    files:
+      - lib/libicu*.so            # [linux]
+      - lib/libicu*.so.*          # [linux]
+      - lib/libicu*.dylib         # [osx]
+      - lib/libicu*.dylib.*       # [osx]
+    test:
+      commands:
+        - conda inspect linkages -p $PREFIX $PKG_NAME
+        - conda inspect objects  -p $PREFIX $PKG_NAME   # [osx]
+    about:
+      license: Unicode Consortium License
+      license_file: LICENSE
+      summary: "Libraries for Unicode support and internationalization"
+
+  - name: "{{ name|lower }}-devel"
+    requirements:
+      run:
+        - "{{ pin_subpackage(name|lower, exact=True) }}"
+    files:
+      - bin/icu-config
+      - include/unicode/*
+      - lib/icu/{{ version }}/*.inc
+      - lib/libicu*.a
+      - lib/pkgconfig/icu*
+      - share/icu/install-sh
+      - share/icu/mkinstalldirs
+      - share/icu/{{ version }}/config/*
+      - share/man/man1/icu-config.1
+    run_exports:
+      # See https://abi-laboratory.pro/tracker/timeline/icu4c/
+      - "{{ pin_subpackage('icu', max_pin='x.x') }}"
+    test:
+      commands:
+        - icu-config --cflags --ldflags
+    about:
+      license: Unicode Consortium License
+      license_file: LICENSE
+      summary: "Headers and static libraries for developing using ICU"
+
+build:
+  skip: True    # [not unix]
+  number: 0
+  features:
+    - opt       # [toolchain != 'default']
+
+about:
+  home: "http://site.icu-project.org/"
