@@ -1,0 +1,94 @@
+{% set name = "boost" %}
+{% set version = "1.69.0" %}
+{% set sha256 = "8f32d4617390d1c2d16f26a27ab60d97807b35440d45891fa340fc2648b04406" %}
+
+package:
+  name: "{{ name|lower }}-all"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.bz2"
+  url:
+    - "https://dl.bintray.com/boostorg/release/{{ version }}/source/boost_{{ version|replace('.', '_') }}.tar.bz2"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+  sha256: "{{ sha256 }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - "{{ compiler('cxx') }}"
+  host:
+    - icu-devel {{ icu }}
+    - bzip2 {{ bzip2 }}
+    - xz {{ xz }}
+    - zlib {{ zlib }}
+
+outputs:
+  - name: boost-libs
+    files:
+      - lib/libboost_*.so       # [linux]
+      - lib/libboost_*.so.*     # [linux]
+      - lib/libboost_*.dylib    # [osx]
+      - lib/libboost_*.dylib.*  # [osx]
+    requirements:
+      # These are here to largely to make ensure their run exports get properly
+      # added to the resulting sub-package.
+      build:
+        - "{{ compiler('cxx') }}"
+      host:
+        - icu-devel {{ icu }}
+        - bzip2 {{ bzip2 }}
+        - xz {{ xz }}
+        - zlib {{ zlib }}
+    test:
+      commands:
+        - conda inspect linkages -p $PREFIX $PKG_NAME
+        - conda inspect objects  -p $PREFIX $PKG_NAME   # [osx]
+    about:
+      home: "https://www.boost.org/"
+      summary: Boost C++ Libraries - shared libraries
+      description: >
+        Boost provides free peer-reviewed portable C++ source libraries. The
+        project emphasizes libraries that work well with the C++ Standard
+        Library and are intended to be widely useful, and usable across a broad
+        spectrum of applications.
+
+        This package contains the shared library (.so or .dylib) files needed
+        to run software built using certain Boost components.
+      license: Boost Software License
+      license_file: "LICENSE_1_0.txt"
+      doc_url: "https://www.boost.org/doc/libs/{{ version|replace('.', '_') }}/"
+      dev_url: "https://github.com/boostorg/boost"
+
+  - name: boost
+    files:
+      - include/boost
+      - lib/libboost_*.a
+    requirements:
+      run:
+        - "{{ pin_subpackage('boost-libs', exact=True) }}"
+    # **NOTE**: Not adding a `pin_subpackage('boost-libs', ...)` run export so
+    # headers-only use of this package does not automatically create a run-time
+    # dependency on the shared libraries package.
+    about:
+      home: "https://www.boost.org/"
+      summary: Boost C++ Libraries - headers and static libraries
+      description: >
+        Boost provides free peer-reviewed portable C++ source libraries. The
+        project emphasizes libraries that work well with the C++ Standard
+        Library and are intended to be widely useful, and usable across a broad
+        spectrum of applications.
+
+        This package contains the all the headers and static library (.a) files
+        needed to develop software using Boost.
+      license: Boost Software License
+      license_file: "LICENSE_1_0.txt"
+      doc_url: "https://www.boost.org/doc/libs/{{ version|replace('.', '_') }}/"
+      dev_url: "https://github.com/boostorg/boost"
+
+build:
+  number: 0
+
+extra:
+  recipe-maintainers:
+    - chenghlee
