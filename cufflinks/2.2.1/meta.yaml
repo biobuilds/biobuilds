@@ -1,44 +1,54 @@
+{% set name = "cufflinks" %}
+{% set version = "2.2.1" %}
+{% set sha256 = "e8316b66177914f14b3a0c317e436d386a46c4c212ca1b2326f89f8a2e08d5ae" %}
+
 package:
-  name: cufflinks
-  version: "2.2.1"
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
 
 requirements:
   # Limits on Boost version due to issues in serialization library; see
   # https://github.com/cole-trapnell-lab/cufflinks/issues/3 for details.
   build:
-    - zlib
-    - boost 1.62.0
+    - biobuilds-build
+    - {{ compiler('cxx') }}
+    - autoconf-update
+  host:
+    - zlib {{ zlib }}
+    - boost {{ boost }}
     # Require older version of samtools to _build_, due to incompatibilities
     # between the older samtools 0.1.x and newer htslib 1.x APIs and headers.
     - samtools 0.1.19
-    - python
     - eigen
   run:
-    - zlib
-    - boost 1.62.0
+    - {{ pin_compatible('boost-libs', max_pin='x.x') }}
     # Allow newer samtools versions at _runtime_, because nothing in the code
     # suggests we will have version-compatibility problems (i.e., cufflinks
     # doesn't write BCF files). Without this "hack", we wouldn't be able to
     # include cufflinks in a standard BioBuilds environment (since that
     # installs the htslib-1.x version of samtools).
     - samtools
-    - python
+    # `cuffmerge` needs some work to be Python 3 compatible.
+    - python 2.7.*
 
 source:
-  fn: cufflinks-2.2.1.tar.gz
-  url: http://download.lab7.io/sources/cufflinks-2.2.1.tar.gz
-  md5: 9a5ba7a7710cd864932cf205c17851f0
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "http://cole-trapnell-lab.github.io/cufflinks/assets/downloads/cufflinks-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
   patches:
     - samtools-includes.patch
     - configure-boost-dylibs.patch
-    - LocusCount-constructor.patch  # [osx]
+    - configure-python-check.patch
+    - LocusCount-constructor.patch
+    - unordered-map-include.patch
+    # Thanks to the Debian Med team for the following patches
+    - fix-ghash-type-value-mismatch.patch
+    - fix-lemon-no-return-value.patch
 
 build:
-  number: 4
-  script_env:
-    - BB_ARCH_FLAGS
-    - BB_OPT_FLAGS
-    - BB_MAKE_JOBS
+  number: 5
 
 test:
   files:
@@ -51,3 +61,5 @@ about:
   license: Boost
   license_file: LICENSE
   summary: "Transcriptome assembly and differential expression analysis for RNA-Seq"
+  dev_url: "https://github.com/cole-trapnell-lab/cufflinks"
+  doc_url: "http://cole-trapnell-lab.github.io/cufflinks/manual/"

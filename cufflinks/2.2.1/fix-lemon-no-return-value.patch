@@ -1,0 +1,19 @@
+Author: Graham Inggs <ginggs@debian.org>
+Last-Update: Mon, 15 Aug 2016 23:47:24 +0200
+Bug-Debian: https://bugs.debian.org/833493
+Description: Fix a build issue caused by an unmaintained code copy of liblemon.
+
+--- src/lemon/error.h
++++ src/lemon/error.h
+@@ -67,9 +67,9 @@ namespace lemon {
+     }
+ 
+     ExceptionMember& operator=(const ExceptionMember& copy) {
+-      if (ptr.get() == 0) return;
++      if (ptr.get() == 0) return NULL;
+       try {
+-	if (!copy.valid()) return;
++	if (!copy.valid()) return NULL;
+  	*ptr = copy.get();
+       } catch (...) {}
+     }

@@ -1,0 +1,25 @@
+commit 7aa2922ab1f4ff600bd6854cdebb4be6d3b06fa5
+Author: Cheng H. Lee <cheng.lee@l7informatics.com>
+Date:   Fri Jan 4 21:40:36 2019 -0600
+
+Tweak `unordered_map.hpp` include for newer Boost releases
+
+Add conditional to deal with the fact that the `tr1` subdirectory was
+deprecated and removed in Boost 1.65.0.
+
+Fixes cole-trapnell-lab/cufflinks#105.
+
+--- src/biascorrection.h
++++ src/biascorrection.h
+@@ -15,7 +15,11 @@
+ #include <vector>
+ #include <list>
+ #include <string>
++#if BOOST_VERSION >= 016500
++#include <boost/unordered_map.hpp>
++#else
+ #include <boost/tr1/unordered_map.hpp>
++#endif
+ #include <boost/thread.hpp>
+ #include "common.h"
+ 

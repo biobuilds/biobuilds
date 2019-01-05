@@ -1,0 +1,36 @@
+Prevent this check and thus `./configure` from failing if the only Python
+interpreter available via `$PATH` is Python 3. (Not that we intend of building
+this package with anything earlier than Python 2.7.)
+
+--- configure.orig	2019-01-04 23:50:09.000000000 -0600
++++ configure	2019-01-04 23:52:38.000000000 -0600
+@@ -4272,13 +4272,8 @@
+       # If the user set $PYTHON, use it and don't search something else.
+       { $as_echo "$as_me:$LINENO: checking whether $PYTHON version >= 2.4" >&5
+ $as_echo_n "checking whether $PYTHON version >= 2.4... " >&6; }
+-      prog="import sys, string
+-# split strings by '.' and convert to numeric.  Append some zeros
+-# because we need at least 4 digits for the hex conversion.
+-minver = map(int, string.split('2.4', '.')) + [0, 0, 0]
+-minverhex = 0
+-for i in xrange(0, 4): minverhex = (minverhex << 8) + minver[i]
+-sys.exit(sys.hexversion < minverhex)"
++      prog="import sys
++sys.exit(sys.version_info < (2, 4))"
+   if { echo "$as_me:$LINENO: $PYTHON -c "$prog"" >&5
+    ($PYTHON -c "$prog") >&5 2>&5
+    ac_status=$?
+@@ -4305,12 +4300,7 @@
+ 	for am_cv_pathless_PYTHON in python python2 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5 none; do
+ 	  test "$am_cv_pathless_PYTHON" = none && break
+ 	  prog="import sys, string
+-# split strings by '.' and convert to numeric.  Append some zeros
+-# because we need at least 4 digits for the hex conversion.
+-minver = map(int, string.split('2.4', '.')) + [0, 0, 0]
+-minverhex = 0
+-for i in xrange(0, 4): minverhex = (minverhex << 8) + minver[i]
+-sys.exit(sys.hexversion < minverhex)"
++sys.exit(sys.version_info < (2, 4))"
+   if { echo "$as_me:$LINENO: $am_cv_pathless_PYTHON -c "$prog"" >&5
+    ($am_cv_pathless_PYTHON -c "$prog") >&5 2>&5
+    ac_status=$?
