@@ -1,0 +1,24 @@
+{% set name = "eigen" %}
+{% set version = "3.3.7" %}
+{% set sha256 = "7e84ef87a07702b54ab3306e77cea474f56a40afa1c0ab245bb11725d006d0da" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://bitbucket.org/eigen/eigen/get/{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.gz"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+  noarch: generic
+
+about:
+  home: "http://eigen.tuxfamily.org/"
+  license: MPL2
+  license_file: COPYING.MPL2
+  summary: "C++ template library for linear algebra"
