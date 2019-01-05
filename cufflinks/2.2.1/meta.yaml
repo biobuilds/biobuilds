@@ -28,8 +28,7 @@ requirements:
     # include cufflinks in a standard BioBuilds environment (since that
     # installs the htslib-1.x version of samtools).
     - samtools
-    # `cuffmerge` needs some work to be Python 3 compatible.
-    - python 2.7.*
+    - python
 
 source:
   fn: "{{ name|lower }}-{{ version }}.tar.gz"
@@ -41,6 +40,8 @@ source:
     - samtools-includes.patch
     - configure-boost-dylibs.patch
     - configure-python-check.patch
+    - cuffmerge-py3-compat.patch
+    - remove-update-check.patch
     - LocusCount-constructor.patch
     - unordered-map-include.patch
     # Thanks to the Debian Med team for the following patches
@@ -48,7 +49,7 @@ source:
     - fix-lemon-no-return-value.patch
 
 build:
-  number: 5
+  number: 6
 
 test:
   files:
