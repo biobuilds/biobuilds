@@ -1,0 +1,63 @@
+{% set name = "ncclient" %}
+{% set version = "0.6.3" %}
+{% set sha256 = "3ab58ee0d71069cb5b0e2f29a4e605d1d8417bd10af45b73ee3e817fe389fadc" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vvv "
+  noarch: python
+
+requirements:
+  host:
+    - python
+    - pip
+    - setuptools >0.6
+    #- lxml >=3.3.0
+    #- paramiko >=1.15.0
+    #- selectors2 >=2.0.1
+    #- six
+  run:
+    - python
+    - lxml >=3.3.0
+    - paramiko >=1.15.0
+    - selectors2 >=2.0.1
+    - six
+
+test:
+  imports:
+    - ncclient
+    - ncclient.devices
+    - ncclient.operations
+    - ncclient.operations.third_party
+    - ncclient.operations.third_party.h3c
+    - ncclient.operations.third_party.hpcomware
+    - ncclient.operations.third_party.huawei
+    - ncclient.operations.third_party.iosxe
+    - ncclient.operations.third_party.juniper
+    - ncclient.operations.third_party.nexus
+    - ncclient.transport
+    - ncclient.transport.third_party
+    - ncclient.transport.third_party.junos
+
+about:
+  home: "https://github.com/ncclient/ncclient"
+  license: Apache 2.0
+  license_file: LICENSE
+  summary: Python library for NETCONF clients
+  doc_url: "https://github.com/ncclient/ncclient/blob/master/README.md"
+  dev_url: "https://github.com/ncclient/ncclient"
+
+extra:
+  recipe-maintainers:
+    - chenghlee

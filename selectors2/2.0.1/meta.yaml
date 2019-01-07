@@ -1,0 +1,42 @@
+{% set name = "selectors2" %}
+{% set version = "2.0.1" %}
+{% set sha256 = "81b77c4c6f607248b1d6bbdb5935403fef294b224b842a830bbfabb400c81884" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vvv "
+  noarch: python
+
+requirements:
+  host:
+    - python
+    - pip
+  run:
+    - python
+
+test:
+  imports:
+    - selectors2
+
+about:
+  home: "https://github.com/sethmlarson/selectors2"
+  license: MIT
+  license_file: LICENSE
+  summary: Back-ported, durable, and portable selectors
+  doc_url: "https://github.com/sethmlarson/selectors2/blob/master/README.rst"
+  dev_url: "https://github.com/sethmlarson/selectors2"
+
+extra:
+  recipe-maintainers:
+    - chenghlee

@@ -1,0 +1,312 @@
+{% set name = "ansible" %}
+{% set version = "2.7.5" %}
+{% set sha256 = "aaf9e1974bd12840ca055ac156f37601c08d73d726a3a6b98a2fe759a57051bb" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vvv"
+  noarch: python
+
+requirements:
+  host:
+    - python
+    - setuptools
+    - pip
+  run:
+    - python
+    - cryptography
+    - jinja2
+    - ncclient      # required by `ansible.plugins.netconf`
+    - paramiko
+    - pyyaml
+
+test:
+  commands:
+    - ansible --version
+    - ansible-config --version
+    #- ansible-connection --version   # hangs waiting for input
+    - ansible-console --version
+    - ansible-doc --version
+    - ansible-galaxy --version
+    - ansible-inventory --version
+    - ansible-playbook --version
+    - ansible-pull --version
+    - ansible-vault --version
+  imports:
+    - ansible
+    - ansible.cli
+    - ansible.compat
+    - ansible.compat.selectors
+    - ansible.compat.tests
+    - ansible.config
+    - ansible.errors
+    - ansible.executor
+    - ansible.executor.powershell
+    - ansible.executor.process
+    - ansible.galaxy
+    - ansible.inventory
+    - ansible.module_utils
+    - ansible.module_utils.aws
+    - ansible.module_utils.common
+    - ansible.module_utils.compat
+    - ansible.module_utils.facts
+    - ansible.module_utils.facts.hardware
+    - ansible.module_utils.facts.network
+    - ansible.module_utils.facts.other
+    - ansible.module_utils.facts.system
+    - ansible.module_utils.facts.virtual
+    - ansible.module_utils.k8s
+    - ansible.module_utils.net_tools
+    - ansible.module_utils.net_tools.nios
+    - ansible.module_utils.network
+    - ansible.module_utils.network.a10
+    - ansible.module_utils.network.aci
+    - ansible.module_utils.network.aireos
+    - ansible.module_utils.network.aos
+    - ansible.module_utils.network.aruba
+    - ansible.module_utils.network.asa
+    - ansible.module_utils.network.avi
+    - ansible.module_utils.network.bigswitch
+    - ansible.module_utils.network.cloudengine
+    - ansible.module_utils.network.cnos
+    - ansible.module_utils.network.common
+    - ansible.module_utils.network.dellos10
+    - ansible.module_utils.network.dellos6
+    - ansible.module_utils.network.dellos9
+    - ansible.module_utils.network.edgeos
+    - ansible.module_utils.network.enos
+    - ansible.module_utils.network.eos
+    - ansible.module_utils.network.exos
+    - ansible.module_utils.network.f5
+    - ansible.module_utils.network.fortimanager
+    - ansible.module_utils.network.fortios
+    - ansible.module_utils.network.ftd
+    - ansible.module_utils.network.ios
+    - ansible.module_utils.network.iosxr
+    - ansible.module_utils.network.ironware
+    - ansible.module_utils.network.junos
+    - ansible.module_utils.network.meraki
+    - ansible.module_utils.network.netconf
+    - ansible.module_utils.network.netscaler
+    - ansible.module_utils.network.nos
+    - ansible.module_utils.network.nso
+    - ansible.module_utils.network.nxos
+    - ansible.module_utils.network.onyx
+    - ansible.module_utils.network.ordnance
+    - ansible.module_utils.network.routeros
+    - ansible.module_utils.network.slxos
+    - ansible.module_utils.network.sros
+    - ansible.module_utils.network.voss
+    - ansible.module_utils.network.vyos
+    - ansible.module_utils.parsing
+    - ansible.module_utils.powershell
+    - ansible.module_utils.remote_management
+    - ansible.module_utils.six
+    - ansible.module_utils.storage
+    - ansible.module_utils.storage.emc
+    - ansible.modules
+    - ansible.modules.cloud
+    - ansible.modules.cloud.amazon
+    - ansible.modules.cloud.atomic
+    - ansible.modules.cloud.azure
+    - ansible.modules.cloud.centurylink
+    - ansible.modules.cloud.cloudscale
+    - ansible.modules.cloud.cloudstack
+    - ansible.modules.cloud.digital_ocean
+    - ansible.modules.cloud.dimensiondata
+    - ansible.modules.cloud.docker
+    - ansible.modules.cloud.google
+    - ansible.modules.cloud.heroku
+    - ansible.modules.cloud.linode
+    - ansible.modules.cloud.lxc
+    - ansible.modules.cloud.lxd
+    - ansible.modules.cloud.memset
+    - ansible.modules.cloud.misc
+    - ansible.modules.cloud.oneandone
+    - ansible.modules.cloud.online
+    - ansible.modules.cloud.opennebula
+    - ansible.modules.cloud.openstack
+    - ansible.modules.cloud.ovh
+    - ansible.modules.cloud.ovirt
+    - ansible.modules.cloud.packet
+    - ansible.modules.cloud.profitbricks
+    - ansible.modules.cloud.pubnub
+    - ansible.modules.cloud.rackspace
+    - ansible.modules.cloud.scaleway
+    - ansible.modules.cloud.smartos
+    - ansible.modules.cloud.softlayer
+    - ansible.modules.cloud.spotinst
+    - ansible.modules.cloud.univention
+    - ansible.modules.cloud.vmware
+    - ansible.modules.cloud.vultr
+    - ansible.modules.cloud.webfaction
+    - ansible.modules.clustering
+    - ansible.modules.clustering.k8s
+    - ansible.modules.clustering.openshift
+    - ansible.modules.commands
+    - ansible.modules.crypto
+    - ansible.modules.crypto.acme
+    - ansible.modules.database
+    - ansible.modules.database.influxdb
+    - ansible.modules.database.misc
+    - ansible.modules.database.mongodb
+    - ansible.modules.database.mssql
+    - ansible.modules.database.mysql
+    - ansible.modules.database.postgresql
+    - ansible.modules.database.proxysql
+    - ansible.modules.database.vertica
+    - ansible.modules.files
+    - ansible.modules.identity
+    - ansible.modules.identity.cyberark
+    - ansible.modules.identity.ipa
+    - ansible.modules.identity.keycloak
+    - ansible.modules.identity.opendj
+    - ansible.modules.inventory
+    - ansible.modules.messaging
+    - ansible.modules.monitoring
+    - ansible.modules.monitoring.zabbix
+    - ansible.modules.net_tools
+    - ansible.modules.net_tools.basics
+    - ansible.modules.net_tools.exoscale
+    - ansible.modules.net_tools.infinity
+    - ansible.modules.net_tools.ldap
+    - ansible.modules.net_tools.nios
+    - ansible.modules.network
+    - ansible.modules.network.a10
+    - ansible.modules.network.aci
+    - ansible.modules.network.aireos
+    - ansible.modules.network.aos
+    - ansible.modules.network.aruba
+    - ansible.modules.network.asa
+    - ansible.modules.network.avi
+    - ansible.modules.network.bigswitch
+    - ansible.modules.network.citrix
+    - ansible.modules.network.cli
+    - ansible.modules.network.cloudengine
+    - ansible.modules.network.cloudvision
+    - ansible.modules.network.cnos
+    - ansible.modules.network.cumulus
+    - ansible.modules.network.dellos10
+    - ansible.modules.network.dellos6
+    - ansible.modules.network.dellos9
+    - ansible.modules.network.edgeos
+    - ansible.modules.network.enos
+    - ansible.modules.network.eos
+    - ansible.modules.network.exos
+    - ansible.modules.network.f5
+    - ansible.modules.network.files
+    - ansible.modules.network.fortimanager
+    - ansible.modules.network.fortios
+    - ansible.modules.network.ftd
+    - ansible.modules.network.illumos
+    - ansible.modules.network.interface
+    - ansible.modules.network.ios
+    - ansible.modules.network.iosxr
+    - ansible.modules.network.ironware
+    - ansible.modules.network.junos
+    - ansible.modules.network.layer2
+    - ansible.modules.network.layer3
+    - ansible.modules.network.meraki
+    - ansible.modules.network.netact
+    - ansible.modules.network.netconf
+    - ansible.modules.network.netscaler
+    - ansible.modules.network.netvisor
+    - ansible.modules.network.nos
+    - ansible.modules.network.nso
+    - ansible.modules.network.nuage
+    - ansible.modules.network.nxos
+    - ansible.modules.network.onyx
+    - ansible.modules.network.opx
+    - ansible.modules.network.ordnance
+    - ansible.modules.network.ovs
+    - ansible.modules.network.panos
+    - ansible.modules.network.protocol
+    - ansible.modules.network.radware
+    - ansible.modules.network.routeros
+    - ansible.modules.network.routing
+    - ansible.modules.network.slxos
+    - ansible.modules.network.sros
+    - ansible.modules.network.system
+    - ansible.modules.network.voss
+    - ansible.modules.network.vyos
+    - ansible.modules.notification
+    - ansible.modules.packaging
+    - ansible.modules.packaging.language
+    - ansible.modules.packaging.os
+    - ansible.modules.remote_management
+    - ansible.modules.remote_management.cobbler
+    - ansible.modules.remote_management.cpm
+    - ansible.modules.remote_management.foreman
+    - ansible.modules.remote_management.hpilo
+    - ansible.modules.remote_management.imc
+    - ansible.modules.remote_management.ipmi
+    - ansible.modules.remote_management.manageiq
+    - ansible.modules.remote_management.oneview
+    - ansible.modules.remote_management.redfish
+    - ansible.modules.remote_management.stacki
+    - ansible.modules.remote_management.ucs
+    - ansible.modules.source_control
+    - ansible.modules.storage
+    - ansible.modules.storage.emc
+    - ansible.modules.storage.glusterfs
+    - ansible.modules.storage.ibm
+    - ansible.modules.storage.infinidat
+    - ansible.modules.storage.netapp
+    - ansible.modules.storage.purestorage
+    - ansible.modules.storage.zfs
+    - ansible.modules.system
+    - ansible.modules.utilities
+    - ansible.modules.utilities.helper
+    - ansible.modules.utilities.logic
+    - ansible.modules.web_infrastructure
+    - ansible.modules.web_infrastructure.ansible_tower
+    - ansible.modules.windows
+    - ansible.parsing
+    - ansible.parsing.utils
+    - ansible.parsing.vault
+    - ansible.parsing.yaml
+    - ansible.playbook
+    - ansible.playbook.role
+    - ansible.plugins
+    - ansible.plugins.action
+    - ansible.plugins.cache
+    - ansible.plugins.callback
+    - ansible.plugins.cliconf
+    - ansible.plugins.connection
+    - ansible.plugins.filter
+    - ansible.plugins.httpapi
+    - ansible.plugins.inventory
+    - ansible.plugins.lookup
+    - ansible.plugins.netconf
+    - ansible.plugins.shell
+    - ansible.plugins.strategy
+    - ansible.plugins.terminal
+    - ansible.plugins.test
+    - ansible.plugins.vars
+    - ansible.template
+    - ansible.utils
+    - ansible.utils.module_docs_fragments
+    - ansible.vars
+
+about:
+  home: "https://ansible.com/"
+  license: GPL-3
+  license_file: COPYING
+  summary: Radically simple IT automation
+  doc_url: "https://docs.ansible.com/ansible/2.7/index.html"
+  dev_url: "https://github.com/ansible/ansible"
+
+extra:
+  recipe-maintainers:
+    - chenghlee
