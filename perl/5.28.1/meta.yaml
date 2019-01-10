@@ -1,0 +1,48 @@
+{% set name = "perl" %}
+{% set version = "5.28.1" %}
+{% set sha256 = "3ebf85fe65df2ee165b22596540b7d5d42f84d4b72d84834f74e2e0b8956c347" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://www.cpan.org/src/5.0/perl-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+  sha256: "{{ sha256 }}"
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+  host:
+    - bzip2
+    - gdbm
+    - libdb
+    - zlib
+
+build:
+  number: 0
+
+test:
+  commands:
+    - perl --help
+    # Make sure modules linked to external libraries load properly
+    {% for module in [
+        "AnyDBM_File",
+        "Compress::Raw::Bzip2",
+        "Compress::Raw::Zlib",
+        "DB_File",
+        "GDBM_File",
+        ]
+    %}
+    - perl -e 'use {{ module }};'
+    {% endfor %}
+
+about:
+  home: http://www.perl.org/
+  license: Artistic
+  license_file: Artistic
+  summary: "Highly-capable, feature-rich programming language"
