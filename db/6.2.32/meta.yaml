@@ -1,0 +1,74 @@
+{% set name = "db" %}
+{% set version = "6.2.32" %}
+{% set sha256 = "a9c5e2b004a5777aa03510cfe5cd766a4a3b777713406b02809c17c8e0e7a8fb" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "https://download.oracle.com/berkeley-db/db-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+
+outputs:
+  - name: db
+    requirements:
+      run:
+        - {{ pin_subpackage('libdb', exact=True) }}
+        - {{ pin_subpackage('db-utils', exact=True) }}
+    about:
+      home: http://www.oracle.com/us/products/database/berkeley-db/index.html
+      license: AGPL-3
+      license_file: LICENSE
+      summary: The Berkeley Database (BDB) embedded, key-value database
+
+  - name: db-utils
+    files:
+      - bin/db_*
+    requirements:
+      run:
+        - {{ pin_subpackage('libdb', exact=True) }}
+    test:
+      commands:
+        - conda inspect linkages -p $PREFIX $PKG_NAME
+        - conda inspect objects  -p $PREFIX $PKG_NAME   # [osx]
+    about:
+      home: http://www.oracle.com/us/products/database/berkeley-db/index.html
+      license: AGPL-3
+      license_file: LICENSE
+      summary: Berkeley Database command line utilities
+
+  - name: libdb
+    files:
+      - include/db*.h
+      - lib/libdb*.so     # [linux]
+      - lib/libdb*.dylib  # [osx]
+    build:
+      run_exports:
+        # Generally okay pinning to minor version; for reference, see:
+        # https://abi-laboratory.pro/?view=timeline&l=libdb
+        - {{ pin_subpackage('libdb', max_pin='x.x') }}
+    test:
+      commands:
+        - test -f $PREFIX/include/db.h
+        - test -f $PREFIX/lib/libdb.so      # [linux]
+        - test -f $PREFIX/lib/libdb.dylib   # [osx]
+        - conda inspect linkages -p $PREFIX $PKG_NAME
+        - conda inspect objects  -p $PREFIX $PKG_NAME   # [osx]
+    about:
+      home: http://www.oracle.com/us/products/database/berkeley-db/index.html
+      license: AGPL-3
+      license_file: LICENSE
+      summary: Berkeley Database shared libraries and headers

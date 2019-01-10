@@ -1,0 +1,48 @@
+{% set name = "gdbm" %}
+{% set version = "1.18.1" %}
+{% set sha256 = "86e613527e5dba544e73208f42b78b7c022d4fa5a6d5498bf18c8d6f745b91dc" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  url:
+    - "ftp://ftp.gnu.org/gnu/gdbm/gdbm-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+  run_exports:
+    # We would probably be ok pinning to major releases, but minor releases
+    # seem to occasionally break something, so let's pin to those instead.
+    # See: https://abi-laboratory.pro/?view=timeline&l=gdbm
+    - {{ pin_subpackage('gdbm', max_pin='x.x') }}
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+
+test:
+  commands:
+    - gdbmtool --version
+    - test -f $PREFIX/include/gdbm.h
+    - test -f $PREFIX/lib/libgdbm.so      # [linux]
+    - test -f $PREFIX/lib/libgdbm.dylib   # [osx]
+    - conda inspect linkages -p $PREFIX $PKG_NAME
+    - conda inspect objects  -p $PREFIX $PKG_NAME   # [osx]
+
+about:
+  home: "https://www.gnu.org.ua/software/gdbm/"
+  license: GPL-3
+  license_file: COPYING
+  summary: GNU dbm library of database functions
+  dev_url: "https://puszcza.gnu.org.ua/projects/gdbm"
+  doc_url: "https://www.gnu.org.ua/software/gdbm/manual/gdbm.html"
+
+extra:
+  recipe-maintainers:
+    - chenghlee
