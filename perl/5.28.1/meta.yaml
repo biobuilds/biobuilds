@@ -1,5 +1,7 @@
 {% set name = "perl" %}
 {% set version = "5.28.1" %}
+{% set build_number = 1 %}
+{% set src_ext = "tar.gz" %}
 {% set sha256 = "3ebf85fe65df2ee165b22596540b7d5d42f84d4b72d84834f74e2e0b8956c347" %}
 
 package:
@@ -7,10 +9,10 @@ package:
   version: "{{ version }}"
 
 source:
-  fn: "{{ name|lower }}-{{ version }}.tar.gz"
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
   url:
-    - "https://www.cpan.org/src/5.0/perl-{{ version }}.tar.gz"
-    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.tar.bz2"
+    - "https://www.cpan.org/src/5.0/perl-{{ version }}.{{ src_ext }}"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
   sha256: "{{ sha256 }}"
 
 requirements:
@@ -24,25 +26,53 @@ requirements:
     - zlib
 
 build:
-  number: 0
+  number: {{ build_number }}
 
-test:
-  commands:
-    - perl --help
-    # Make sure modules linked to external libraries load properly
-    {% for module in [
-        "AnyDBM_File",
-        "Compress::Raw::Bzip2",
-        "Compress::Raw::Zlib",
-        "DB_File",
-        "GDBM_File",
-        ]
-    %}
-    - perl -e 'use {{ module }};'
-    {% endfor %}
+outputs:
+  - name: "perl"
+    script: install_perl.sh
+    test:
+      commands:
+        - perl --help
+        # Make sure modules linked to external libraries load properly
+        {% for module in [
+            "AnyDBM_File",
+            "Compress::Raw::Bzip2",
+            "Compress::Raw::Zlib",
+            "DB_File",
+            "GDBM_File",
+            ]
+        %}
+        - perl -e 'use {{ module }};'
+        {% endfor %}
+
+  # `bioconda` compatibility package
+  - name: "perl-threaded"
+    requirements:
+      - {{ pin_subpackage('perl', exact=True) }}
+    build:
+      # Prevent inclusion of "plx.yy" in this package's build string, since it
+      # will always require a specific build of the 'perl' package.
+      string: "{{ build_number }}"
+    test:
+      commands:
+        - perl --help
+    about:
+      home: "https://www.perl.org"
+      license: Artistic
+      license_file: Artistic
+      summary: Perl interpreter with thread support enabled
+      description: >
+        Dummy package that installs the corresponding BioBuilds "perl" package.
+        Its primary use is to support installation of `bioconda` packages into
+        BioBuilds environments, as some packages from that channel list
+        "perl-threaded" rather than "perl" as a run-time dependency.
 
 about:
-  home: http://www.perl.org/
+  home: "https://www.perl.org/"
   license: Artistic
   license_file: Artistic
-  summary: "Highly-capable, feature-rich programming language"
+  summary: The Practical Extraction and Report Language
+  description: >
+    A highly capable, feature-rich programming language that is suitable for
+    both rapid prototyping and large scale development projects.

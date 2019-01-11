@@ -240,5 +240,3 @@ make -j${MAKE_JOBS} \
 # permissions not available to processes running in containers. So for now,
 # skip the `make test` step.
 #make -j${MAKE_JOBS} test 2>&1
-
-make install
