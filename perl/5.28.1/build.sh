@@ -70,17 +70,25 @@ config_opts+=(
     -Dvendorprefix="${PREFIX}"
     )
 
-# This version of `./Configure` seems insistent on dropping "perl5" from the
-# libraries paths (e.g., `lib/$version` instead of `lib/perl5/$version`), so we
-# need to take "corrective action".
-perl_arch="${HOST_ARCH}-${HOST_OS}-thread"
+# This version's `./Configure` seems insistent on dropping "perl5" from the
+# library paths and putting things directly in `lib` (e.g., `lib/$version`
+# instead of `lib/perl5/$version` and `lib/site_perl/$version` instead of
+# `lib/perl5/site_perl/$version`), so we need to take "corrective action".
+#
+# NOTE: Because we are building a relocatable Perl tree (see below), we MUST
+# use ".../../" to specify the locations of these directories _relative_ to the
+# `perl` binary. Specifying absolute paths (i.e., `${PREFIX}/lib/something`)
+# WILL cause the resulting `perl` binary to fail in strange ways; e.g., not
+# being able to find modules like `CPAN` or `strict` in `@INC`, even though
+# their `.pm` files exist in the correct place on the filesystem.
+perl_arch="${HOST_ARCH}-${HOST_OS}-threaded"
 config_opts+=(
-    -Dprivlib="${PREFIX}/lib/perl5/${PKG_VERSION}"
-    -Darchlib="${PREFIX}/lib/perl5/${PKG_VERSION}/${perl_arch}"
-    -Dsitelib="${PREFIX}/lib/perl5/site_perl/${PKG_VERSION}"
-    -Dsitearch="${PREFIX}/lib/perl5/site_perl/${PKG_VERSION}/${perl_arch}"
-    -Dvendorlib="${PREFIX}/lib/perl5/vendor_perl/${PKG_VERSION}"
-    -Dvendorarch="${PREFIX}/lib/perl5/vendor_perl/${PKG_VERSION}/${perl_arch}"
+    -Dprivlib=".../../lib/perl5/${PKG_VERSION}"
+    -Darchlib=".../../lib/perl5/${PKG_VERSION}/${perl_arch}"
+    -Dsitelib=".../../lib/perl5/site_perl/${PKG_VERSION}"
+    -Dsitearch=".../../lib/perl5/site_perl/${PKG_VERSION}/${perl_arch}"
+    -Dvendorlib=".../../lib/perl5/vendor_perl/${PKG_VERSION}"
+    -Dvendorarch=".../../lib/perl5/vendor_perl/${PKG_VERSION}/${perl_arch}"
     )
 
 # To better match the Filesystem Hierarchy Standard, move manpages out of

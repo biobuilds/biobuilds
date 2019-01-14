@@ -1,6 +1,6 @@
 {% set name = "perl" %}
 {% set version = "5.28.1" %}
-{% set build_number = 1 %}
+{% set build_number = 2 %}
 {% set src_ext = "tar.gz" %}
 {% set sha256 = "3ebf85fe65df2ee165b22596540b7d5d42f84d4b72d84834f74e2e0b8956c347" %}
 
