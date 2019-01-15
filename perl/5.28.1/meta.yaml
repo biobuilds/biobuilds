@@ -1,6 +1,6 @@
 {% set name = "perl" %}
 {% set version = "5.28.1" %}
-{% set build_number = 2 %}
+{% set build_number = 3 %}
 {% set src_ext = "tar.gz" %}
 {% set sha256 = "3ebf85fe65df2ee165b22596540b7d5d42f84d4b72d84834f74e2e0b8956c347" %}
 
@@ -45,6 +45,34 @@ outputs:
         %}
         - perl -e 'use {{ module }};'
         {% endfor %}
+    about:
+      home: "https://www.perl.org/"
+      license: Artistic
+      license_file: Artistic
+      summary: The Practical Extraction and Report Language
+      description: >
+        A highly capable, feature-rich programming language that is suitable for
+        both rapid prototyping and large scale development projects.
+
+  # Compiler package used for building extensible subrountines (XS) modules
+  - name: "perl_c_compiler"
+    requirements:
+      host:
+        # Needed so `pin_compatible` works. Ideally, we'd pin using the
+        # compiler and version version from the "build" section, but that does
+        # not seem to be an option at the moment.
+        - {{ compiler('c') }}
+      run:
+        - {{ pin_subpackage('perl', exact=True) }}
+        # Both GCC and LLVM (clang) should be compatible within major versions
+        - {{ pin_compatible(compiler('c'), max_pin='x') }}
+    test:
+      files:
+        # Source: https://www.perl.com/article/getting-started-with-xs/
+        - XS-Tutorial
+      script: test_perl_c_compiler.sh
+    about:
+      summary: C compiler used for building Perl XS modules
 
   # `bioconda` compatibility package
   - name: "perl-threaded"
@@ -68,11 +96,3 @@ outputs:
         BioBuilds environments, as some packages from that channel list
         "perl-threaded" rather than "perl" as a run-time dependency.
 
-about:
-  home: "https://www.perl.org/"
-  license: Artistic
-  license_file: Artistic
-  summary: The Practical Extraction and Report Language
-  description: >
-    A highly capable, feature-rich programming language that is suitable for
-    both rapid prototyping and large scale development projects.
