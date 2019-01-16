@@ -1,0 +1,94 @@
+{% set name = "libxml2" %}
+{% set version = "2.9.9" %}
+{% set src_ext = "tar.gz" %}
+{% set sha256 = "94fb70890143e3c6549f265cee93ec064c80a84c42ad0f23e85ee1fd6540a871" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
+  url:
+    - "ftp://xmlsoft.org/libxml2/libxml2-{{ version }}.{{ src_ext }}"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+  run_exports:
+    # Symbols occasionally removed between minor versions; see:
+    # https://abi-laboratory.pro/index.php?view=timeline&l=libxml2
+    - {{ pin_subpackage(name|lower, max_pin='x.x') }}
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+    - pkg-config
+
+    # Used in previous versions to reconfigure for ppc64le support
+    #- autoconf
+    #- automake
+    #- libtool
+
+  host:
+    - icu-devel {{ icu }}
+    - ncurses {{ ncurses }}     # needed for `xmllint` history support
+    - readline {{ readline }}   # needed for `xmllint` history support
+    - xz {{ xz }}
+    - zlib {{ zlib }}
+
+outputs:
+  - name: "{{ name }}"
+    files:
+      - bin/xmlcatalog
+      - bin/xmllint
+      - lib/libxml2.dylib     # [osx]
+      - lib/libxml2.*.dylib   # [osx]
+      - lib/libxml2.so        # [linux]
+      - lib/libxml2.so.*      # [linux]
+      - share/man/man1/xmlcatalog.1
+      - share/man/man1/xmllint.1
+    test:
+      files:
+        - test.xml
+      commands:
+        - xmllint test.xml
+        - conda inspect linkages -p $PREFIX libxml2
+        - conda inspect objects  -p $PREFIX libxml2   # [osx]
+    about:
+      license: MIT
+      license_file: Copyright
+      summary: GNOME XML parser and toolkit
+
+  - name: "{{ name }}-devel"
+    files:
+      - bin/xml2-config
+      - include/libxml2
+      - lib/cmake/libxml2
+      - lib/libxml2*.a
+      - lib/libxml2*.la
+      - lib/pkgconfig/libxml*
+      - share/aclocal/libxml*
+      - share/man/man1/xml2-config.1
+      - share/man/man3/libxml.3
+    build:
+      run_exports:
+        - {{ pin_subpackage(name, exact=True) }}
+    requirements:
+      run:
+        - {{ pin_subpackage(name, exact=True) }}
+    about:
+      license: MIT
+      license_file: Copyright
+      summary: GNOME XML parser and toolkit - headers and static libraries
+
+about:
+  home: http://xmlsoft.org/
+  doc_url: http://xmlsoft.org/html/index.html
+  dev_url: https://git.gnome.org/browse/libxml2/
+
+extra:
+  recipe-maintainers:
+    - chenghlee
