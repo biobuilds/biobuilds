@@ -1,0 +1,84 @@
+{% set name = "libxslt" %}
+{% set version = "1.1.33" %}
+{% set src_ext = "tar.gz" %}
+{% set sha256 = "8e36605144409df979cab43d835002f63988f3dc94d5d3537c12796db90e38c8" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
+  url:
+    - "ftp://xmlsoft.org/libxml2/libxslt-{{ version }}.{{ src_ext }}"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
+  patches:
+    - 0001-libxml2-via-pkg-config-first.patch
+
+build:
+  number: 0
+  run_exports:
+    # forward compatible: https://abi-laboratory.pro/?view=timeline&l=libxslt
+    - {{ pin_subpackage('libxslt', max_pin='x.x') }}
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+    - autoconf
+    - automake 1.15.*
+    - libtool
+    - pkg-config
+  host:
+    - icu-devel {{ icu }}
+    - libxml2-devel >=2.6.27
+
+outputs:
+  - name: "{{ name }}"
+    files:
+      - bin/xsltproc
+      - lib/lib*xslt.dylib    # [osx]
+      - lib/lib*xslt.*.dylib  # [osx]
+      - lib/lib*xslt.so       # [linux]
+      - lib/lib*xslt.so.*     # [linux]
+      - share/man/man1/xsltproc.1
+    test:
+      commands:
+        - xsltproc --version
+        - conda inspect linkages -p $PREFIX libxslt
+        - conda inspect objects  -p $PREFIX libxslt  # [osx]
+    about:
+      license: MIT
+      license_file: COPYING
+      summary: GNOME XSLT 1.0 processing library
+
+  - name: "{{ name }}-devel"
+    files:
+      - bin/xslt-config
+      - include/libexslt
+      - include/libxslt
+      - lib/lib*xslt.a
+      - lib/pkgconfig/*xslt.pc
+      - lib/xslt*.sh
+      - share/aclocal/*xslt.m4
+      - share/man/man3/*xslt.3
+    build:
+      run_exports:
+        - {{ pin_subpackage(name, exact=True) }}
+    requirements:
+      run:
+        - {{ pin_subpackage(name, exact=True) }}
+    about:
+      license: MIT
+      license_file: COPYING
+      summary: GNOME XSLT 1.0 processing library - headers and static libraries
+
+about:
+  home: http://xmlsoft.org/XSLT/
+  doc_url: http://xmlsoft.org/XSLT/
+  dev_url: https://gitlab.gnome.org/GNOME/libxslt/
+
+extra:
+  recipe-maintainers:
+    - chenghlee
