@@ -18,14 +18,14 @@ requirements:
     - biobuilds-build
     - "{{ compiler('c') }}"
   host:
-    - openssl
+    - openssl {{ openssl }}
     - pcre-devel {{ pcre }}
-    - zlib
+    - zlib {{ zlib }}
   run:
     - pcre
 
 build:
-  number: 0
+  number: 1
 
 test:
   commands:

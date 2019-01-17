@@ -1,4 +1,10 @@
+openssl:
+  - 1.0.2
+  - 1.1.1
+
 pcre: 8.42
+
+zlib: 1.2.8
 
 pin_run_as_build:
   pcre:
