@@ -17,10 +17,7 @@ source:
     - 0001-libxml2-via-pkg-config-first.patch
 
 build:
-  number: 0
-  run_exports:
-    # forward compatible: https://abi-laboratory.pro/?view=timeline&l=libxslt
-    - {{ pin_subpackage('libxslt', max_pin='x.x') }}
+  number: 1
 
 requirements:
   build:
@@ -65,7 +62,10 @@ outputs:
       - share/man/man3/*xslt.3
     build:
       run_exports:
-        - {{ pin_subpackage(name, exact=True) }}
+        # Hasn't been a major or minor version step in a _long_ time, but
+        # compataibility between patch levels has been really good. See:
+        # https://abi-laboratory.pro/?view=timeline&l=libxslt
+        - {{ pin_subpackage(name, max_pin='x.x') }}
     requirements:
       run:
         - {{ pin_subpackage(name, exact=True) }}
