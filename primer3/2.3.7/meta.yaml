@@ -1,29 +1,38 @@
+{% set name = "primer3" %}
+{% set version = "2.3.7" %}
+{% set src_ext = "tar.gz" %}
+{% set sha256 = "9e37a301d2ca9e5034c9a9d4afcb3e90041f6cc44c658b63598d0ccfcb176e5e" %}
+
 package:
-  name: primer3
-  version: "2.3.7"
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
 
 requirements:
   build:
     - biobuilds-build
-    - perl    # needed for tests
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ toolchain }}-build     # [toolchain != 'default']
+  host:
+    - biobuilds-opt             # [toolchain != 'default']
+    - perl                      # needed for tests
   run:
-    - biobuilds-opt     # [opt]
+    - {{ toolchain }}-runtime   # [toolchain != 'default']
 
 source:
-  fn: primer3-2.3.7.tar.gz
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
   url:
-    - http://downloads.sourceforge.net/project/primer3/primer3/2.3.7/primer3-2.3.7.tar.gz
-    - http://download.lab7.io/sources/primer3-2.3.7.tar.gz
-  md5: c6b89067bf465e62b6b1fd830b5b4418
+    - "https://downloads.sourceforge.net/project/primer3/primer3/{{ version }}/primer3-{{ version }}.{{ src_ext }}"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
   patches:
     - make-install.patch
+    - makefile-compiler-vars.patch
 
 build:
-  number: 1
+  number: 2
   features:
-    - opt     # [opt]
-  script_env:
-    - MAKE_JOBS
+    - opt                       # [toolchain != 'default']
 
 # No tests needed as those are done in the build script.
 
@@ -31,4 +40,4 @@ about:
   home: "http://primer3.sourceforge.net/"
   license: GPLv2
   license_file: COPYING.txt
-  summary: "Widely used program for designing PCR primers"
+  summary: "Tool for designing PCR primers from DNA sequences"
