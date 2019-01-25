@@ -1,0 +1,201 @@
+{% set name = "ncurses" %}
+{% set version = "6.1" %}
+{% set src_ext = "tar.gz" %}
+{% set sha256 = "aa057eeeb4a14d470101eff4597d5833dcef5965331be3528c08d99cebaa0d17" %}
+
+{% set ncurses_headers = [
+    "curses.h",
+    "cursesapp.h",
+    "cursesf.h",
+    "cursesm.h",
+    "cursesp.h",
+    "cursesw.h",
+    "cursslk.h",
+    "eti.h",
+    "etip.h",
+    "form.h",
+    "menu.h",
+    "ncurses.h",
+    "ncurses_dll.h",
+    "nc_tparm.h",
+    "panel.h",
+    "term.h",
+    "termcap.h",
+    "term_entry.h",
+    "tic.h",
+    "unctrl.h",
+] %}
+
+{% set ncurses_libraries = [
+    "form",
+    "menu",
+    "ncurses",
+    "ncurses++",
+    "panel",
+    "tic",
+    "tinfo",
+] %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
+  url:
+    - "http://ftp.gnu.org/pub/gnu/ncurses/ncurses-{{ version }}.{{ src_ext }}"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
+  patches:
+    - cve-2018-10754.patch
+
+build:
+  skip: true  # [win]
+  number: 0
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - pkg-config
+
+outputs:
+  - name: {{ name }}
+    files:
+      {% for libname in ncurses_libraries %}
+      - lib/lib{{ libname }}.so         # [linux]
+      - lib/lib{{ libname }}.so.*       # [linux]
+      - lib/lib{{ libname }}w.so        # [linux]
+      - lib/lib{{ libname }}w.so.*      # [linux]
+      - lib/lib{{ libname }}.dylib      # [osx]
+      - lib/lib{{ libname }}.*.dylib    # [osx]
+      - lib/lib{{ libname }}w.dylib     # [osx]
+      - lib/lib{{ libname }}w.*.dylib   # [osx]
+      {% endfor %}
+      - lib/terminfo
+      - share/tabset
+      - share/terminfo
+    test:
+      commands:
+        - conda inspect linkages -p $PREFIX ncurses
+        - conda inspect objects  -p $PREFIX ncurses   # [osx]
+    about:
+      license: MIT-like
+      license_family: MIT
+      license_file: COPYING
+      summary: Libraries for terminal handling
+      description: >
+        ncurses is a free software emulation of the System V Release 4.0
+        `curses` library that provides an API for writing text-based user
+        interfaces in a terminal-independent manner.
+
+        This package contains the shared libraries and terminal information
+        (terminfo) files needed to run applications built using ncurses.
+
+  - name: {{ name }}-utils
+    files:
+      - bin/captoinfo
+      - bin/clear
+      - bin/infocmp
+      - bin/infotocap
+      - bin/reset
+      - bin/tabs
+      - bin/tack
+      - bin/tic
+      - bin/toe
+      - bin/tput
+      - bin/tset
+    requirements:
+      run:
+        - {{ pin_subpackage('ncurses', exact=True) }}
+    test:
+      commands:
+        #- captoinfo -V
+        #- clear -V
+        #- infocmp -V
+        #- infotocap -V
+        #- reset -V
+        #- tabs -V
+        #- tic -V
+        #- toe -V
+        #- tput -V
+        #- tset -V
+        - conda inspect linkages -p $PREFIX ncurses-utils
+        - conda inspect objects  -p $PREFIX ncurses-utils   # [osx]
+    about:
+      license: MIT-like
+      license_family: MIT
+      license_file: COPYING
+      summary: ncurses command-line utilities
+      description: >
+        ncurses is a free software emulation of the System V Release 4.0
+        `curses` library that provides an API for writing text-based user
+        interfaces in a terminal-independent manner.
+
+        This package contains various command-line utilities provided with the
+        ncurses library. They are separated from the core `ncurses` package
+        largely to avoid potential conflicts with their counterparts normally
+        supplied by the end users' OS.
+
+  - name: {{ name }}-devel
+    build:
+      run_exports:
+        # Pretty good compatibility within major versions (except for 5.5, for some
+        # reason); see: <https://abi-laboratory.pro/?view=timeline&l=ncurses>
+        - {{ pin_subpackage('ncurses', max_pin='x') }}
+    requirements:
+      run:
+        - {{ pin_subpackage('ncurses', exact=True) }}
+    files:
+      #- bin/ncurses6-config
+      - bin/ncursesw6-config
+      {% for header in ncurses_headers %}
+      - include/ncurses/{{ header }}
+      - include/ncursesw/{{ header }}
+      {% endfor %}
+      {% for libname in ncurses_libraries %}
+      - lib/lib{{ libname }}.a
+      - lib/lib{{ libname }}w.a
+      - lib/pkgconfig/{{ libname }}.pc
+      - lib/pkgconfig/{{ libname }}w.pc
+      {% endfor %}
+    test:
+      requires:
+        - pkg-config
+      commands:
+        # Ideally, we'd use word boundaries in the `egrep` regexps, but alas,
+        # there's no cross-platform way of specifying them.
+        - ncursesw6-config --cflags | egrep -q -- '-I[[:alnum:]/_-]*/include/ncursesw'
+        - ncursesw6-config --libs | egrep -q -- '-lncursesw'
+        - pkg-config ncurses --cflags | egrep -q -- '-I[[:alnum:]/_-]*/include/ncurses([[:space:]]|$)'
+        - pkg-config ncurses --libs | egrep -q -- '-lncursesw'
+        - pkg-config tinfo --cflags | egrep -q -- '-I[[:alnum:]/_-]*/include/ncurses([[:space:]]|$)'
+        - pkg-config tinfo --libs | egrep -q -- '-ltinfow'
+        - pkg-config ncursesw --cflags | egrep -q -- '-I[[:alnum:]/_-]*/include/ncursesw'
+        - pkg-config ncursesw --libs | egrep -q -- '-lncursesw'
+        - pkg-config tinfow --cflags | egrep -q -- '-I[[:alnum:]/_-]*/include/ncursesw'
+        - pkg-config tinfow --libs | egrep -q -- '-ltinfow'
+    about:
+      license: MIT-like
+      license_family: MIT
+      license_file: COPYING
+      summary: ncurses headers and static libraries
+      description: >
+        ncurses is a free software emulation of the System V Release 4.0
+        `curses` library that provides an API for writing text-based user
+        interfaces in a terminal-independent manner.
+
+        This package contains the header files and static libraries needed to
+        build applications using ncurses.
+
+about:
+  home: https://www.gnu.org/software/ncurses/
+  doc_url: https://invisible-island.net/ncurses/NCURSES-Programming-HOWTO.html
+  dev_url: https://invisible-island.net/ncurses/
+
+extra:
+  recipe-maintainers:
+    - chenghlee
+  original-recipe-maintainers:
+    - jakirkham
+    - jjhelmus
