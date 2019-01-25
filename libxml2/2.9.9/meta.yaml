@@ -15,27 +15,16 @@ source:
   sha256: "{{ sha256 }}"
 
 build:
-  number: 0
-  run_exports:
-    # Symbols occasionally removed between minor versions; see:
-    # https://abi-laboratory.pro/index.php?view=timeline&l=libxml2
-    - {{ pin_subpackage(name|lower, max_pin='x.x') }}
+  number: 1
 
 requirements:
   build:
     - biobuilds-build
     - {{ compiler('c') }}
     - pkg-config
-
-    # Used in previous versions to reconfigure for ppc64le support
-    #- autoconf
-    #- automake
-    #- libtool
-
   host:
     - icu-devel {{ icu }}
-    - ncurses {{ ncurses }}     # needed for `xmllint` history support
-    - readline {{ readline }}   # needed for `xmllint` history support
+    - readline {{ readline }}   # `xmllint`, `xmlcatalog` history support
     - xz {{ xz }}
     - zlib {{ zlib }}
 
@@ -75,7 +64,10 @@ outputs:
       - share/man/man3/libxml.3
     build:
       run_exports:
-        - {{ pin_subpackage(name, exact=True) }}
+        # Fairly good support within minor versions; could probably get away
+        # with a major version pin, but that does occassionally break things.
+        # See: https://abi-laboratory.pro/?view=timeline&l=libxml2
+        - {{ pin_subpackage(name, max_pin='x.x') }}
     requirements:
       run:
         - {{ pin_subpackage(name, exact=True) }}
