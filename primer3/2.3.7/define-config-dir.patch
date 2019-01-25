@@ -1,0 +1,54 @@
+Use a define to set the default path to the "primer3_config" directory
+
+--- src/primer3_boulder_main.c
++++ src/primer3_boulder_main.c
+@@ -50,6 +50,10 @@
+ #include "read_boulder.h"
+ #include "print_boulder.h"
+ 
++#ifndef DEFAULT_CONFIG_DIR
++#define DEFAULT_CONFIG_DIR "/opt/primer3_config"
++#endif
++
+ /* Check on which OS we compile */
+ #if defined(_WIN32) || defined(WIN32) || defined (__WIN32__) || defined(__CYGWIN__) || defined(__MINGW32__)
+ #define OS_WIN
+@@ -512,11 +516,11 @@
+ 	(char*) malloc(strlen("./primer3_config/") * sizeof(char) + 1);
+       if (NULL == thermodynamic_params_path) exit (-2); /* Out of memory */
+       strcpy(thermodynamic_params_path, "./primer3_config/");
+-    } else if ((stat("/opt/primer3_config", &st) == 0)  && S_ISDIR(st.st_mode)) {
++    } else if ((stat(DEFAULT_CONFIG_DIR, &st) == 0)  && S_ISDIR(st.st_mode)) {
+       thermodynamic_params_path =
+-	(char*) malloc(strlen("/opt/primer3_config/") * sizeof(char) + 1);
++	(char*) malloc(strlen(DEFAULT_CONFIG_DIR "/") * sizeof(char) + 1);
+       if (NULL == thermodynamic_params_path) exit (-2); /* Out of memory */
+-      strcpy(thermodynamic_params_path, "/opt/primer3_config/");
++      strcpy(thermodynamic_params_path, DEFAULT_CONFIG_DIR "/");
+     } else {
+       /* no default directory found */
+       return;
+--- src/thal_main.c
++++ src/thal_main.c
+@@ -49,6 +49,10 @@
+ 
+ #include "thal.h"
+ 
++#ifndef DEFAULT_CONFIG_DIR
++#define DEFAULT_CONFIG_DIR "/opt/primer3_config"
++#endif
++
+ /* Check on which OS we compile */
+ #if defined(_WIN32) || defined(WIN32) || defined (__WIN32__) || defined(__CYGWIN__) || defined(__MINGW32__)
+ #define OS_WIN
+@@ -303,8 +307,8 @@
+ #else 
+      if ((stat("./primer3_config", &st) == 0) && S_ISDIR(st.st_mode)) {
+        tmp_ret = get_thermodynamic_values("./primer3_config/", &o);
+-     } else if ((stat("/opt/primer3_config", &st) == 0)  && S_ISDIR(st.st_mode)) {
+-       tmp_ret = get_thermodynamic_values("/opt/primer3_config/", &o);
++     } else if ((stat(DEFAULT_CONFIG_DIR, &st) == 0)  && S_ISDIR(st.st_mode)) {
++       tmp_ret = get_thermodynamic_values(DEFAULT_CONFIG_DIR "/", &o);
+      } else {
+        /* no default directory found, error */
+        fprintf(stderr, "Error: thermodynamic approach chosen, but path to thermodynamic parameters not specified\n");

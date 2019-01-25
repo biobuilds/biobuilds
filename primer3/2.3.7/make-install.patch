@@ -10,13 +10,14 @@
  # ======================================================================
  # If you have trouble with library skew when moving primer3 executables
  # between systems, you might want to set LIBOPTS to -static
-@@ -216,6 +219,10 @@
+@@ -216,6 +219,11 @@
  	cd ../test; make test
  endif
  
 +install: $(EXES) $(LIBRARIES)
 +	install -d "$(PREFIX)/bin"
 +	install -m 755 $(EXES) "$(PREFIX)/bin"
++	rm -f "$(PREFIX)/bin/long_seq_tm_test"
 +
  # ======================================================================
  # 

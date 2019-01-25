@@ -28,13 +28,19 @@ source:
   patches:
     - make-install.patch
     - makefile-compiler-vars.patch
+    - fix-pointer-derefs.patch
+    - define-config-dir.patch
 
 build:
-  number: 2
+  number: 3
   features:
     - opt                       # [toolchain != 'default']
 
-# No tests needed as those are done in the build script.
+test:
+  source_files:
+    - example
+  commands:
+    - primer3_core -format_output < example
 
 about:
   home: "http://primer3.sourceforge.net/"

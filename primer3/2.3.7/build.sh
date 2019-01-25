@@ -13,10 +13,10 @@ if [[ ! -f "${BUILD_ENV}" ]]; then
 fi
 source "${BUILD_ENV}" -v
 
-# Work around some problematic pointer comparisons in 'oligotm.c' and 'thal.c'.
-# (At least until we find time to fix the code and send the patches upstream.)
-CFLAGS="${CFLAGS} -fpermissive"
-CXXFLAGS="${CXXFLAGS} -fpermissive"
+# Set the default path to the "primer3_config" directory
+CFG_DIR="${PREFIX}/etc/primer3_config"
+CFLAGS="${CFLAGS} -DDEFAULT_CONFIG_DIR='\"${CFG_DIR}\"'"
+CXXFLAGS="${CXXFLAGS} -DDEFAULT_CONFIG_DIR='\"${CFG_DIR}\"'"
 
 # Restore flags we squash with our `make` invocation below. (Not quite sure the
 # define is absolutely necessary, but there seems to be no harm in having it.)
@@ -50,7 +50,13 @@ make -C src -j${MAKE_JOBS} \
     LD="${LD}" \
     LDFLAGS="${LDFLAGS}"
 
-make -C test
+# These take a really long time to run but still miss cases that matter to us
+# (e.g., not finding config files after relocation), so skip them for now.
+#make -C test
 
 make -C src install \
     PREFIX="${PREFIX}"
+
+umask 022   # make sure everyone can at least read these files
+mkdir -p "${CFG_DIR}"
+cp -Rfv src/primer3_config/. "${CFG_DIR}/."

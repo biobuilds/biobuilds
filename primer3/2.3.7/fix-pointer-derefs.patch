@@ -1,0 +1,28 @@
+--- src/oligotm.c
++++ src/oligotm.c
+@@ -421,7 +421,7 @@
+      double gcPercent=0;
+      double free_divalent; /* conc of divalent cations minus dNTP conc */
+      int i;
+-     for(i = 0; i <= len && d != NULL && d != '\0';) {
++     for(i = 0; i <= len && d != NULL && *d != '\0';) {
+ 	if(*d == 'C' || *d == 'G') {
+ 	   gcPercent++;
+ 	}  
+--- src/thal.c
++++ src/thal.c
+@@ -426,12 +426,12 @@
+ 	       "Illegal type");
+    o->align_end_1 = -1;
+    o->align_end_2 = -1;
+-   if ('\0' == oligo_f) {
++   if ('\0' == oligo_f[0]) {
+       strcpy(o->msg, "Empty first sequence");
+       o->temp = 0.0;
+       return;
+    }
+-   if ('\0' == oligo_r) {
++   if ('\0' == oligo_r[0]) {
+       strcpy(o->msg, "Empty second sequence");
+       o->temp = 0.0;
+       return;
