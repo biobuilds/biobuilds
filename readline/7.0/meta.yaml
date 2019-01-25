@@ -1,66 +1,111 @@
+{% set name = "readline" %}
 {% set version = "7.0" %}
+{% set src_ext = "tar.gz" %}
+{% set sha256 = "750d437185286f40a369e1e4f4764eda932b9459b5ec9a731628393dd3d32334" %}
+
+{% set readline_libs = [
+    "history",
+    "readline",
+] %}
 
 package:
-  name: readline
+  name: "{{ name|lower }}"
   version: "{{ version }}"
 
 source:
-  fn: "readline-{{ version }}.tar.gz"
-  url: 
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
+  url:
     - "ftp://ftp.gnu.org/gnu/readline/readline-{{ version }}.tar.gz"
-    - "http://download.lab7.io/sources/readline-{{ version }}.tar.gz"
-  sha256: "750d437185286f40a369e1e4f4764eda932b9459b5ec9a731628393dd3d32334"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
   patches:
     - patches/readline70-001
     - patches/readline70-002
     - patches/readline70-003
+    - patches/readline70-004
+    - patches/readline70-005
+    - patches/configure-tinfo.patch
 
 build:
   skip: true  # [win]
-  number: 1
+  number: 2
   run_exports:
-    # change soname at major ver: https://abi-laboratory.pro/tracker/timeline/readline/
-    - {{ pin_subpackage('readline') }}
+    # SONAME changes with each major version; see:
+    # https://abi-laboratory.pro/?view=timeline&l=readline.
+    - {{ pin_subpackage('readline', max_pin='x') }}
 
 requirements:
   build:
     - pkg-config
     - {{ compiler('c') }}
-    - ncurses {{ ncurses }}
-  run:
-    - ncurses
+  host:
+    - ncurses-devel {{ ncurses }}
 
-test:
-  commands:
-  {% set readline_libs = [
-    'libreadline',
-    'libhistory'
-  ] %}
-  {% for lib in readline_libs %}
-    - test -f ${PREFIX}/lib/{{ lib }}.a
-    - test -f ${PREFIX}/lib/{{ lib }}.so      # [linux]
-    - test -f ${PREFIX}/lib/{{ lib }}.dylib   # [osx]
-  {% endfor %}
+outputs:
+  - name: {{ name }}
+    files:
+      {% for libname in readline_libs %}
+      - lib/lib{{ libname }}.so         # [linux]
+      - lib/lib{{ libname }}.so.*       # [linux]
+      - lib/lib{{ libname }}.dylib      # [osx]
+      - lib/lib{{ libname }}.*.dylib    # [osx]
+      {% endfor %}
+    test:
+      commands:
+        {% for libname in readline_libs %}
+        - test -f ${PREFIX}/lib/lib{{ libname }}.so     # [linux]
+        - test -f ${PREFIX}/lib/lib{{ libname }}.dylib  # [osx]
+        {% endfor %}
+        - conda inspect linkages -p $PREFIX readline
+        - conda inspect objects  -p $PREFIX readline  # [osx]
+    about:
+      license: GPL-3.0
+      license_family: GPL
+      license_file: COPYING
+      summary: GNU command-line history and editing libraries
+
+  - name: {{ name }}-devel
+    files:
+      - include/readline
+      {% for libname in readline_libs %}
+      - lib/lib{{ libname }}.a
+      - share/man/man3/{{ libname }}.3
+      {% endfor %}
+    build:
+      run_exports:
+        # SONAME changes between major versions; see:
+        # <https://abi-laboratory.pro/?view=timeline&l=readline>
+        - {{ pin_subpackage(name, max_pin='x') }}
+    requirements:
+      run:
+        - {{ pin_subpackage(name, exact=True) }}
+    test:
+      commands:
+        {% for libname in readline_libs %}
+        - test -f ${PREFIX}/include/readline/{{ libname }}.h
+        - test -f ${PREFIX}/lib/lib{{ libname }}.a
+        {% endfor %}
+    about:
+      license: GPL-3.0
+      license_family: GPL
+      license_file: COPYING
+      summary: GNU readline headers and static libraries
 
 about:
-  home: https://cnswww.cns.cwru.edu/php/chet/readline/rltop.html
-  license: GPL3
-  license_file: COPYING
-  summary: library for editing command lines as they are typed in
-  description: |
-    The standard Python readline extension statically linked against the GNU
-    readline library.
-  doc_url: https://pypi.python.org/pypi/readline
-  dev_url: https://github.com/ludwigschwardt/python-gnureadline
-  doc_source_url: https://github.com/ludwigschwardt/python-gnureadline
+  home: https://tiswww.case.edu/php/chet/readline/rltop.html
+  doc_url: https://tiswww.case.edu/php/chet/readline/readline.html
+  dev_url: https://git.savannah.gnu.org/cgit/readline.git/
 
 extra:
   recipe-maintainers:
+    - chenghlee
+  original-recipe-maintainers:
     - croth1
     - jakirkham
     - jjhelmus
     - pelson
     - msarahan
     - asmeurer
+    - msarahan
     - mingwandroid
-    - chenghlee
+    - ocefpaf
