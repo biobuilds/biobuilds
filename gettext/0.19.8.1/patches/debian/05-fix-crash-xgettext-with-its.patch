@@ -1,0 +1,33 @@
+From: Bruno Haible <bruno@clisp.org>
+Subject: Fix crash of xgettext with --its option.
+Origin: https://git.savannah.gnu.org/gitweb/?p=gettext.git;a=commitdiff_plain;h=a0cab23332a254e3500cac2a3a984472d02180e5
+Bug-Debian: https://bugs.debian.org/891347
+X-Debian-version: 0.19.8.1-5
+
+--- gettext-tools/src/xgettext.c
++++ gettext-tools/src/xgettext.c
+@@ -330,7 +330,7 @@
+   bool sort_by_msgid = false;
+   bool sort_by_filepos = false;
+   char **dirs;
+-  char **its_dirs;
++  char **its_dirs = NULL;
+   char *explicit_its_filename = NULL;
+   const char *file_name;
+   const char *files_from = NULL;
+@@ -1016,9 +1016,12 @@
+   if (its_locating_rules)
+     locating_rule_list_free (its_locating_rules);
+ 
+-  for (i = 0; its_dirs[i] != NULL; i++)
+-    free (its_dirs[i]);
+-  free (its_dirs);
++  if (its_dirs != NULL)
++    {
++      for (i = 0; its_dirs[i] != NULL; i++)
++        free (its_dirs[i]);
++      free (its_dirs);
++    }
+ 
+   exit (EXIT_SUCCESS);
+ }
