@@ -1,0 +1,143 @@
+{% set name = "openldap" %}
+{% set version = "2.4.47" %}
+{% set src_ext = "tgz" %}
+{% set sha256 = "f54c5877865233d9ada77c60c0f69b3e0bfd8b1b55889504c650047cc305520b" %}
+
+{% set openldap_binaries = [
+    "ldapadd",
+    "ldapcompare",
+    "ldapdelete",
+    "ldapexop",
+    "ldapmodify",
+    "ldapmodrdn",
+    "ldappasswd",
+    "ldapsearch",
+    "ldapurl",
+    "ldapwhoami",
+] %}
+
+{% set openldap_libraries = [
+    "lber",
+    "ldap",
+    "ldap_r",
+] %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
+  url:
+    - "ftp://ftp.openldap.org/pub/OpenLDAP/openldap-release/openldap-{{ version }}.{{ src_ext }}"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - biobuilds-build
+    - autoconf-update
+    - {{ compiler('c') }}
+  host:
+    - openssl {{ openssl }}
+
+outputs:
+  - name: libldap
+    files:
+      {% for libname in openldap_libraries %}
+      - lib/lib{{ libname }}*.so*     # [linux]
+      - lib/lib{{ libname }}*.dylib*  # [osx]
+      {% endfor %}
+      - etc/openldap/ldap.conf
+      - share/man/man5/ldap.conf.5
+    build:
+      no_link:
+        # Each environment should have its own configuration
+        - etc/openldap/ldap.conf
+    requirements:
+      # Added to ensure that the `run_export` from the OpenSSL package used in
+      # the build process is applied, and that this output package properly
+      # tracks what OpenSSL version it needs at run time.
+      host:
+        - openssl {{ openssl }}
+    test:
+      commands:
+        - conda inspect linkages libldap
+        - conda inspect objects  libldap  # [osx]
+    about:
+      license: OpenLDAP
+      license_file: COPYRIGHT
+      summary: OpenLDAP shared libraries
+
+  - name: libldap-devel
+    files:
+      - include/lber*.h
+      - include/ldap*.h
+      - include/ldif.h
+      - include/slapi-plugin.h
+      {% for libname in openldap_libraries %}
+      - lib/lib{{ libname }}.a
+      {% endfor %}
+    build:
+      run_exports:
+        # Only have data for this minor version, but ABI compatibility has been
+        # fantastic, so we'll take the chance and pin to the major version.
+        # See: https://abi-laboratory.pro/index.php?view=timeline&l=openldap
+        - {{ pin_subpackage('libldap', max_pin='x') }}
+    requirements:
+      host:
+        # Need this so we can exactly pin to the sibling shared libraries
+        # (`libldap`) package. Without this, we would have to relax the
+        # `exact=True` pinning below, which could lead to OpenSSL-related
+        # errors when statically linking to `libldap`.
+        - openssl {{ openssl }}
+      run:
+        - {{ pin_subpackage('libldap', exact=True) }}
+    about:
+      license: OpenLDAP
+      license_file: COPYRIGHT
+      summary: OpenLDAP headers and static libraries
+
+  - name: openldap-utils
+    files:
+      {% for binname in openldap_binaries %}
+      - bin/{{ binname }}
+      - share/man/man1/{{ binname }}.1
+      {% endfor %}
+      - share/man/man5/ldif.5
+    requirements:
+      run:
+        # Not using an `exact=True` pin on the theory that the OpenLDAP clients
+        # should only care about having a matching version of `libldap.so` and
+        # NOT about what OpenSSL version said `libldap.so` is linked to (AKA
+        # avoiding a transitive dependency on OpenSSL).
+        - {{ pin_subpackage('libldap', max_pin='x.x.x') }}
+    test:
+      commands:
+        {% for binname in openldap_binaries %}
+        {% if binname != 'ldapurl' %}
+        - {{ binname }} -VV
+        {% else %}
+        - {{ binname }} -h localhost
+        {% endif %}
+        {% endfor %}
+        - conda inspect linkages openldap-utils
+        - conda inspect objects  openldap-utils   # [osx]
+    about:
+      license: OpenLDAP
+      license_file: COPYRIGHT
+      summary: OpenLDAP client utilities
+
+about:
+  home: https://www.openldap.org/
+  license: OpenLDAP
+  license_file: COPYRIGHT
+  doc_url: https://www.openldap.org/doc/admin24/guide.html
+  dev_url: https://www.openldap.org/devel/gitweb.cgi
+
+extra:
+  recipe-maintainers:
+    - chenghlee
