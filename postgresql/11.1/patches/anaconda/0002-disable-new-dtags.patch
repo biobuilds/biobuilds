@@ -1,0 +1,27 @@
+From 5b760660ecf56b50518fd42637315abba9adeca9 Mon Sep 17 00:00:00 2001
+From: Nehal J Wani <nehaljw.kkd1@gmail.com>
+Date: Sun, 29 Jul 2018 02:19:33 -0500
+Subject: [PATCH 2/3] Disable new-dtags
+
+---
+ src/makefiles/Makefile.linux | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/src/makefiles/Makefile.linux b/src/makefiles/Makefile.linux
+index f4f091c..fc0798a 100644
+--- a/src/makefiles/Makefile.linux
++++ b/src/makefiles/Makefile.linux
+@@ -3,7 +3,9 @@ AROPT = crs
+ export_dynamic = -Wl,-E
+ # Use --enable-new-dtags to generate DT_RUNPATH instead of DT_RPATH.
+ # This allows LD_LIBRARY_PATH to still work when needed.
+-rpath = -Wl,-rpath,'$(rpathdir)',--enable-new-dtags
++# rpath = -Wl,-rpath,'$(rpathdir)',--enable-new-dtags
++# But for Anaconda Distribution it allows LD_LIBRARY_PATH to break everything when not needed.
++rpath = -Wl,-rpath,'$(rpathdir)',--disable-new-dtags
+ 
+ DLSUFFIX = .so
+ 
+-- 
+2.17.0
+

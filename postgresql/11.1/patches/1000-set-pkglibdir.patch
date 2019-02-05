@@ -1,0 +1,22 @@
+To avoid making a mess of '${PREFIX}/lib', make sure PostgreSQL support and
+contrib libraries get installed into a PostgreSQL-specific subdirectory. Note
+that we cannot rely on the conditionals because the conda build prefix path
+contains "postgresql" (i.e., the package name), which causes the unpatched
+`override` statement to be skipped.
+
+--- src/Makefile.global.in
++++ src/Makefile.global.in
+@@ -117,12 +117,7 @@
+ 
+ libdir := @libdir@
+ 
+-pkglibdir = $(libdir)
+-ifeq "$(findstring pgsql, $(pkglibdir))" ""
+-ifeq "$(findstring postgres, $(pkglibdir))" ""
+-override pkglibdir := $(pkglibdir)/postgresql
+-endif
+-endif
++pkglibdir := @libdir@/postgresql
+ 
+ includedir := @includedir@
+ 
