@@ -1,0 +1,107 @@
+From: Bruno Haible <bruno@clisp.org>
+Subject: Verify that system dependent strings in .mo files are NUL terminated.
+Origin: https://git.savannah.gnu.org/gitweb/?p=gettext.git;a=patch;h=861745b3c53362925eaf3605a334565af378556c
+Bug-Debian: https://bugs.debian.org/876498
+X-Debian-version: 0.19.8.1-5
+
+--- gettext-runtime/intl/loadmsgcat.c
++++ gettext-runtime/intl/loadmsgcat.c
+@@ -1031,19 +1031,26 @@
+ 				? orig_sysdep_tab[i]
+ 				: trans_sysdep_tab[i]));
+ 			size_t need = 0;
++			const char *static_segments =
++			  (char *) data
++			  + W (domain->must_swap, sysdep_string->offset);
+ 			const struct segment_pair *p = sysdep_string->segments;
+ 
+ 			if (W (domain->must_swap, p->sysdepref) != SEGMENTS_END)
+-			  for (p = sysdep_string->segments;; p++)
++			  for (;; p++)
+ 			    {
++			      nls_uint32 segsize;
+ 			      nls_uint32 sysdepref;
+ 
+-			      need += W (domain->must_swap, p->segsize);
++			      segsize = W (domain->must_swap, p->segsize);
++			      need += segsize;
+ 
+ 			      sysdepref = W (domain->must_swap, p->sysdepref);
+ 			      if (sysdepref == SEGMENTS_END)
+ 				break;
+ 
++			      static_segments += segsize;
++
+ 			      if (sysdepref >= n_sysdep_segments)
+ 				{
+ 				  /* Invalid.  */
+@@ -1055,12 +1062,25 @@
+ 				{
+ 				  /* This particular string pair is invalid.  */
+ 				  valid = 0;
+-				  break;
+ 				}
+ 
+ 			      need += strlen (sysdep_segment_values[sysdepref]);
+ 			    }
+ 
++			/* The last static segment must end in a NUL.  */
++			{
++			  nls_uint32 segsize =
++			    W (domain->must_swap, p->segsize);
++
++			  if (!(segsize > 0
++				&& static_segments[segsize - 1] == '\0'))
++			    {
++			      /* Invalid.  */
++			      freea (sysdep_segment_values);
++			      goto invalid;
++			    }
++			}
++
+ 			needs[j] = need;
+ 			if (!valid)
+ 			  break;
+@@ -1114,7 +1134,7 @@
+ 
+ 			    if (W (domain->must_swap, p->sysdepref)
+ 				!= SEGMENTS_END)
+-			      for (p = sysdep_string->segments;; p++)
++			      for (;; p++)
+ 				{
+ 				  nls_uint32 sysdepref;
+ 
+@@ -1175,7 +1195,7 @@
+ 				  {
+ 				    inmem_tab_entry->pointer = mem;
+ 
+-				    for (p = sysdep_string->segments;; p++)
++				    for (;; p++)
+ 				      {
+ 					nls_uint32 segsize =
+ 					  W (domain->must_swap, p->segsize);
+--- gettext-tools/src/read-mo.c
++++ gettext-tools/src/read-mo.c
+@@ -169,11 +169,19 @@
+       s_offset += segsize;
+ 
+       if (sysdepref == SEGMENTS_END)
+-        break;
++        {
++          /* The last static segment must end in a NUL.  */
++          if (!(segsize > 0 && bfp->data[s_offset - 1] == '\0'))
++            /* Invalid.  */
++            error (EXIT_FAILURE, 0,
++                   _("file \"%s\" contains a not NUL terminated system dependent string"),
++                   bfp->filename);
++          break;
++        }
+       if (sysdepref >= header->n_sysdep_segments)
+         /* Invalid.  */
+-          error (EXIT_FAILURE, 0, _("file \"%s\" is not in GNU .mo format"),
+-                 bfp->filename);
++        error (EXIT_FAILURE, 0, _("file \"%s\" is not in GNU .mo format"),
++               bfp->filename);
+       /* See 'struct sysdep_segment'.  */
+       sysdep_segment_offset = header->sysdep_segments_offset + sysdepref * 8;
+       ss_length = get_uint32 (bfp, sysdep_segment_offset);

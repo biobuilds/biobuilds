@@ -1,0 +1,80 @@
+{% set name = "ossp-uuid" %}
+{% set version = "1.6.2" %}
+{% set src_ext = "tar.gz" %}
+{% set sha256 = "11a615225baa5f8bb686824423f50e4427acd3f70d394765bdff32801f0fd5b0" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
+  url:
+    - "ftp://ftp.ossp.org/pkg/lib/uuid/uuid-{{ version }}.{{ src_ext }}"
+    - "http://archive.ubuntu.com/ubuntu/pool/universe/o/ossp-uuid/ossp-uuid_{{ version }}.orig.{{ src_ext }}"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
+  patches:
+    # From Debian/Ubuntu package sources
+    - change-library-name.patch
+    - link-with-ldflags.patch
+
+requirements:
+  build:
+    - biobuilds-build
+    - autoconf-update
+    - {{ compiler('c') }}
+
+build:
+  number: 0
+
+outputs:
+  - name: "{{ name|lower }}"
+    files:
+      - bin/uuid
+      - lib/libossp-uuid.so       # [linux]
+      - lib/libossp-uuid.so.*     # [linux]
+      - lib/libossp-uuid.dylib    # [osx]
+      - lib/libossp-uuid.*.dylib  # [osx]
+      - share/man/man1/uuid.1
+    test:
+      commands:
+        - uuid
+        - conda inspect linkages -p $PREFIX ossp-uuid
+        - conda inspect objects  -p $PREFIX ossp-uuid   # [osx]
+    about:
+      home: "http://www.ossp.org/pkg/lib/uuid/"
+      license: "MIT-Style"
+      license_family: "MIT"
+      license_file: "LICENSE"
+      summary: >
+        OSSP C99 API and corresponding CLI tool for Universally Unique
+        Identifiers (UUIDs) compliant with various standards
+
+  - name: "{{ name|lower }}-devel"
+    files:
+      - bin/uuid-config
+      - include/ossp/uuid.h
+      - lib/libossp-uuid.a
+      - lib/pkgconfig/ossp-uuid.pc
+      - share/man/man1/uuid-config.1
+      - share/man/man3/uuid.3ossp
+    build:
+      run_exports:
+        - {{ pin_subpackage(name|lower, exact=True) }}
+    requirements:
+      run:
+        - "{{ name|lower }}"
+    test:
+      requires:
+        - pkg-config
+      commands:
+        - uuid-config --cflags --libs | grep -- '-lossp-uuid'
+        - pkg-config --cflags --libs ossp-uuid | grep -- '-lossp-uuid'
+    about:
+      home: "http://www.ossp.org/pkg/lib/uuid/"
+      license: "MIT-Style"
+      license_family: "MIT"
+      license_file: "LICENSE"
+      summary: >
+        OSSP C99 API for UUID generation - headers and static libraries

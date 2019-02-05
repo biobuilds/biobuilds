@@ -1,0 +1,378 @@
+{% set name = "postgresql" %}
+{% set major_ver = "11" %}
+{% set minor_ver = "1" %}
+{% set version = major_ver + "." + minor_ver %}
+{% set src_ext = "tar.bz2" %}
+{% set sha256 = "90815e812874831e9a4bf6e1136bf73bc2c5a0464ef142e2dfea40cda206db08" %}
+
+{% set client_bin = [
+    "clusterdb",
+    "createdb",
+    "createuser",
+    "dropdb",
+    "dropuser",
+    "pg_basebackup",
+    "pg_dump",
+    "pg_dumpall",
+    "pg_isready",
+    "pg_receivewal",
+    "pg_recvlogical",
+    "pg_restore",
+    "pgbench",
+    "psql",
+    "reindexdb",
+    "vacuumdb",
+] %}
+
+{% set server_bin = [
+    "initdb",
+    "oid2name",
+    "pg_archivecleanup",
+    "pg_controldata",
+    "pg_ctl",
+    "pg_resetwal",
+    "pg_rewind",
+    "pg_standby",
+    "pg_test_fsync",
+    "pg_test_timing",
+    "pg_upgrade",
+    "pg_verify_checksums",
+    "pg_waldump",
+    "postgres",
+    "postmaster",
+    "vacuumlo",
+] %}
+
+package:
+  name: "{{ name|lower }}-multi"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
+  url:
+    - "https://ftp.postgresql.org/pub/source/v{{ version }}/postgresql-{{ version }}.{{ src_ext }}"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
+  patches:
+    # Patches from the "defaults" channel
+    - patches/anaconda/0002-disable-new-dtags.patch
+    # Our patches
+    - patches/1000-set-pkglibdir.patch
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+    - pkg-config
+
+    # We don't _really_ need these to build PostgreSQL, but it does stop
+    # `./configure` from finding other versions that may be in `$PATH` on the
+    # build servers. This is of particular concern on macOS build servers where
+    # XCode is installed, as XCode provides older versions of these tools that
+    # may break our PostgreSQL build in strange ways.
+    - bison
+    - flex
+  host:
+    - gettext
+    - icu-devel {{ icu }}
+    - krb5
+    - libldap-devel
+    - libuuid-devel
+    - libxml2-devel {{ libxml2 }}
+    - libxslt-devel {{ libxslt }}
+    - openssl {{ openssl }}
+    - readline-devel {{ readline }}
+    - zlib {{ zlib }}
+
+outputs:
+  - name: libpq
+    files:
+      - lib/libpq.so        # [linux]
+      - lib/libpq.so.*      # [linux]
+      - lib/libpq.dylib     # [osx]
+      - lib/libpq.*.dylib   # [osx]
+      - share/locale/*/LC_MESSAGES/libpq5-{{ major_ver }}.mo
+    requirements:
+      # The `build` and `host` sections are needed to ensure `run_export`
+      # direcctives are properly applied to the output package.
+      build:
+        - {{ compiler('c') }}
+      host:
+        - gettext   # [osx]
+        - krb5
+        - libldap-devel
+        - openssl {{ openssl }}
+        - zlib {{ zlib }}
+      run:
+        - tzdata
+    test:
+      commands:
+        - conda inspect linkages --show-files libpq
+        #- conda inspect objects libpq   # [osx]
+    about:
+      license: PostgreSQL (MIT-like)
+      license_file: COPYRIGHT
+      summary: PostgreSQL client run-time libraries
+      description: >
+        PostgreSQL is a powerful, object-relational SQL database system.
+
+        The package contains the shared run-time library needed by clients to
+        communicate with PostgreSQL database servers.
+
+  - name: libecpg
+    files:
+      - lib/libecpg_compat.so       # [linux]
+      - lib/libecpg_compat.so.*     # [linux]
+      - lib/libecpg.so              # [linux]
+      - lib/libecpg.so.*            # [linux]
+      - lib/libpgtypes.so           # [linux]
+      - lib/libpgtypes.so.*         # [linux]
+      - lib/libecpg_compat.dylib    # [osx]
+      - lib/libecpg_compat.*.dylib  # [osx]
+      - lib/libecpg.dylib           # [osx]
+      - lib/libecpg.*.dylib         # [osx]
+      - lib/libpgtypes.dylib        # [osx]
+      - lib/libpgtypes.*.dylib      # [osx]
+      - share/locale/*/LC_MESSAGES/ecpg-{{ major_ver }}.mo
+      - share/locale/*/LC_MESSAGES/ecpglib6-{{ major_ver }}.mo
+    requirements:
+      build:
+        - {{ compiler('c') }}
+      host:
+        - gettext   # [osx]
+      run:
+        - {{ pin_subpackage('libpq', max_pin='x.x') }}
+    test:
+      commands:
+        - conda inspect linkages --show-files libecpg
+        #- conda inspect objects libecpg   # [osx]
+    about:
+      license: PostgreSQL (MIT-like)
+      license_file: COPYRIGHT
+      summary: PostgreSQL ECPG run-time libraries
+      description: >
+        PostgreSQL is a powerful, object-relational SQL database system.
+
+        The package contains shared run-time libraries needed by applications
+        built using ECPG (Embedded PostgreSQL in C).
+
+  - name: postgresql-client
+    files:
+      {% for binname in client_bin %}
+      - bin/{{ binname }}
+      - share/locale/*/LC_MESSAGES/{{ binname }}-{{ major_ver }}.mo
+      {% endfor %}
+      - share/locale/*/LC_MESSAGES/pgscripts-{{ major_ver }}.mo
+      - share/postgresql/psqlrc.sample
+    requirements:
+      build:
+        - {{ compiler('c') }}
+      host:
+        - gettext   # [osx]
+        - readline-devel {{ readline }}
+        - zlib {{ zlib }}
+      run:
+        - {{ pin_subpackage('libpq', max_pin='x.x') }}
+    test:
+      commands:
+        - conda inspect linkages --show-files postgresql-client
+        #- conda inspect objects postgresql-client   # [osx]
+        {% for binname in client_bin %}
+        - {{ binname }} --version
+        {% endfor %}
+    about:
+      license: PostgreSQL (MIT-like)
+      license_file: COPYRIGHT
+      summary: PostgreSQL client applications
+      description: >
+        PostgreSQL is a powerful, object-relational SQL database system.
+
+        The package contains the interactive `psql` CLI client, as well as
+        PostgreSQL administration tools for backup/restore, database
+        operations, and database user (role) management.
+
+  - name: postgresql-server
+    files:
+      {% for binname in server_bin %}
+      - bin/{{ binname }}
+      - share/locale/*/LC_MESSAGES/{{ binname }}-{{ major_ver }}.mo
+      {% endfor %}
+      - lib/postgresql/*.so
+      - share/doc/postgresql/extension
+      - share/locale/*/LC_MESSAGES/plpgsql-{{ major_ver }}.mo
+      - share/postgresql/catalog_version
+      - share/postgresql/conversion_create.sql
+      - share/postgresql/errcodes.txt
+      - share/postgresql/extension
+      - share/postgresql/information_schema.sql
+      - share/postgresql/pg_hba.conf.sample
+      - share/postgresql/pg_ident.conf.sample
+      - share/postgresql/pg_service.conf.sample
+      - share/postgresql/postgres.bki
+      - share/postgresql/postgres.description
+      - share/postgresql/postgres.shdescription
+      - share/postgresql/postgresql.conf.sample
+      - share/postgresql/recovery.conf.sample
+      - share/postgresql/snowball_create.sql
+      - share/postgresql/sql_features.txt
+      - share/postgresql/system_views.sql
+      - share/postgresql/timezonesets
+      - share/postgresql/tsearch_data
+    requirements:
+      build:
+        - {{ compiler('c') }}
+      host:
+        - gettext   # [osx]
+        - icu-devel {{ icu }}
+        - libxml2-devel {{ libxml2 }}
+        - libxslt-devel {{ libxslt }}
+        - libuuid-devel
+      run:
+        - {{ pin_subpackage('libpq', max_pin='x.x') }}
+    test:
+      commands:
+        - conda inspect linkages --show-files postgresql-server
+        #- conda inspect objects postgresql-server   # [osx]
+        {% for binname in server_bin %}
+        - {{ binname }} --version
+        {% endfor %}
+    about:
+      license: PostgreSQL (MIT-like)
+      license_file: COPYRIGHT
+      summary: PostgreSQL server applications
+      description: >
+        PostgreSQL is a powerful, object-relational SQL database system.
+
+        The package contains the PostgreSQL server-side components, including
+        the server application itself (`postgres`) and tools for managing
+        PostgreSQL as a system service/server (e.g., `pg_ctl`).
+
+  - name: postgresql
+    requirements:
+      run:
+        - {{ pin_subpackage('postgresql-client', exact=True) }}
+        - {{ pin_subpackage('postgresql-server', exact=True) }}
+        - {{ pin_subpackage('libecpg', exact=True) }}
+    about:
+      license: PostgreSQL (MIT-like)
+      license_file: COPYRIGHT
+      summary: PostgreSQL all-in-one metapackage
+      description: >
+        PostgreSQL is a powerful, object-relational SQL database system.
+
+        The metapackage installs the PostgreSQL server and client packages.
+
+  - name: libpq-devel
+    files:
+      - bin/pg_config
+      - include/postgresql/internal
+      - include/postgresql/libpq
+      - include/postgresql/libpq-*.h
+      - include/postgresql/pg_config*.h
+      - include/postgresql/postgres_ext.h
+      - lib/libpgcommon.a
+      - lib/libpgfeutils.a
+      - lib/libpgport.a
+      - lib/libpq.a
+      - lib/pkgconfig/libpq.pc
+      - share/locale/*/LC_MESSAGES/pg_config-{{ major_ver }}.mo
+    build:
+      run_exports:
+        - {{ pin_subpackage('libpq', max_pin='x') }}
+    requirements:
+      host:
+        - openssl {{ openssl }}
+      run:
+        - {{ pin_subpackage('libpq', exact=True) }}
+    test:
+      requires:
+        - pkg-config
+      commands:
+        - pkg-config --cflags libpq
+        - pkg-config --libs libpq
+    about:
+      license: PostgreSQL (MIT-like)
+      license_file: COPYRIGHT
+      summary: PostgreSQL client development files
+      description: >
+        PostgreSQL is a powerful, object-relational SQL database system.
+
+        The package contains the headers and static libraries needed to build
+        applications that communicate with a PostgreSQL server.
+
+  - name: postgresql-server-devel
+    files:
+      - include/postgresql/server
+      - lib/postgresql/pgxs
+    build:
+      run_exports:
+        # Strictly speaking, this `run_export` is probably not _required_.
+        # However, building a PostgreSQL server extension that doesn't need the
+        # server at run-time seems a little weird, so we'll go ahead and
+        # include this directive.
+        - {{ pin_subpackage('postgresql-server', max_pin='x') }}
+    requirements:
+      run:
+        - {{ pin_subpackage('libpq-devel', max_pin='x.x') }}
+    about:
+      license: PostgreSQL (MIT-like)
+      license_file: COPYRIGHT
+      summary: PostgreSQL server development files
+      description: >
+        PostgreSQL is a powerful, object-relational SQL database system.
+
+        The package contains the headers and static libraries needed to build
+        additional components for the PostgreSQL server itself, including SPI
+        libraries for calling C function from SQL and add-on modules.
+
+        Note that this package is _not_ needed for building programs that
+        simply need to communicate with a PostgreSQL server; those should use
+        the `postgresql-client-devel` package instead.
+
+  - name: libecpg-devel
+    files:
+      - bin/ecpg
+      - include/postgresql/ecpg*.h
+      - include/postgresql/informix
+      - include/postgresql/pgtypes*.h
+      - include/postgresql/sql*.h
+      - lib/libecpg*.a
+      - lib/libpgtypes.a
+      - lib/pkgconfig/libecpg*.pc
+      - lib/pkgconfig/libpgtypes.pc
+    build:
+      run_exports:
+        - {{ pin_subpackage('libecpg', max_pin='x') }}
+    requirements:
+      run:
+        - {{ pin_subpackage('libecpg', exact=True) }}
+        - {{ pin_subpackage('libpq-devel', max_pin='x.x') }}
+    test:
+      requires:
+        - pkg-config
+      commands:
+        - pkg-config --cflags libecpg
+        - pkg-config --libs libecpg
+    about:
+      license: PostgreSQL (MIT-like)
+      license_file: COPYRIGHT
+      summary: PostgreSQL ECPG development files
+      description: >
+        PostgreSQL is a powerful, object-relational SQL database system.
+
+        The package contains the headers, static libraries, and `ecpg` tool
+        needed to build applications using ECPG (Embedded PostgreSQL in C).
+
+about:
+  home: https://www.postgresql.org/
+  license: PostgreSQL (MIT-like)
+  license_file: COPYRIGHT
+  dev_url: https://git.postgresql.org/gitweb/?p=postgresql.git
+  doc_url: https://www.postgresql.org/docs/11/index.html
+
+extra:
+  recipe-maintainers:
+    - chenghlee

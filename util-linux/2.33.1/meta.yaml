@@ -1,0 +1,78 @@
+{% set name = "util-linux" %}
+{% set version = "2.33.1" %}
+{% set src_ext = "tar.gz" %}
+{% set sha256 = "e15bd3142b3a0c97fffecaed9adfdef8ab1d29211215d7ae614c177ef826e73a" %}
+
+{% set ver_major_minor = ".".join(version.split(".")[:2]) %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  fn: "{{ name|lower }}-{{ version }}.{{ src_ext }}"
+  url:
+    - "https://mirrors.kernel.org/pub/linux/utils/util-linux/v{{ ver_major_minor }}/util-linux-{{ version }}.tar.gz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
+  patches:
+    - patches/configure-uuidgen.patch
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - biobuilds-build
+    - {{ compiler('c') }}
+
+outputs:
+  - name: libuuid
+    files:
+      - bin/uuidgen
+      - lib/libuuid.so             # [linux]
+      - lib/libuuid.so.*           # [linux]
+      - lib/libuuid.dylib          # [osx]
+      - lib/libuuid.*.dylib        # [osx]
+      - share/man/man1/uuidgen.1
+    requirements:
+      build:
+        - {{ compiler('c') }}
+    test:
+      commands:
+        - uuidgen --random
+        - conda inspect linkages --show-files libuuid
+        - conda inspect objects libuuid   # [osx]
+    about:
+      license: BSD
+      license_file: Documentation/licenses/COPYING.BSD-3-Clause
+      summary: >
+        Library and CLI tool for generating universally unique identifiers
+        (UUIDs) from the e2fsprogs/util-linux suite.
+
+  - name: libuuid-devel
+    files:
+      - include/uuid
+      - lib/libuuid.a
+      - lib/pkgconfig/uuid.pc
+    build:
+      run_exports:
+        # Taking a guess here...
+        - {{ pin_subpackage('libuuid', max_pin='x') }}
+    requirements:
+      run:
+        - {{ pin_subpackage('libuuid', exact=True) }}
+    about:
+      license: BSD
+      license_file: Documentation/licenses/COPYING.BSD-3-Clause
+      summary: >
+        e2fsprogs/util-linux UUID library - headers and static libraries
+
+about:
+  home: 
+  dev_url: 
+  doc_url: 
+
+extra:
+  recipe-maintainers:
+    - chenghlee

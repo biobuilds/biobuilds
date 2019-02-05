@@ -1,9 +1,6 @@
 icu:
   - 63.1
 
-ncurses:
-  - 6.0
-
 readline:
   - 7.0
 

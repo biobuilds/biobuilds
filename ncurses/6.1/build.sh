@@ -6,6 +6,33 @@ set -x -u
 # may fail with errors arising from the THROWS and THROW2 macros.
 export CXXFLAGS="-std=c++11 ${CXXFLAGS:-}"
 
+#-----------------------------------------------------------
+# ncurses (gen-pkgconfig.in) adds -ltinfo to ncurses.pc if any of the following conditions is true:
+#   1. No `*-Wl,-rpath,*` is found in EXTRA_LDFLAGS
+#   2. Any `*--as-needed*` is found in EXTRA_LDFLAGS
+#
+# The build system takes care that any `-Wl,-rpath,` in LDFLAGS gets copied into EXTRA_LDFLAGS
+# (and also that any -L${PREFIX}/lib gets translated to -Wl,-rpath,${PREFIX}/lib)
+# the same is not true of -Wl,--as-needed (which is referenced only in gen-pkgconfig.in).
+# One option to fix this is to pass our LDFLAGS as EXTRA_LDFLAGS however this ends up copying across
+# all of our linker flags into the .pc file which means they are forced upon all pkg-config based
+# consumers of ncurses and that is a very bad thing indeed. If we wanted to do that we would:
+#
+#   export EXTRA_LDFLAGS=${LDFLAGS}
+#   export LDFLAGS=
+#
+# .. but instead it is better to strip off all '-Wl,-rpath,*' and '-L${PREFIX}' from LDFLAGS.
+#-----------------------------------------------------------
+#re='^(.*)(-Wl,-rpath,[^ ]*)(.*)$'
+#if [[ ${LDFLAGS} =~ $re ]]; then
+#  export LDFLAGS="${BASH_REMATCH[1]}${BASH_REMATCH[3]}"
+#fi
+#re='^(.*)(-L[^ ]*)(.*)$'
+#if [[ ${LDFLAGS} =~ $re ]]; then
+#  export LDFLAGS="${BASH_REMATCH[1]}${BASH_REMATCH[3]}"
+#fi
+
+
 ## Generate a list of options for `./configure`
 declare -a config_opts
 
@@ -88,6 +115,12 @@ config_opts+=(--without-develop)
 config_opts+=(--without-profile)
 config_opts+=(--without-tests)
 
+# `ncurses` now has rudimentary but non-experimental support for multi-threaded
+# applications that use `use_window()` and `use_screen()`.  However, we are NOT
+# going to enable such support until we have a good use case for it, as doing
+# so changes the libraries' names, which will likely break existing packages.
+#config_opts+=(--with-pthread)
+
 # Miscellaneous options
 config_opts+=(--disable-root-environ)   # restrict environment when root
 config_opts+=(--with-xterm-kbs=del)     # xterm backspace sends DEL
@@ -128,7 +161,8 @@ pushd ${PREFIX}/lib
 for _LIB in form menu ncurses ncurses++ panel tic tinfo; do
     test -f lib${_LIB}w${_SOEXT} && \
         ln -sf lib${_LIB}w${_SOEXT} lib${_LIB}${_SOEXT}
-    test -f lib${_LIB}w.a && ln -sf lib${_LIB}w.a lib${_LIB}.a
+    test -f lib${_LIB}w.a && \
+        ln -sf lib${_LIB}w.a lib${_LIB}.a
 
     pushd pkgconfig
     if [[ -f ${_LIB}w.pc ]]; then
@@ -158,3 +192,14 @@ mkdir -p "${HEADERS_DIR}"
 for HEADER in $(ls $HEADERS_DIR_W); do
   ln -sf "${HEADERS_DIR_W}/${HEADER}" "${HEADERS_DIR}/${HEADER}"
 done
+
+# Ensure that the code at the top that strips -L and -Wl,-rpath from LDFLAGS
+# did its job and we have ended up with a working ncursesw.pc file (i.e. one
+# that contains -ltinfow)
+#if ! grep 'Libs:' "${PREFIX}"/lib/pkgconfig/ncursesw.pc | \
+#        grep -q "\-ltinfow";
+#then
+#    echo "ERROR: ncurses gen-pkgconfig created a broken ncursesw.pc" >&2
+#    echo "       It does not contain '-ltinfow' in the 'Libs:' line" >&2
+#    exit 1
+#fi

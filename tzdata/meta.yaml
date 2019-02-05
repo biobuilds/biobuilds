@@ -1,0 +1,91 @@
+{% set name = "tzdata" %}
+{% set version = "2018i" %}
+{% set build_num = 0 %}
+{% set src_ext = "tar.gz" %}
+{% set sha256_code = "aaacdb876ca6fb9d58e244b462cbc7578a496b1b10994381b4b32b9f2ded32dc" %}
+{% set sha256_data = "82c45ef84ca3bc01d0a4a397ba8adeb8f7f199c6550740587c6ac5a7108c00d9" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  # Not using the `tzdb-${version}` source tarball as that would require
+  # building lzip as a dependency package. So we'll put together the 
+  - fn: "tzcode-{{ version }}.{{ src_ext }}"
+    url:
+      - "https://data.iana.org/time-zones/releases/tzcode{{ version }}.{{ src_ext }}"
+      - "http://download.lab7.io/sources/tzcode-{{ version }}_{{ sha256_code[:10] }}.{{ src_ext }}"
+    sha256: "{{ sha256_code }}"
+    folder: .
+  - fn: "tzdata-{{ version }}.{{ src_ext }}"
+    url:
+      - "https://data.iana.org/time-zones/releases/tzdata{{ version }}.{{ src_ext }}"
+      - "http://download.lab7.io/sources/tzdata-{{ version }}_{{ sha256_data[:10] }}.{{ src_ext }}"
+    sha256: "{{ sha256_data }}"
+    folder: .
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+
+outputs:
+  - name: tzdata
+    build:
+      # The timezone/DST data files are architecture-independent, so we only it
+      # to generate it on one platform.
+      noarch: generic
+      skip: True  # [not linux64]
+
+      # No real reason for the build string ot include a hash, as the package
+      # contents are independent of the build tools used to generate them.
+      string: "{{ build_num }}"
+
+      # This package only contains data files, so libgcc-ng isn't really a
+      # run-time requirement. Suppress this requirement so the package can be
+      # installed on platforms where a suitable libgcc-ng package does not
+      # exist (e.g., osx-64).
+      ignore_run_exports:
+        - libgcc-ng
+    files:
+      - share/zoneinfo
+      - share/zoneinfo-posix
+      - share/zoneinfo-right
+    about:
+      home: https://www.iana.org/time-zones
+      summary: The IANA timezones and DST rules database
+      license: Public domain
+      license_file: LICENSE
+      description: >
+        The Time Zone Database (often called tz or zoneinfo) contains code and
+        data that represent the history of local time for many representative
+        locations around the globe. It is updated periodically to reflect
+        changes made by political bodies to time zone boundaries, UTC offsets,
+        and daylight-saving rules. Its management procedure is documented in
+        "BCP 175: Procedures for Maintaining the Time Zone Database".
+
+  - name: tzdata-utils
+    files:
+      - bin/zdump
+      - bin/zic
+    requirements:
+      build:
+        - {{ compiler('c') }}
+      run:
+        - {{ pin_subpackage('tzdata', exact=True) }}
+    build:
+      number: {{ build_num }}
+    test:
+      commands:
+        - zic --version
+        - zdump --version
+        - zdump US/Central UTC
+    about:
+      home: https://www.iana.org/time-zones
+      summary: Utilities for managing the IANA zoneinfo database
+      license: Public domain
+      license_file: LICENSE
+
+extra:
+  recipe-maintainers:
+    - chenghlee

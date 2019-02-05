@@ -1,7 +1,7 @@
 {% set name = "ncurses" %}
-{% set version = "6.0" %}
+{% set version = "6.1" %}
 {% set src_ext = "tar.gz" %}
-{% set sha256 = "f551c24b30ce8bfb6e96d9f59b42fbea30fa3a6123384172f9e7284bcf647260" %}
+{% set sha256 = "aa057eeeb4a14d470101eff4597d5833dcef5965331be3528c08d99cebaa0d17" %}
 
 {% set ncurses_headers = [
     "curses.h",
@@ -47,16 +47,11 @@ source:
     - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
   sha256: "{{ sha256 }}"
   patches:
-    # http://lists.gnu.org/archive/html/bug-ncurses/2011-04/txtkWQqiQvcZe.txt
-    - fix.patch
-    # http://lists.gnu.org/archive/html/bug-ncurses/2015-01/msg00016.html
-    - ncurses-5.9-gcc-5.patch
-    - cxx1z-remove-dynamic-exception-specifications.patch
-    - clang.patch
+    - cve-2018-10754.patch
 
 build:
   skip: true  # [win]
-  number: 2
+  number: 0
 
 requirements:
   build:
@@ -105,6 +100,7 @@ outputs:
       - bin/infotocap
       - bin/reset
       - bin/tabs
+      - bin/tack
       - bin/tic
       - bin/toe
       - bin/tput

@@ -1,39 +1,96 @@
 {% set name = "gettext" %}
 {% set version = "0.19.8.1" %}
+{% set src_ext = "tar.xz" %}
+{% set sha256 = "105556dbc5c3fbbc2aa0edb46d22d055748b6f5c7cd7a8d99f8e7eb84e938be4" %}
+
+{% set gettext_binaries = [
+    "envsubst",
+    "gettext",
+    "gettext.sh",
+    "gettextize",
+    "msgattrib",
+    "msgcat",
+    "msgcmp",
+    "msgcomm",
+    "msgconv",
+    "msgen",
+    "msgexec",
+    "msgfilter",
+    "msgfmt",
+    "msggrep",
+    "msginit",
+    "msgmerge",
+    "msgunfmt",
+    "msguniq",
+    "ngettext",
+    "recode-sr-latin",
+    "xgettext",
+] %}
+
+{% set gettext_libraries = [
+    "gettextlib",
+    "gettextpo",
+    "gettextsrc",
+] %}
 
 package:
-  name: {{ name|lower }}
+  name: "{{ name|lower }}"
   version: "{{ version }}"
 
 source:
-  fn: "{{ name }}-{{ version }}.tar.xz"
+  fn: "{{ name|lower }}-{{ version }}.tar.xz"
   url:
-    - "ftp://ftp.gnu.org/pub/gnu/{{ name }}/{{ name }}-{{ version }}.tar.xz"
-    - "http://download.lab7.io/sources/{{ name }}-{{ version }}.tar.xz"
-  sha256: "105556dbc5c3fbbc2aa0edb46d22d055748b6f5c7cd7a8d99f8e7eb84e938be4"
+    - "https://ftp.gnu.org/pub/gnu/{{ name }}/{{ name }}-{{ version }}.tar.xz"
+    - "http://download.lab7.io/sources/{{ name|lower }}-{{ version }}_{{ sha256[:10] }}.{{ src_ext }}"
+  sha256: "{{ sha256 }}"
+  patches:
+    - patches/debian/03-avoid-extraneous-nul-bytes.patch
+    - patches/debian/04-fix-msgunfmt-heap-corruption.patch
+    - patches/debian/05-fix-crash-xgettext-with-its.patch
+    - patches/debian/09-fix-crash-with-po-file-input.patch
 
 build:
-  number: 0
+  number: 1
   skip: True  # [win]
+  run_exports:
+    # Seems pretty good: https://abi-laboratory.pro/tracker/timeline/gettext/
+    - {{ pin_subpackage('gettext') }}
 
 requirements:
   build:
     - {{ compiler('c') }}
-    - libffi
-    - libiconv  # [not linux and not win]
+    - flex
+    - bison
+  host:
+    # Per source "DEPENDENCIES" file, libiconv not needed for glibc >= 2.2 or
+    # macOS >= 10.3, which should be true for all our target platforms.
+    #- libiconv
 
 test:
   commands:
-    - test -f ${PREFIX}/lib/libgettextlib.so  # [linux]
-    - test -f ${PREFIX}/lib/libintl.dylib     # [osx]
+    {% for bin in gettext_binaries %}
+    - {{ bin }} --version
+    {% endfor %}
+    {% for libname in gettext_libraries %}
+    - test -x ${PREFIX}/lib/lib{{ libname }}.so     # [linux]
+    - test -x ${PREFIX}/lib/lib{{ libname }}.dylib  # [osx]
+    {% endfor %}
+    - test -f ${PREFIX}/lib/preloadable_libintl.so  # [linux]
+    - test -f ${PREFIX}/lib/libintl.dylib           # [osx]
+    - conda inspect linkages -p $PREFIX gettext
+    - conda inspect objects  -p $PREFIX gettext     # [osx]
 
 about:
-  home: https://www.gnu.org/software/gettext/
-  license: GPLv2
+  home: "https://www.gnu.org/software/gettext/"
+  license: GPL-2.0
+  license_family: GPL
   license_file: COPYING
-  summary: "Internationalization package."
+  summary: "GNU internationalization utilities"
+  dev_url: "https://savannah.gnu.org/projects/gettext/"
+  doc_url: "https://www.gnu.org/software/gettext/manual/html_node/index.html"
 
 extra:
   recipe-maintainers:
-    - scopatz
     - chenghlee
+  original-recipe-maintainers:
+    - scopatz
