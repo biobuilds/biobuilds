@@ -1,0 +1,23 @@
+Make sure the `uuidgen` utility gets built, even though we told `./configure`
+to disable all applications.
+
+--- configure.orig	2019-02-04 22:18:00.000000000 -0600
++++ configure	2019-02-04 22:18:20.000000000 -0600
+@@ -23829,17 +23829,8 @@
+ 
+ 
+ 
+-  if test "x$ul_default_estate" != x; then
+-  enable_uuidgen=$ul_default_estate
+-  build_uuidgen=yes
+-  if test "x$ul_default_estate" = xno; then
+-    build_uuidgen=no
+-  fi
+-else
+-
+   build_uuidgen=yes
+   enable_uuidgen=check
+-fi
+ 
+ 
+ 
